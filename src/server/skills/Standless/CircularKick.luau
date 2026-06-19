@@ -34,6 +34,7 @@ local Skill: types.SkillData = {
 		"Hit",
 		"ComboEnder",
 		"IgnoreBlock",
+		"Ragdoll",
 	},
 
 	AttackInfo = {

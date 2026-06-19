@@ -110,7 +110,13 @@ local None = {
 		ArcSpearStrike = {
 			Animation = Animations.User.ArcSpearStrikeStart,
 			Priority = Enum.AnimationPriority.Action,
-		}
+		},
+
+		-- Wait A Little Bit
+		WaitALittleBit = {
+			Animation = Animations.User.WaitALittleBit,
+			Priority = Enum.AnimationPriority.Action,
+		},
 	},
 	Sounds = {
 		Punch1 = {
@@ -171,6 +177,17 @@ local None = {
 		
 		ArcSpearStrikeHit = {
 			Sound = Sounds.ArcSpearStrikeHit,
+			Volume = 1,
+		},
+
+		-- Wait A Little Bit
+		WaitALittleBit = {
+			Sound = Sounds.WaitALittleBit,
+			Volume = 1,
+		},
+
+		WaitALittleBitHit = {
+			Sound = Sounds.WaitALittleBitHit,
 			Volume = 1,
 		},
 	},

@@ -114,6 +114,13 @@ local None = {
 			Animation = Animations.User.UppercutStart,
 			Priority = Enum.AnimationPriority.Action
 		},
+
+
+		--Circular Kick
+		CircularKick = {
+			Animation = Animations.User.CircularKick,
+			Priority = Enum.AnimationPriority.Action
+		},
 	},
 	Sounds = {
 		Punch1 = {

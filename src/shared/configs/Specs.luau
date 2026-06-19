@@ -37,6 +37,7 @@ local Specs = {
 			
 			["Barrage"] = Enum.KeyCode.E,
 			["ArcSpearStrike"] = Enum.KeyCode.R,
+			["WaitALittleBit"] = Enum.KeyCode.G,
 		}
 	},
 	

@@ -17,6 +17,7 @@ local Spec = {
 		
 		["Barrage"] = "~/skills/Barrage",
 		["ArcSpearStrike"] = "@Specs/Undyne/ArcSpearStrike",
+		["WaitALittleBit"] = "~/skills/Undyne/WaitALittleBit",
 	},
 
 	onInit = function(self: types.Spec)
