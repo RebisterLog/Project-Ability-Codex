@@ -49,11 +49,13 @@ function Skill.onInit(self)
 
 	local Anims = self.Spec.Data.Assets.Animations
 	local Sounds = self.Spec.Data.Assets.Sounds
+	local Models = self.Spec.Data.Assets.Models
 	local AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
+	self.UUID = 0
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{1, function(seq)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
@@ -69,14 +71,18 @@ function Skill.onInit(self)
 				end,
 			},
 
+			{24, function()
+				self.UUID = tick()
+				VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", character.instance, Models.Footrest, self.UUID)
+			end,},
+			
 			{25,function(seq, Frame)
 					local Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = AttackInfo.Hitbox
-					})	
-
-
+					})
+					
 					for _, Target in Targets do
 						if table.find(self.AlreadyHit, Target) then
 							continue
@@ -90,6 +96,9 @@ function Skill.onInit(self)
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 							if not Data.State.Continue then return end
+							
+						
+							VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", Data.Victim.instance, Models.FootrestVictim)
 							
 							VFXService:StartEffect(Players:GetPlayers(), "Animation", Data.Victim.instance, {
 								Animation = Anims.FootrestVictim,
@@ -128,6 +137,7 @@ function Skill.Interrupt(self)
 		Animation = Anims.Footrest.Animation,
 	})
 	VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds.FootrestVL.Sound)
+	VFXService:StopEffect(Players:GetPlayers(), "EmitFolder", character.instance, self.UUID)
 end
 
 return Skill

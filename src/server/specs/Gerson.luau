@@ -4,6 +4,7 @@ local Configuration = ServerScriptService.server.Configuration
 local Configs = Configuration.ConfigsFolder.Value
 local SpecsConfig = require(Configs.Specs)
 local skills = ServerScriptService.server.skills
+local types =  require(ServerScriptService.server.types)
 
 local Spec = {
 	Skills = {
@@ -18,11 +19,11 @@ local Spec = {
 		["Bonk"] = "@Specs/Gerson/Bonk"
 	},
 
-	onInit = function(self)
+	onInit = function(self: types.Spec)
 		local hammer = self.Data.Assets.Models["Hammer"] :: Model
 
 		if hammer then
-			local copy = hammer:Clone()
+			local copy = self.Cleaner:Clone(hammer)
 			copy:PivotTo(self.Character.instance:GetPivot())
 
 			local motor = copy:FindFirstChildOfClass("Motor6D")

@@ -74,8 +74,6 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 		end
 	end
 	
-	spec:Init()
-	
 	if _G["CRANE_DEBUGGING"] then
 		Crane.Utils.Log(script.Name, `Generated Spec {spec.Data.DisplayName} for {character.instance.Name}`)
 	end

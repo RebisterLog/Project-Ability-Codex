@@ -38,10 +38,8 @@ local Gerson: BotsCharacters.BotCharacterConfig = {
 			},
 			
 			RejectedConditions = {
-				--"TARGET_RAGDOLLED",
-				--"TARGET_ATTACKING",
-				--"TARGET_ARMORED",
-			}
+				
+			},
 		},
 		
 		["Bonk"] = {
@@ -81,7 +79,10 @@ local Gerson: BotsCharacters.BotCharacterConfig = {
 		
 		{
 			"Dash",
-			"Bonk",
+			"Punch",
+			"Punch",
+			"Punch",
+			"Grab"
 		},
 		
 		{

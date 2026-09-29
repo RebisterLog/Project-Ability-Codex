@@ -7,6 +7,7 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 	Aggressive = 0.5,
 	Reaction = 0.6,
 	Agility = 0.6,
+	Debug = false,
 
 	Skills = {
 		["Punch"] = {
@@ -77,6 +78,14 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			--	"TARGET_ATTACKING",
 			--}
 		},
+		
+		["CircularKick"] = {
+			Distance = 6,
+			
+			RequiredConditions = {
+				"TARGET_RAGDOLLED"
+			}
+		}
 	},
 	
 	Combos = {
@@ -93,13 +102,28 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Punch",
 			"Punch",
 			"Footrest",
+			"Punch",
+			"Dash",
+			"Uppercut",
+			"Dash",
+			"CircularKick"
+		},
+		
+		{
+			"Punch",
+			"Punch",
+			"Punch",
+			"Footrest",
 			"Grab",
+			"CircularKick",
 		},
 		
 		{
 			"Dash",
 			"Footrest",
 			"Uppercut",
+			"Dash",
+			"CircularKick",
 		},
 		
 		{

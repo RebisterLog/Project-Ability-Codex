@@ -2,11 +2,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
 
+local ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
+
 type EmitData = {
 	UUID: number,
 	Particle: BasePart,
 	Origin: CFrame | Instance,
 	Offset: CFrame?,
+	UseForge: boolean?,
 }
 
 local Particles = {}
@@ -26,6 +29,7 @@ return {
 		local Particle = Data.Particle:Clone()
 		local Origin = Data.Origin
 		local Offset = Data.Offset
+		local UseForge = Data.UseForge
 		
 		prepareParticle(Particle)
 		
@@ -49,6 +53,18 @@ return {
 		end
 		
 		Particle.Parent = workspace.Effects
+		
+		if Data.UUID then
+			Particles[Data.UUID] = Particle
+		end
+		
+		if UseForge then
+			ForgeVFX.emit(Particle).Finished:andThen(function()
+				Debris:AddItem(Particle)
+			end)
+			
+			return
+		end
 		
 		local MaxLifetime = 0
 		
@@ -77,10 +93,6 @@ return {
 		end)
 		
 		Debris:AddItem(Particle, MaxLifetime + 3)
-
-		if Data.UUID then
-			Particles[Data.UUID] = Particle
-		end
 	end,
 	
 	onStop = function(self, uuid: number)

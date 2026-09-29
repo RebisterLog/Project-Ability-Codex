@@ -36,7 +36,10 @@ function BotsService:Remove(character: types.Character)
 end
 
 function BotsService:Create(botName: string, model: Model)
+	local character = Crane:AddComponent(model, "Character")
+	local bot = self:Instance(botName, character)
 	
+	return bot, character
 end
 
 return BotsService

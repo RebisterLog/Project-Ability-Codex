@@ -74,7 +74,7 @@ function Skill.onInit(self)
 
 	self.AlreadyHit = {}
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{0, function(seq)
 				seq.Cleaner:Add(CombatService:AddArmor(character, true))

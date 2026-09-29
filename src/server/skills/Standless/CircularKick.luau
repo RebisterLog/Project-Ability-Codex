@@ -53,7 +53,7 @@ local Skill: types.SkillData = {
 		},
 
 		Ragdoll = {
-			Duration = 1.5,
+			Duration = 0.5,
 		},
 
 		Knockback = {
@@ -74,19 +74,20 @@ function Skill:onInit()
 
 	local Anims = self.Spec.Data.Assets.Animations
 	local Sounds = self.Spec.Data.Assets.Sounds
+	local Models = self.Spec.Data.Assets.Models
 	local AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{0, function(seq)
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
 				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 				table.clear(self.AlreadyHit)
-				self.HitSoundPlayed = false
 
+				
 				VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
 					Animation = Anims["CircularKick"],
 					Speed = seq.Speed,
@@ -101,7 +102,20 @@ function Skill:onInit()
 					})
 				end)
 			end},
+			
+			{11, function()
+				VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", character.instance, Models.CircularKick)
+			end,},
 
+			{19, function()
+				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+					Particle = Models.CircularKickGroundHit,
+					Origin = character.RootPart.CFrame,
+					Offset = Models.CircularKickGroundHit:GetAttribute("Offset"),
+					UseForge = true,
+				})
+			end,},
+			
 			{20, function(seq)
 				local Targets = CombatService:Hitbox({
 					Skill = self,
@@ -122,13 +136,12 @@ function Skill:onInit()
 						if not Data.State.Success then return end
 						table.insert(self.AlreadyHit, Target)
 
-						if not self.HitSoundPlayed then
-							self.HitSoundPlayed = true
+						if #self.AlreadyHit <= 1 then
 							VFXService:StartEffect(Players:GetPlayers(), "Sound", Target.RootPart, Sounds["CircularKickHit"])
 						end
 					end)
 				end
-			end, 28},
+			end, 25},
 
 			{40},
 		},

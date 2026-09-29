@@ -7,7 +7,7 @@ local BTN_TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingD
 local BTN_ICON_TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
 
 local function getPrettySize(origin: UDim2)
-	return UDim2.new(origin.X.Scale * 1.02, 0, origin.Y.Scale * 1.02, 0)
+	return UDim2.new(origin.X.Scale * 1.1, 0, origin.Y.Scale * 1.1, 0)
 end
 
 local function cancelAllTweens(tweens: {Tween})

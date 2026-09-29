@@ -28,6 +28,8 @@ by RebisterLog
 	@class Utils
 ]=]
 
+local HttpService = game:GetService("HttpService")
+
 type LogLevel = "info" | "warn" | "error"
 local function Log(owner: string, reason: string, level: LogLevel?)
 	level = level or "info"
@@ -129,6 +131,10 @@ local function PointPart(cframe: CFrame)
 	return part
 end
 
+local function GenerateUUID(): string
+	return HttpService:GenerateGUID(false)
+end
+
 return {
 	Log = Log,
 	DeepClone = DeepClone,
@@ -136,4 +142,5 @@ return {
 	Extend = Extend,
 	ChangeNetworkOwner = SafeChangeNetworkOwner,
 	PointPart = PointPart,
+	GenerateUUID = GenerateUUID,
 }

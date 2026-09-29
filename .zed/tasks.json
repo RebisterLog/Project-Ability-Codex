@@ -1,0 +1,11 @@
+[
+  {
+    "label": "Dev Watch Project",
+    "command": "cmd",
+    "args": [
+      "/c",
+      "npx concurrently -n \"SOURC,ROJO,STYLUA\" -c \"bgBlue,bgGreen,bgYellow\" \"rojo sourcemap --include-non-scripts --watch default.project.json --output sourcemap.json\" \"rojo serve\" \"stylua --lsp\""
+    ],
+    "use_new_terminal": false
+  }
+]

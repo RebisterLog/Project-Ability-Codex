@@ -25,32 +25,17 @@ local None = {
 
 		-- Grab
 
-		StandOffGrab = {
+		Grab = {
 			Animation = Animations.User.GrabStart,
 			Priority = Enum.AnimationPriority.Action,
 		},
 
-		StandOffThrow = {
+		GrabThrow = {
 			Animation = Animations.User.GrabHit,
 			Priority = Enum.AnimationPriority.Action,
 		},
 
-		StandOffThrowVictim = {
-			Animation = Animations.Enemy.Grab,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		StandOnGrab = {
-			Animation = Animations.User.GrabStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		StandOnThrow = {
-			Animation = Animations.User.GrabHit,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		StandOnThrowVictim = {
+		GrabThrowVictim = {
 			Animation = Animations.Enemy.Grab,
 			Priority = Enum.AnimationPriority.Action,
 		},
@@ -111,10 +96,10 @@ local None = {
 			Animation = Animations.User.ArcSpearStrikeStart,
 			Priority = Enum.AnimationPriority.Action,
 		},
-
+		
 		-- Wait A Little Bit
 		WaitALittleBit = {
-			Animation = Animations.User.WaitALittleBit,
+			Animation = Animations.User.WaitALittleBitStart,
 			Priority = Enum.AnimationPriority.Action,
 		},
 	},
@@ -138,17 +123,17 @@ local None = {
 		
 		-- Grab
 
-		StandOffGrab = {
+		Grab = {
 			Sound = Sounds.GrabStart,
 			Volume = 1,
 		},
 
-		StandOffGrabbed = {
+		Grabbed = {
 			Sound = Sounds.GrabHit,
 			Volume = 1,
 		},
 
-		StandOffGrabVL = {
+		GrabVL = {
 			Sound = Sounds.GrabVoice,
 			Volume = 1,
 		},
@@ -179,10 +164,10 @@ local None = {
 			Sound = Sounds.ArcSpearStrikeHit,
 			Volume = 1,
 		},
-
+		
 		-- Wait A Little Bit
 		WaitALittleBit = {
-			Sound = Sounds.WaitALittleBit,
+			Sound = Sounds.WaitALittleBitStart,
 			Volume = 1,
 		},
 
@@ -204,8 +189,6 @@ local None = {
 	Stats = {
 		Grab = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
-			StartHitFrame = 30,
-			EndHitFrame = 40,
 			FinalFrame = 75,
 		},
 	}

@@ -18,6 +18,9 @@ type StopData = {
 }
 
 function Animation:Validate(character: Model)
+	if character.ClassName ~= "Model" then return end
+	if not character then return false end
+	
 	if (character:GetPivot().Position - workspace.CurrentCamera.CFrame.Position).Magnitude > 150 then return false end
 	return true
 end
@@ -32,6 +35,8 @@ function Animation:onStart(character: Model, Data: Data)
 	AnimationActor:SendMessage("Play", character, Animation.Animation, {
 		Speed = Data.Speed,
 		Priority = Animation.Priority,
+		FadeInTime = Animation.FadeInTime,
+		Weight = Animation.Weight,
 	})
 end
 

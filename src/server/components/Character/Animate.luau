@@ -2,6 +2,7 @@
 --!optimize 2
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local CoreAnimations = {
 	Idle = Enum.AnimationPriority.Idle,
@@ -140,10 +141,12 @@ return function(character: Model)
 		end
 	end)
 
-	humanoid.Running:Connect(function(speed: number)
+	RunService.Heartbeat:Connect(function()
+		local speed = (rootPart.AssemblyLinearVelocity * Vector3.new(1,0,1)).Magnitude 
+
 		speed /= getRigScale()
 
-		if speed > 24 then
+		if speed > 20 then
 			transitToAnimation("Run", 0.25, nil, speed/24)
 		elseif speed > 1 then
 			transitToAnimation("Walk", 0.25,  nil, speed/12)

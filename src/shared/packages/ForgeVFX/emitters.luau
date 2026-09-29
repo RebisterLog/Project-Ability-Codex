@@ -1,0 +1,394 @@
+local Beam = require("./effects/beam")
+local Spin = require("./effects/spin")
+local Mesh = require("./effects/mesh")
+local Sound = require("./effects/sound")
+local Bezier = require("./effects/bezier")
+local Screen = require("./effects/screen")
+local Particle = require("./effects/particle")
+local Lightning = require("./effects/lightning")
+local CameraShake = require("./effects/camera_shake")
+local Tweener = require("./effects/tweener")
+local Randomizer = require("./effects/randomizer")
+local ShockwaveRing = require("./effects/shockwave_ring")
+local ShockwaveLine = require("./effects/shockwave_line")
+local ShockwaveDebris = require("./effects/shockwave_debris")
+
+local attr = require("./mod/attributes")
+local types = require("./types")
+local utility = require("./mod/utility")
+
+local Promise = require("./pkg/Promise")
+
+local emitters = {}
+
+local function processRandomizers(obj: Instance, scope: types.scope)
+  local r_prop = obj:QueryDescendants(`> RayValue.{utility.PROPERTY_RANDOMIZER_TAG}`)
+  local r_attr = obj:QueryDescendants(`> RayValue.{utility.ATTRIBUTE_RANDOMIZER_TAG}`)
+
+  -- allow emitting the randomizer directly
+  if obj:IsA("RayValue") then
+    if obj:HasTag(utility.PROPERTY_RANDOMIZER_TAG) then
+      table.insert(r_prop, obj)
+    elseif obj:HasTag(utility.ATTRIBUTE_RANDOMIZER_TAG) then
+      table.insert(r_attr, obj)
+    end
+  end
+
+  for _, obj in r_prop do
+    utility.try(`failed to emit property randomizer with error: %s`, Randomizer.emit, obj, scope, false)
+  end
+
+  for _, obj in r_attr do
+    utility.try(`failed to emit attribute randomizer with error: %s`, Randomizer.emit, obj, scope, true)
+  end
+end
+
+function emitters.particle(
+  obj: ParticleEmitter,
+  scope: types.scope,
+  sharedUncMap: { [Instance]: number },
+  sharedRefMap: { [Instance]: Instance },
+  legacyScale: number
+)
+  local count = attr.get(obj, "EmitCount", utility.PLUGIN_CONTEXT and 1 or nil)
+  local duration = attr.get(obj, "EmitDuration", 0, true)
+
+  if not count or (count <= 0 and duration <= 0) then
+    return
+  end
+
+  if not obj:IsDescendantOf(workspace) then
+    local parent, ancestor = utility.cloneParticleAncestry(obj, sharedRefMap)
+
+    if not parent then
+      return
+    end
+
+    local clone = obj:Clone()
+    clone.Archivable = false
+    clone.Parent = parent
+
+    if not sharedUncMap[ancestor] then
+      ancestor.Parent = workspace.Terrain
+      sharedUncMap[ancestor] = 1
+    else
+      sharedUncMap[ancestor] += 1
+    end
+
+    table.insert(scope, function()
+      sharedUncMap[ancestor] -= 1
+
+      if sharedUncMap[ancestor] <= 0 then
+        ancestor:Destroy()
+      end
+    end)
+
+    utility.try(`failed to emit particle with error: %s`, Particle.emit, obj, clone, scope, legacyScale)
+  else
+    utility.try(`failed to emit particle with error: %s`, Particle.emit, obj, obj, scope, legacyScale)
+  end
+end
+
+function emitters.beam(obj: Beam, scope: types.scope, legacyScale: number)
+  local att0, att1 = obj.Attachment0, obj.Attachment1
+
+  if not att0 or not att1 then
+    return
+  end
+
+  local clone = obj:Clone()
+  clone.Archivable = false
+  clone.Parent = workspace.Terrain
+
+  -- clone attachments for beams with scaled length
+  local unscaled = NumberRange.new(1, 1)
+
+  if
+    attr.get(obj, "Length_Scale_Start", unscaled, true) ~= unscaled
+    or attr.get(obj, "Length_Scale_End", unscaled, true) ~= unscaled
+  then
+    local a, b = att0:Clone(), att1:Clone()
+
+    table.insert(scope, a)
+    table.insert(scope, b)
+
+    a.Name = "_ForgeTempAttachment"
+    b.Name = "_ForgeTempAttachment"
+
+    a:AddTag(utility.EMIT_EXCLUDE_TAG)
+    b:AddTag(utility.EMIT_EXCLUDE_TAG)
+
+    clone.Attachment0 = a
+    clone.Attachment1 = b
+
+    a.Parent = att0.Parent
+    b.Parent = att1.Parent
+  end
+
+  table.insert(scope, clone)
+
+  utility.try(`failed to emit beam with error: %s`, Beam.emit, obj, clone, scope, legacyScale)
+end
+
+function emitters.trail(obj: Trail)
+  obj.Enabled = true
+end
+
+function emitters.bezier(obj: Instance, scope: types.scope, skipEnabledCheck: boolean?)
+  local part = obj:FindFirstChildOfClass("Part")
+
+  if not part then
+    return
+  end
+
+  if not skipEnabledCheck and obj:GetAttribute("Enabled") then
+    obj:SetAttribute("Enabled", false)
+  end
+
+  local clone = part:Clone()
+  clone.Locked = true
+
+  table.insert(scope, clone)
+
+  utility.try(`failed to emit bezier with error: %s`, Bezier.emit, obj, clone, scope, skipEnabledCheck)
+end
+
+function emitters.lightning(obj: Instance, scope: types.scope, skipEnabledCheck: boolean?)
+  local part = obj:FindFirstChildOfClass("Part")
+
+  if not part then
+    return
+  end
+
+  if not skipEnabledCheck and obj:GetAttribute("Enabled") then
+    obj:SetAttribute("Enabled", false)
+  end
+
+  local clone = part:Clone()
+  clone.Locked = true
+
+  table.insert(scope, clone)
+
+  utility.try(`failed to emit lightning with error: %s`, Lightning.emit, obj, clone, scope, skipEnabledCheck)
+end
+
+function emitters.mesh(
+  obj: Instance,
+  scope: types.scope,
+  shared_part_cache: any,
+  legacyScale: number,
+  skipEnabledCheck: boolean?
+)
+  local start = obj:FindFirstChild("Start")
+
+  if not start then
+    return
+  end
+
+  if not skipEnabledCheck and obj:GetAttribute("Enabled") then
+    obj:SetAttribute("Enabled", false)
+  end
+
+  local tasks = {}
+  local context = (scope :: any)._context
+
+  local useEmitDuration = obj:HasTag(utility.ENABLED_VFX_TAG) and attr.get(obj, "EmitDuration", 0) > 0
+  local emitCount = if useEmitDuration and not skipEnabledCheck then 1 else attr.get(obj, "EmitCount", 1)
+
+  for i = 1, emitCount do
+    local promise = Promise.new(function(resolve)
+      utility.try(
+        `failed to emit mesh with error: %s`,
+        Mesh.emit,
+        obj,
+        utility.assembleMeshVFX(start, scope, shared_part_cache),
+        scope,
+        legacyScale,
+        skipEnabledCheck
+      )
+
+      resolve()
+    end)
+
+    table.insert(tasks, promise)
+
+    if context then
+      table.insert(context._promises, promise)
+    end
+  end
+
+  Promise.all(tasks):await()
+end
+
+function emitters.spin(obj: Model, scope: types.scope)
+  if utility.lock(obj) then
+    return
+  end
+
+  utility.try(`failed to emit spinning model with error: %s`, Spin.emit, obj, scope)
+  utility.unlock(obj)
+end
+
+function emitters.camera_shake(obj: RayValue, scope: types.scope)
+  utility.try(`failed to emit camera shake with error: %s`, CameraShake.emit, obj, scope)
+end
+
+function emitters.property_tweener(obj: RayValue, scope: types.scope)
+  if not obj.Parent or utility.lock(obj) then
+    return
+  end
+
+  utility.try(`failed to emit property tweener with error: %s`, Tweener.emit, obj, scope, false)
+  utility.unlock(obj)
+end
+
+function emitters.attribute_tweener(obj: RayValue, scope: types.scope)
+  if not obj.Parent or utility.lock(obj) then
+    return
+  end
+
+  utility.try(`failed to emit attribute tweener with error: %s`, Tweener.emit, obj.Parent, obj, scope, true)
+  utility.unlock(obj)
+end
+
+function emitters.screen(obj: BasePart, scope: types.scope)
+  local ok, result = utility.try(`failed to emit screen effect with error: %s`, Screen.emit, obj, scope)
+
+  return if ok then result else false
+end
+
+function emitters.shockwave_ring(att: Attachment, obj: Part, scope: types.scope)
+  utility.try(`failed to emit shockwave ring with error: %s`, ShockwaveRing.emit, att, obj, scope)
+end
+
+function emitters.shockwave_debris(att: Attachment, obj: Part, scope: types.scope)
+  utility.try(`failed to emit shockwave debris with error: %s`, ShockwaveDebris.emit, att, obj, scope)
+end
+
+function emitters.shockwave_line(att: Attachment, obj: Part, scope: types.scope)
+  utility.try(`failed to emit shockwave line with error: %s`, ShockwaveLine.emit, att, obj, scope)
+end
+
+function emitters.sound(obj: Sound, scope: types.scope)
+  local emitCount = attr.get(obj, "EmitCount", 1, true)
+
+  if emitCount <= 0 then
+    return
+  end
+
+  utility.try(`failed to emit sound with error: %s`, Sound.emit, obj, scope)
+end
+
+-- Dispatch function to determine which emitter to use and call it
+function emitters.dispatch(
+  obj: any, -- since we don't use IsA(...), we don't get type narrowing
+  scope: types.scope,
+  sharedUncMap: { [Instance]: number },
+  sharedRefMap: { [Instance]: Instance },
+  shared_part_cache: any,
+  legacyScale: number
+)
+  local className = obj.ClassName
+
+  processRandomizers(obj, scope)
+
+  if className == "ParticleEmitter" then
+    emitters.particle(obj, scope, sharedUncMap, sharedRefMap, legacyScale)
+    return
+  elseif className == "Beam" then
+    emitters.beam(obj, scope, legacyScale)
+    return
+  elseif className == "Trail" then
+    emitters.trail(obj)
+    return
+  elseif className == "Sound" then
+    emitters.sound(obj, scope)
+    return
+  elseif className == "RayValue" then
+    if obj:HasTag(utility.SCREENSHAKE_TAG) then
+      emitters.camera_shake(obj, scope)
+    elseif obj:HasTag(utility.ATTRIBUTE_TWEENER_TAG) then
+      emitters.attribute_tweener(obj, scope)
+    elseif obj:HasTag(utility.PROPERTY_RANDOMIZER_TAG) or obj:HasTag(utility.ATTRIBUTE_RANDOMIZER_TAG) then
+    -- skip randomizer effects because they have already been emitted
+    else
+      -- fall back to property tweens for backwards compatibility
+      emitters.property_tweener(obj, scope)
+    end
+
+    return
+  end
+
+  if obj:HasTag(utility.BEZIER_TAG) then
+    emitters.bezier(obj, scope)
+    return
+  end
+
+  if obj:HasTag(utility.LIGHTNING_TAG) then
+    emitters.lightning(obj, scope)
+    return
+  end
+
+  if className == "Model" then
+    if utility.isMeshVFX(obj) then
+      emitters.mesh(obj, scope, shared_part_cache, legacyScale)
+    else
+      emitters.spin(obj, scope)
+    end
+
+    return
+  end
+
+  if className == "Part" then
+    local att = utility.findFirstClassWithTag(obj, "Attachment", utility.SHOCKWAVE_TAG)
+
+    if att then
+      local name = obj.Parent and obj.Parent.Name or ""
+
+      if name == "Rings" then
+        emitters.shockwave_ring(att, obj, scope)
+      elseif name == "Debris" then
+        emitters.shockwave_debris(att, obj, scope)
+      elseif name == "Lines" then
+        emitters.shockwave_line(att, obj, scope)
+      end
+    end
+  end
+end
+
+-- Registry for enabled effects (effects that emit continuously)
+type EnabledEffectConfig = {
+  check: (obj: Instance) -> boolean,
+  emit: (obj: Instance, scope: types.scope, shared_part_cache: any) -> (),
+}
+
+emitters.enabled_registry = {
+  mesh = {
+    check = function(obj: Instance)
+      return utility.isMeshVFX(obj)
+    end,
+    emit = function(obj: Instance, scope: types.scope, shared_part_cache: any)
+      emitters.mesh(obj, scope, shared_part_cache, 1, true)
+    end,
+  },
+
+  bezier = {
+    check = function(obj: Instance)
+      return obj:HasTag(utility.BEZIER_TAG)
+    end,
+    emit = function(obj: Instance, scope: types.scope, shared_part_cache: any)
+      emitters.bezier(obj, scope, true)
+    end,
+  },
+
+  lightning = {
+    check = function(obj: Instance)
+      return obj:HasTag(utility.LIGHTNING_TAG)
+    end,
+    emit = function(obj: Instance, scope: types.scope, shared_part_cache: any)
+      emitters.lightning(obj, scope, true)
+    end,
+  },
+} :: { [string]: EnabledEffectConfig }
+
+return emitters

@@ -103,28 +103,6 @@ function TestService:onStart()
 
 			Crane:GetService("BotsService"):Instance("BasicWarrior", char)
 		end
-		
-		local GERSON do
-			local bot = workspace.Live["Gerson"]
-			local char: types.Character = Crane:AddComponent(bot, "Character")
-			--char:SetSpec("Standless")
-			--HandleHealth(char.Humanoid)
-			--char.Spec:ActivateSkill("Run")
-			--HandleWatchHome(char.RootPart.Position, char.instance)
-
-			Crane:GetService("BotsService"):Instance("Gerson", char)
-		end
-		
-		local Undyne do
-			local bot = workspace.Live["Undyne"]
-			local char: types.Character = Crane:AddComponent(bot, "Character")
-			--char:SetSpec("Standless")
-			--HandleHealth(char.Humanoid)
-			--char.Spec:ActivateSkill("Run")
-			--HandleWatchHome(char.RootPart.Position, char.instance)
-
-			Crane:GetService("BotsService"):Instance("Undyne", char)
-		end
 	end)
 end
 

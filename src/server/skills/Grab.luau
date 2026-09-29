@@ -2,11 +2,11 @@ local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Types = require(ServerScriptService.server.types)
+local types = require(ServerScriptService.server.types)
 local Enums = require(ServerScriptService.server.Enums)
 local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 
-local Skill: Types.SkillData = {
+local Skill: types.SkillData = {
 	DisplayName = "Grab",
 	Cooldown = 1,
 	
@@ -17,14 +17,6 @@ local Skill: Types.SkillData = {
 		"Ragdoll",
 		"IgnoreBlock",
 	},
-	
-	OnGrab = function(self: Types.SkillData, target: Types.Character)
-		
-	end,
-	
-	OnThrow = function(self: Types.SkillData, target: Types.Character)
-		
-	end,
 
 	AttackInfo = {
 		Hitbox = {
@@ -52,18 +44,19 @@ local Skill: Types.SkillData = {
 		Knockback = {
 			Duration = 0.1,
 			Velocity = Vector3.new(0, 30, 0),
-			Speed = 80,
+			Speed = 100,
 			RelativePart = "Attacker",
-			FindCrashObject = true,
+			MaxForce = Vector3.new(5_000, 10_000, 5_000)
+			--FindCrashObject = true,
 		},
 		
 		Angular = {
-			Velocity = Vector3.new(-15,0,0),
+			Velocity = Vector3.new(-5,0,0),
 			Duration = 0.5,
 		},
 
 		Ragdoll = {
-			Duration = 1,
+			Duration = 0.75,
 		},
 		
 		Stun = {
@@ -77,32 +70,34 @@ function Skill.onInit(self)
 	local character = self.Character
 	local RootPart = character.RootPart
 	local Humanoid = character.Humanoid
-	local VFXService = Crane:GetService("VFXService")
 	
-	local CombatService = Crane:GetService("CombatService")
-
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
 	local AttackInfo = self.Data.AttackInfo
 	local ThrowInfo = self.Data.Throw
 	
+	local VFXService = Crane:GetService("VFXService")
+	local CombatService = Crane:GetService("CombatService")
+	local StandService = Crane:GetService("StandService")
+	
+	local stand = StandService:GetStand(self.Character) :: types.Stand
+	local isStandActive = if stand then stand:IsActive() else false
+
+	-- if stand exists - it will use stand's Assets
+	self.Assets = if isStandActive then self.Spec.Data.Assets.Stand else self.Spec.Data.Assets
+	self.Caster = isStandActive and stand.instance or self.Character.instance
+	
 	self.GrabData = {
-		Prefix = "StandOff",
 		Offset = self.Spec.Data.Assets.Stats.Grab["AnimationOffset"] or CFrame.new(0, 0, -4) * CFrame.Angles(0, 180, 0),
-		StartHitFrame = self.Spec.Data.Assets.Stats.Grab["StartHitFrame"] or 30,
-		EndHitFrame = self.Spec.Data.Assets.Stats.Grab["EndHitFrame"] or 40,
 		FinalFrame = self.Spec.Data.Assets.Stats.Grab["FinalFrame"] or 30,
 	}
 	
-	--AttackInfo.Stun.Duration = self.GrabData.FinalFrame / 60 + 1
 	ThrowInfo.Stun.Duration = self.GrabData.FinalFrame / 60
 
 	self.AlreadyHit = {}
-	self.Target = nil :: Types.Character?
+	self.Target = nil :: types.Character?
 	
-	self.GrabSequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.GrabSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Validate = function()
-			if not self.Target.Parent or not character.instance.Parent then
+			if not self.Target.Parent or not self.Caster.Parent then
 				return false
 			end
 			
@@ -110,6 +105,9 @@ function Skill.onInit(self)
 		end,
 		Frames = {
 			{0, function(seq: Sequencer.Sequencer)
+				local Anims = self.Assets.Animations
+				local Sounds = self.Assets.Sounds
+				
 				CombatService:Attack{
 					Attacker = character,
 					Victim = self.Target,
@@ -134,23 +132,19 @@ function Skill.onInit(self)
 							Offset = self.GrabData.Offset,
 						}						
 					},
-				} :: Types.GrabData))
+				} :: types.GrabData))
 				
-				VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-					Animation = Anims[self.GrabData.Prefix.."Throw"],
+				VFXService:StartEffect(Players:GetPlayers(), "Animation", self.Caster, {
+					Animation = Anims["GrabThrow"],
 					Speed = seq.Speed, 
 				})
 				
 				VFXService:StartEffect(Players:GetPlayers(), "Animation", self.Target.instance, {
-					Animation = Anims[self.GrabData.Prefix.."ThrowVictim"],
+					Animation = Anims["GrabThrowVictim"],
 					Speed = seq.Speed, 
 				})
 
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."Grabbed"])
-				
-				if self.OnGrab then
-					self.OnGrab(self.Data, self.Target)
-				end
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["Grabbed"])
 			end,},
 			
 			{self.GrabData.FinalFrame - 5, function(seq)
@@ -163,29 +157,28 @@ function Skill.onInit(self)
 					Victim = self.Target,
 					Info = self.Data.Throw,
 				}
-				
-				if self.OnThrow then
-					self.OnThrow(self.Data, self.Target)
-				end
 			end,}
 		}
 	}))
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{0, function(seq)
+				local Anims = self.Assets.Animations
+				local Sounds = self.Assets.Sounds
+				
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 12))
 				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 				table.clear(self.AlreadyHit)
 
-				VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-					Animation = Anims[self.GrabData.Prefix.."Grab"],
-					Speed = seq.Speed, 
+				VFXService:StartEffect(Players:GetPlayers(), "Animation", self.Caster, {
+					Animation = Anims["Grab"],
+					Speed = seq.Speed,
 				})
 
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."Grab"])
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."GrabVL"])
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["Grab"])
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["GrabVL"])
 				
 				self.Target = nil
 			end,},
@@ -209,7 +202,7 @@ function Skill.onInit(self)
 						Attacker = character,
 						Victim = Target,
 						Info = AttackInfo,
-					}:andThen(function(Data: Types.AttackData)
+					}:andThen(function(Data: types.AttackData)
 						if Data.State.Success and Data.State.Continue and not self.GrabSequence:IsPlaying() then
 							self.Target = Target
 
@@ -219,15 +212,21 @@ function Skill.onInit(self)
 					end)
 				end
 			end,
-			self.GrabData.EndHitFrame},
+			32},
 			
-			{45},
+			{40},
 		},
 	}))
 end
 
 function Skill.Activate(self)	
-	-- self.GrabData["Prefix"] =
+	local StandService = Crane:GetService("StandService")
+
+	local stand = StandService:GetStand(self.Character) :: types.Stand
+	local isStandActive = if stand then stand:IsActive() else false
+
+	self.Assets = isStandActive and self.Spec.Data.Assets.Stand or self.Spec.Data.Assets
+	self.Caster = isStandActive and stand.instance or self.Character.instance
 	
 	if self.Sequence then
 		self.Sequence:Play()
@@ -242,10 +241,10 @@ end
 function Skill.Interrupt(self)
 	local character = self.Character
 	local RootPart = character.RootPart
+	
 	local VFXService = Crane:GetService("VFXService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
+	local Anims = self.Assets.Animations
 
 	if self.Sequence then
 		self.Sequence:Stop()
@@ -255,9 +254,10 @@ function Skill.Interrupt(self)
 		self.GrabSequence:Stop()
 	end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-		Animation = Anims[self.GrabData.Prefix.."Grab"],
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Caster, {
+		Animation = Anims["Grab"],
 	})
+	
 	--VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."Grab"])
 	--VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."GrabVL"])
 end

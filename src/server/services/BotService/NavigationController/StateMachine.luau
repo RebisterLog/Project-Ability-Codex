@@ -36,17 +36,27 @@ local StateMachine = {}
 StateMachine.__index = StateMachine
 
 function StateMachine.ChangeState<T>(self: StateMachine<T>, new: keyof<T>)
+	if new == self.CurrentState then return end
 	local old = self.CurrentState
 	
 	if old then
 		self.CurrentState = nil
+		if self.UpdateConnection then self.UpdateConnection:Disconnect() end
 		if self.States[old]["Exit"] then self.States[old]:Exit(new) end
 	end
 	
 	if new then
 		if self.States[new]["Enter"] then self.States[new]:Enter(old) end
 		self.CurrentState = new
+
+		self.UpdateConnection = RunService.Heartbeat:Connect(function(dt)
+			if self.CurrentState and self.States[self.CurrentState] and self.States[self.CurrentState].Update then
+				self.States[self.CurrentState]:Update(dt)
+			end
+		end)
 	end
+	
+	--print("Current:", self.CurrentState)
 	
 	for _, listener in self.Listeners do
 		listener(new, old)
@@ -95,6 +105,9 @@ return {
 		config = config or {}
 		
 		if config.CreateNoneState then
+			if not config.States then
+				config.States = {}
+			end
 			if not config.States["None"] then
 				config.States["None"] = {
 					Enter = function() end,
@@ -109,11 +122,13 @@ return {
 			CurrentState = nil,
 		}, StateMachine)
 		
-		machine.UpdateConnection = RunService.Heartbeat:Connect(function(dt)
-			if machine.CurrentState and machine.States[machine.CurrentState] and machine.States[machine.CurrentState].Update then
-				machine.States[machine.CurrentState]:Update(dt)
-			end
-		end)
+		if machine.CurrentState then
+			machine.UpdateConnection = RunService.Heartbeat:Connect(function(dt)
+				if machine.CurrentState and machine.States[machine.CurrentState] and machine.States[machine.CurrentState].Update then
+					machine.States[machine.CurrentState]:Update(dt)
+				end
+			end)
+		end
 		
 		if config.Initial then
 			machine:ChangeState(config.Initial or "None")

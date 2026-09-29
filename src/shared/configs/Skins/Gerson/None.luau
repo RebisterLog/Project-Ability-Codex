@@ -9,7 +9,8 @@ local None = {
 	Animations = {
 		-- Movement
 		Idle = {
-			Animation = Animations.User.Movements.Idle,
+			--Animation = Animations.User.Movements.Idle,
+			Animation = Animations.User.Movements.IdleCross,
 			Priority = Enum.AnimationPriority.Idle,
 		},
 
@@ -38,36 +39,21 @@ local None = {
 
 		-- Grab
 
-		StandOffGrab = {
+		Grab = {
 			Animation = Animations.User.GrabStart,
 			Priority = Enum.AnimationPriority.Action,
 		},
 
-		StandOffThrow = {
+		GrabThrow = {
 			Animation = Animations.User.GrabHit,
 			Priority = Enum.AnimationPriority.Action,
 		},
 
-		StandOffThrowVictim = {
+		GrabThrowVictim = {
 			Animation = Animations.Enemy.Grab,
 			Priority = Enum.AnimationPriority.Action,
 		},
-
-		StandOnGrab = {
-			Animation = Animations.User.GrabStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		StandOnThrow = {
-			Animation = Animations.User.GrabHit,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		StandOnThrowVictim = {
-			Animation = Animations.Enemy.Grab,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		
 		-- Dash
 		DashForward = {
 			Animation = GlobalAnimations.Dash.Forward,
@@ -150,17 +136,17 @@ local None = {
 		
 		-- Grab
 
-		StandOffGrab = {
+		Grab = {
 			Sound = Sounds.GrabStart,
 			Volume = 1,
 		},
 
-		StandOffGrabbed = {
+		Grabbed = {
 			Sound = Sounds.GrabHit,
 			Volume = 1,
 		},
 
-		StandOffGrabVL = {
+		GrabVL = {
 			Sound = Sounds.GrabVoice,
 			Volume = 1,
 		},
@@ -183,8 +169,6 @@ local None = {
 	Stats = {
 		Grab = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
-			StartHitFrame = 30,
-			EndHitFrame = 40,
 			FinalFrame = 75,
 		},
 	}

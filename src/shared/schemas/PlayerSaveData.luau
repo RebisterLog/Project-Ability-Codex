@@ -8,17 +8,20 @@ type SkinData = {
 	FirstOwnerId: number,
 }
 
-type SpecData = {
-	Id: string, -- id(name) of Spec
+export type SpecData = {
+	Id: string, -- unique id
+	Name: string, -- Spec name
 	ReceivedTime: number,
 	FirstOwnerId: number,
 }
 
 export type PlayerSaveData = {
 	Money: number,
+	Experience: number,
+	Level: number,
 	Inventory: {string},
 	
-	SpecBinds: {[string]: {[string]: Bind}}, -- [specId]: {[skillId]: keycode}
+	SpecBinds: {[string]: {[string]: Bind}}, -- [spec name]: {[skillId]: keycode}
 	Skins: {[string]: SkinData}, -- [unique id]: data
 	Specs: {[string]: SpecData}, -- [unique id]: data
 	
@@ -26,11 +29,13 @@ export type PlayerSaveData = {
 }
 
 return {
+	Expirience = 0,
+	Level = 0,
 	Money = 0,
 	Inventory = {},
 	
 	Skins = {},
 	Specs = {},
 	
-	Spec = "Standless"
+	Spec = "None",
 } :: PlayerSaveData

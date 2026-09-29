@@ -1,0 +1,845 @@
+--!native
+--!nolint LocalShadow
+local RunService = game:GetService("RunService")
+local PhysicsService = game:GetService("PhysicsService")
+
+local attr = require("./attributes")
+local logger = require("./logger")
+
+local Promise = require("../pkg/Promise")
+
+local utility = {}
+
+utility.PLUGIN_CONTEXT = script:FindFirstAncestorOfClass("Plugin")
+  or (RunService:IsStudio() and not RunService:IsRunning())
+
+utility.SERVER_CONTEXT = RunService:IsServer() or utility.PLUGIN_CONTEXT
+
+utility.DEG_TO_RAD = math.pi / 180
+
+utility.BEZIER_TAG = "BezierParticle"
+utility.LIGHTNING_TAG = "LightningBolt"
+utility.SHOCKWAVE_TAG = "Shockwave"
+utility.SCREENSHAKE_TAG = "CameraShake"
+
+utility.PROPERTY_TWEENER_TAG = "PropertyTweener"
+utility.PROPERTY_RANDOMIZER_TAG = "PropertyRandomizer"
+
+utility.ATTRIBUTE_TWEENER_TAG = "AttributeTweener"
+utility.ATTRIBUTE_RANDOMIZER_TAG = "AttributeRandomizer"
+
+utility.ENABLED_VFX_TAG = "ConstantVFX"
+utility.TEXTURE_LOAD_TAG = "LoadVFXTextures"
+
+utility.CLEANUP_TAG = "__forge__cleanupOnExit"
+utility.EMIT_EXCLUDE_TAG = "__forge_excludeFromEmit"
+
+utility.RENDER_PRIORITY = Enum.RenderPriority.Camera.Value + 1
+
+utility.COLLISION_GROUPS = {
+  StudioSelectable = {},
+
+  ForgeDebris = {
+    ForgeDebris = false,
+  },
+
+  ForgeMouseIgnore = {
+    StudioSelectable = false,
+  },
+}
+
+utility.COPY_SPECIALMESH_PROPERTIES = {
+  "MeshId",
+  "MeshType",
+  "Offset",
+  "Scale",
+  "TextureId",
+  "VertexColor",
+}
+
+utility.COPY_PART_PROPERTIES = {
+  "CastShadow",
+
+  "Color",
+
+  "Material",
+  "MaterialVariant",
+  "Reflectance",
+
+  "Shape",
+
+  "FrontSurface",
+  "BackSurface",
+  "LeftSurface",
+  "RightSurface",
+  "TopSurface",
+  "BottomSurface",
+}
+
+utility.COPY_EXTENDED_PART_PROPERTIES = {
+  "Size",
+  "Transparency",
+
+  "CustomPhysicalProperties",
+
+  "CanCollide",
+  "CanQuery",
+  "CanTouch",
+
+  "CollisionGroup",
+}
+
+local LOCKS = setmetatable({} :: { [Instance]: boolean }, { __mode = "k" })
+
+function utility.lock(ref: Instance)
+  if LOCKS[ref] then
+    return true
+  end
+
+  LOCKS[ref] = coroutine.running()
+
+  return false
+end
+
+function utility.unlock(ref: Instance, key: thread?)
+  local thread = LOCKS[ref]
+
+  if coroutine.running() ~= thread and key ~= thread then
+    logger.error("attempt to unlock an instance owned by a different thread")
+  end
+
+  LOCKS[ref] = nil
+end
+
+function utility.setCollisionGroups(groups)
+  local rules = {}
+
+  for name, list in groups do
+    PhysicsService:RegisterCollisionGroup(name)
+
+    if not name:match("Studio") or RunService:IsStudio() then
+      rules[name] = list
+    end
+  end
+
+  for name, list in rules do
+    for group, collidable in list do
+      if group:match("Studio") and not RunService:IsStudio() then
+        continue
+      end
+
+      PhysicsService:CollisionGroupSetCollidable(name, group, collidable)
+    end
+  end
+end
+
+local last_id = 0
+
+function utility.getRandomId()
+  last_id += 1
+  return tostring(last_id)
+end
+
+function utility.copyProperties(from: Instance, to: Instance, list: { string })
+  for _, k in list do
+    to[k] = from[k]
+  end
+end
+
+function utility.lerp(a: number, b: number, t: number)
+  return a + (b - a) * t
+end
+
+function utility.try<R...>(msg: string, func: (...any) -> R..., ...: any): (boolean, R...)
+  local res = { xpcall(func, function(err)
+    logger.warn(string.format(msg, err))
+  end, ...) }
+
+  return res[1], table.unpack(res, 2)
+end
+
+function utility.reboundfn<A>(sec: number, func: (...A) -> never): (...A) -> never
+  local lastRunThread
+
+  return function(...)
+    if lastRunThread then
+      task.cancel(lastRunThread)
+    end
+
+    local args = { ... }
+
+    lastRunThread = task.delay(sec, function()
+      lastRunThread = nil
+      func(table.unpack(args))
+    end)
+  end
+end
+
+function utility.randomUnitVector(min: Vector3, max: Vector3, rng: Random?)
+  local rng = rng or Random.new()
+  return Vector3.new(rng:NextNumber(min.X, max.X), rng:NextNumber(min.Y, max.Y), rng:NextNumber(min.Z, max.Z))
+end
+
+function utility.getImpulseForce(start: Vector3, goal: Vector3, duration: number)
+  return (goal - start) / duration + Vector3.new(0, workspace.Gravity * duration * 0.5, 0)
+end
+
+function utility.isMeshVFX(obj: Instance)
+  return obj
+    and obj:IsA("Model")
+    and obj:FindFirstChild("Start")
+    and (obj :: any).Start:IsA("BasePart")
+    and obj:FindFirstChild("End")
+    and (obj :: any).End:IsA("BasePart")
+end
+
+function utility.isSpinModelStatic(model: Model)
+  return attr.get(model, "SpinRotation", vector.zero, true) == vector.zero
+    and attr.get(model, "Scale_Start", 1, true) == 1
+    and attr.get(model, "Scale_End", 1, true) == 1
+    and (attr.get(model, "SyncPosition", false, true) == false)
+end
+
+function utility.shouldSkipNested(obj: Instance)
+  return obj:IsA("Beam")
+    or obj:HasTag(utility.BEZIER_TAG)
+    or obj:HasTag(utility.LIGHTNING_TAG)
+    or utility.isMeshVFX(obj)
+    or (obj:IsA("BasePart") and utility.findFirstClassWithTag(obj, "Attachment", utility.SHOCKWAVE_TAG) ~= nil)
+end
+
+function utility.getTarget(obj: Instance): Instance?
+  local objectValue = obj:FindFirstChildOfClass("ObjectValue")
+
+  if objectValue and objectValue.Value then
+    return objectValue.Value
+  end
+
+  local parent = obj.Parent
+
+  if not parent then
+    return nil
+  end
+
+  while parent:IsA("Folder") do
+    parent = parent.Parent
+
+    if not parent then
+      return nil
+    end
+  end
+
+  return parent
+end
+
+function utility.createEmitPromise(
+  effects: any,
+  instance: Instance,
+  effectDepth: number,
+  emitFunc: any,
+  context: { _promises: { any } }?
+)
+  local promise = Promise.new(function(resolve, _, onCancel)
+    local scope: { [any]: any } = {}
+    scope.depth = effectDepth
+    scope.effects = effects
+    scope._context = context
+
+    onCancel(function()
+      if scope._onCancel then
+        for _, cb in scope._onCancel do
+          cb()
+        end
+      end
+
+      utility.cleanupScope(scope)
+    end)
+
+    emitFunc(scope)
+
+    utility.cleanupScope(scope)
+
+    resolve()
+  end)
+
+  if context then
+    table.insert(context._promises, promise)
+  end
+
+  return promise
+end
+
+function utility.onCancel(scope: { [any]: any }, callback: () -> ())
+  if not scope._onCancel then
+    scope._onCancel = {}
+  end
+
+  table.insert(scope._onCancel, callback)
+end
+
+local ENABLED_CANCEL_TOKENS: { [Instance]: { _promises: { any }, _scopes: { { unknown } } } } = setmetatable(
+  {},
+  { __mode = "k" }
+) :: any
+
+local FORCE_EMIT_SET: { [Instance]: boolean } = setmetatable({}, { __mode = "k" }) :: any
+
+function utility.forceEmit(obj: Instance, value: boolean)
+  FORCE_EMIT_SET[obj] = if value then true else nil :: any
+end
+
+function utility.isForceEmitting(obj: Instance): boolean
+  return FORCE_EMIT_SET[obj] == true
+end
+
+function utility.setEnabledCancelToken(obj: Instance, token: { _promises: { any }, _scopes: { { unknown } } }?)
+  ENABLED_CANCEL_TOKENS[obj] = token :: any
+end
+
+function utility.getEnabledCancelToken(obj: Instance)
+  return ENABLED_CANCEL_TOKENS[obj]
+end
+
+function utility.cancelToken(token: { _promises: { any }, _scopes: { { unknown } } })
+  for _, promise in token._promises do
+    promise:cancel()
+  end
+
+  for _, scope in token._scopes do
+    utility.cleanupScope(scope, true)
+  end
+
+  table.clear(token._promises)
+  table.clear(token._scopes)
+end
+
+function utility.stopEmitDuration(ref: Instance)
+  local token = utility.getEnabledCancelToken(ref)
+
+  attr.trigger(ref, "Enabled", false)
+  attr.clearState(ref)
+  utility.forceEmit(ref, false)
+
+  return token
+end
+
+function utility.awaitEmitDuration(token: { _promises: { any } }?)
+  if not token then
+    return
+  end
+
+  local pending = {}
+
+  for _, promise in token._promises do
+    table.insert(pending, promise)
+  end
+
+  if #pending > 0 then
+    Promise.all(pending):await()
+  end
+end
+
+function utility.cleanupScope(scope: { [any]: any }, syncFunctions: boolean?)
+  local depth = scope.depth
+  local effects = scope.effects
+
+  local context = scope._context
+  local onCancelCbs = scope._onCancel
+
+  for k, v in scope do
+    -- Skip scope metadata fields
+    if k == "depth" or k == "effects" or k == "_context" or k == "_onCancel" then
+      continue
+    end
+
+    local t = typeof(v)
+
+    if t == "Instance" then
+      v:Destroy()
+    elseif t == "RBXScriptConnection" then
+      v:Disconnect()
+    elseif t == "thread" then
+      if coroutine.status(v) ~= "dead" then
+        task.cancel(v)
+      end
+    elseif t == "function" then
+      if syncFunctions then
+        v()
+      else
+        task.spawn(v)
+      end
+    elseif t == "table" then
+      utility.cleanupScope(v)
+    end
+  end
+
+  table.clear(scope)
+
+  scope.depth = depth
+  scope.effects = effects
+
+  scope._context = context
+  scope._onCancel = onCancelCbs
+end
+
+function utility.protectParent(scope: { [any]: any }, parent: Instance)
+  table.insert(
+    scope,
+    parent.AncestryChanged:Connect(function(_, new)
+      if parent.Parent == workspace.Terrain then
+        return
+      end
+
+      parent.Parent = workspace.Terrain
+    end)
+  )
+end
+
+function utility.findFirstClassWithTag(obj: Instance?, class: string, tag: string)
+  if not obj or obj.Parent == game then
+    return
+  end
+
+  if obj.ClassName == class and obj:HasTag(tag) then
+    return obj
+  else
+    return utility.findFirstClassWithTag(obj.Parent, class, tag)
+  end
+end
+
+function utility.cloneParticleAncestry(
+  particle: ParticleEmitter,
+  map: { [Instance?]: Instance }
+): (Instance?, Instance?)
+  if not particle:FindFirstAncestorWhichIsA("BasePart") and not particle:FindFirstAncestorOfClass("Attachment") then
+    return
+  end
+
+  local function findAncestor(obj: Instance?)
+    if not obj then
+      return
+    end
+
+    local ancestor = obj
+
+    if obj.Parent and (obj.Parent:IsA("BasePart") or obj.Parent:IsA("Attachment")) then
+      ancestor = findAncestor(obj.Parent)
+    end
+
+    return ancestor
+  end
+
+  local function recurse(obj: Instance?)
+    if not obj then
+      return
+    end
+
+    local created = map[obj]
+
+    if created then
+      return created, if obj == particle then map[obj.Parent] else map[findAncestor(obj.Parent)] or map[obj]
+    end
+
+    local clone = Instance.fromExisting(obj)
+    clone.Archivable = false
+
+    if clone:IsA("BasePart") then
+      clone.Locked = true
+    end
+
+    local ancestor = clone
+
+    if map then
+      map[obj] = clone
+    end
+
+    if obj.Parent and (obj.Parent:IsA("BasePart") or obj.Parent:IsA("Attachment")) then
+      local parent, pa = recurse(obj.Parent)
+
+      if pa then
+        ancestor = pa
+      end
+
+      if parent then
+        clone.Parent = parent
+      end
+    end
+
+    return clone, ancestor
+  end
+
+  return recurse(particle.Parent)
+end
+
+function utility.getTransformedOriginExtents(parent: Instance)
+  local originCFrame, originSize = CFrame.identity, vector.zero
+
+  if parent:IsA("BasePart") then
+    originSize = parent.Size
+    originCFrame = parent.CFrame
+  elseif parent:IsA("Attachment") then
+    originCFrame = parent.WorldCFrame
+
+    local newParent = parent.Parent
+
+    -- step 1: find the full origin cframe by walking up the tree, and processing the upmost attachment
+    local positionScale = attr.get(parent, "PositionScale", vector.zero, true)
+
+    if newParent then
+      if newParent:IsA("BasePart") and positionScale ~= vector.zero then
+        local offset = (newParent.Size / 2) * positionScale
+        originCFrame = originCFrame + offset
+      end
+    end
+
+    -- step 2: apply rotation on final origin cframe
+    local overrideWorldRotation = attr.get(parent, "OverrideWorldRotation", false, true)
+    local worldRotation = attr.get(parent, "WorldRotation", vector.zero, true)
+
+    if overrideWorldRotation then
+      local rotRad = worldRotation * utility.DEG_TO_RAD
+      local position = originCFrame.Position
+
+      originCFrame = CFrame.new(position) * CFrame.fromOrientation(rotRad.X, rotRad.Y, rotRad.Z)
+    end
+  end
+
+  return originCFrame, originSize
+end
+
+function utility.getMeshDecals(ref: Model, start: BasePart)
+  local legacy_isFlipbook = attr.get(ref, "Flipbook", false, true)
+
+  local decals = {}
+  local flipbooks = {}
+  local fromToMap = {}
+
+  local function filter(list: { Instance }): { Decal }
+    local filtered = {}
+
+    for _, v in list do
+      if v:IsA("Decal") then
+        table.insert(filtered, v)
+      end
+    end
+
+    return filtered
+  end
+
+  if legacy_isFlipbook then
+    decals = filter(start:GetChildren())
+  else
+    local originalEnd = ref:FindFirstChild("End")
+    local originalStart = ref:FindFirstChild("Start")
+
+    if originalEnd then
+      for _, v in start:GetChildren() do
+        if not v:IsA("Decal") then
+          continue
+        end
+
+        local from = v
+
+        local to = originalEnd:FindFirstChild(v.Name)
+
+        if not to or not to:IsA("Decal") then
+          continue
+        end
+
+        table.insert(decals, v)
+
+        fromToMap[from] = to
+
+        if not attr.get(v, "FlipbookEnabled", nil) then
+          table.insert(decals, v)
+        else
+          local data = attr.get(v, "FlipbookTextures", nil)
+
+          if data then
+            flipbooks[v] = utility.deserializeFlipbook(data)
+          end
+        end
+      end
+
+      for _, v in originalStart:GetChildren() do
+        if not v:IsA("Decal") then
+          continue
+        end
+
+        -- convert children decals to flipbooks
+        local children = v:GetChildren()
+
+        do
+          local offset = 0
+
+          for i = 1, #children do
+            i -= offset
+
+            local obj = children[i]
+
+            if not obj:IsA("Decal") then
+              table.remove(children, i)
+              offset += 1
+            end
+          end
+        end
+
+        if #children ~= 0 then
+          local function idx(str: string)
+            return tonumber(str:match("%d+")) or 0
+          end
+
+          table.sort(children, function(a, b)
+            return idx(a.Name) < idx(b.Name)
+          end)
+
+          local ids = {}
+
+          for _, obj in children do
+            table.insert(ids, idx(obj.Texture))
+            obj:Destroy()
+          end
+
+          local buf = utility.serializeFlipbook(ids)
+
+          attr.set(v, "FlipbookEnabled", true)
+          attr.set(v, "FlipbookTextures", buffer.tostring(buf))
+        end
+      end
+    end
+  end
+
+  return decals, flipbooks, fromToMap
+end
+
+function utility.assembleMeshVFX(start: BasePart, scope: { any }, shared_part_cache: any)
+  local id = utility.getRandomId()
+
+  if start:IsA("Part") then
+    local objAbstr = shared_part_cache:get(id)
+    objAbstr.CFrame = start.CFrame
+
+    local obj = objAbstr._getReal()
+
+    utility.copyProperties(start, obj, utility.COPY_PART_PROPERTIES)
+    utility.copyProperties(start, obj, utility.COPY_EXTENDED_PART_PROPERTIES)
+
+    local clone = start:Clone()
+
+    for _, child in clone:GetChildren() do
+      child.Parent = obj
+    end
+
+    clone:Destroy()
+
+    table.insert(scope, function()
+      shared_part_cache:free(id)
+    end)
+
+    return objAbstr
+  else
+    local clone = start:Clone()
+    clone.Archivable = false
+    clone.Locked = true
+    clone.Parent = workspace.Terrain
+
+    clone:AddTag(utility.CLEANUP_TAG)
+
+    table.insert(scope, clone)
+
+    return clone
+  end
+end
+
+function utility.getBezierPoints(root: Attachment, metadata: boolean?)
+  local objs = root:GetChildren()
+
+  table.sort(objs, function(a, b)
+    return tonumber(a.Name) < tonumber(b.Name)
+  end)
+
+  local points: { vector } = {}
+  local attachments: { Attachment } = {}
+  local attachmentToPointMap: { [Attachment]: vector } = {}
+
+  local function vec(p: Attachment)
+    local w = root.WorldCFrame:PointToObjectSpace(p.WorldPosition)
+    local pos = vector.create(w.X, w.Y, w.Z)
+
+    table.insert(points, pos)
+
+    if metadata then
+      attachmentToPointMap[p] = pos
+      table.insert(attachments, p)
+    end
+
+    return pos
+  end
+
+  for i, p in objs do
+    local t0 = p:FindFirstChild("T0")
+    local t1 = p:FindFirstChild("T1")
+
+    if i == 1 then
+      vec(p)
+    end
+
+    -- left
+    if i ~= 1 then
+      if t1 then
+        vec(t1)
+      else
+        vec(p)
+      end
+    end
+
+    if i ~= 1 and i ~= #objs then
+      vec(p)
+    end
+
+    -- right
+    if i ~= #objs then
+      if t0 then
+        vec(t0)
+      else
+        vec(p)
+      end
+    end
+
+    if i == #objs then
+      vec(p)
+    end
+  end
+
+  return points, attachments, attachmentToPointMap
+end
+
+function utility.scaleNumberSequence(
+  seq: NumberSequence,
+  scale: number | (value: number, envelope: number) -> (number, number)
+)
+  if scale == 1 then
+    return seq
+  end
+
+  local scaled = {}
+
+  for _, keypoint in seq.Keypoints do
+    local value, envelope
+
+    if typeof(scale) == "function" then
+      value, envelope = scale(keypoint.Value, keypoint.Envelope)
+    else
+      value, envelope = keypoint.Value * scale, keypoint.Envelope * scale
+    end
+
+    table.insert(scaled, NumberSequenceKeypoint.new(keypoint.Time, value, envelope))
+  end
+
+  return NumberSequence.new(scaled)
+end
+
+function utility.serializePath(points: { Path2DControlPoint })
+  local buf = buffer.create(#points * 4 * 6)
+
+  local offset = 0
+
+  for i, p in points do
+    local px = p.Position.X.Scale
+    local py = p.Position.Y.Scale
+
+    if i ~= 1 then
+      buffer.writef32(buf, offset, px + p.LeftTangent.X.Scale)
+      buffer.writef32(buf, offset + 4, py + p.LeftTangent.Y.Scale)
+
+      offset += 8
+    end
+
+    buffer.writef32(buf, offset, px)
+    buffer.writef32(buf, offset + 4, py)
+
+    offset += 8
+
+    if i ~= #points then
+      buffer.writef32(buf, offset, px + p.RightTangent.X.Scale)
+      buffer.writef32(buf, offset + 4, py + p.RightTangent.Y.Scale)
+
+      offset += 8
+    end
+  end
+
+  return buf
+end
+
+function utility.deserializePath(data: string | buffer)
+  local buf = typeof(data) == "string" and buffer.fromstring(data) or data
+  local count = buffer.len(buf) / 24
+
+  local points = {}
+
+  for i = 0, count - 1 do
+    local offset = i * 4 * 6
+
+    local px = buffer.readf32(buf, offset)
+    local py = buffer.readf32(buf, offset + 4)
+
+    table.insert(points, vector.create(px, py))
+
+    if i ~= count - 1 then
+      local t1x = buffer.readf32(buf, offset + 8)
+      local t1y = buffer.readf32(buf, offset + 12)
+
+      local t2x = buffer.readf32(buf, offset + 16)
+      local t2y = buffer.readf32(buf, offset + 20)
+
+      table.insert(points, vector.create(t1x, t1y))
+      table.insert(points, vector.create(t2x, t2y))
+    end
+  end
+
+  return points
+end
+
+local flipbook_common = require("./common/flipbook")
+
+utility.serializeFlipbook = flipbook_common.serialize
+utility.deserializeFlipbook = flipbook_common.deserialize
+
+-- out cubic
+utility.default_bezier = buffer.tostring(utility.serializePath({
+  Path2DControlPoint.new(UDim2.fromScale(0, 1), UDim2.new(), UDim2.fromScale(0.215, -0.61)),
+  Path2DControlPoint.new(UDim2.fromScale(1, 0), UDim2.fromScale(-0.645, 0), UDim2.new()),
+}))
+
+-- linear
+utility.linear_bezier = buffer.tostring(utility.serializePath({
+  Path2DControlPoint.new(UDim2.fromScale(0, 1)),
+  Path2DControlPoint.new(UDim2.fromScale(1, 0)),
+}))
+
+function utility.scaleAttribute(obj: Instance, factor: number, name: string)
+  local value = attr.get(obj, name, nil)
+
+  if value ~= nil then
+    if typeof(value) == "number" then
+      attr.set(obj, name, value * factor)
+    elseif typeof(value) == "Vector3" then
+      attr.set(obj, name, value * factor)
+    elseif typeof(value) == "NumberRange" then
+      attr.set(obj, name, NumberRange.new(value.Min * factor, value.Max * factor))
+    end
+  end
+end
+
+function utility.scaleAttachmentDistance(a0: Attachment?, a1: Attachment?, factor: number)
+  if not a0 or not a1 then
+    return
+  end
+
+  local midpoint = (a0.Position + a1.Position) / 2
+
+  a0.Position = midpoint + (a0.Position - midpoint) * factor
+  a1.Position = midpoint + (a1.Position - midpoint) * factor
+end
+
+return utility

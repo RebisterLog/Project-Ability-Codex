@@ -59,7 +59,18 @@ local Specs = {
 	
 	["TheWorld"] = {
 		DisplayName = "The World",
-		IsPublic = false,
+		IsPublic = true,
+
+		Binds = {
+			["Dash"] = Enum.KeyCode.C,
+			["Block"] = Enum.KeyCode.F,
+			["Punch"] = Enum.UserInputType.MouseButton1,
+			["Run"] = Enum.KeyCode.LeftControl,
+			["Grab"] = Enum.KeyCode.X,
+			["Summon"] = Enum.KeyCode.Q,
+			
+			["StandBarrage"] = Enum.KeyCode.E,
+		}
 	},
 }
 

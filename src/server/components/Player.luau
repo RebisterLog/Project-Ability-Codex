@@ -36,6 +36,10 @@ function Player.onStart(self: typeof(Player))
 	--self.instance.RespawnLocation = point
 end
 
+function Player:SetSpec(abilityName: string)
+	
+end
+
 function Player.Destroy(self: typeof(Player))
 	self.Janitor:Cleanup()
 end

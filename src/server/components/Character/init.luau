@@ -133,6 +133,7 @@ function Character.SetSpec(self: typeof(Character), id: string, skin: string?, b
 	}), "Destroy")
 	
 	self.Spec = spec
+	self.Spec:Init()
 	
 	return spec
 end
@@ -205,6 +206,23 @@ end
 function Character.Ragdoll(self: types.Character, state: boolean)
 	local humanoid = self.Humanoid
 	if not humanoid or not self.instance then return end
+	
+	local StandService = Crane:GetService("StandService")
+	
+	local stand = StandService:GetStand(self) :: types.Stand
+	local isStandVisible = stand and stand:IsVisible() or false
+	
+	if stand and state == isStandVisible then
+		if state then
+			self.StandWasActive = true
+			stand:SetVisible(not state)
+		else
+			if self.StandWasActive then
+				self.StandWasActive = false
+				stand:SetVisible(not state)
+			end
+		end
+	end
 
 	if not Players:GetPlayerFromCharacter(self.instance) and not state then
 		SafeChangeNetworkOwnership(self.RootPart, nil)

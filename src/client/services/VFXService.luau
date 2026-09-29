@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 local LocalPlayer = Players.LocalPlayer
 local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
@@ -19,6 +20,8 @@ local VFXService = Crane:CreateService({
 VFXService.Effects = {} :: {[string]: Effect}
 
 function VFXService.onStart(self: typeof(VFXService))
+	ForgeVFX.init()
+
 	for i, module in EffectsFolder:QueryDescendants("ModuleScript") do
 		self.Effects[module.Name] = require(module)
 	end

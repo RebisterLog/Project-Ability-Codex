@@ -31,6 +31,7 @@ local Utils = require(script.Utils)
 local Signal = require(script.packages.Signal)
 local Buttler = require(script.packages.Buttler)
 local Janitor = require(script.packages.Janitor)
+local CacheTab = require(script.packages.CacheTab)
 
 _G["CRANE_DEBUGGING"] = false
 _G["CRANE_TRACK_TAGS"] = true
@@ -123,6 +124,7 @@ local Crane = {
 
 	-- Shortcuts for libraries
 	Signal = Signal,
+	CacheTab = CacheTab,
 	Janitor = Janitor,
 	Buttler = Buttler,
 }

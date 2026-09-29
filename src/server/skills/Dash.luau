@@ -1,6 +1,8 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local TweenService = game:GetService("TweenService")
+
 local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 local Enums = require(ServerScriptService.server.Enums)
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
@@ -20,6 +22,8 @@ local Skill: types.SkillData = {
 		Time = 0.25
 	}
 }
+
+local Dash_Style = TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
 local function GetDashDirection(Normal)
 	local angle = math.ceil(math.deg(math.atan2(Normal.X, -Normal.Z)) - 0.5)
@@ -46,7 +50,7 @@ function Skill:onInit()
 	
 	local Anims = self.Spec.Data.Assets.Animations
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{1, function(seq)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
@@ -70,9 +74,17 @@ function Skill:onInit()
 					velocity.Velocity = RootPart.CFrame:VectorToWorldSpace(Normal) * 80
 					velocity.Parent = RootPart
 					
+					TweenService:Create(velocity, Dash_Style, {Velocity = Vector3.zero}):Play()
+					
+					seq.Velocity = velocity
+					
 					seq.Cleaner:Set("Velocity", velocity)
 				end,
-			}, 
+			},
+			
+			--{10, function(seq)
+			--	seq.Velocity.MaxForce = Vector3.new(9_000,0,9_000)
+			--end,},
 
 			{15, function(seq)
 				seq.Cleaner:Remove("Velocity")

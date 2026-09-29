@@ -1,6 +1,9 @@
 --!native
 
 local ServerScriptService = game:GetService("ServerScriptService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
 local types = require(ServerScriptService.server.types)
 local Enums = require(ServerScriptService.server.Enums)
 

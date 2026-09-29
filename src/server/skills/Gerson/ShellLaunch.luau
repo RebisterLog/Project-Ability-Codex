@@ -29,7 +29,6 @@ local Skill: types.SkillData = {
 			PerfectBlockable = false,
 			BlockBreak = false,
 			BlockCancel = true,
-			BlockIgnore = true,
 		},
 
 		Stun = {
@@ -92,7 +91,7 @@ function Skill.onInit(self)
 			{0, function(seq)
 				local shell = seq.Cleaner:Clone(Models.Shell) :: Model
 				self.Shell = shell
-
+				
 				local velocity = seq.Cleaner:Construct(Instance, "BodyVelocity") :: BodyVelocity
 				velocity.MaxForce = Vector3.new(10_000, 0, 10_000)
 				velocity.Velocity = RootPart.CFrame.LookVector * 100
@@ -145,6 +144,8 @@ function Skill.onInit(self)
 				slideSound.Parent = shell.PrimaryPart
 				slideSound.Looped = true
 				slideSound:Play()
+				
+				seq.Cleaner:Add(slideSound)
 
 				shell:PivotTo(RootPart.CFrame * CFrame.new(0,0,-3))
 				shell.Parent = workspace
@@ -152,7 +153,9 @@ function Skill.onInit(self)
 				Crane.Utils.ChangeNetworkOwner(shell, nil)
 			end,},
 
-			{5, function(seq)
+			{5, function(seq, frame)
+				if frame % 3 > 0 then return end
+				
 				local targets = CombatService:Hitbox({
 					Skill = self,
 					Caster = character,
@@ -183,7 +186,7 @@ function Skill.onInit(self)
 		}
 	})
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{0, function(seq)
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 12))

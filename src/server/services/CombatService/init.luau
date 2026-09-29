@@ -54,9 +54,12 @@ function CombatService:Hitbox(Data: types.HitboxData)
 	local Origin = Info.Origin or Caster.RootPart.CFrame
 	local Size = Info.Size
 	local Offset = Info.Offset or CFrame.identity
+	local MovementCorrection = Info.MovementCorrection
 	
 	if Skill then
-		self.Casted:Fire(Data)
+		task.spawn(function()
+			self.Casted:Fire(Data)
+		end)
 	end
 	
 	local Params
@@ -69,8 +72,16 @@ function CombatService:Hitbox(Data: types.HitboxData)
 		Params:AddToFilter(workspace.Live)
 	end
 	
-	if not Caster.Player then
-		Params.CollisionGroup = "Player"
+	--if not Caster.Player then
+	--	Params.CollisionGroup = "Player"
+	--end
+	
+	if MovementCorrection then
+		local humanoid = Caster.Humanoid
+		local move = humanoid.MoveDirection
+		local correction = Vector3.zAxis * math.min(0, (-Origin.LookVector:Dot(move) * RootPart.AssemblyLinearVelocity.Magnitude / 4))
+
+		Offset += correction
 	end
 	
 	if Offset and Offset ~= CFrame.identity then

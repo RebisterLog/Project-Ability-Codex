@@ -3,6 +3,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local RunService = game:GetService("RunService")
 local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 local Enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
@@ -44,15 +45,14 @@ local States: {[string]: BotState} = {
 			self.Combo = self.bot:GetCombo()
 			self.ComboIndex = 1
 			
-			--local conditions = self.bot:GetConditions()
-			
-			--self.bot.Navigator:SetHoldDistance(if isMelle then nil else 20)
 			self.bot.Navigator:SetMovementStyle(if isBaiting then "zigzag" else "puma")
 		end,
 
 		Update = function(self: BotState)
 			local hasActiveSkill = self.bot.Character.Spec:CheckActiveSkills()
 			if hasActiveSkill then return end
+			
+			self.bot.Character.Spec:DeactivateSkill("Block")
 
 			if self.ComboIndex > #self.Combo then
 				self.ComboIndex = 1
@@ -114,22 +114,24 @@ local States: {[string]: BotState} = {
 
 			local conditions = self.bot:GetConditions() :: {BotsCharacters.SkillCondition}
 			
-			if table.find(conditions, "TARGET_IGNORE_BLOCK") then
-				spec:ActivateSkill("Dash")
-				return
-			end
-			
 			if table.find(conditions, "TARGET_PERFECT_BLOCKABLE") then
-				spec:ActivateSkill("Block")
+				task.spawn(function()
+					spec:ActivateSkill("Block")
+				end)
+				return
 			end
 
 			if table.find(conditions, "TARGET_BLOCKABLE") then
 				if spec.Skills["Block"]:IsOnCooldown() then
 					spec:ActivateSkill("Dash")
 				else
-					spec:ActivateSkill("Block")
+					task.spawn(function()
+						spec:ActivateSkill("Block")
+					end)
 				end
 			end
+			
+			spec:ActivateSkill("Dash")
 		end,
 
 		Update = function(self: BotState)
@@ -141,16 +143,28 @@ local States: {[string]: BotState} = {
 				self.bot.StateMachine:ChangeState("Attacking")
 				return
 			end
-			
 		end,
 
 		Exit = function(self: BotState)
-			self.bot.Character.Spec:DeactivateSkill("Block")
+			local spec = self.bot.Character.Spec
+			spec:DeactivateSkill("Block")
 			self.bot.Navigator:SetMovementStyle("direct")
 			self.bot.Navigator:SetHoldDistance()
 		end,
 	},
 }
+
+local function GetAverageValue(nums: {number})
+	local summ = 0
+	local count = 0
+	
+	for i, x in nums do
+		summ += x
+		count += 1
+	end
+	
+	return summ / count
+end	
 
 local Bot = {}
 Bot.__index = Bot
@@ -167,15 +181,37 @@ function Bot.SetTarget(self: Bot, character: types.Character)
 		self:ClearTarget()
 	end))
 	
+	local hitboxTracker: {[string]: {lastPos: Vector3, lastTime: number, lastDist: number}} = {}
+
 	self.TargetCleaner:Add(Crane:GetService("CombatService").Casted:Connect(function(data: types.HitboxData)
-		if data.Caster == self.Target then
-			if table.find(data.Skill.Data.SkillCharacters, "Hit") then
+		if data.Caster ~= self.Target then return end
+		if not table.find(data.Skill.Data.SkillCharacters, "Hit") then return end
+
+		local botPos = self.Character.RootPart.Position
+		local hitboxPos = data.Info.Origin and data.Info.Origin.Position or (self.Target.RootPart.CFrame * data.Info.Offset).Position
+		local hitboxSize = typeof(data.Info.Size) == "Vector3" and GetAverageValue({data.Info.Size.X, data.Info.Size.Y, data.Info.Size.Z}) or data.Info.Size
+		local dist = (botPos - hitboxPos).Magnitude
+		local skillId = data.Skill.Data.Id
+		local now = os.clock()
+		local isProjectile = table.find(data.Skill.Data.SkillCharacters, "Projectile")
+		local track = hitboxTracker[skillId]
+
+		local threshold = hitboxSize + (isProjectile and 30 or 8)
+
+		if track then
+			if dist < track.lastDist and dist <= threshold then
+				self.StateMachine:ChangeState("Defending")
+			end
+		else
+			if dist <= threshold then
 				self.StateMachine:ChangeState("Defending")
 			end
 		end
+
+		hitboxTracker[skillId] = { lastPos = hitboxPos, lastTime = now, lastDist = dist }
 	end))
 
-	self.StateMachine:ChangeState("Attacking")
+	self.StateMachine:ChangeState("Defending")
 end
 
 function Bot.GetCombo(self: Bot)
@@ -237,7 +273,8 @@ end
 
 function Bot.ClearTarget(self: Bot)
 	self.TargetCleaner:Clean()
-	self.StateMachine:ChangeState()
+	self.StateMachine:ChangeState("None")
+	self.Navigator:ClearTarget()
 end
 
 function Bot:Destroy()
@@ -258,14 +295,15 @@ return {
 			AutoJump = true,
 			RotateToTarget = true,
 			Style = NavigationController.MovementStyles.direct,
-			Debug = false,
+			Debug = config.Debug or false,
 		})
 
 		local cleaner = character.Cleaner:Scope()
 		cleaner:Set("Navigator", navigator)
 
 		local stateMachine = StateMachine.new({
-			CreateNoneState = false,	
+			CreateNoneState = true,	
+			ProhibitNullState = true,
 		})
 
 		cleaner:Add(stateMachine)

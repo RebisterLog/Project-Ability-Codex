@@ -104,7 +104,7 @@ function Skill.onInit(self)
 	local Sounds = self.Spec.Data.Assets.Sounds
 	local Models = self.Spec.Data.Assets.Models
 	
-	self.Sequence = CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{0, function(seq)
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 12))
@@ -116,6 +116,7 @@ function Skill.onInit(self)
 				})
 				
 				self.BarrageUUID = os.clock()
+				
 
 				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 					UUID = self.BarrageUUID,
@@ -217,19 +218,18 @@ function Skill.onInit(self)
 			
 			{235},
 		}
-	}) :: Sequencer.Sequencer
+	}) :: Sequencer.Sequencer)
 end
 
 function Skill.Activate(self: types.Skill)
 	if self.Sequence then
-		self.Sequence:Play()
-
 		self.Sequence.Cleaner:Add(self.Deactivated:Once(function()
 			if self.Sequence.CurrentFrame <= 160 then
 				self.Sequence:Stop()
 			end
 		end))
 		
+		self.Sequence:Play()
 		self.Sequence:Await()
 	end
 end

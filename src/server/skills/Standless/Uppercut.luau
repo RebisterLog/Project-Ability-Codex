@@ -28,13 +28,14 @@ local Skill: Types.SkillData = {
 		Damage = 15,
 
 		Block = {
+			PerfectBlockable = true,
 			BlockBreak = true,
 		},
 		
 		Knockback = {
 			Duration = 0.1,
 			Velocity = Vector3.new(0, 50, 0),
-			Speed = 40,
+			Speed = 30,
 			RelativePart = "Attacker",
 		},
 		
@@ -64,19 +65,21 @@ function Skill.onInit(self)
 
 	local Anims = self.Spec.Data.Assets.Animations
 	local Sounds = self.Spec.Data.Assets.Sounds
+	local Models = self.Spec.Data.Assets.Models
 	local AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{1, function(seq)
-					seq.Cleaner:Add(CombatService:AddArmor(character, true))
+					seq.Cleaner:Set("Armor", CombatService:AddArmor(character, true))
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					table.clear(self.AlreadyHit)
 
+					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", self.Character.instance, Models.Uppercut)
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
 						Animation = Anims.Uppercut,
 						Speed = seq.Speed, 
@@ -92,7 +95,6 @@ function Skill.onInit(self)
 						Info = AttackInfo.Hitbox
 					})	
 
-
 					for _, Target in Targets do
 						if table.find(self.AlreadyHit, Target) then
 							continue
@@ -106,11 +108,21 @@ function Skill.onInit(self)
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 							
+							if Data.State.PerfectBlocked or Data.State.BlockBroken then return end
+							
+							if #self.AlreadyHit <= 1 then
+								VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", self.Character.instance, Models.UppercutHit)
+							end
+							
 							VFXService:StartEffect(Players:GetPlayers(), "Sound", Data.Victim.RootPart.CFrame, Sounds.UppercutHit)
 						end)
 					end
 				end,
-			25},
+			24},
+			
+			{30, function(seq)
+				seq.Cleaner:Remove("Armor")
+			end,},
 
 			{35}
 		}

@@ -8,26 +8,26 @@ local Promise = require(ReplicatedStorage.shared.packages.Promise)
 local Signal = Crane.Signal
 local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 local types = require(ServerScriptService.server.types)
-local Janitor = Crane.Janitor
 
 local Skill = {}
 Skill.__index = Skill
 
-function Skill.new(character: types.Character, spec: types.SpecData, data: types.SkillData)
+function Skill.new(character: types.Character, spec: types.Spec, data: types.SkillData)
 	local self = setmetatable({
 		Character = character,
 		Data = data,
 		Spec = spec,
 		Active = false,
 		Holding = false,
-		Janitor = Janitor.new(),
+		Cleaner = Crane.Buttler.new(),
 		
 		Deactivated = Signal.new(),
 		
 		Proxy = Proxy({
 			Parameters = {
+				DisplayName = "Unknown",
 				ReleaseTime = 0,
-				Enable = true,
+				Enabled = false,
 				Bind = Enum.KeyCode.Unknown,	
 			}
 		}),
@@ -77,9 +77,21 @@ function Skill.SetCooldown(self: types.Skill, Time: number)
 	})
 end
 
+function Skill.SetDisplayName(self: types.Skill, name: string)
+	self.Proxy:Patch({
+		{Name = "SetDictionary", Path = {"Parameters"}, Args = {"DisplayName", name}}
+	})
+end
+
 function Skill.SetBind(self: types.Skill, bind: types.Bind)
 	self.Proxy:Patch({
 		{Name = "SetDictionary", Path = {"Parameters"}, Args = {"Bind", bind}}
+	})
+end
+
+function Skill.SetEnabled(self: types.Skill, enabled: boolean)
+	self.Proxy:Patch({
+		{Name = "SetDictionary", Path = {"Parameters"}, Args = {"Enabled", enabled}}
 	})
 end
 
@@ -88,6 +100,9 @@ function Skill.IsOnCooldown(self: types.Skill)
 end
 
 function Skill.Validate(self: types.Skill)
+	if not self.Proxy().Parameters.Enabled then
+		return false
+	end
 	if self.Character:GetParameter("Stun").Duration > 0 then
 		return false
 	end
@@ -97,7 +112,7 @@ function Skill.Validate(self: types.Skill)
 	if self.Character.Humanoid.Health <= 0 then
 		return false
 	end
-	if self.Proxy().Parameters.ReleaseTime > tick() then
+	if self:IsOnCooldown() then
 		return false
 	end
 	return true
@@ -115,16 +130,28 @@ function Skill.Init(self: types.Skill)
 	local CombatService = Crane:GetService("CombatService")
 	
 	if self.Data.Interrupt then
-		self.Janitor:Add(CombatService.Interrupted:Connect(function(Target)
+		self.Cleaner:Add(CombatService.Interrupted:Connect(function(Target)
 			if Target == self.Character then
 				self:Interrupt()
 			end
 		end))
 	end
+	
+	if not self.Data.Tag then
+		self:SetEnabled(true)
+	end
+	
+	self:SetDisplayName(self.Data.DisplayName)
 end
 
 function Skill.Destroy(self: types.Skill)
-	self.Janitor:Destroy()
+	if self.Data.onDestroy then
+		self.Data.onDestroy(self)
+	end
+	
+	if self.Cleaner and #self.Cleaner > 0 then
+		self.Cleaner:Destroy()
+	end
 end
 
 return Skill

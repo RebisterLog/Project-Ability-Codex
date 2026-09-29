@@ -2,70 +2,58 @@
   "name": "PAC",
   "tree": {
     "$className": "DataModel",
-
     "ReplicatedStorage": {
       "shared": {
+        "$properties": {
+          "IconTint": {
+            "Color3": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
         "$path": "src/shared"
       }
     },
-
     "ServerScriptService": {
       "server": {
-        "$path": "src/server"
-      }
-    },
-
-    "StarterPlayer": {
-      "StarterPlayerScripts": {
-        "client": {
-          "$path": "src/client"
-        }
-      }
-    },
-
-    "Workspace": {
-      "$properties": {
-        "FilteringEnabled": true
-      },
-      "Baseplate": {
-        "$className": "Part",
         "$properties": {
-          "Anchored": true,
-          "Color": [
-            0.38823,
-            0.37254,
-            0.38823
-          ],
-          "Locked": true,
-          "Position": [
-            0,
-            -10,
-            0
-          ],
-          "Size": [
-            512,
-            20,
-            512
-          ]
-        }
-      }
-    },
-    "Lighting": {
-      "$properties": {
-        "Ambient": [
-          0,
-          0,
-          0
-        ],
-        "Brightness": 2,
-        "GlobalShadows": true,
-        "Outlines": false,
-        "Technology": "Voxel"
+          "IconTint": {
+            "Color3": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "$path": "src/server"
       }
     },
     "SoundService": {
       "$properties": {
+        "DefaultListenerLocation": "Camera",
         "RespectFilteringEnabled": true
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "client": {
+          "$properties": {
+            "IconTint": {
+              "Color3": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "$path": "src/client"
+        }
+      },
+      "$properties": {
+        "CameraMaxZoomDistance": 128.0,
+        "GameSettingsAvatar": "R6"
       }
     }
   }

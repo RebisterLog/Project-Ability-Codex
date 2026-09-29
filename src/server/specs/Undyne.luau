@@ -24,7 +24,7 @@ local Spec = {
 		local spear = self.Data.Assets.Models["Spear"] :: Model
 		
 		if spear then
-			local copy = spear:Clone()
+			local copy = self.Cleaner:Clone(spear)
 			copy:PivotTo(self.Character.instance:GetPivot())
 			
 			local motor = Instance.new("Motor6D")

@@ -57,6 +57,7 @@ export type HitboxData = {
 		SortByDistance: boolean?,
 		CanQueryCaster: boolean?,
 		Parameters: OverlapParams?,
+		MovementCorrection: boolean?,
 		Debug: boolean?,
 	}
 }
@@ -114,6 +115,7 @@ export type AttackData = {
 		Continue: boolean, 
 		Blocking: boolean, 
 		Blocked: boolean, 
+		BlockBroken: boolean,
 		PerfectBlocking: boolean,
 		PerfectBlocked: boolean,
 		BlockIgnored: boolean,
@@ -228,16 +230,65 @@ export type AttackData = {
 	}
 ]]
 
+-- QUEST
+
+type QuestProperities = {
+	Name: string,
+	Data: {any},
+	Player: PlayerComponent,
+	Cleaner: typeof(Crane.Buttler.new()),
+}
+
+type QuestMethods = {
+	Init: (self: Quest, player: PlayerComponent) -> (),
+	Start: (self: Quest) -> (),
+	Complete: (self: Quest) -> (),
+	
+	AddProgress: (self: Quest, amount: any) -> (),
+	RemoveProgress: (self: Quest, amount: any) -> ()?,
+	
+	CheckComplete: (self: Quest) -> boolean,
+}
+
+export type Quest = QuestProperities & QuestMethods
+
+-- STAND
+
+type StandProperities = {
+	Active: boolean,
+	Visible: boolean,
+	Owner: Character,
+	RootPart: BasePart,
+	Cleaner: typeof(Crane.Buttler.new()),
+}
+
+type StandMethods = {
+	Init: (self: Stand, owner: Character)  -> (),
+	
+	IsActive: (self: Stand) -> (boolean),
+	IsVisible: (self: Stand) -> (boolean),
+	
+	SetActive: (self: Stand, state: boolean) -> (),
+	SetVisible: (self: Stand, state: boolean) -> (),
+	
+	WeldToOwner: (self: Stand) -> (),
+	WeldTo: (self: Stand, part: BasePart) -> (),
+}
+
+export type Stand = Crane.Component<Model> & StandProperities & StandMethods
+
 --SKILL
 
 export type SkillData = {
 	Id: string,
+	Tag: string?,
 
 	Cooldown: number,
 	DisplayName: string,
 	AttackInfo: AttackInfo,
 	SkillCharacters: {BotsCharacters.SkillCharacter},
 	onInit: (self: Skill) -> (),
+	onDestroy: (self: Skill) -> (),
 	Activate: (self: Skill) -> (),
 	Interrupt: (self: Skill) -> (),
 }
@@ -245,11 +296,12 @@ export type SkillData = {
 type SkillProperties = {
 	Initialized: boolean,
 	Active: boolean,
+	Enabled: boolean,
 	Holding: boolean,
 	Data: SkillData,
-	Spec: SpecData,
+	Spec: Spec,
 	Character: Character,
-	Janitor: typeof(Crane.Janitor.new()),
+	Cleaner: typeof(Crane.Buttler.new()),
 	Proxy: Proxy.ProxyTab<SkillReplicationData>,
 	Deactivated: Signal.Signal<Skill>,
 }
@@ -259,6 +311,8 @@ type SkillMethods = {
 	Interrupt: (self: Skill) -> (),
 	Deactivate: (self: Skill) -> (),
 	SetCooldown: (self: Skill, Time: number) -> (),
+	SetDisplayName: (self: Skill, name: string) -> (),
+	SetEnabled: (self: Skill, enabled: boolean) -> (),
 	SetBind: (self: Skill, bind: Bind) -> (),
 	IsOnCooldown: (self: Skill) -> boolean,
 	Validate: (self: Skill) -> (boolean, string?),
@@ -278,8 +332,11 @@ export type SkillReplicationData = {
 
 --SPEC
 
+export type SpecSaveData = PlayerSaveData.SpecData
+
 export type SpecDef = {
 	Id: string,
+	Name: string,
 	Skin: string,
 	Binds: {[string]: Bind}
 }
@@ -322,7 +379,7 @@ type SpecProperities = {
 	Data: SpecData,
 	Initialized: boolean,
 	Skills: {[string]: Skill},
-	Janitor: typeof(Crane.Janitor.new()),
+	Cleaner: typeof(Crane.Buttler.new()),
 	Character: Character,
 	Proxy: Proxy.ProxyTab<{
 		Skills: {
@@ -344,6 +401,7 @@ type SpecMethods = {
 	InterruptSkill: (self: Spec, skillId: string) -> (),
 	Destroy: (self: Spec) -> (),
 	CheckActiveSkills: (self: Spec) -> boolean,
+	SetEnableSkills: (self: Spec, tag: string, state: boolean) -> (),
 }
 
 export type Spec = SpecProperities & SpecMethods

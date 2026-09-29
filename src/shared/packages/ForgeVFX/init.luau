@@ -1,0 +1,301 @@
+-- The license is placed inside a string in order for it to be preserved when the code is decompiled
+-- Even if the engine retains the entire string in memory, it's only around 3.5kB
+local _ = [[
+Preamble.
+Disclaimer: nothing stated in this preamble is legal advice.
+
+This is a simple license that allows anyone to use the emit module in their Roblox games.
+
+1. You cannot use the module in anything that isn't a Roblox game. For example, it means
+that you cannot create a plugin using this module.
+
+2. You are allowed to use the module commercially in your games.
+
+3. You are free to share the module with other developers so they can use it in their games,
+as long as the license is retained.
+
+4. You can modify and share the module as long as you follow the terms of the license. All
+derivates of the module must have the same license.
+
+5. If you break the terms and conditions of the license, you are required to stop the use and
+distribution of the module immediately.
+
+End of preamble.
+
+VFX Forge Developer License (VFX-DL) Version 1.1
+
+Copyright (c) 2025 zilibobi
+
+1. Definitions.
+   - "Module" means the source code and any compiled form of the Emit Module.
+   - "You" means any individual or organization exercising the rights granted herein.
+   - "Derivative Work" means any work based upon or incorporating the Module.
+   - "Roblox Experience" means a user-facing game or simulation that runs on the
+   Roblox platform, created using Roblox Studio and played via the Roblox client.
+
+2. Grant of Rights.
+   Permission is hereby granted, free of charge, to You to use, reproduce,
+   prepare Derivative Works of, publicly display, publicly perform, sublicense,
+   and distribute the Module, **solely when embedded in the runtime environment of
+   a Roblox Experience** (including playtesting in Roblox Studio), and **not** when
+   loaded by any Roblox Studio plugin or other developer tool, running in any context
+   that has access to API methods or permissions unavailable to runtime scripts within
+   Roblox Experiences (excluding the Roblox Studio command bar feature, when used for
+   the purpose of viewing finished effects). You may distribute the Module or Derivative
+   Work to other developers, provided they use it only within the permitted runtime
+   context described above.
+
+3. Conditions.
+   a. Copyleft.
+       Any Derivative Work, including modified or extended versions of the Module, that
+       You distribute must be licensed under the exact same terms as this VFX-DL.
+   b. Redistribution.
+       You must include a copy of this license text with any distribution of the Module or Derivative Work.
+   c. No Other Contexts.
+       You may not embed, load, or distribute the Module within any Roblox Studio
+       plugin, editor extension, command-line tool, test harness, or any code running
+       under Studio outside of normal game runtime.
+
+4. Disclaimer of Warranty.
+    The Module is provided "AS IS," without warranty of any kind, express or implied,
+    including but not limited to the warranties of merchantability, fitness for a
+    particular purpose, and noninfringement.
+
+5. Limitation of Liability.
+    In no event shall the authors or copyright holders be liable for any claim,
+    damages, or other liability arising from, out of, or in connection with the
+    Module or the use or other dealings in the Module.
+
+6. Termination.
+    If You violate the terms of this License, Your rights under this VFX-DL will
+    terminate automatically. Upon termination, You must cease all use and distribution
+    of the Module and any Derivative Works.
+
+7. Versioning.
+    This license applies to Version 1.1 of the VFX-DL. Future versions may be published
+    by the copyright holder.
+
+8. Commercial use.
+    This License permits commercial use within the scope defined in Section 2.
+
+9. Trademarks and branding.
+    Nothing in this License grants permission to use the trade names, trademarks, service marks,
+    or product names of the Licensor.
+]]
+
+local RunService = game:GetService("RunService")
+local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local logger = require("@self/mod/logger")
+local utility = require("@self/mod/utility")
+local attributes = require("@self/mod/attributes")
+
+local Sound = require("@self/effects/sound")
+local Bezier = require("@self/effects/bezier")
+local Lightning = require("@self/effects/lightning")
+local CameraShake = require("@self/effects/camera_shake")
+local ShockwaveRing = require("@self/effects/shockwave_ring")
+local ShockwaveLine = require("@self/effects/shockwave_line")
+local ShockwaveDebris = require("@self/effects/shockwave_debris")
+
+local caches = require("@self/services/caches")
+local effects = require("@self/services/effects")
+local texture_loader = require("@self/services/texture_loader")
+local enabled_effects = require("@self/services/enabled_effects")
+
+local PluginContext = utility.PLUGIN_CONTEXT
+local ServerContext = utility.SERVER_CONTEXT
+
+type params = {}
+
+local api = {}
+
+api.scope = {}
+api.setup = false
+
+function api.init(params: params?)
+  if api.setup then
+    return
+  end
+
+  if ServerContext then
+    task.spawn(function()
+      local done = false
+      local tries = 0
+
+      local lastErr
+
+      repeat
+        tries += 1
+
+        local ok, err = pcall(utility.setCollisionGroups, utility.COLLISION_GROUPS)
+
+        done = ok
+        lastErr = err
+
+        if not done then
+          task.wait(tries)
+        end
+      until done or tries >= 5
+
+      if not done then
+        logger.warn(
+          `couldn't register necessary collision groups after {tries} tries with the last error being: {lastErr}`
+        )
+      end
+    end)
+  end
+
+  api.setup = true
+
+  if RunService:IsServer() and not PluginContext then
+    return
+  end
+
+  api.caches = caches.init(api.scope)
+
+  shared.vfx = api
+
+  -- init services
+  effects.init(api)
+
+  texture_loader.init(api.scope)
+  enabled_effects.init(api.scope, api.caches.shared_part, effects)
+
+  -- init effects
+  Sound.init()
+  CameraShake.init()
+
+  Bezier.init(api.caches.shared_part)
+  Lightning.init(api.caches.shared_part)
+  ShockwaveRing.init(api.caches.shared_part)
+  ShockwaveLine.init(api.caches.shared_part)
+  ShockwaveDebris.init(api.caches.shared_part)
+end
+
+function api.deinit()
+  if not api.setup then
+    return
+  end
+
+  api.setup = false
+
+  shared.vfx = nil
+
+  if RunService:IsServer() and not PluginContext then
+    return
+  end
+
+  utility.cleanupScope(api.scope)
+
+  effects.deinit()
+
+  Sound.deinit()
+  Bezier.deinit()
+  Lightning.deinit()
+  CameraShake.deinit()
+  ShockwaveRing.deinit()
+  ShockwaveLine.deinit()
+  ShockwaveDebris.deinit()
+
+  local cleanupObjects = CollectionService:GetTagged(utility.CLEANUP_TAG)
+
+  for _, obj in cleanupObjects do
+    obj:Destroy()
+  end
+end
+
+local function fullEmit(scale: number, depth: number, ...: Instance)
+  if not api.setup then
+    logger.error("not initialized")
+  end
+
+  return effects.emit(depth, ...)
+end
+
+function api.emit(vfxOrScale: number | Instance, ...: Instance)
+  if typeof(vfxOrScale) ~= "number" then
+    return fullEmit(1, 0, vfxOrScale, ...)
+  else
+    return fullEmit(vfxOrScale, 0, ...)
+  end
+end
+
+function api.emitWithDepth(depth: number, ...: Instance)
+  return fullEmit(1, depth, ...)
+end
+
+function api.cacheAttributes(obj: Instance, shallow: boolean)
+  if utility.SERVER_CONTEXT then
+    logger.error("attributes can only be cached in a client-side context")
+  end
+
+  if not obj:IsDescendantOf(ReplicatedStorage) then
+    logger.error("attributes can only be cached for VFX inside ReplicatedStorage")
+  end
+
+  attributes.cache(obj)
+
+  if shallow then
+    return
+  end
+
+  for _, v in obj:GetDescendants() do
+    attributes.cache(v)
+  end
+end
+
+function api.restoreAttributes(obj: Instance, shallow: boolean?)
+  if utility.SERVER_CONTEXT then
+    logger.error("attributes can only be restored in a client-side context")
+  end
+
+  attributes.restore(obj)
+
+  if shallow then
+    return
+  end
+
+  for _, v in obj:GetDescendants() do
+    attributes.restore(v)
+  end
+end
+
+local function setEnabled(obj: Instance, enabled: boolean)
+  if obj:IsA("ParticleEmitter") then
+    obj.Enabled = enabled
+    return
+  elseif obj:IsA("Beam") then
+    obj.Enabled = enabled
+    return
+  end
+
+  if attributes.isCached(obj) then
+    attributes.trigger(obj, "Enabled", enabled)
+  else
+    obj:SetAttribute("Enabled", enabled)
+  end
+end
+
+function api.enable(obj: Instance)
+  setEnabled(obj, true)
+
+  for _, v in obj:GetDescendants() do
+    setEnabled(v, true)
+  end
+end
+
+function api.disable(obj: Instance)
+  setEnabled(obj, false)
+
+  for _, v in obj:GetDescendants() do
+    setEnabled(v, false)
+  end
+end
+
+api.retime = require("@self/mod/retime").batch
+api.resize = require("@self/mod/resize").batch
+api.recolor = require("@self/mod/recolor")
+
+return api

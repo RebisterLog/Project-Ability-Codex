@@ -42,7 +42,7 @@ local Skill: types.SkillData = {
 		Priority = Enums.IFrames.Ragdoll,
 
 		Hitbox = {
-			Size = 20,
+			Size = 10,
 			Offset = CFrame.new(0, 0, 0),
 			Debug = true,
 		},
@@ -79,10 +79,10 @@ function Skill:onInit()
 
 	self.AlreadyHit = {}
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{0, function(seq)
-				seq.Cleaner:Add(CombatService:AddArmor(character, true))
+				seq.Cleaner:Set("Armor", CombatService:AddArmor(character, true))
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
 				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
@@ -102,7 +102,7 @@ function Skill:onInit()
 				end)
 			end},
 
-			{20, function(seq)
+			{75, function(seq)
 				local Targets = CombatService:Hitbox({
 					Skill = self,
 					Caster = character,
@@ -125,9 +125,13 @@ function Skill:onInit()
 						VFXService:StartEffect(Players:GetPlayers(), "Sound", Target.RootPart, Sounds["WaitALittleBitHit"])
 					end)
 				end
-			end, 28},
+			end, 80},
+			
+			{125, function(seq)
+				seq:Remove("Armor")
+			end,},
 
-			{45},
+			{130},
 		},
 	}))
 end

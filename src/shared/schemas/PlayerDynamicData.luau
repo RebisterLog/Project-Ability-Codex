@@ -1,4 +1,5 @@
 type SkillData = {
+	DisplayName: string,
 	ReleaseTime: number,
 	Bind: Enum.KeyCode | Enum.UserInputType,
 	Enable: boolean,

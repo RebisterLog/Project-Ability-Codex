@@ -20,8 +20,7 @@ function Spec.new(character: types.Character, data: types.SpecData): types.Spec
 		Data = data,
 		Character = character,
 		Skills = {},
-		ActiveSkill = nil,
-		Janitor = Crane.Janitor.new(),
+		Cleaner = Crane.Buttler.new(),
 		Proxy = Proxy({
 			Skills = {}
 		}),
@@ -73,6 +72,14 @@ function Spec.CheckActiveSkills(self: types.Spec): boolean
 	return #activeSkills > 0, activeSkills
 end
 
+function Spec.SetEnableSkills(self: types.Spec, tag: string, state: boolean)
+	for id, skill in self.Skills do
+		if skill.Data.Tag == tag then
+			skill:SetEnabled(state)
+		end
+	end
+end
+
 function Spec.AddSkill(self: types.Spec, skill: types.Skill)
 	if self.Skills[skill.Data.Id] then return end
 	
@@ -92,6 +99,8 @@ function Spec.AddSkill(self: types.Spec, skill: types.Skill)
 	self.Proxy:Patch({
 		{Name = "SetDictionary", Path = {"Skills"}, Args = {skill.Data.Id, skill.Proxy()} }
 	})
+	
+	self.Cleaner:Add(skill)
 end
 
 function Spec.RemoveSkill(self: types.Spec, skillId: string)
@@ -113,9 +122,7 @@ function Spec.ActivateSkill(self: types.Spec, skillId: string)
 	
 	local success, err = skill:Validate()
 	if not success then return success, err end
-	
-	self.ActiveSkill = skill
-	
+
 	self.OnActivateSkill:Fire(skill)
 	
 	return skill:Activate()
@@ -126,10 +133,6 @@ function Spec.InterruptSkill(self: types.Spec, skillId: string)
 	
 	local skill = self.Skills[skillId]
 	self.OnInterruptSkill:Fire(skill)
-	
-	if self.ActiveSkill == skill then
-		self.ActiveSkill = nil
-	end
 
 	return skill:Interrupt()
 end
@@ -140,16 +143,11 @@ function Spec.DeactivateSkill(self: types.Spec, skillId: string)
 	local skill = self.Skills[skillId]
 	self.OnDeactivateSkill:Fire(skill)
 	
-	if self.ActiveSkill == skill then
-		self.ActiveSkill = nil
-	end
-	
 	return skill:Deactivate()
 end
 
 function Spec.Destroy(self: types.Spec)
-	self.Janitor:Destroy()
+	self.Cleaner:Destroy()
 end
-
 
 return Spec

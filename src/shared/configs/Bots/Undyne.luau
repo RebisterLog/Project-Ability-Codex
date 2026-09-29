@@ -56,6 +56,14 @@ local Undyne: BotsCharacters.BotCharacterConfig = {
 			}
 		},
 		
+		["WaitALittleBit"] = {
+			Distance = 8,
+			
+			RequiredConditions = {
+				"TARGET_RAGDOLLED"
+			},
+		},
+		
 		["Dash"] = {
 			--Distance = 15,
 			--RequiredConditions = {
@@ -77,12 +85,14 @@ local Undyne: BotsCharacters.BotCharacterConfig = {
 			"Punch",
 			"Punch",
 			"Punch",
-			"ArcSpearStrike"
+			"ArcSpearStrike",
+			"WaitALittleBit",
 		},
 		
 		{
 			"Dash",
 			"ArcSpearStrike",
+			"WaitALittleBit",
 		},
 		
 		{
@@ -90,6 +100,7 @@ local Undyne: BotsCharacters.BotCharacterConfig = {
 			"Punch",
 			"Punch",
 			"ArcSpearStrike",
+			"WaitALittleBit",
 		},
 	}
 }

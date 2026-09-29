@@ -63,7 +63,7 @@ function Block:Activate()
 				CombatService.Interrupted:Fire(Data.Attacker)
 				
 				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-					Particle = ReplicatedStorage.Assets.Block.Models.PerfectBlockEffectPart,
+					Particle = ReplicatedStorage.assets.Default.Block.VFX.PerfectBlock,
 					Origin = RootPart,
 					Offset = CFrame.new(0,0,-2),
 				})
@@ -76,7 +76,7 @@ function Block:Activate()
 					Tween = true,
 				})	
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, {
-					Sound = ReplicatedStorage.Assets.Block.Sounds.PerfectBlock,
+					Sound = ReplicatedStorage.assets.Default.Block.Sounds.PerfectBlock,
 					Volume = 1,
 				})
 			elseif Data.State.BlockBroken then
@@ -88,17 +88,17 @@ function Block:Activate()
 				resolve()
 				
 				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-					Particle = ReplicatedStorage.Assets.Block.Models.BlockBreakEffectPart,
+					Particle = ReplicatedStorage.assets.Default.Block.VFX.BlockBreak,
 					Origin = RootPart,
 					Offset = CFrame.new(0,0,-2)
 				})	
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, {
-					Sound = ReplicatedStorage.Assets.Block.Sounds.BlockBreak,
+					Sound = ReplicatedStorage.assets.Default.Block.Sounds.BlockBreak,
 					Volume = 1,
 				})
 			elseif Data.State.Blocked then
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, {
-					Sound = ReplicatedStorage.Assets.Block.Sounds.Hit,
+					Sound = ReplicatedStorage.assets.Default.Block.Sounds.Hit,
 					Volume = 1,
 				})
 			end

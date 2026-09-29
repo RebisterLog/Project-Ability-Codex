@@ -541,8 +541,11 @@ function NavigationController.SetTarget(self: NavigationController, target: Base
 end
 
 function NavigationController.ClearTarget(self: NavigationController)
+	self.stateMachine:ChangeState("None")
+	
 	self.target = nil
 	self.humanoid:Move(Vector3.zero)
+	self.alignOrient.Enabled = false
 	
 	if self.config.Debug then
 		print("Target cleared")
@@ -633,7 +636,9 @@ return {
 
 		local navigator = setmetatable({
 			config = config or table.clone(DEFAULT_CONFIG),
-			stateMachine = StateMachine.new(),
+			stateMachine = StateMachine.new({
+				CreateNoneState = true,
+			}),
 
 			agentParams = agentParams,
 			rayParams = rayParams,
