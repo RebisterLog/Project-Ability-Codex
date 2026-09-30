@@ -1,9 +1,5 @@
 # PAC - OpenCode Agent Guidance
 
-## Build and Run
-- Precompile structure `rojo sourcemap > sourcemap.json`
-- Start Rojo server: `rojo serve`
-
 ## Project Structure (via Rojo)
 - Shared code: `src/shared` → `ReplicatedStorage.shared`
 - Server code: `src/server` → `ServerScriptService.server`

@@ -20,8 +20,9 @@ type DefaultProps = {
 
 return function(scope: Fusion.Scope, props: DefaultProps, router: Router.Router)
     local preloadScope = scope:innerScope()
-    
+
     local preloadedAssets, totalAssets = Preload(preloadScope, function()
+        task.wait(3)
         preloadScope:doCleanup()
         router:SwitchPage("PlayerHUD", nil, {
             style = "Transparency",

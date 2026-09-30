@@ -28,8 +28,6 @@ local function HandleWatchHome(homePoint: Vector3, character: Model)
 end
 
 function TestService:onStart()
-	self.ChronoService = Crane:GetService("ChronoService")
-
 	task.delay(3, function()
 		local ATTACKING_DUMMY
 		do

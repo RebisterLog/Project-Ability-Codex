@@ -177,9 +177,9 @@ function CombatService.GetStates(self: typeof(CombatService), Character: types.C
 end
 
 function CombatService.AddArmor(self: typeof(CombatService), Character: types.Character)
-	local Collector = Crane.Janitor.new()
+	local Cleaner = Crane.Buttler.new()
 
-	Collector:Add(Character:AddParameter("Armor", true))
+	Cleaner:Add(Character:AddParameter("Armor", true))
 
 	local UUID = os.clock()
 	self.VFXService:StartEffect(Players:GetPlayers(), "Highlight", Character.instance, {
@@ -189,11 +189,11 @@ function CombatService.AddArmor(self: typeof(CombatService), Character: types.Ch
 		OutlineTransparency = 0.1,
 		FillTransparency = 0.8,
 	})
-	Collector:Add(function()
+	Cleaner:Add(function()
 		self.VFXService:StopEffect(Players:GetPlayers(), "Highlight", UUID)
 	end)
 
-	return Collector
+	return Cleaner
 end
 
 function CombatService.CreateGrab(
