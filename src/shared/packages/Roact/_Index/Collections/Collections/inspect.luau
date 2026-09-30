@@ -19,8 +19,8 @@ local HttpService = game:GetService("HttpService")
 local Collections = script.Parent
 local Packages = Collections.Parent
 
-local isArray = require(Collections.Array.isArray)
 local ES7Types = require(Packages.ES7Types)
+local isArray = require(Collections.Array.isArray)
 
 type Array<T> = ES7Types.Array<T>
 -- local NULL = require(srcWorkspace.luaUtils.null)
@@ -77,9 +77,7 @@ local function sortKeysForPrinting(a: any, b)
 	local typeofB = type(b)
 
 	-- strings and numbers are sorted numerically/alphabetically
-	if typeofA == typeofB and (typeofA == "number" or typeofA == "string") then
-		return a < b
-	end
+	if typeofA == typeofB and (typeofA == "number" or typeofA == "string") then return a < b end
 
 	-- sort the rest by type name
 	return typeofA < typeofB
@@ -137,9 +135,7 @@ function formatValue(value, seenValues, options: FormatOptions)
 end
 
 function formatObjectValue(value, previouslySeenValues, options: FormatOptions)
-	if table.find(previouslySeenValues, value) ~= nil then
-		return "[Circular]"
-	end
+	if table.find(previouslySeenValues, value) ~= nil then return "[Circular]" end
 
 	local seenValues = { unpack(previouslySeenValues) }
 	table.insert(seenValues, value)
@@ -164,9 +160,7 @@ end
 function formatObject(object, seenValues, options: FormatOptions)
 	local result = ""
 	local mt = getmetatable(object)
-	if mt and rawget(mt, "__tostring") then
-		return tostring(object)
-	end
+	if mt and rawget(mt, "__tostring") then return tostring(object) end
 
 	local fragmentedKeys, fragmentedKeysLength, keysLength = getFragmentedKeys(object)
 
@@ -199,12 +193,8 @@ end
 
 function formatArray(array: Array<any>, seenValues: Array<any>, options: FormatOptions): string
 	local length = #array
-	if length == 0 then
-		return "[]"
-	end
-	if #seenValues > options.depth then
-		return "[Array]"
-	end
+	if length == 0 then return "[]" end
+	if #seenValues > options.depth then return "[Array]" end
 
 	local len = math.min(MAX_ARRAY_LENGTH, length)
 	local remaining = length - len

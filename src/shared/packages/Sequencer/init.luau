@@ -2,7 +2,6 @@
 --!native
 --!optimize 2
 
-
 --[[
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                           S E Q U E N C E R   V.1.0.0                        ║
@@ -160,10 +159,10 @@ type Frame = {
 }
 
 type InputData = {
-	Frames: {Frame},
-	
-	Validator: ((self: Sequencer) -> (boolean))?,
-	Speed: number?, 
+	Frames: { Frame },
+
+	Validator: ((self: Sequencer) -> boolean)?,
+	Speed: number?,
 }
 
 -- MODULE
@@ -183,15 +182,15 @@ type SequencerMethods = {
 	Play: (self: Sequencer) -> (),
 	Stop: (self: Sequencer) -> (),
 	AdjustSpeed: (self: Sequencer, speed: number) -> (),
-	IsPlaying: (self: Sequencer) -> (boolean),
+	IsPlaying: (self: Sequencer) -> boolean,
 	Await: (self: Sequencer, state: States?) -> (),
 	Destroy: (self: Sequencer) -> (),
 }
 
 export type Sequencer = setmetatable<SequencerProperties & SequencerMethods, typeof(Sequencer)>
 
-local function GetFrames(frames: {Frame}, startFrame: number, endFrame: number): {Frame}
-	local scoped: {Frame} = {}
+local function GetFrames(frames: { Frame }, startFrame: number, endFrame: number): { Frame }
+	local scoped: { Frame } = {}
 	local low = math.min(startFrame, endFrame)
 	local high = math.max(startFrame, endFrame)
 
@@ -202,16 +201,14 @@ local function GetFrames(frames: {Frame}, startFrame: number, endFrame: number):
 
 		if not frameEnd then
 			-- Single frame / end frame: fire if we passed or landed on it this tick
-			if frameStart >= low and frameStart <= high then
-				table.insert(scoped, frame)
-			end
+			if frameStart >= low and frameStart <= high then table.insert(scoped, frame) end
 		else
 			-- Added 1 frame to include last frame
 			if high < frameStart or high > frameEnd + 1 then continue end
-			
+
 			-- Count of passed frames for that period of time
 			local count = math.floor(high) - math.floor(low)
-			
+
 			if count > 0 then
 				-- Dublicating if was passed a lot
 				for _ = 1, count do
@@ -227,12 +224,12 @@ end
 function Sequencer.Play(self: Sequencer)
 	-- If was already playing
 	if self.State == States.Playing then return end
-	
+
 	if self.State == States.Paused then
 		self.State = States.Playing
 		return
 	end
-	
+
 	self.Tick = RunService.Heartbeat:Connect(function(delta: number)
 		-- Skipping until playing
 		if self.State ~= States.Playing then return end
@@ -241,11 +238,11 @@ function Sequencer.Play(self: Sequencer)
 		self.CurrentFrame += self.Speed * delta * 60 -- 60 frames = 1 second
 
 		-- The frames that were passed between 'startFrame' and self.CurrentFrame
-		local toExecFrames: {Frame} = GetFrames(self.Frames, startFrame, self.CurrentFrame)
+		local toExecFrames: { Frame } = GetFrames(self.Frames, startFrame, self.CurrentFrame)
 		if #toExecFrames == 0 then return end
 
-		for i=1, #toExecFrames do
-			local validator = self.Validator :: ((self: Sequencer) -> (boolean))?
+		for i = 1, #toExecFrames do
+			local validator = self.Validator :: ((self: Sequencer) -> boolean)?
 			if validator and not validator(self) then
 				-- Runtime check was failed
 				self:Stop()
@@ -270,21 +267,21 @@ function Sequencer.Play(self: Sequencer)
 			self:Stop()
 		end
 	end)
-	
+
 	self.State = States.Playing
 end
 
 function Sequencer.Stop(self: Sequencer)
 	-- Not started or already stopped
 	if self.State == States.None or self.State == States.Stopped then return end
-	
+
 	self.State = States.Stopped
 	self.CurrentFrame = 0
-	
+
 	-- I didn't add Tick connection to the Cleaner
 	-- to split 'user' stuff and 'module' stuff
 	if self.Tick then self.Tick:Disconnect() end
-	
+
 	self.Cleaner:Clean()
 end
 
@@ -308,11 +305,11 @@ end
 function Sequencer.Await(self: Sequencer, state: State?)
 	-- Default value
 	state = state or States.Stopped
-	
+
 	if self.State == state then return end
 
 	local thread = coroutine.running()
-	
+
 	local await: RBXScriptConnection
 	await = RunService.Heartbeat:Connect(function()
 		-- When state of sequence == required state - continue main thread
@@ -321,7 +318,7 @@ function Sequencer.Await(self: Sequencer, state: State?)
 			coroutine.resume(thread)
 		end
 	end)
-	
+
 	coroutine.yield()
 end
 
@@ -351,6 +348,6 @@ return {
 
 		return self :: Sequencer
 	end,
-	
+
 	States = States,
 }

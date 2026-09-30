@@ -60,21 +60,21 @@ function Data:load(dataStore, key, transform)
 end
 
 function Data:save(dataStore, key, transform)
-	if self.ongoingSaves[dataStore] == nil then
-		self.ongoingSaves[dataStore] = {}
-	end
+	if self.ongoingSaves[dataStore] == nil then self.ongoingSaves[dataStore] = {} end
 
 	local ongoingSave = self.ongoingSaves[dataStore][key]
 
 	if ongoingSave == nil then
 		local attempts = self.config:get("saveAttempts")
-		local promise = self.throttle:updateAsync(dataStore, key, transform, false, attempts):finally(function()
-			self.ongoingSaves[dataStore][key] = nil
+		local promise = self.throttle
+			:updateAsync(dataStore, key, transform, false, attempts)
+			:finally(function()
+				self.ongoingSaves[dataStore][key] = nil
 
-			if next(self.ongoingSaves[dataStore]) == nil then
-				self.ongoingSaves[dataStore] = nil
-			end
-		end)
+				if next(self.ongoingSaves[dataStore]) == nil then
+					self.ongoingSaves[dataStore] = nil
+				end
+			end)
 
 		if promise:getStatus() == Promise.Status.Started then
 			self.ongoingSaves[dataStore][key] = { promise = promise }

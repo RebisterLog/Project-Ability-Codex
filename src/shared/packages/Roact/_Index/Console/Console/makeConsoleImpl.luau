@@ -103,9 +103,7 @@ return function()
 	end
 
 	function console.groupEnd()
-		if indentDepth > 0 then
-			indentDepth = indentDepth - 1
-		end
+		if indentDepth > 0 then indentDepth = indentDepth - 1 end
 	end
 
 	return console

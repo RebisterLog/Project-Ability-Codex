@@ -1,11 +1,11 @@
 --!strict
 
-local React = require(script.Parent.Parent.React)
-local Promise = require(script.Parent.Parent.Promise)
 local Controller = require(script.Parent.Parent.Controller)
-local util = require(script.Parent.Parent.util)
+local Promise = require(script.Parent.Parent.Promise)
+local React = require(script.Parent.Parent.React)
 local common = require(script.Parent.Parent.types.common)
 local isRoact17 = require(script.Parent.Parent.isRoact17)
+local util = require(script.Parent.Parent.util)
 
 local useRefKey = if isRoact17 then "current" else "value"
 
@@ -60,7 +60,8 @@ local function useSprings<T>(
 	local useRef: <T>(T) -> {
 		current: T,
 		value: T,
-	} = hooks[if isRoact17 then "useRef" else "useValue"]
+	} =
+		hooks[if isRoact17 then "useRef" else "useValue"]
 
 	local isImperative = useRef(nil :: boolean?)
 	local ctrls = useRef({} :: {
@@ -103,7 +104,8 @@ local function useSprings<T>(
 	hooks.useMemo(function()
 		if length > #ctrls[useRefKey] then
 			for i = #ctrls[useRefKey] + 1, length do
-				local styles, api = Controller.new(if typeof(props) == "table" then props[i] else props(i))
+				local styles, api =
+					Controller.new(if typeof(props) == "table" then props[i] else props(i))
 				ctrls[useRefKey][i] = api
 				UseSpringsStylesList[useRefKey][i] = styles
 			end
@@ -123,7 +125,9 @@ local function useSprings<T>(
 			if #ctrls[useRefKey] > 0 then
 				for apiName, value in pairs(getmetatable(ctrls[useRefKey][1])) do
 					if typeof(value) == "function" and apiName ~= "new" then
-						apiList[useRefKey][apiName] = function(apiProps: (index: number) -> any | any)
+						apiList[useRefKey][apiName] = function(
+							apiProps: (index: number) -> any | any
+						)
 							local promises = {}
 							for i, spring in ipairs(ctrls[useRefKey]) do
 								table.insert(
@@ -131,13 +135,13 @@ local function useSprings<T>(
 									Promise.new(function(resolve)
 										local result = spring[apiName](
 											spring,
-											if typeof(apiProps) == "function" then apiProps(i) else apiProps
+											if typeof(apiProps) == "function"
+												then apiProps(i)
+												else apiProps
 										)
 
 										-- Some results might be promises
-										if result and result.await then
-											result:await()
-										end
+										if result and result.await then result:await() end
 
 										resolve()
 									end)
@@ -162,17 +166,13 @@ local function useSprings<T>(
 		end
 	end, {})
 
-	if isImperative[useRefKey] then
-		return UseSpringsStylesList[useRefKey], apiList[useRefKey]
-	end
+	if isImperative[useRefKey] then return UseSpringsStylesList[useRefKey], apiList[useRefKey] end
 
 	return UseSpringsStylesList[useRefKey]
 end
 
 local exports: any = function(...)
-	if isRoact17 then
-		return useSprings(React, ...)
-	end
+	if isRoact17 then return useSprings(React, ...) end
 
 	return useSprings(...)
 end

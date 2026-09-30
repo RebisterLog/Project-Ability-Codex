@@ -43,7 +43,7 @@ Component.__tostring = "CraneComponent"
 	@type ComponentDef <T = {any}?>{Name: string, Tag: string?, BaseComponent: T?}
 	@within Component
 ]=]
-export type ComponentDef<T = {any}?> = {
+export type ComponentDef<T = { any }?> = {
 	--[=[
 		The unique name of the component.
 
@@ -150,7 +150,7 @@ function Component.Instantiate<T>(self: Component<T>, instance: T & Instance)
 		instance = instance,
 		Destroying = Signal.new(),
 	}, {
-		__index = self	
+		__index = self,
 	}) :: Component<T>
 
 	local destroyed = false
@@ -179,9 +179,7 @@ end
 	@method Destroy
 	@within Component
 ]=]
-function Component.Destroy<T>(self: Component<T>)
-
-end
+function Component.Destroy<T>(self: Component<T>) end
 
 --[=[
 	Starts the component by calling the `onStart` callback if it exists.

@@ -35,7 +35,7 @@ local function diffProperties(
 	lastRawProps: Object,
 	nextRawProps: Object,
 	rootContainerElement: HostInstance
-): (nil | Array<any>)
+): nil | Array<any>
 	-- if _G.__DEV__ then
 	--   validatePropertiesInDevelopment(tag, nextRawProps)
 	-- end
@@ -88,9 +88,7 @@ local function diffProperties(
 	-- let styleName;
 	-- let styleUpdates = null;
 	for propKey, _ in lastProps do
-		if nextProps[propKey] ~= nil then
-			continue
-		end
+		if nextProps[propKey] ~= nil then continue end
 		-- if (propKey === STYLE) {
 		--   const lastStyle = lastProps[propKey];
 		--   for (styleName in lastStyle) {
@@ -128,9 +126,7 @@ local function diffProperties(
 	end
 	for propKey, nextProp in nextProps do
 		local lastProp = if lastProps ~= nil then lastProps[propKey] else nil
-		if nextProp == lastProp then
-			continue
-		end
+		if nextProp == lastProp then continue end
 		-- if (propKey === STYLE) {
 		--   if (__DEV__) {
 		--     if (nextProp) {

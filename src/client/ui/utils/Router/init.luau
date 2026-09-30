@@ -1,6 +1,6 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -18,7 +18,7 @@ local Children = Fusion.Children
 -- Types
 export type SwitchStyle = SwitchStyles.SwitchStyle
 
-export type UIFragment = Instance | {Instance}
+export type UIFragment = Instance | { Instance } | () -> Instance | () -> { Instance }
 
 export type PageProps<T = UIFragment, I = any> = {
 	Name: string,
@@ -32,7 +32,7 @@ type Page = {
 	Scope: Fusion.Scope,
 	Fragment: UIFragment,
 	Cleaner: typeof(Buttler.new()),
-	
+
 	Enter: (self: Page, style: SwitchStyleProps, ...any) -> (),
 	Leave: (self: Page, style: SwitchStyleProps) -> (),
 }
@@ -50,13 +50,13 @@ export type Router = {
 
 	CurrentPage: Page?,
 
-	Pages: {[string]: Page},
+	Pages: { [string]: Page },
 
 	new: (scope: Fusion.Scope) -> Router,
-	Render: (self: Router, startPage: string) -> {[string]: Instance},
+	Render: (self: Router, startPage: string) -> { [string]: Instance },
 	ProvidePage: (self: Router, props: PageProps) -> (),
 	SwitchPage: <T>(self: Router, name: string, enterData: T, style: SwitchStyleProps?) -> (),
-	ProvidePages: (self: Router, pages: {PageProps}) -> (),
+	ProvidePages: (self: Router, pages: { PageProps }) -> (),
 }
 
 -- Utils
@@ -74,55 +74,49 @@ local DefaultSwitchStyle: SwitchStyleProps = {
 local Page = {}
 Page.__index = Page
 
-function Page.new(scope: Fusion.Scope, props: PageProps)
+function Page.new(pageScope: Fusion.Scope, props: PageProps)
 	local self = {
 		Props = props,
-		Scope = props.Scope,
-		
-		Fragment = scope:New "CanvasGroup" {
+		Scope = pageScope,
+
+		Fragment = pageScope:New("CanvasGroup")({
 			Name = props.Name,
 			Size = UDim2.fromScale(1, 1),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromScale(0.5, 0.5),
 			BackgroundTransparency = 1,
 
-			[Children] = {props.Page}
-		},
-		
+			[Children] = {
+				if typeof(props.Page) == "function" then props.Page(pageScope) else props.Page,
+			},
+		}),
+
 		Cleaner = Buttler.new(),
 	}
-	
+
 	setmetatable(self, Page)
-	
+
 	return self
 end
 
 function Page.Enter<T>(self: Page, style: SwitchStyleProps, data: T?)
 	self.Cleaner:Clean()
-	
-	if self.Props.OnEnter then
-		self.Props.OnEnter(self.Scope, self.Fragment, data)
-	end
+
+	if self.Props.OnEnter then self.Props.OnEnter(self.Scope, self.Fragment, data) end
 
 	local toClean = SwitchStyles.Animations[style.style].Enter(self.Fragment, style)
-	
-	if toClean then
-		self.Cleaner:Add(toClean)
-	end
+
+	if toClean then self.Cleaner:Add(toClean) end
 end
 
 function Page.Leave(self: Page, style: SwitchStyleProps)
 	self.Cleaner:Clean()
-	
-	if self.Props.OnLeave then
-		self.Props.OnLeave(self.Scope, self.Fragment)
-	end
+
+	if self.Props.OnLeave then self.Props.OnLeave(self.Scope, self.Fragment) end
 
 	local toClean = SwitchStyles.Animations[style.style].Leave(self.Fragment, style)
 
-	if toClean then
-		self.Cleaner:Add(toClean)
-	end
+	if toClean then self.Cleaner:Add(toClean) end
 end
 
 function Page.Destroy(self: Page)
@@ -138,16 +132,12 @@ Router.__index = Router
 function Router.SwitchPage<T>(self: Router, name: string?, enterData: T?, style: SwitchStyleProps?)
 	if self.Pages[name] == self.CurrentPage then return end
 
-	if name and not self.Pages[name] then
-		error("Page with name " .. name .. " does not exist")
-	end
-	
-	if self.CurrentPage then
-		self.CurrentPage:Leave(style or DefaultSwitchStyle)
-	end
-	
+	if name and not self.Pages[name] then error("Page with name " .. name .. " does not exist") end
+
+	if self.CurrentPage then self.CurrentPage:Leave(style or DefaultSwitchStyle) end
+
 	self.CurrentPage = nil
-	
+
 	if name then
 		local page = self.Pages[name]
 		page:Enter(style or DefaultSwitchStyle, enterData)
@@ -159,13 +149,13 @@ function Router.ProvidePage(self: Router, props: PageProps)
 	if self.Pages[props.Name] then
 		error("Page with name " .. props.Name .. " already exists in this router")
 	end
-	
+
 	local pageScope = self.RootScope:innerScope()
-	
+
 	self.Pages[props.Name] = Page.new(pageScope, props)
 end
 
-function Router.ProvidePages(self: Router, pages: {PageProps})
+function Router.ProvidePages(self: Router, pages: { PageProps })
 	for i, props in pages do
 		self:ProvidePage(props)
 	end
@@ -173,10 +163,10 @@ end
 
 function Router.Render<T>(self: Router, startPage: string?, startPageData: T?)
 	const pages = {}
-	
+
 	for name, page in self.Pages do
 		pages[name] = page.Fragment
-		
+
 		if startPage and name == startPage then
 			page:Enter(DefaultSwitchStyle, startPageData)
 			self.CurrentPage = page
@@ -184,7 +174,7 @@ function Router.Render<T>(self: Router, startPage: string?, startPageData: T?)
 			page:Leave(DefaultSwitchStyle)
 		end
 	end
-	
+
 	return pages
 end
 

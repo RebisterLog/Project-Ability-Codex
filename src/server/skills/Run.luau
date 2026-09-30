@@ -5,9 +5,7 @@ local Skill: types.SkillData = {
 	DisplayName = "Run",
 }
 
-function Skill:onInit()
-	
-end
+function Skill:onInit() end
 
 function Skill.Activate(self)
 	local Character = self.Character

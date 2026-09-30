@@ -83,26 +83,26 @@ Copyright (c) 2025 zilibobi
     or product names of the Licensor.
 ]]
 
-local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
+local attributes = require("@self/mod/attributes")
 local logger = require("@self/mod/logger")
 local utility = require("@self/mod/utility")
-local attributes = require("@self/mod/attributes")
 
-local Sound = require("@self/effects/sound")
 local Bezier = require("@self/effects/bezier")
-local Lightning = require("@self/effects/lightning")
 local CameraShake = require("@self/effects/camera_shake")
-local ShockwaveRing = require("@self/effects/shockwave_ring")
-local ShockwaveLine = require("@self/effects/shockwave_line")
+local Lightning = require("@self/effects/lightning")
 local ShockwaveDebris = require("@self/effects/shockwave_debris")
+local ShockwaveLine = require("@self/effects/shockwave_line")
+local ShockwaveRing = require("@self/effects/shockwave_ring")
+local Sound = require("@self/effects/sound")
 
 local caches = require("@self/services/caches")
 local effects = require("@self/services/effects")
-local texture_loader = require("@self/services/texture_loader")
 local enabled_effects = require("@self/services/enabled_effects")
+local texture_loader = require("@self/services/texture_loader")
 
 local PluginContext = utility.PLUGIN_CONTEXT
 local ServerContext = utility.SERVER_CONTEXT
@@ -115,183 +115,167 @@ api.scope = {}
 api.setup = false
 
 function api.init(params: params?)
-  if api.setup then
-    return
-  end
+	if api.setup then return end
 
-  if ServerContext then
-    task.spawn(function()
-      local done = false
-      local tries = 0
+	if ServerContext then
+		task.spawn(function()
+			local done = false
+			local tries = 0
 
-      local lastErr
+			local lastErr
 
-      repeat
-        tries += 1
+			repeat
+				tries += 1
 
-        local ok, err = pcall(utility.setCollisionGroups, utility.COLLISION_GROUPS)
+				local ok, err = pcall(utility.setCollisionGroups, utility.COLLISION_GROUPS)
 
-        done = ok
-        lastErr = err
+				done = ok
+				lastErr = err
 
-        if not done then
-          task.wait(tries)
-        end
-      until done or tries >= 5
+				if not done then task.wait(tries) end
+			until done or tries >= 5
 
-      if not done then
-        logger.warn(
-          `couldn't register necessary collision groups after {tries} tries with the last error being: {lastErr}`
-        )
-      end
-    end)
-  end
+			if not done then
+				logger.warn(
+					`couldn't register necessary collision groups after {tries} tries with the last error being: {lastErr}`
+				)
+			end
+		end)
+	end
 
-  api.setup = true
+	api.setup = true
 
-  if RunService:IsServer() and not PluginContext then
-    return
-  end
+	if RunService:IsServer() and not PluginContext then return end
 
-  api.caches = caches.init(api.scope)
+	api.caches = caches.init(api.scope)
 
-  shared.vfx = api
+	shared.vfx = api
 
-  -- init services
-  effects.init(api)
+	-- init services
+	effects.init(api)
 
-  texture_loader.init(api.scope)
-  enabled_effects.init(api.scope, api.caches.shared_part, effects)
+	texture_loader.init(api.scope)
+	enabled_effects.init(api.scope, api.caches.shared_part, effects)
 
-  -- init effects
-  Sound.init()
-  CameraShake.init()
+	-- init effects
+	Sound.init()
+	CameraShake.init()
 
-  Bezier.init(api.caches.shared_part)
-  Lightning.init(api.caches.shared_part)
-  ShockwaveRing.init(api.caches.shared_part)
-  ShockwaveLine.init(api.caches.shared_part)
-  ShockwaveDebris.init(api.caches.shared_part)
+	Bezier.init(api.caches.shared_part)
+	Lightning.init(api.caches.shared_part)
+	ShockwaveRing.init(api.caches.shared_part)
+	ShockwaveLine.init(api.caches.shared_part)
+	ShockwaveDebris.init(api.caches.shared_part)
 end
 
 function api.deinit()
-  if not api.setup then
-    return
-  end
+	if not api.setup then return end
 
-  api.setup = false
+	api.setup = false
 
-  shared.vfx = nil
+	shared.vfx = nil
 
-  if RunService:IsServer() and not PluginContext then
-    return
-  end
+	if RunService:IsServer() and not PluginContext then return end
 
-  utility.cleanupScope(api.scope)
+	utility.cleanupScope(api.scope)
 
-  effects.deinit()
+	effects.deinit()
 
-  Sound.deinit()
-  Bezier.deinit()
-  Lightning.deinit()
-  CameraShake.deinit()
-  ShockwaveRing.deinit()
-  ShockwaveLine.deinit()
-  ShockwaveDebris.deinit()
+	Sound.deinit()
+	Bezier.deinit()
+	Lightning.deinit()
+	CameraShake.deinit()
+	ShockwaveRing.deinit()
+	ShockwaveLine.deinit()
+	ShockwaveDebris.deinit()
 
-  local cleanupObjects = CollectionService:GetTagged(utility.CLEANUP_TAG)
+	local cleanupObjects = CollectionService:GetTagged(utility.CLEANUP_TAG)
 
-  for _, obj in cleanupObjects do
-    obj:Destroy()
-  end
+	for _, obj in cleanupObjects do
+		obj:Destroy()
+	end
 end
 
 local function fullEmit(scale: number, depth: number, ...: Instance)
-  if not api.setup then
-    logger.error("not initialized")
-  end
+	if not api.setup then logger.error("not initialized") end
 
-  return effects.emit(depth, ...)
+	return effects.emit(depth, ...)
 end
 
 function api.emit(vfxOrScale: number | Instance, ...: Instance)
-  if typeof(vfxOrScale) ~= "number" then
-    return fullEmit(1, 0, vfxOrScale, ...)
-  else
-    return fullEmit(vfxOrScale, 0, ...)
-  end
+	if typeof(vfxOrScale) ~= "number" then
+		return fullEmit(1, 0, vfxOrScale, ...)
+	else
+		return fullEmit(vfxOrScale, 0, ...)
+	end
 end
 
 function api.emitWithDepth(depth: number, ...: Instance)
-  return fullEmit(1, depth, ...)
+	return fullEmit(1, depth, ...)
 end
 
 function api.cacheAttributes(obj: Instance, shallow: boolean)
-  if utility.SERVER_CONTEXT then
-    logger.error("attributes can only be cached in a client-side context")
-  end
+	if utility.SERVER_CONTEXT then
+		logger.error("attributes can only be cached in a client-side context")
+	end
 
-  if not obj:IsDescendantOf(ReplicatedStorage) then
-    logger.error("attributes can only be cached for VFX inside ReplicatedStorage")
-  end
+	if not obj:IsDescendantOf(ReplicatedStorage) then
+		logger.error("attributes can only be cached for VFX inside ReplicatedStorage")
+	end
 
-  attributes.cache(obj)
+	attributes.cache(obj)
 
-  if shallow then
-    return
-  end
+	if shallow then return end
 
-  for _, v in obj:GetDescendants() do
-    attributes.cache(v)
-  end
+	for _, v in obj:GetDescendants() do
+		attributes.cache(v)
+	end
 end
 
 function api.restoreAttributes(obj: Instance, shallow: boolean?)
-  if utility.SERVER_CONTEXT then
-    logger.error("attributes can only be restored in a client-side context")
-  end
+	if utility.SERVER_CONTEXT then
+		logger.error("attributes can only be restored in a client-side context")
+	end
 
-  attributes.restore(obj)
+	attributes.restore(obj)
 
-  if shallow then
-    return
-  end
+	if shallow then return end
 
-  for _, v in obj:GetDescendants() do
-    attributes.restore(v)
-  end
+	for _, v in obj:GetDescendants() do
+		attributes.restore(v)
+	end
 end
 
 local function setEnabled(obj: Instance, enabled: boolean)
-  if obj:IsA("ParticleEmitter") then
-    obj.Enabled = enabled
-    return
-  elseif obj:IsA("Beam") then
-    obj.Enabled = enabled
-    return
-  end
+	if obj:IsA("ParticleEmitter") then
+		obj.Enabled = enabled
+		return
+	elseif obj:IsA("Beam") then
+		obj.Enabled = enabled
+		return
+	end
 
-  if attributes.isCached(obj) then
-    attributes.trigger(obj, "Enabled", enabled)
-  else
-    obj:SetAttribute("Enabled", enabled)
-  end
+	if attributes.isCached(obj) then
+		attributes.trigger(obj, "Enabled", enabled)
+	else
+		obj:SetAttribute("Enabled", enabled)
+	end
 end
 
 function api.enable(obj: Instance)
-  setEnabled(obj, true)
+	setEnabled(obj, true)
 
-  for _, v in obj:GetDescendants() do
-    setEnabled(v, true)
-  end
+	for _, v in obj:GetDescendants() do
+		setEnabled(v, true)
+	end
 end
 
 function api.disable(obj: Instance)
-  setEnabled(obj, false)
+	setEnabled(obj, false)
 
-  for _, v in obj:GetDescendants() do
-    setEnabled(v, false)
-  end
+	for _, v in obj:GetDescendants() do
+		setEnabled(v, false)
+	end
 end
 
 api.retime = require("@self/mod/retime").batch

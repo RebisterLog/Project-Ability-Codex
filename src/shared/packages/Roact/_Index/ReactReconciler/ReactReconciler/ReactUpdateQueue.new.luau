@@ -402,9 +402,7 @@ local function getStateFromUpdate<State>(
 		local payload = update.payload
 		if type(payload) == "function" then
 			-- Updater function
-			if __DEV__ then
-				enterDisallowedContextReadInDEV()
-			end
+			if __DEV__ then enterDisallowedContextReadInDEV() end
 			-- ROBLOX deviation: Upstream binds this callback to the instance;
 			-- in order for us to get the same behavior, we'd need to change the
 			-- signature of the updater, which doesn't make sense for our case
@@ -426,9 +424,7 @@ local function getStateFromUpdate<State>(
 					-- finally
 					reenableLogs()
 
-					if not ok then
-						error(result)
-					end
+					if not ok then error(result) end
 				end
 				exitDisallowedContextReadInDEV()
 			end
@@ -438,19 +434,15 @@ local function getStateFromUpdate<State>(
 		return payload
 	elseif updateTag == CaptureUpdate or updateTag == UpdateState then
 		if updateTag == CaptureUpdate then
-			workInProgress.flags = bit32.bor(
-				bit32.band(workInProgress.flags, bit32.bnot(ShouldCapture)),
-				DidCapture
-			)
+			workInProgress.flags =
+				bit32.bor(bit32.band(workInProgress.flags, bit32.bnot(ShouldCapture)), DidCapture)
 		end
 		-- Intentional fallthrough
 		local payload = update.payload
 		local partialState
 		if type(payload) == "function" then
 			-- Updater function
-			if __DEV__ then
-				enterDisallowedContextReadInDEV()
-			end
+			if __DEV__ then enterDisallowedContextReadInDEV() end
 			-- ROBLOX deviation: Upstream binds this callback to the instance;
 			-- in order for us to get the same behavior, we'd need to change the
 			-- signature of the updater, which doesn't make sense for our case
@@ -472,9 +464,7 @@ local function getStateFromUpdate<State>(
 					-- finally
 					reenableLogs()
 
-					if not ok then
-						error(result)
-					end
+					if not ok then error(result) end
 				end
 				exitDisallowedContextReadInDEV()
 			end
@@ -509,9 +499,7 @@ local function processUpdateQueue<State>(
 
 	hasForceUpdate = false
 
-	if __DEV__ then
-		currentlyProcessingQueue = queue.shared
-	end
+	if __DEV__ then currentlyProcessingQueue = queue.shared end
 
 	local firstBaseUpdate = queue.firstBaseUpdate
 	local lastBaseUpdate = queue.lastBaseUpdate
@@ -617,14 +605,8 @@ local function processUpdateQueue<State>(
 				end
 
 				-- Process this update.
-				newState = getStateFromUpdate(
-					workInProgress,
-					queue,
-					update,
-					newState,
-					props,
-					instance
-				)
+				newState =
+					getStateFromUpdate(workInProgress, queue, update, newState, props, instance)
 				local callback = update.callback
 				if
 					callback ~= nil
@@ -653,9 +635,7 @@ local function processUpdateQueue<State>(
 					local lastPendingUpdate = pendingQueue
 					-- Intentionally unsound. Pending updates form a circular list, but we
 					-- unravel them when transferring them to the base queue.
-					local firstPendingUpdate = (
-						lastPendingUpdate.next :: any
-					) :: Update<State>
+					local firstPendingUpdate = (lastPendingUpdate.next :: any) :: Update<State>
 					lastPendingUpdate.next = nil
 					update = firstPendingUpdate
 					queue.lastBaseUpdate = lastPendingUpdate
@@ -664,9 +644,7 @@ local function processUpdateQueue<State>(
 			end
 		end
 
-		if newLastBaseUpdate == nil then
-			newBaseState = newState
-		end
+		if newLastBaseUpdate == nil then newBaseState = newState end
 
 		queue.baseState = (newBaseState :: any) :: State
 		queue.firstBaseUpdate = newFirstBaseUpdate
@@ -684,9 +662,7 @@ local function processUpdateQueue<State>(
 		workInProgress.memoizedState = newState
 	end
 
-	if __DEV__ then
-		currentlyProcessingQueue = nil
-	end
+	if __DEV__ then currentlyProcessingQueue = nil end
 end
 exports.processUpdateQueue = processUpdateQueue
 
@@ -724,9 +700,7 @@ local function commitUpdateQueue<State>(
 	if effects ~= nil then
 		for _, effect in effects do
 			local callback = effect.callback
-			if callback ~= nil then
-				callCallback(callback, instance)
-			end
+			if callback ~= nil then callCallback(callback, instance) end
 
 			-- ROBLOX performance: return this object to the pool
 			table.clear(effect)

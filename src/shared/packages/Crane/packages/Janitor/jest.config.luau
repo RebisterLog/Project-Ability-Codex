@@ -16,10 +16,10 @@ type JestConfiguration = {
 		name: string,
 		color: string,
 	},
-	projects: {Instance}?,
+	projects: { Instance }?,
 	rootDir: Instance?,
-	setupFiles: {ModuleScript}?,
-	setupFilesAfterEnv: {ModuleScript}?,
+	setupFiles: { ModuleScript }?,
+	setupFilesAfterEnv: { ModuleScript }?,
 	slowTestThreshold: number?,
 	snapshotFormat: {
 		printInstanceDefaults: boolean?,
@@ -33,19 +33,19 @@ type JestConfiguration = {
 		min: boolean?,
 		printBasicPrototype: boolean?,
 		printFunctionName: boolean?,
-		theme: {[string]: string}?,
+		theme: { [string]: string }?,
 	}?,
-	snapshotSerializers: {Serializer}?,
+	snapshotSerializers: { Serializer }?,
 	testFailureExitCode: number?,
-	testMatch: {string}?,
-	testPathIgnorePatterns: {string}?,
-	testRegex: {{string} | string}?,
+	testMatch: { string }?,
+	testPathIgnorePatterns: { string }?,
+	testRegex: { { string } | string }?,
 	testTimeout: number?,
 	verbose: boolean?,
 }
 
 local JestConfiguration: JestConfiguration = {
-	displayName = "Janitor";
-	testMatch = {"**/*.test"};
+	displayName = "Janitor",
+	testMatch = { "**/*.test" },
 }
 return JestConfiguration

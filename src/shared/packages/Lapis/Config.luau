@@ -21,9 +21,7 @@ end
 
 function Config:set(values)
 	for key, value in values do
-		if self.config[key] == nil then
-			error(`Invalid config key "{tostring(key)}"`)
-		end
+		if self.config[key] == nil then error(`Invalid config key "{tostring(key)}"`) end
 
 		self.config[key] = value
 	end

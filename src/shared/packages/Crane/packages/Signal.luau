@@ -79,9 +79,7 @@ local Connection = {}
 Connection.__index = Connection
 
 function Connection:Disconnect()
-	if not self.Connected then
-		return
-	end
+	if not self.Connected then return end
 	self.Connected = false
 
 	-- Unhook the node, but DON'T clear it. That way any fire calls that are
@@ -95,9 +93,7 @@ function Connection:Disconnect()
 		while prev and prev._next ~= self do
 			prev = prev._next
 		end
-		if prev then
-			prev._next = self._next
-		end
+		if prev then prev._next = self._next end
 	end
 end
 
@@ -251,9 +247,7 @@ function Signal:Once(fn)
 	local done = false
 
 	connection = self:Connect(function(...)
-		if done then
-			return
-		end
+		if done then return end
 
 		done = true
 		connection:Disconnect()
@@ -291,7 +285,7 @@ function Signal:DisconnectAll()
 	end
 	self._handlerListHead = false
 
-	local yieldedThreads: {[thread]: boolean} = rawget(self, "_yieldedThreads")
+	local yieldedThreads: { [thread]: boolean } = rawget(self, "_yieldedThreads")
 	if yieldedThreads then
 		for thread in yieldedThreads do
 			if coroutine.status(thread) == "suspended" then
@@ -326,7 +320,7 @@ function Signal:Fire(...)
 			--	freeRunnerThread = coroutine.create(runEventHandlerInFreeThread)
 			--end
 			--task.spawn(freeRunnerThread, item._fn, ...)
-			
+
 			item._fn(...)
 		end
 		item = item._next
@@ -346,9 +340,7 @@ function Signal:FireDeferred(...)
 	while item do
 		local conn = item
 		task.defer(function(...)
-			if conn.Connected then
-				conn._fn(...)
-			end
+			if conn.Connected then conn._fn(...) end
 		end, ...)
 		item = item._next
 	end
@@ -403,9 +395,7 @@ function Signal:Destroy()
 	self:DisconnectAll()
 
 	local proxyHandler = rawget(self, "_proxyHandler")
-	if proxyHandler then
-		proxyHandler:Disconnect()
-	end
+	if proxyHandler then proxyHandler:Disconnect() end
 end
 
 -- Make signal strict

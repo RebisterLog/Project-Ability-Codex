@@ -1,11 +1,11 @@
 local RunService = game:GetService("RunService")
 
-local Promise = require(script.Parent.Promise)
-local Signal = require(script.Parent.Signal)
 local Animation = require(script.Parent.Animation)
 local AnimationConfig = require(script.Parent.AnimationConfig)
-local util = require(script.Parent.util)
+local Promise = require(script.Parent.Promise)
+local Signal = require(script.Parent.Signal)
 local helpers = require(script.Parent.helpers)
+local util = require(script.Parent.util)
 
 local SpringValue = {}
 SpringValue.__index = SpringValue
@@ -53,22 +53,16 @@ function SpringValue:_update(props)
 	end
 
 	return Promise.new(function(resolve, _, onCancel)
-		if props.delay then
-			task.wait(props.delay)
-		end
+		if props.delay then task.wait(props.delay) end
 
-		if onCancel() then
-			return
-		end
+		if onCancel() then return end
 
 		local range = self:_prepareNode(props)
 		local from = range.from
 		local to = range.to
 
 		-- Focus the "from" value if changing without a "to" value
-		if from and not to then
-			to = from
-		end
+		if from and not to then to = from end
 
 		local anim = self.animation
 		local defaultProps = self.defaultProps
@@ -85,7 +79,9 @@ function SpringValue:_update(props)
             except for declarative updates. When `reset` is defined, there
             must exist a value to animate from.
         ]]
-		local reset = if props.reset == nil then from ~= nil else anim.fromValues ~= nil and props.reset
+		local reset = if props.reset == nil
+			then from ~= nil
+			else anim.fromValues ~= nil and props.reset
 
 		if reset then
 			anim.values = table.clone(anim.fromValues)
@@ -133,9 +129,7 @@ function SpringValue:advance(dt: number)
 	local toValues = anim.toValues
 
 	for i, _ in ipairs(anim.values) do
-		if anim.done[i] then
-			continue
-		end
+		if anim.done[i] then continue end
 
 		local finished = anim.immediate
 		local position = toValues[i]
@@ -159,7 +153,10 @@ function SpringValue:advance(dt: number)
 					anim.v0[i] = config.velocity[i]
 				else
 					-- If a number, set velocity towards the target
-					anim.v0[i] = if to - from > 0 then config.velocity elseif to - from < 0 then -config.velocity else 0
+					anim.v0[i] = if to - from > 0
+						then config.velocity
+						elseif to - from < 0 then -config.velocity
+						else 0
 				end
 			end
 			local _v0 = anim.v0[i]
@@ -228,9 +225,7 @@ function SpringValue:advance(dt: number)
 
 					if not isMoving then
 						finished = math.abs(to - position) <= precision
-						if finished then
-							break
-						end
+						if finished then break end
 					end
 
 					if canBounce then
@@ -263,9 +258,7 @@ function SpringValue:advance(dt: number)
 			idle = false
 		end
 
-		if anim:setValue(i, position) then
-			changed = true
-		end
+		if anim:setValue(i, position) then changed = true end
 	end
 
 	if idle then
@@ -290,12 +283,8 @@ function SpringValue:_prepareNode(props)
 	local to = props.to
 	local from = props.from
 
-	if typeof(to) == "table" then
-		to = to[key]
-	end
-	if typeof(from) == "table" then
-		from = from[key]
-	end
+	if typeof(to) == "table" then to = to[key] end
+	if typeof(from) == "table" then from = from[key] end
 
 	local range = {
 		to = to,

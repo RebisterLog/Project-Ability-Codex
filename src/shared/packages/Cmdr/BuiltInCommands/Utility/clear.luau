@@ -13,11 +13,9 @@ return {
 
 		if gui and frame then
 			for _, child in pairs(frame:GetChildren()) do
-				if child.Name == "Line" and child:IsA("TextBox") then
-					child:Destroy()
-				end
+				if child.Name == "Line" and child:IsA("TextBox") then child:Destroy() end
 			end
 		end
 		return ""
-	end
+	end,
 }

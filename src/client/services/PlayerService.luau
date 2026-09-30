@@ -1,10 +1,10 @@
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
-local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
+local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
 local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
 local PlayerService = Crane:CreateService({
@@ -16,7 +16,7 @@ function PlayerService.onInit(self: typeof(PlayerService))
 	self.Player = Crane:AddComponent(Players.LocalPlayer, "Player")
 
 	local proxies = {}
-	
+
 	Crane:GetPacket("RequestProxy").listen(function(data)
 		proxies = data
 	end)
@@ -35,9 +35,7 @@ function PlayerService.onInit(self: typeof(PlayerService))
 	end)
 end
 
-function PlayerService.onStart(self: typeof(PlayerService))
-
-end
+function PlayerService.onStart(self: typeof(PlayerService)) end
 
 function PlayerService:GetPlayer()
 	return self.Player

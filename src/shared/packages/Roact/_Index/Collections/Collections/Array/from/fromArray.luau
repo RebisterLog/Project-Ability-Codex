@@ -35,7 +35,11 @@ return function<T, U>(
 		array = table.create(arrayLength)
 		for i = 1, arrayLength do
 			if thisArg ~= nil then
-				(array :: Array<U>)[i] = (mapFn :: mapFnWithThisArg<T, U>)(thisArg, (value :: Array<T>)[i], i)
+				(array :: Array<U>)[i] = (mapFn :: mapFnWithThisArg<T, U>)(
+					thisArg,
+					(value :: Array<T>)[i],
+					i
+				)
 			else
 				(array :: Array<U>)[i] = (mapFn :: mapFn<T, U>)((value :: Array<T>)[i], i)
 			end

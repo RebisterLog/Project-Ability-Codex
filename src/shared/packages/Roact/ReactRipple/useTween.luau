@@ -17,9 +17,7 @@ local function useTween<T>(initialValue: T, initialOptions: TweenOptions<T>?): (
 	React.useEffect(function()
 		local disconnect = tweenRef.current:onChange(setValue)
 
-		if not initialOptions or initialOptions.start ~= false then
-			tweenRef.current:start()
-		end
+		if not initialOptions or initialOptions.start ~= false then tweenRef.current:start() end
 
 		return function()
 			tweenRef.current:stop()

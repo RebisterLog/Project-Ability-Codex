@@ -14,18 +14,16 @@ local function GetRank(UserId: number): number
 	for _, GroupInfo in groups do
 		if not UserId then break end
 
-		if GroupInfo.Id == 34865080 then
-			return GroupInfo.Rank
-		end
+		if GroupInfo.Id == 34865080 then return GroupInfo.Rank end
 	end
 
 	return 0
 end
 
-return function (registry)
+return function(registry)
 	registry:RegisterHook("BeforeRun", function(context)
 		local player = context.Executor :: Player
-		
+
 		if context.Group == "Admin" and GetRank(player.UserId) < 200 then
 			return "You don't have permission to run this command"
 		end

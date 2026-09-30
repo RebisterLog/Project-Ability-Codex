@@ -9,21 +9,16 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 
-local keyCache: {[string]: Types.SpecialKey} = {}
+local keyCache: { [string]: Types.SpecialKey } = {}
 
-local function getProperty_unsafe(
-	instance: Instance,
-	property: string
-)
+local function getProperty_unsafe(instance: Instance, property: string)
 	return (instance :: any)[property]
 end
 
-local function OnEvent(
-	eventName: string
-): Types.SpecialKey
+local function OnEvent(eventName: string): Types.SpecialKey
 	local key = keyCache[eventName]
 	if key == nil then
 		key = {
@@ -44,7 +39,7 @@ local function OnEvent(
 				else
 					table.insert(scope, event:Connect(callback :: any))
 				end
-			end
+			end,
 		}
 		keyCache[eventName] = key
 	end

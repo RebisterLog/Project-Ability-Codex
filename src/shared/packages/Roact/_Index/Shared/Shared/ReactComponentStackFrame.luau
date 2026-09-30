@@ -17,9 +17,7 @@ type Source = ReactElementType.Source
 
 -- ROBLOX deviation: Needed to properly type class components
 local flowtypes = require(script.Parent["flowtypes.roblox"])
-type React_StatelessFunctionalComponent<P> = flowtypes.React_StatelessFunctionalComponent<
-	P
->
+type React_StatelessFunctionalComponent<P> = flowtypes.React_StatelessFunctionalComponent<P>
 type React_ComponentType<P> = flowtypes.React_ComponentType<P>
 type ReactComponent<P> = React_StatelessFunctionalComponent<P> | React_ComponentType<P>
 
@@ -96,9 +94,7 @@ local function describeBuiltInComponentFrame(
 	-- 	return describeComponentFrame(name, source, ownerName)
 	-- end
 	local ownerName = nil
-	if _G.__DEV__ and owner then
-		ownerName = describeOwner(owner)
-	end
+	if _G.__DEV__ and owner then ownerName = describeOwner(owner) end
 
 	return describeComponentFrame(name, source, ownerName)
 	-- ROBLOX deviation END
@@ -106,25 +102,19 @@ end
 
 local reentry = false
 local componentFrameCache = nil
-if _G.__DEV__ then
-	componentFrameCache = setmetatable({}, { __mode = "k" })
-end
+if _G.__DEV__ then componentFrameCache = setmetatable({}, { __mode = "k" }) end
 
 local function describeNativeComponentFrame(
 	fn: nil | ReactComponent<any>, -- ROBLOX TODO: only accept tables with __tostring metamethod overridden
 	construct: boolean
 ): string
 	-- // If something asked for a stack inside a fake render, it should get ignored.
-	if not fn or reentry then
-		return ""
-	end
+	if not fn or reentry then return "" end
 
 	if _G.__DEV__ then
 		local frame = componentFrameCache[fn]
 
-		if frame ~= nil then
-			return frame
-		end
+		if frame ~= nil then return frame end
 	end
 
 	local control
@@ -228,9 +218,7 @@ local function describeNativeComponentFrame(
 							-- similar to React
 							local frame = "\n" .. prefix .. sampleLines[sampleIndex]
 
-							if _G.__DEV__ then
-								componentFrameCache[fn] = frame
-							end
+							if _G.__DEV__ then componentFrameCache[fn] = frame end
 							-- // Return the line we found.
 							-- deviation: to mimic the behavior of the try-catch-finally
 							-- we cannot return the value here.
@@ -254,9 +242,7 @@ local function describeNativeComponentFrame(
 	-- Error.prepareStackTrace = previousPrepareStackTrace
 
 	-- deviation: return here to micmic the end of the finally block
-	if earlyOutValue ~= nil then
-		return earlyOutValue
-	end
+	if earlyOutValue ~= nil then return earlyOutValue end
 
 	-- Fallback to just using the name if we couldn't make it throw.
 	-- ROBLOX deviation START: Can't get displayName for functions, since fn can be a class, we can get the class name here
@@ -266,13 +252,9 @@ local function describeNativeComponentFrame(
 		else if type(fn) == "table" then tostring(fn) else ""
 
 	local syntheticFrame = ""
-	if name ~= nil and name ~= "" then
-		syntheticFrame = describeBuiltInComponentFrame(name)
-	end
+	if name ~= nil and name ~= "" then syntheticFrame = describeBuiltInComponentFrame(name) end
 
-	if _G.__DEV__ then
-		componentFrameCache[fn] = syntheticFrame
-	end
+	if _G.__DEV__ then componentFrameCache[fn] = syntheticFrame end
 
 	return syntheticFrame
 end
@@ -330,9 +312,7 @@ local function describeClassComponentFrame(
 	-- end
 	local name = tostring(ctor)
 	local ownerName = nil
-	if _G.__DEV__ and owner then
-		ownerName = describeOwner(owner)
-	end
+	if _G.__DEV__ and owner then ownerName = describeOwner(owner) end
 	return describeComponentFrame(name, source, ownerName)
 	-- ROBLOX deviation END
 end
@@ -360,14 +340,10 @@ function describeFunctionComponentFrame(
 	-- 	end
 	-- 	return describeComponentFrame(name, source, ownerName)
 	-- end
-	if not fn then
-		return ""
-	end
+	if not fn then return "" end
 	-- ROBLOX deviation: use debug.info to discover function names
 	-- ROBLOX FIXME: find out how non-functions are getting into here, they pollute test output
-	local name = if type(fn) == "function"
-		then debug.info(fn :: Function, "n")
-		else tostring(fn)
+	local name = if type(fn) == "function" then debug.info(fn :: Function, "n") else tostring(fn)
 	local ownerName = nil
 	if _G.__DEV__ and ownerFn then
 		-- ROBLOX deviation: owner may be a function or a table
@@ -390,12 +366,8 @@ local function describeUnknownElementTypeFrameInDEV(
 	-- ROBLOX deviation: owner could be a class component
 	ownerFn: nil | ReactComponent<any>
 ): string
-	if not _G.__DEV__ then
-		return ""
-	end
-	if type_ == nil then
-		return ""
-	end
+	if not _G.__DEV__ then return "" end
+	if type_ == nil then return "" end
 
 	-- ROBLOX deviation: in JavaScript, if `type` contains a class, typeof will
 	-- return "function". We need to specifically check for the class.
@@ -419,9 +391,7 @@ local function describeUnknownElementTypeFrameInDEV(
 		return describeFunctionComponentFrame(type_, source, ownerFn)
 	end
 
-	if type(type_) == "string" then
-		return describeBuiltInComponentFrame(type_, source, ownerFn)
-	end
+	if type(type_) == "string" then return describeBuiltInComponentFrame(type_, source, ownerFn) end
 
 	if type_ == REACT_SUSPENSE_TYPE then
 		return describeBuiltInComponentFrame("Suspense", source, ownerFn)
@@ -452,9 +422,7 @@ local function describeUnknownElementTypeFrameInDEV(
 				)
 			end)
 
-			if ok then
-				return result
-			end
+			if ok then return result end
 		end
 	end
 

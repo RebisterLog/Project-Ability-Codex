@@ -19,12 +19,12 @@
       CircularKickHit : Sound on hit connect
 ]=]
 
-local ServerScriptService = game:GetService("ServerScriptService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
 local Enums = require(ServerScriptService.server.Enums)
+local types = require(ServerScriptService.server.types)
 
 local Skill: types.SkillData = {
 	DisplayName = "CircularKick",
@@ -81,69 +81,104 @@ function Skill:onInit()
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
-			{0, function(seq)
-				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
-				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+			{
+				0,
+				function(seq)
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
+					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-				table.clear(self.AlreadyHit)
+					table.clear(self.AlreadyHit)
 
-				
-				VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-					Animation = Anims["CircularKick"],
-					Speed = seq.Speed,
-				})
-
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["CircularKick"])
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["CircularKickVL"])
-
-				seq.Cleaner:Add(function()
-					VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-						Animation = Anims["CircularKick"].Animation,
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+						Animation = Anims["CircularKick"],
+						Speed = seq.Speed,
 					})
-				end)
-			end},
-			
-			{11, function()
-				VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", character.instance, Models.CircularKick)
-			end,},
 
-			{19, function()
-				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-					Particle = Models.CircularKickGroundHit,
-					Origin = character.RootPart.CFrame,
-					Offset = Models.CircularKickGroundHit:GetAttribute("Offset"),
-					UseForge = true,
-				})
-			end,},
-			
-			{20, function(seq)
-				local Targets = CombatService:Hitbox({
-					Skill = self,
-					Caster = character,
-					Info = AttackInfo.Hitbox,
-				}) :: {types.Character}
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						RootPart,
+						Sounds["CircularKick"]
+					)
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						RootPart,
+						Sounds["CircularKickVL"]
+					)
 
-				for _, Target in Targets do
-					if table.find(self.AlreadyHit, Target) then
-						continue
-					end
-
-					CombatService:Attack({
-						Attacker = character,
-						Victim = Target,
-						Info = AttackInfo,
-					}):andThen(function(Data: types.AttackData)
-						if not Data.State.Success then return end
-						table.insert(self.AlreadyHit, Target)
-
-						if #self.AlreadyHit <= 1 then
-							VFXService:StartEffect(Players:GetPlayers(), "Sound", Target.RootPart, Sounds["CircularKickHit"])
-						end
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"Animation",
+							character.instance,
+							{
+								Animation = Anims["CircularKick"].Animation,
+							}
+						)
 					end)
-				end
-			end, 25},
+				end,
+			},
 
-			{40},
+			{
+				11,
+				function()
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"EmitFolder",
+						character.instance,
+						Models.CircularKick
+					)
+				end,
+			},
+
+			{
+				19,
+				function()
+					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+						Particle = Models.CircularKickGroundHit,
+						Origin = character.RootPart.CFrame,
+						Offset = Models.CircularKickGroundHit:GetAttribute("Offset"),
+						UseForge = true,
+					})
+				end,
+			},
+
+			{
+				20,
+				function(seq)
+					local Targets = CombatService:Hitbox({
+						Skill = self,
+						Caster = character,
+						Info = AttackInfo.Hitbox,
+					}) :: { types.Character }
+
+					for _, Target in Targets do
+						if table.find(self.AlreadyHit, Target) then continue end
+
+						CombatService:Attack({
+							Attacker = character,
+							Victim = Target,
+							Info = AttackInfo,
+						}):andThen(function(Data: types.AttackData)
+							if not Data.State.Success then return end
+							table.insert(self.AlreadyHit, Target)
+
+							if #self.AlreadyHit <= 1 then
+								VFXService:StartEffect(
+									Players:GetPlayers(),
+									"Sound",
+									Target.RootPart,
+									Sounds["CircularKickHit"]
+								)
+							end
+						end)
+					end
+				end,
+				25,
+			},
+
+			{ 40 },
 		},
 	}))
 end
@@ -160,9 +195,7 @@ function Skill:Interrupt()
 
 	local Anims = self.Spec.Data.Assets.Animations
 
-	if self.Sequence then
-		self.Sequence:Stop()
-	end
+	if self.Sequence then self.Sequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
 		Animation = Anims["CircularKick"].Animation,

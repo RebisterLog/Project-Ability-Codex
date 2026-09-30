@@ -12,24 +12,24 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 	Skills = {
 		["Punch"] = {
 			Distance = 8,
-			
+
 			RejectedConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
-			}
+			},
 		},
-		
+
 		["Block"] = {
 			RequiredConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
-			
+
 			RejectedConditions = {
 				"TARGET_IGNORE_BLOCK",
 			},
-			
+
 			HoldUntil = {
 				"TARGET_STUNNED",
 				"TARGET_ATTACKING",
@@ -39,38 +39,38 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 				"TARGET_PERFECT_BLOCKING",
 			},
 		},
-		
+
 		["Grab"] = {
 			Distance = 6,
-			
+
 			RequiredConditions = {
 				"TARGET_BLOCKING",
 			},
-			
+
 			RejectedConditions = {
 				--"TARGET_RAGDOLLED",
 				--"TARGET_ATTACKING",
 				--"TARGET_ARMORED",
-			}
+			},
 		},
-		
+
 		["Footrest"] = {
 			Distance = 6,
-			
+
 			RejectedConditions = {
 				"TARGET_ARMORED",
 				"TARGET_RAGDOLLED",
-			}
+			},
 		},
-		
+
 		["Uppercut"] = {
 			Distance = 8,
 
 			RejectedConditions = {
 				"TARGET_RAGDOLLED",
-			}
+			},
 		},
-		
+
 		["Dash"] = {
 			--Distance = 15,
 			--RequiredConditions = {
@@ -78,16 +78,16 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			--	"TARGET_ATTACKING",
 			--}
 		},
-		
+
 		["CircularKick"] = {
 			Distance = 6,
-			
+
 			RequiredConditions = {
-				"TARGET_RAGDOLLED"
-			}
-		}
+				"TARGET_RAGDOLLED",
+			},
+		},
 	},
-	
+
 	Combos = {
 		{
 			"Footrest",
@@ -96,7 +96,7 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Punch",
 			"Uppercut",
 		},
-		
+
 		{
 			"Punch",
 			"Punch",
@@ -106,9 +106,9 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Dash",
 			"Uppercut",
 			"Dash",
-			"CircularKick"
+			"CircularKick",
 		},
-		
+
 		{
 			"Punch",
 			"Punch",
@@ -117,7 +117,7 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Grab",
 			"CircularKick",
 		},
-		
+
 		{
 			"Dash",
 			"Footrest",
@@ -125,12 +125,12 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Dash",
 			"CircularKick",
 		},
-		
+
 		{
 			"Dash",
 			"Uppercut",
-		}
-	}
+		},
+	},
 }
 
 return BasicWarrior

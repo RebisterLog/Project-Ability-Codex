@@ -13,9 +13,7 @@ function namespacesDependencies.start(name: string)
 end
 
 function namespacesDependencies.add(data)
-	if not current then
-		return
-	end
+	if not current then return end
 
 	table.insert(current, data)
 end
@@ -29,9 +27,7 @@ function namespacesDependencies.currentName()
 end
 
 function namespacesDependencies.empty(): { [number]: any }
-	if current == nil then
-		return {}
-	end
+	if current == nil then return {} end
 
 	local result = current
 	current = nil

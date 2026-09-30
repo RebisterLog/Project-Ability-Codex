@@ -38,9 +38,7 @@ return function(valueObject: StringValue): replicatedValueType
 		self._luauData = table.freeze(HttpService:JSONDecode(valueObject.Value))
 
 		valueObject.Changed:Connect(function(value: string)
-			if not value then
-				return
-			end
+			if not value then return end
 
 			self._luauData = table.freeze(HttpService:JSONDecode(value))
 		end)

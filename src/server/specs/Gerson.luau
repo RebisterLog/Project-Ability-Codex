@@ -1,22 +1,21 @@
-local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Configuration = ServerScriptService.server.Configuration
 local Configs = Configuration.ConfigsFolder.Value
 local SpecsConfig = require(Configs.Specs)
 local skills = ServerScriptService.server.skills
-local types =  require(ServerScriptService.server.types)
+local types = require(ServerScriptService.server.types)
 
 local Spec = {
 	Skills = {
 		["Dash"] = "~/skills/Dash",
 		["Punch"] = "~/skills/Punch",
-		["Block"] = '~/skills/Block',
+		["Block"] = "~/skills/Block",
 		["Run"] = "~/skills/Run",
 		["Grab"] = "~/skills/Grab",
-		
 
 		["ShellLaunch"] = "@Specs/Gerson/ShellLaunch",
-		["Bonk"] = "@Specs/Gerson/Bonk"
+		["Bonk"] = "@Specs/Gerson/Bonk",
 	},
 
 	onInit = function(self: types.Spec)

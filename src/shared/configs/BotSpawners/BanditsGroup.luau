@@ -7,12 +7,12 @@ return {
 	MinBots = 5,
 	CacheBots = true,
 	FightTogether = true,
-	
+
 	Bots = {
 		{
 			Model = NPCFolder.Mahoti,
 			BotCharacter = "BasicWarrior",
 			Weight = 10,
 		},
-	}
+	},
 }

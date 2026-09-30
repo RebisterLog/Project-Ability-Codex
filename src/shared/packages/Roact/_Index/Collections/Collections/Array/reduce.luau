@@ -18,7 +18,12 @@ local Array = script.Parent
 local Packages = Array.Parent.Parent
 local types = require(Packages.ES7Types)
 type Array<T> = types.Array<T>
-type reduceFn<T, U> = (previousValue: U, currentValue: T, currentIndex: number, array: Array<T>) -> U
+type reduceFn<T, U> = (
+	previousValue: U,
+	currentValue: T,
+	currentIndex: number,
+	array: Array<T>
+) -> U
 
 -- Implements Javascript's `Array.prototype.reduce` as defined below
 -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
@@ -28,9 +33,7 @@ return function<T, U>(array: Array<T>, callback: reduceFn<T, U>, initialValue: U
 		if typeof(array) ~= "table" then
 			error(string.format("Array.reduce called on %s", typeof(array)))
 		end
-		if typeof(callback) ~= "function" then
-			error("callback is not a function")
-		end
+		if typeof(callback) ~= "function" then error("callback is not a function") end
 	end
 
 	local length = #array
@@ -42,9 +45,7 @@ return function<T, U>(array: Array<T>, callback: reduceFn<T, U>, initialValue: U
 		value = initialValue
 	else
 		initial = 2
-		if length == 0 then
-			error("reduce of empty array with no initial value")
-		end
+		if length == 0 then error("reduce of empty array with no initial value") end
 		value = array[1]
 	end
 

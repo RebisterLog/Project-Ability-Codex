@@ -16,31 +16,20 @@ local is = require(script.Parent.objectIs)
  * Returns true when the values of all keys are strictly equal.
 ]]
 local function shallowEqual(objA, objB)
-	if is(objA, objB) then
-		return true
-	end
+	if is(objA, objB) then return true end
 
-	if
-		typeof(objA) ~= "table"
-		or objA == nil
-		or typeof(objB) ~= "table"
-		or objB == nil
-	then
+	if typeof(objA) ~= "table" or objA == nil or typeof(objB) ~= "table" or objB == nil then
 		return false
 	end
 
 	-- deviation: `Object.keys` does not have an equivalent in Lua, so we
 	-- iterate through each table instead
 	for key, value in objA do
-		if not is(objB[key], value) then
-			return false
-		end
+		if not is(objB[key], value) then return false end
 	end
 
 	for key, value in objB do
-		if not is(objA[key], value) then
-			return false
-		end
+		if not is(objA[key], value) then return false end
 	end
 
 	return true

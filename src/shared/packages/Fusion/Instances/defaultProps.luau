@@ -11,13 +11,13 @@ local task = nil -- Disable usage of Roblox's task scheduler
 return {
 	ScreenGui = {
 		ResetOnSpawn = false,
-		ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 	},
 
 	BillboardGui = {
 		ResetOnSpawn = false,
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-		Active = true
+		Active = true,
 	},
 
 	SurfaceGui = {
@@ -25,13 +25,13 @@ return {
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 
 		SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud,
-		PixelsPerStud = 50
+		PixelsPerStud = 50,
 	},
 
 	Frame = {
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderColor3 = Color3.new(0, 0, 0),
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
 	},
 
 	ScrollingFrame = {
@@ -39,7 +39,7 @@ return {
 		BorderColor3 = Color3.new(0, 0, 0),
 		BorderSizePixel = 0,
 
-		ScrollBarImageColor3 = Color3.new(0, 0, 0)
+		ScrollBarImageColor3 = Color3.new(0, 0, 0),
 	},
 
 	TextLabel = {
@@ -50,7 +50,7 @@ return {
 		Font = Enum.Font.SourceSans,
 		Text = "",
 		TextColor3 = Color3.new(0, 0, 0),
-		TextSize = 14
+		TextSize = 14,
 	},
 
 	TextButton = {
@@ -63,7 +63,7 @@ return {
 		Font = Enum.Font.SourceSans,
 		Text = "",
 		TextColor3 = Color3.new(0, 0, 0),
-		TextSize = 14
+		TextSize = 14,
 	},
 
 	TextBox = {
@@ -76,13 +76,13 @@ return {
 		Font = Enum.Font.SourceSans,
 		Text = "",
 		TextColor3 = Color3.new(0, 0, 0),
-		TextSize = 14
+		TextSize = 14,
 	},
 
 	ImageLabel = {
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderColor3 = Color3.new(0, 0, 0),
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
 	},
 
 	ImageButton = {
@@ -90,53 +90,53 @@ return {
 		BorderColor3 = Color3.new(0, 0, 0),
 		BorderSizePixel = 0,
 
-		AutoButtonColor = false
+		AutoButtonColor = false,
 	},
 
 	ViewportFrame = {
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderColor3 = Color3.new(0, 0, 0),
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
 	},
 
 	VideoFrame = {
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderColor3 = Color3.new(0, 0, 0),
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
 	},
-	
+
 	CanvasGroup = {
 		BackgroundColor3 = Color3.new(1, 1, 1),
 		BorderColor3 = Color3.new(0, 0, 0),
-		BorderSizePixel = 0
+		BorderSizePixel = 0,
 	},
 
 	SpawnLocation = {
-		Duration = 0
+		Duration = 0,
 	},
 
 	BoxHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
 	ConeHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
 	CylinderHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
 	ImageHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
 	LineHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
 	SphereHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
 	WireframeHandleAdornment = {
-		ZIndex = 0
+		ZIndex = 0,
 	},
-	
+
 	Part = {
 		Anchored = true,
 		Size = Vector3.one,
@@ -147,7 +147,7 @@ return {
 		TopSurface = Enum.SurfaceType.Smooth,
 		BottomSurface = Enum.SurfaceType.Smooth,
 	},
-	
+
 	TrussPart = {
 		Anchored = true,
 		Size = Vector3.one * 2,

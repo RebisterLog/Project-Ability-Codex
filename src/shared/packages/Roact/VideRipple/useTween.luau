@@ -9,9 +9,7 @@ local function useTween<T>(initialValue: T, initialOptions: TweenOptions<T>?): (
 	local tween = Ripple.createTween(initialValue, initialOptions)
 	local getter = Vide.source(initialValue)
 
-	if not initialOptions or initialOptions.start ~= false then
-		tween:start()
-	end
+	if not initialOptions or initialOptions.start ~= false then tween:start() end
 
 	Vide.cleanup(tween:onChange(getter))
 	Vide.cleanup(tween)

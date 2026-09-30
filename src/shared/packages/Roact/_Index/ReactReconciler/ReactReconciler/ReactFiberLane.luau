@@ -14,8 +14,7 @@ type FiberRoot = ReactInternalTypes.FiberRoot
 type ReactPriorityLevel = ReactInternalTypes.ReactPriorityLevel
 local console = require(Packages.Shared).console
 
-local ReactFiberSchedulerPriorities =
-	require(script.Parent["ReactFiberSchedulerPriorities.roblox"])
+local ReactFiberSchedulerPriorities = require(script.Parent["ReactFiberSchedulerPriorities.roblox"])
 
 -- deviation: Instead of defining these here, and and re-exporting in
 -- `ReactInternalTypes`, we depend on and re-export them here to avoid cyclical
@@ -247,9 +246,7 @@ local function schedulerPriorityToLanePriority(
 end
 exports.schedulerPriorityToLanePriority = schedulerPriorityToLanePriority
 
-local function lanePriorityToSchedulerPriority(
-	lanePriority: LanePriority
-): ReactPriorityLevel
+local function lanePriorityToSchedulerPriority(lanePriority: LanePriority): ReactPriorityLevel
 	if lanePriority == SyncLanePriority or lanePriority == SyncBatchedLanePriority then
 		return ImmediateSchedulerPriority
 	elseif
@@ -277,11 +274,7 @@ local function lanePriorityToSchedulerPriority(
 	elseif lanePriority == NoLanePriority then
 		return NoSchedulerPriority
 	else
-		invariant(
-			false,
-			"Invalid update priority: %s. This is a bug in React.",
-			lanePriority
-		)
+		invariant(false, "Invalid update priority: %s. This is a bug in React.", lanePriority)
 		-- deviation: luau doesn't know that invariant throws, so we error
 		error("unreachable")
 	end
@@ -353,8 +346,7 @@ local function getNextLanes(root: FiberRoot, wipLanes: Lanes): Lanes
 	-- // are suspended.
 	-- ROBLOX performance: inline getEqualOrHigherPriorityLanes to avoid function call overhead in hot path
 	-- nextLanes = bit32.band(pendingLanes, getEqualOrHigherPriorityLanes(nextLanes))
-	nextLanes =
-		bit32.band(pendingLanes, bit32.lshift(getLowestPriorityLane(nextLanes), 1) - 1)
+	nextLanes = bit32.band(pendingLanes, bit32.lshift(getLowestPriorityLane(nextLanes), 1) - 1)
 
 	-- // If we're already in the middle of a render, switching lanes will interrupt
 	-- // it and we'll lose our progress. We should only do this if the new lanes are
@@ -419,9 +411,7 @@ local function getMostRecentEventTime(root: FiberRoot, lanes: Lanes): number
 		local lane = bit32.lshift(1, index)
 
 		local eventTime = eventTimes[index]
-		if eventTime > mostRecentEventTime then
-			mostRecentEventTime = eventTime
-		end
+		if eventTime > mostRecentEventTime then mostRecentEventTime = eventTime end
 
 		lanes = bit32.band(lanes, bit32.bnot(lane))
 	end
@@ -508,14 +498,9 @@ end
 exports.getHighestPriorityPendingLanes = getHighestPriorityPendingLanes
 
 local function getLanesToRetrySynchronouslyOnError(root: FiberRoot): Lanes
-	local everythingButOffscreen =
-		bit32.band(root.pendingLanes, bit32.bnot(OffscreenLane))
-	if everythingButOffscreen ~= NoLanes then
-		return everythingButOffscreen
-	end
-	if bit32.band(everythingButOffscreen, OffscreenLane) ~= 0 then
-		return OffscreenLane
-	end
+	local everythingButOffscreen = bit32.band(root.pendingLanes, bit32.bnot(OffscreenLane))
+	if everythingButOffscreen ~= NoLanes then return everythingButOffscreen end
+	if bit32.band(everythingButOffscreen, OffscreenLane) ~= 0 then return OffscreenLane end
 	return NoLanes
 end
 exports.getLanesToRetrySynchronouslyOnError = getLanesToRetrySynchronouslyOnError
@@ -553,16 +538,14 @@ local function findUpdateLane(lanePriority: LanePriority, wipLanes: Lanes): Lane
 	elseif lanePriority == SyncBatchedLanePriority then
 		return SyncBatchedLane
 	elseif lanePriority == InputDiscreteLanePriority then
-		local lane =
-			pickArbitraryLane(bit32.band(InputDiscreteLanes, bit32.bnot(wipLanes)))
+		local lane = pickArbitraryLane(bit32.band(InputDiscreteLanes, bit32.bnot(wipLanes)))
 		if lane == NoLane then
 			-- // Shift to the next priority level
 			return findUpdateLane(InputContinuousLanePriority, wipLanes)
 		end
 		return lane
 	elseif lanePriority == InputContinuousLanePriority then
-		local lane =
-			pickArbitraryLane(bit32.band(InputContinuousLanes, bit32.bnot(wipLanes)))
+		local lane = pickArbitraryLane(bit32.band(InputContinuousLanes, bit32.bnot(wipLanes)))
 		if lane == NoLane then
 			-- // Shift to the next priority level
 			return findUpdateLane(DefaultLanePriority, wipLanes)
@@ -589,9 +572,7 @@ local function findUpdateLane(lanePriority: LanePriority, wipLanes: Lanes): Lane
 		-- break
 	elseif lanePriority == IdleLanePriority then
 		local lane = pickArbitraryLane(bit32.band(IdleLanes, bit32.bnot(wipLanes)))
-		if lane == NoLane then
-			lane = pickArbitraryLane(IdleLanes)
-		end
+		if lane == NoLane then lane = pickArbitraryLane(IdleLanes) end
 		return lane
 	else
 		-- // The remaining priorities are not valid for updates
@@ -629,9 +610,7 @@ local function findRetryLane(wipLanes: Lanes): Lane
 	-- // "retries" — a special update that attempts to flip a Suspense boundary
 	-- // from its placeholder state to its primary/resolved state.
 	local lane = pickArbitraryLane(bit32.band(RetryLanes, bit32.bnot(wipLanes)))
-	if lane == NoLane then
-		lane = pickArbitraryLane(RetryLanes)
-	end
+	if lane == NoLane then lane = pickArbitraryLane(RetryLanes) end
 	return lane
 end
 exports.findRetryLane = findRetryLane
@@ -702,14 +681,10 @@ exports.laneToLanes = laneToLanes
 local function higherPriorityLane(a: Lane, b: Lane)
 	-- // This works because the bit ranges decrease in priority as you go left.
 	if a ~= NoLane and b ~= NoLane then
-		if a < b then
-			return a
-		end
+		if a < b then return a end
 		return b
 	else
-		if a ~= NoLane then
-			return a
-		end
+		if a ~= NoLane then return a end
 		return b
 	end
 end
@@ -818,14 +793,12 @@ end
 exports.markRootSuspended = markRootSuspended
 
 local function markRootPinged(root: FiberRoot, pingedLanes: Lanes, eventTime: number)
-	root.pingedLanes =
-		bit32.bor(root.pingedLanes, bit32.band(root.suspendedLanes, pingedLanes))
+	root.pingedLanes = bit32.bor(root.pingedLanes, bit32.band(root.suspendedLanes, pingedLanes))
 end
 exports.markRootPinged = markRootPinged
 
 local function markRootExpired(root: FiberRoot, expiredLanes: Lanes)
-	root.expiredLanes =
-		bit32.bor(root.expiredLanes, bit32.band(expiredLanes, root.pendingLanes))
+	root.expiredLanes = bit32.bor(root.expiredLanes, bit32.band(expiredLanes, root.pendingLanes))
 end
 exports.markRootExpired = markRootExpired
 
@@ -938,8 +911,7 @@ local function getBumpedLaneForHydration(root: FiberRoot, renderLanes: Lanes): L
 	then
 		lane = IdleHydrationLane
 	elseif
-		highestLanePriority == OffscreenLanePriority
-		or highestLanePriority == NoLanePriority
+		highestLanePriority == OffscreenLanePriority or highestLanePriority == NoLanePriority
 	then
 		lane = NoLane
 	else

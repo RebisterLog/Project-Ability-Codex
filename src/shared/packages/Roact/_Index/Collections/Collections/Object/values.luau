@@ -21,9 +21,7 @@ type Array<T> = types.Array<T>
 
 -- TODO Luau: needs overloads to model this more correctly
 return function<T>(value: { [string]: T } | Array<T> | string): Array<T> | Array<string>
-	if value == nil then
-		error("cannot extract values from a nil value")
-	end
+	if value == nil then error("cannot extract values from a nil value") end
 	local valueType = typeof(value)
 
 	local array: Array<T> | Array<string>

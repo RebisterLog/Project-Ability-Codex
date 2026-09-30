@@ -16,16 +16,16 @@
 local Array = script.Parent
 local Collections = Array.Parent
 local Packages = Collections.Parent
-local Set = require(Collections.Set)
 local Map = require(Collections.Map.Map)
-local isArray = require(Array.isArray)
+local Set = require(Collections.Set)
 local instanceof = require(Packages.InstanceOf)
+local isArray = require(Array.isArray)
 local types = require(Packages.ES7Types)
 
-local fromString = require(script.fromString)
-local fromSet = require(script.fromSet)
-local fromMap = require(script.fromMap)
 local fromArray = require(script.fromArray)
+local fromMap = require(script.fromMap)
+local fromSet = require(script.fromSet)
+local fromString = require(script.fromString)
 
 type Array<T> = types.Array<T>
 type Object = types.Object
@@ -40,9 +40,7 @@ return function<T, U>(
 	thisArg: Object?
 	-- FIXME Luau: need overloading so the return type on this is more sane and doesn't require manual casts
 ): Array<U> | Array<T> | Array<string>
-	if value == nil then
-		error("cannot create array from a nil value")
-	end
+	if value == nil then error("cannot create array from a nil value") end
 	local valueType = typeof(value)
 
 	local array: Array<U> | Array<T> | Array<string>

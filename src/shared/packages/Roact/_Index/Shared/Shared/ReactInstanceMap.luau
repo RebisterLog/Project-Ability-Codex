@@ -94,10 +94,7 @@ exports.set = function(key, value)
 				message ..= " (from original fiber " .. (getComponentName(key) or "UNNAMED Component") .. ")"
 			end
 			error(Error.new(message))
-		elseif
-			(parent :: any).alternate ~= nil
-			and not isValidFiber((parent :: any).alternate)
-		then
+		elseif (parent :: any).alternate ~= nil and not isValidFiber((parent :: any).alternate) then
 			message = "invalid alternate fiber ("
 				.. (getComponentName(key) or "UNNAMED alternate")
 				.. ") in "

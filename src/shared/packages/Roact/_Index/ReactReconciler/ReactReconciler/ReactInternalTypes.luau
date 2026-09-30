@@ -299,10 +299,7 @@ export type FiberRoot = {
 	current: Fiber,
 
 	-- ROBLOX deviation START: we use a lightweight unordered set for performance
-	pingCache: SimpleMap<
-		Wakeable,
-		(SimpleSet<any> | SimpleMap<Wakeable, SimpleSet<any>>)
-	> | nil,
+	pingCache: SimpleMap<Wakeable, (SimpleSet<any> | SimpleMap<Wakeable, SimpleSet<any>>)> | nil,
 	-- ROBLOX deviation END
 
 	-- A finished work-in-progress HostRoot that's ready to be committed.

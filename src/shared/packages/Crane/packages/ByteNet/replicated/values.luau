@@ -25,9 +25,7 @@ end
 
 function values.access(name: string): replicatedValue.replicatedValueType
 	-- caching
-	if valueDictionary[name] then
-		return valueDictionary[name]
-	end
+	if valueDictionary[name] then return valueDictionary[name] end
 
 	if runContext == "client" then
 		local potentialValueInstance = valueFolder:FindFirstChild(name)

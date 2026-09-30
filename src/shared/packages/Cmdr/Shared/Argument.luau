@@ -1,7 +1,7 @@
 local Util = require(script.Parent.Util)
 
 local function unescapeOperators(text)
-	for _, operator in ipairs({"%.", "%?", "%*", "%*%*"}) do
+	for _, operator in ipairs({ "%.", "%?", "%*", "%*%*" }) do
 		text = text:gsub("\\" .. operator, operator:gsub("%%", ""))
 	end
 
@@ -12,20 +12,20 @@ local Argument = {}
 Argument.__index = Argument
 
 --- Returns a new ArgumentContext, an object that handles parsing and validating arguments
-function Argument.new (command, argumentObject, value)
+function Argument.new(command, argumentObject, value)
 	local self = {
-		Command = command; -- The command that owns this argument
-		Type = nil; -- The type definition
-		Name = argumentObject.Name; -- The name for this specific argument
-		Object = argumentObject; -- The raw ArgumentObject (definition)
-		Required = argumentObject.Default == nil and argumentObject.Optional ~= true; -- If the argument is required or not.
-		Executor = command.Executor; -- The player who is running the command
-		RawValue = value; -- The raw, unparsed value
-		RawSegments = {}; -- The raw, unparsed segments (if the raw value was comma-sep)
-		TransformedValues = {}; -- The transformed value (generated later)
-		Prefix = ""; -- The prefix for this command (%Team)
-		TextSegmentInProgress = ""; -- The text of the raw segment the user is currently typing.
-		RawSegmentsAreAutocomplete = false;
+		Command = command, -- The command that owns this argument
+		Type = nil, -- The type definition
+		Name = argumentObject.Name, -- The name for this specific argument
+		Object = argumentObject, -- The raw ArgumentObject (definition)
+		Required = argumentObject.Default == nil and argumentObject.Optional ~= true, -- If the argument is required or not.
+		Executor = command.Executor, -- The player who is running the command
+		RawValue = value, -- The raw, unparsed value
+		RawSegments = {}, -- The raw, unparsed segments (if the raw value was comma-sep)
+		TransformedValues = {}, -- The transformed value (generated later)
+		Prefix = "", -- The prefix for this command (%Team)
+		TextSegmentInProgress = "", -- The text of the raw segment the user is currently typing.
+		RawSegmentsAreAutocomplete = false,
 	}
 
 	if type(argumentObject.Type) == "table" then
@@ -41,7 +41,13 @@ function Argument.new (command, argumentObject, value)
 		self.Prefix = prefix
 
 		if self.Type == nil then
-			error(string.format("%s has an unregistered type %q", self.Name or "<none>", parsedType or "<none>"))
+			error(
+				string.format(
+					"%s has an unregistered type %q",
+					self.Name or "<none>",
+					parsedType or "<none>"
+				)
+			)
 		end
 	end
 
@@ -65,9 +71,7 @@ end
 -- The return value(s) from this function are passed to all of the other argument methods.
 -- Called automatically at instantiation
 function Argument:Transform()
-	if #self.TransformedValues ~= 0 then
-		return
-	end
+	if #self.TransformedValues ~= 0 then return end
 
 	local rawValue = self.RawValue
 	if self.Type.ArgumentOperatorAliases then
@@ -86,7 +90,6 @@ function Argument:Transform()
 			rawValue = strings[math.random(1, #strings)]
 			self.RawSegmentsAreAutocomplete = true
 		end
-
 	end
 
 	if self.Type.Listable and #self.RawValue > 0 then
@@ -100,7 +103,10 @@ function Argument:Transform()
 
 				if not options.IsPartial and #remainingItems > 0 then
 					for _ = 1, math.min(maxSize, #remainingItems) do
-						table.insert(items, table.remove(remainingItems, math.random(1, #remainingItems)))
+						table.insert(
+							items,
+							table.remove(remainingItems, math.random(1, #remainingItems))
+						)
 					end
 
 					rawValue = table.concat(items, ",")
@@ -115,16 +121,11 @@ function Argument:Transform()
 					local defaultString = self.Type.Default(self.Executor) or ""
 
 					for i, string in ipairs(strings) do
-						if string == defaultString then
-							table.remove(strings, i)
-						end
+						if string == defaultString then table.remove(strings, i) end
 					end
 				end
 
-				rawValue = table.concat(
-					strings,
-					","
-				)
+				rawValue = table.concat(strings, ",")
 				self.RawSegmentsAreAutocomplete = true
 			end
 		end
@@ -133,9 +134,7 @@ function Argument:Transform()
 
 		local rawSegments = Util.SplitStringSimple(rawValue, ",")
 
-		if #rawSegments == 0 then
-			rawSegments = {""}
-		end
+		if #rawSegments == 0 then rawSegments = { "" } end
 
 		if rawValue:sub(#rawValue, #rawValue) == "," then
 			rawSegments[#rawSegments + 1] = "" -- makes auto complete tick over right after pressing ,
@@ -171,9 +170,7 @@ end
 
 --- Validates that the argument will work without any type errors.
 function Argument:Validate(isFinal)
-	if self.RawValue == nil or #self.RawValue == 0 and self.Required == false then
-		return true
-	end
+	if self.RawValue == nil or #self.RawValue == 0 and self.Required == false then return true end
 
 	if self.Required and (self.RawSegments[1] == nil or #self.RawSegments[1] == 0) then
 		return false, "This argument is required."
@@ -184,17 +181,13 @@ function Argument:Validate(isFinal)
 			if self.Type.Validate then
 				local valid, errorText = self.Type.Validate(self:GetTransformedValue(i))
 
-				if not valid then
-					return valid, errorText or "Invalid value"
-				end
+				if not valid then return valid, errorText or "Invalid value" end
 			end
 
 			if isFinal and self.Type.ValidateOnce then
 				local validOnce, errorTextOnce = self.Type.ValidateOnce(self:GetTransformedValue(i))
 
-				if not validOnce then
-					return validOnce, errorTextOnce
-				end
+				if not validOnce then return validOnce, errorTextOnce end
 			end
 		end
 
@@ -227,9 +220,7 @@ function Argument:GetValue()
 		return self.Object.Default
 	end
 
-	if not self.Type.Listable then
-		return self:ParseValue(1)
-	end
+	if not self.Type.Listable then return self:ParseValue(1) end
 
 	local values = {}
 

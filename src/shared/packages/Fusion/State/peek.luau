@@ -16,9 +16,7 @@ local castToState = require(Package.State.castToState)
 -- Graph
 local evaluate = require(Package.Graph.evaluate)
 
-local function peek<T>(
-	target: Types.UsedAs<T>
-): T
+local function peek<T>(target: Types.UsedAs<T>): T
 	local targetState = castToState(target)
 	if targetState ~= nil then
 		evaluate(targetState, false)

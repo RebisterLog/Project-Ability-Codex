@@ -5,11 +5,10 @@ local PackageIndex = script.Parent.Parent.Parent._Index
 
 local Package = require(PackageIndex["Collections"]["Collections"])
 
-export type Array<T> = Package.Array<T> 
-export type Map<T, V> = Package.Map<T, V> 
+export type Array<T> = Package.Array<T>
+export type Map<T, V> = Package.Map<T, V>
 export type Object = Package.Object
-export type Set<T> = Package.Set<T> 
-export type WeakMap<T, V> = Package.WeakMap<T, V> 
-
+export type Set<T> = Package.Set<T>
+export type WeakMap<T, V> = Package.WeakMap<T, V>
 
 return Package

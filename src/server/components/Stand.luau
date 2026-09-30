@@ -1,9 +1,9 @@
 --!native
 --!optimize 2
 
-local ServerScriptService = game:GetService("ServerScriptService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local SharedStand = require(ReplicatedStorage.shared.components.Stand)
 
@@ -16,7 +16,7 @@ local Stand: types.Stand = Crane:CreateComponent({
 })
 
 local function prepareStandModel(model: Model)
-	for i, part in model:QueryDescendants("BasePart") :: {BasePart} do
+	for i, part in model:QueryDescendants("BasePart") :: { BasePart } do
 		part.Anchored = false
 		part.Massless = true
 		part.CanCollide = false
@@ -30,7 +30,7 @@ local function prepareStandModel(model: Model)
 		animatorController = Instance.new("AnimationController")
 		animatorController.Parent = model
 	end
-	
+
 	local animator = animatorController:FindFirstChildOfClass("Animator")
 	if not animator then
 		animator = Instance.new("Animator")
@@ -43,24 +43,24 @@ function Stand.onStart(self: types.Stand)
 	self.RootPart = self.instance:FindFirstChild("HumanoidRootPart") or self.instance.PrimaryPart
 
 	prepareStandModel(self.instance)
-	
-	local parts = self.instance:QueryDescendants("BasePart") :: {BasePart}
-	local decals = self.instance:QueryDescendants("Decal") :: {Decal}
-	
+
+	local parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
+	local decals = self.instance:QueryDescendants("Decal") :: { Decal }
+
 	for i, part in parts do
 		part:SetAttribute("Transparency", part.Transparency)
 	end
-	
+
 	for i, decal in decals do
 		decal:SetAttribute("Transparency", decal.Transparency)
 	end
-	
+
 	task.defer(function()
 		self.instance:AddTag("Stand")
 	end)
-	
-	local parts = self.instance:QueryDescendants("BasePart") :: {BasePart}
-	local decals = self.instance:QueryDescendants("Decal") :: {Decal}
+
+	local parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
+	local decals = self.instance:QueryDescendants("Decal") :: { Decal }
 
 	for i, part in parts do
 		part.Transparency = 1
@@ -79,9 +79,9 @@ function Stand.Init(self: types.Stand, owner: types.Character)
 
 	weld.Part0 = owner.RootPart
 	weld.Part1 = self.RootPart
-	
+
 	self.instance.Parent = workspace.Stands
-	
+
 	self.Owner.Humanoid.Died:Once(function()
 		self:SetVisible(false)
 	end)
@@ -89,29 +89,35 @@ end
 
 function Stand.SetVisible(self: types.Stand, state: boolean)
 	if self.Visible == state then return end
-	
+
 	if self.VisibleDelay then
 		task.cancel(self.VisibleDelay)
 		self.VisibleDelay = nil
 	end
 
 	self.Visible = state
-	
+
 	local summon = state and "Summon" or "Unsummon"
-	
+
 	Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "Summon", self.instance, state)
-	
+
 	Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "Animation", self.instance, {
 		Animation = self.Owner.Spec.Data.Assets.Stand.Animations[summon],
 	})
-	
+
 	if state then
-		Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "Sound", self.RootPart, 
+		Crane:GetService("VFXService"):StartEffect(
+			Players:GetPlayers(),
+			"Sound",
+			self.RootPart,
 			self.Owner.Spec.Data.Assets.Stand.Sounds[summon]
 		)
 
-		Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "Sound", self.RootPart, 
-			self.Owner.Spec.Data.Assets.Stand.Sounds[summon.."VL"]
+		Crane:GetService("VFXService"):StartEffect(
+			Players:GetPlayers(),
+			"Sound",
+			self.RootPart,
+			self.Owner.Spec.Data.Assets.Stand.Sounds[summon .. "VL"]
 		)
 
 		Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "EmitParticle", {
@@ -119,15 +125,15 @@ function Stand.SetVisible(self: types.Stand, state: boolean)
 			Origin = self.RootPart,
 		})
 	end
-	
+
 	self.VisibleDelay = task.delay(1, function()
-		local parts = self.instance:QueryDescendants("BasePart") :: {BasePart}
-		local decals = self.instance:QueryDescendants("Decal") :: {Decal}
+		local parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
+		local decals = self.instance:QueryDescendants("Decal") :: { Decal }
 
 		for i, part in parts do
 			part.Transparency = state and (part:GetAttribute("Transparency") or 0) or 1
 		end
-		
+
 		for i, decal in decals do
 			decal.Transparency = state and (decal:GetAttribute("Transparency") or 0) or 1
 		end

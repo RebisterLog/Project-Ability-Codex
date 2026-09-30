@@ -10,8 +10,6 @@ local BotSpawnService = Crane:CreateService({
 
 function BotSpawnService:onStart()
 	self.ConfigService = Crane:GetService("ConfigService")
-	
-	
 end
 
 return BotSpawnService

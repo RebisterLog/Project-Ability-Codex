@@ -1,13 +1,14 @@
 -- Here be dragons
 -- luacheck: ignore 212
 local GuiService = game:GetService("GuiService")
-local UserInputService = game:GetService("UserInputService")
-local TextChatService = game:GetService("TextChatService")
 local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 
 local WINDOW_MAX_HEIGHT = 300
-local MOUSE_TOUCH_ENUM = { Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.Touch }
+local MOUSE_TOUCH_ENUM =
+	{ Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2, Enum.UserInputType.Touch }
 
 --- Window handles the command bar GUI
 local Window = {
@@ -40,7 +41,12 @@ function Window:UpdateWindowHeight()
 	local windowHeight = Gui.UIListLayout.AbsoluteContentSize.Y
 		+ Gui.UIPadding.PaddingTop.Offset
 		+ Gui.UIPadding.PaddingBottom.Offset
-	Gui.Size = UDim2.new(Gui.Size.X.Scale, Gui.Size.X.Offset, 0, math.clamp(windowHeight, 0, WINDOW_MAX_HEIGHT))
+	Gui.Size = UDim2.new(
+		Gui.Size.X.Scale,
+		Gui.Size.X.Offset,
+		0,
+		math.clamp(windowHeight, 0, WINDOW_MAX_HEIGHT)
+	)
 	Gui.CanvasPosition = Vector2.new(0, windowHeight)
 end
 
@@ -49,9 +55,7 @@ function Window:AddLine(text, options)
 	options = options or {}
 	text = tostring(text)
 
-	if typeof(options) == "Color3" then
-		options = { Color = options }
-	end
+	if typeof(options) == "Color3" then options = { Color = options } end
 
 	if #text == 0 then
 		Window:UpdateWindowHeight()
@@ -77,8 +81,10 @@ function Window:SetVisible(visible)
 	Gui.Visible = visible
 
 	if visible then
-		self.PreviousChatWindowConfigurationEnabled = TextChatService.ChatWindowConfiguration.Enabled
-		self.PreviousChatInputBarConfigurationEnabled = TextChatService.ChatInputBarConfiguration.Enabled
+		self.PreviousChatWindowConfigurationEnabled =
+			TextChatService.ChatWindowConfiguration.Enabled
+		self.PreviousChatInputBarConfigurationEnabled =
+			TextChatService.ChatInputBarConfiguration.Enabled
 		TextChatService.ChatWindowConfiguration.Enabled = false
 		TextChatService.ChatInputBarConfiguration.Enabled = false
 
@@ -90,10 +96,14 @@ function Window:SetVisible(visible)
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
 	else
-		TextChatService.ChatWindowConfiguration.Enabled = if self.PreviousChatWindowConfigurationEnabled ~= nil then 
-			self.PreviousChatWindowConfigurationEnabled else true
-		TextChatService.ChatInputBarConfiguration.Enabled = if self.PreviousChatInputBarConfigurationEnabled ~= nil then 
-			self.PreviousChatInputBarConfigurationEnabled else true
+		TextChatService.ChatWindowConfiguration.Enabled = if self.PreviousChatWindowConfigurationEnabled
+				~= nil
+			then self.PreviousChatWindowConfigurationEnabled
+			else true
+		TextChatService.ChatInputBarConfiguration.Enabled = if self.PreviousChatInputBarConfigurationEnabled
+				~= nil
+			then self.PreviousChatInputBarConfigurationEnabled
+			else true
 
 		Entry.TextBox:ReleaseFocus()
 		self.AutoComplete:Hide()
@@ -134,7 +144,8 @@ end
 --- Sets whether the command is in a valid state or not.
 -- Cannot submit if in invalid state.
 function Window:SetIsValidInput(isValid, errorText)
-	Entry.TextBox.TextColor3 = isValid and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 73, 73)
+	Entry.TextBox.TextColor3 = isValid and Color3.fromRGB(255, 255, 255)
+		or Color3.fromRGB(255, 73, 73)
 	self.Valid = isValid
 	self._errorText = errorText
 end
@@ -199,13 +210,9 @@ local lastPressTime = 0
 local pressCount = 0
 --- Handles user input when the box is focused
 function Window:BeginInput(input, gameProcessed)
-	if GuiService.MenuIsOpen then
-		self:Hide()
-	end
+	if GuiService.MenuIsOpen then self:Hide() end
 
-	if gameProcessed and self:IsVisible() == false then
-		return
-	end
+	if gameProcessed and self:IsVisible() == false then return end
 
 	if self.Cmdr.ActivationKeys[input.KeyCode] then -- Activate the command bar
 		if self.Cmdr.MashToEnable and not self.Cmdr.Enabled then
@@ -233,9 +240,7 @@ function Window:BeginInput(input, gameProcessed)
 	end
 
 	if self.Cmdr.Enabled == false or not self:IsVisible() then
-		if self:IsVisible() then
-			self:Hide()
-		end
+		if self:IsVisible() then self:Hide() end
 
 		return
 	end
@@ -274,22 +279,16 @@ function Window:BeginInput(input, gameProcessed)
 				for i = 1, #args do
 					local arg = args[i]
 					local segments = arg.RawSegments
-					if arg == lastArg then
-						segments[#segments] = replace
-					end
+					if arg == lastArg then segments[#segments] = replace end
 
 					local argText = arg.Prefix .. table.concat(segments, ",")
 
 					-- Put auto completion options in quotation marks if they have a space
-					if argText:find(" ") or argText == "" then
-						argText = ("%q"):format(argText)
-					end
+					if argText:find(" ") or argText == "" then argText = ("%q"):format(argText) end
 
 					newText = ("%s %s"):format(newText, argText)
 
-					if arg == lastArg then
-						break
-					end
+					if arg == lastArg then break end
 				end
 			else
 				newText = replace
@@ -324,9 +323,7 @@ Entry.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
 		Entry.TextBox.Text = Entry.TextBox.Text:gsub("\t", "")
 		return
 	end
-	if Window.OnTextChanged then
-		return Window.OnTextChanged(Entry.TextBox.Text)
-	end
+	if Window.OnTextChanged then return Window.OnTextChanged(Entry.TextBox.Text) end
 end)
 
 Gui.ChildAdded:Connect(function()

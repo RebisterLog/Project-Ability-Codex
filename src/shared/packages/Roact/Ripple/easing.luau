@@ -140,7 +140,9 @@ local function circOut(x: number): number
 end
 
 local function circInOut(x: number): number
-	return if x < 0.5 then (1 - (1 - ((2 * x) ^ 2)) ^ 0.5) / 2 else (((1 - ((-2 * x + 2) ^ 2)) ^ 0.5) + 1) / 2
+	return if x < 0.5
+		then (1 - (1 - ((2 * x) ^ 2)) ^ 0.5) / 2
+		else (((1 - ((-2 * x + 2) ^ 2)) ^ 0.5) + 1) / 2
 end
 
 local function backIn(x: number): number
@@ -158,11 +160,17 @@ local function backInOut(x: number): number
 end
 
 local function elasticIn(x: number): number
-	return if x == 0 then 0 elseif x == 1 then 1 else -(2 ^ (10 * x - 10)) * math.sin((x * 10 - 10.75) * c4)
+	return if x == 0
+		then 0
+		elseif x == 1 then 1
+		else -(2 ^ (10 * x - 10)) * math.sin((x * 10 - 10.75) * c4)
 end
 
 local function elasticOut(x: number): number
-	return if x == 0 then 0 elseif x == 1 then 1 else (2 ^ (-10 * x)) * math.sin((x * 10 - 0.75) * c4) + 1
+	return if x == 0
+		then 0
+		elseif x == 1 then 1
+		else (2 ^ (-10 * x)) * math.sin((x * 10 - 0.75) * c4) + 1
 end
 
 local function elasticInOut(x: number): number

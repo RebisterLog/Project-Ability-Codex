@@ -31,9 +31,7 @@ local function flatMap<T, U, V>(
 		if typeof(array) ~= "table" then
 			error(string.format("Array.flatMap called on %s", typeof(array)))
 		end
-		if typeof(callback) ~= "function" then
-			error("callback is not a function")
-		end
+		if typeof(callback) ~= "function" then error("callback is not a function") end
 	end
 	return flat(map(array, callback, thisArg))
 end

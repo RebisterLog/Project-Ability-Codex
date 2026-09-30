@@ -14,7 +14,7 @@ task.spawn(function()
 	end
 end)
 
-return function (context, key, value)
+return function(context, key, value)
 	if DataStoresActive == nil then
 		table.insert(queue, coroutine.running())
 		coroutine.yield()
@@ -44,9 +44,7 @@ return function (context, key, value)
 
 		DataStore:SetAsync(keyPath, value)
 
-		if type(value) == "table" then
-			return table.concat(value, ",") or ""
-		end
+		if type(value) == "table" then return table.concat(value, ",") or "" end
 
 		return value
 	else
@@ -54,9 +52,7 @@ return function (context, key, value)
 
 		store[key] = value
 
-		if type(value) == "table" then
-			return table.concat(value, ",") or ""
-		end
+		if type(value) == "table" then return table.concat(value, ",") or "" end
 
 		return value
 	end

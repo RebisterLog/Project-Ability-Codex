@@ -8,8 +8,8 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 -- Graph
 local change = require(Package.Graph.change)
 -- Utility
@@ -23,33 +23,26 @@ local class = {}
 class.type = "State"
 class.kind = "ExternalTime"
 class.timeliness = "lazy"
-class.dependencySet = table.freeze {}
+class.dependencySet = table.freeze({})
 class._EXTREMELY_DANGEROUS_usedAsValue = External.lastUpdateStep()
 
-local METATABLE = table.freeze {__index = class}
+local METATABLE = table.freeze({ __index = class })
 
-local allTimers: {Self} = {}
+local allTimers: { Self } = {}
 
-local function ExternalTime(
-	scope: Types.Scope<unknown>
-): ExternalTime
+local function ExternalTime(scope: Types.Scope<unknown>): ExternalTime
 	local createdAt = os.clock()
-	local self: Self = setmetatable(
-		{
-			createdAt = createdAt,
-			dependentSet = {},
-			lastChange = nil,
-			scope = scope,
-			validity = "invalid"
-		}, 
-		METATABLE
-	) :: any
+	local self: Self = setmetatable({
+		createdAt = createdAt,
+		dependentSet = {},
+		lastChange = nil,
+		scope = scope,
+		validity = "invalid",
+	}, METATABLE) :: any
 	local destroy = function()
 		self.scope = nil
 		local index = table.find(allTimers, self)
-		if index ~= nil then
-			table.remove(allTimers, index)
-		end
+		if index ~= nil then table.remove(allTimers, index) end
 	end
 	self.oldestTask = destroy
 	nicknames[self.oldestTask] = "ExternalTime"
@@ -58,9 +51,7 @@ local function ExternalTime(
 	return self
 end
 
-function class._evaluate(
-	self: Self
-): boolean
+function class._evaluate(self: Self): boolean
 	-- While someone else could call `change()` on this object, it wouldn't be
 	-- idiomatic. So, since the only idiomatic time this function runs is when
 	-- the external update step runs, it's safe enough to assume that the result
@@ -69,9 +60,7 @@ function class._evaluate(
 	return true
 end
 
-External.bindToUpdateStep(function(
-	externalNow: number
-): ()
+External.bindToUpdateStep(function(externalNow: number): ()
 	class._EXTREMELY_DANGEROUS_usedAsValue = External.lastUpdateStep()
 	for _, timer in allTimers do
 		change(timer)

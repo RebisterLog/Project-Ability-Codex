@@ -42,13 +42,9 @@ local function getDefaultInstanceProperty(className, propertyName)
 
 		-- We have to use a marker here, because Lua doesn't distinguish
 		-- between 'nil' and 'not in a table'
-		if propValue == Nil then
-			return true, nil
-		end
+		if propValue == Nil then return true, nil end
 
-		if propValue ~= nil then
-			return true, propValue
-		end
+		if propValue ~= nil then return true, propValue end
 	else
 		classCache = {}
 		_cachedPropertyValues[className] = classCache

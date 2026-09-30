@@ -10,7 +10,7 @@ return {
 	onStart = function(self, data: AngularData)
 		local Attachment = Instance.new("Attachment")
 		Attachment.Parent = data.Part
-		
+
 		local AngularVelocity = Instance.new("AngularVelocity")
 		AngularVelocity.Attachment0 = Attachment
 		AngularVelocity.RelativeTo = Enum.ActuatorRelativeTo.Attachment0
@@ -24,7 +24,5 @@ return {
 		game.Debris:AddItem(Attachment, data.Duration or 0.2)
 	end,
 
-	onStop = function(self)
-
-	end,
+	onStop = function(self) end,
 }

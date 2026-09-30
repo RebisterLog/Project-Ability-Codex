@@ -23,9 +23,7 @@ local enableSchedulerTracing = ReactFeatureFlags.enableSchedulerTracing
 local __subscriberRef = Tracing.__subscriberRef
 
 local subscribers: Set<Subscriber> = {}
-if enableSchedulerTracing then
-	subscribers = {}
-end
+if enableSchedulerTracing then subscribers = {} end
 
 exports.unstable_subscribe = function(subscriber: Subscriber): ()
 	if enableSchedulerTracing then
@@ -48,9 +46,7 @@ exports.unstable_unsubscribe = function(subscriber: Subscriber): ()
 	if enableSchedulerTracing then
 		subscribers[subscriber] = nil
 
-		if #Object.keys(subscribers) == 0 then
-			__subscriberRef.current = nil
-		end
+		if #Object.keys(subscribers) == 0 then __subscriberRef.current = nil end
 	end
 end
 
@@ -71,9 +67,7 @@ function onInteractionTraced(interaction: Interaction): ()
 		end
 	end
 
-	if didCatchError then
-		error(caughtError)
-	end
+	if didCatchError then error(caughtError) end
 end
 
 function onInteractionScheduledWorkCompleted(interaction: Interaction): ()
@@ -82,8 +76,7 @@ function onInteractionScheduledWorkCompleted(interaction: Interaction): ()
 
 	for subscriber, _ in subscribers do
 		-- ROBLOX try
-		local ok, result =
-			pcall(subscriber.onInteractionScheduledWorkCompleted, interaction)
+		local ok, result = pcall(subscriber.onInteractionScheduledWorkCompleted, interaction)
 		-- ROBLOX catch
 		if not ok then
 			local error_ = result
@@ -94,9 +87,7 @@ function onInteractionScheduledWorkCompleted(interaction: Interaction): ()
 		end
 	end
 
-	if didCatchError then
-		error(caughtError)
-	end
+	if didCatchError then error(caughtError) end
 end
 
 function onWorkScheduled(interactions: Set<Interaction>, threadID: number): ()
@@ -116,9 +107,7 @@ function onWorkScheduled(interactions: Set<Interaction>, threadID: number): ()
 		end
 	end
 
-	if didCatchError then
-		error(caughtError)
-	end
+	if didCatchError then error(caughtError) end
 end
 
 function onWorkStarted(interactions: Set<Interaction>, threadID: number): ()
@@ -138,9 +127,7 @@ function onWorkStarted(interactions: Set<Interaction>, threadID: number): ()
 		end
 	end
 
-	if didCatchError then
-		error(caughtError)
-	end
+	if didCatchError then error(caughtError) end
 end
 
 function onWorkStopped(interactions: Set<Interaction>, threadID: number): ()
@@ -160,9 +147,7 @@ function onWorkStopped(interactions: Set<Interaction>, threadID: number): ()
 		end
 	end
 
-	if didCatchError then
-		error(caughtError)
-	end
+	if didCatchError then error(caughtError) end
 end
 
 function onWorkCanceled(interactions: Set<Interaction>, threadID: number): ()
@@ -182,9 +167,7 @@ function onWorkCanceled(interactions: Set<Interaction>, threadID: number): ()
 		end
 	end
 
-	if didCatchError then
-		error(caughtError)
-	end
+	if didCatchError then error(caughtError) end
 end
 
 return exports

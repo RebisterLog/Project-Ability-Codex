@@ -113,7 +113,8 @@ local scheduler = schedule("Spring", function<T>(state: SpringState<T>, dt, remo
 			local v1 = (v0 - f * dt * (offset * f + v0)) * decay
 
 			if complete then
-				complete = belowThreshold(p1 - target, restPosition) and belowThreshold(v1, restVelocity)
+				complete = belowThreshold(p1 - target, restPosition)
+					and belowThreshold(v1, restVelocity)
 			end
 
 			positionComponents[key] = p1
@@ -150,7 +151,8 @@ local scheduler = schedule("Spring", function<T>(state: SpringState<T>, dt, remo
 			local v1 = (v0 * (i - z * d) - offset * (z * f)) * decay
 
 			if complete then
-				complete = belowThreshold(p1 - target, restPosition) and belowThreshold(v1, restVelocity)
+				complete = belowThreshold(p1 - target, restPosition)
+					and belowThreshold(v1, restVelocity)
 			end
 
 			positionComponents[key] = p1
@@ -177,7 +179,8 @@ local scheduler = schedule("Spring", function<T>(state: SpringState<T>, dt, remo
 			local v1 = co1 * r1 + co2 * ec2 * r2
 
 			if complete then
-				complete = belowThreshold(p1 - target, restPosition) and belowThreshold(v1, restVelocity)
+				complete = belowThreshold(p1 - target, restPosition)
+					and belowThreshold(v1, restVelocity)
 			end
 
 			positionComponents[key] = p1
@@ -230,9 +233,7 @@ local function createSpring<Value>(initialValue: Value, inputOptions: SpringOpti
 
 	self:configure(options)
 
-	if options.start then
-		self:start()
-	end
+	if options.start then self:start() end
 
 	return self
 end
@@ -240,17 +241,13 @@ end
 function Spring:scheduleUpdate()
 	self.state.complete = false
 
-	if self.state.started then
-		scheduler.add(self.state)
-	end
+	if self.state.started then scheduler.add(self.state) end
 end
 
 function Spring:start()
 	self.state.started = true
 
-	if not self.state.complete then
-		scheduler.add(self.state)
-	end
+	if not self.state.complete then scheduler.add(self.state) end
 end
 
 function Spring:stop()
@@ -284,17 +281,11 @@ function Spring:configure(options: SpringOptions)
 		state.frequency = (tension / mass) ^ 0.5 / 2 / math.pi
 	end
 
-	if options.velocity then
-		self:setVelocity(options.velocity)
-	end
+	if options.velocity then self:setVelocity(options.velocity) end
 
-	if options.impulse then
-		self:impulse(options.impulse)
-	end
+	if options.impulse then self:impulse(options.impulse) end
 
-	if options.position then
-		self:setPosition(options.position)
-	end
+	if options.position then self:setPosition(options.position) end
 end
 
 function Spring:getPosition(): Animatable
@@ -317,19 +308,13 @@ function Spring:setPosition(value: Animatable)
 end
 
 function Spring:setVelocity(value: Animatable)
-	if intermediate.setValue(self.state.velocity, value) then
-		self:scheduleUpdate()
-	end
+	if intermediate.setValue(self.state.velocity, value) then self:scheduleUpdate() end
 end
 
 function Spring:setGoal(value: Animatable, options: SpringOptions?)
-	if options then
-		self:configure(options)
-	end
+	if options then self:configure(options) end
 
-	if intermediate.setValue(self.state.goal, value) then
-		self:scheduleUpdate()
-	end
+	if intermediate.setValue(self.state.goal, value) then self:scheduleUpdate() end
 end
 
 function Spring:impulse(value: Animatable)

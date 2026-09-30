@@ -20,9 +20,7 @@ local function warnNoop(publicInstance: any, callerName: string)
 		-- defined on the metatable
 		local componentName = publicInstance.__componentName or "ReactClass"
 		local warningKey = componentName .. "." .. callerName
-		if didWarnStateUpdateForUnmountedComponent[warningKey] then
-			return
-		end
+		if didWarnStateUpdateForUnmountedComponent[warningKey] then return end
 		-- ROBLOX deviation: message adjusted for accuracy with Lua class components
 		console.error(
 			"Can't call %s on a component that is not yet mounted. "

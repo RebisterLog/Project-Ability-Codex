@@ -1,10 +1,10 @@
-local ServerScriptService = game:GetService("ServerScriptService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
 local Enums = require(ServerScriptService.server.Enums)
 local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+local types = require(ServerScriptService.server.types)
 
 local Skill: types.SkillData = {
 	DisplayName = "NAME",
@@ -12,8 +12,8 @@ local Skill: types.SkillData = {
 
 	AttackInfo = {
 		Hitbox = {
-			Size = Vector3.new(7,7,7),
-			Offset = CFrame.new(0,0,-3),
+			Size = Vector3.new(7, 7, 7),
+			Offset = CFrame.new(0, 0, -3),
 			Debug = true,
 		},
 
@@ -27,7 +27,7 @@ local Skill: types.SkillData = {
 
 		Stun = {
 			Priority = Enums.Stun.Medium,
-			Duration = 0.7
+			Duration = 0.7,
 		},
 
 		Ragdoll = {
@@ -48,7 +48,7 @@ function Skill.onInit(self)
 	local RootPart = character.RootPart
 	local Humanoid = character.Humanoid
 	local VFXService = Crane:GetService("VFXService")
-	
+
 	local CombatService = Crane:GetService("CombatService")
 
 	local Anims = self.Spec.Data.Assets.Animations
@@ -60,56 +60,60 @@ function Skill.onInit(self)
 
 	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
 		Frames = {
-			{1, function(seq)
-				--seq.Cleaner:Add(CombatService:AddArmor(character, true))
-				--seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
-				--seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+			{
+				1,
+				function(seq)
+					--seq.Cleaner:Add(CombatService:AddArmor(character, true))
+					--seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
+					--seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-				--table.clear(self.AlreadyHit)
+					--table.clear(self.AlreadyHit)
 
-				--VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-				--	Animation = Anims["NAME"],
-				--	Speed = seq.Speed, 
-				--})
-				
-				--VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["NAME"])
-				
-				--seq.Cleaner:Add(function()
-				--	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-				--		Animation = Anims["NAME"].Animation,
-				--	})					
-				--end)
-			end,
+					--VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					--	Animation = Anims["NAME"],
+					--	Speed = seq.Speed,
+					--})
+
+					--VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["NAME"])
+
+					--seq.Cleaner:Add(function()
+					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
+					--		Animation = Anims["NAME"].Animation,
+					--	})
+					--end)
+				end,
 			},
 
-			{30, function(seq)
-				--local Targets = CombatService:Hitbox({
-				--	Skill = self,
-				--	Caster = character,
-				--	Info = AttackInfo.Hitbox
-				--})	
+			{
+				30,
+				function(seq)
+					--local Targets = CombatService:Hitbox({
+					--	Skill = self,
+					--	Caster = character,
+					--	Info = AttackInfo.Hitbox
+					--})
 
-				--for _, Target in Targets do
-				--	if table.find(self.AlreadyHit, Target) then
-				--		continue
-				--	end
+					--for _, Target in Targets do
+					--	if table.find(self.AlreadyHit, Target) then
+					--		continue
+					--	end
 
-				--	CombatService:Attack({
-				--		Attacker = character,
-				--		Victim = Target,
-				--		Info = AttackInfo,
-				--	}):andThen(function(Data: types.AttackData)
-				--		if not Data.State.Success then return end
-				--		table.insert(self.AlreadyHit, Target)
+					--	CombatService:Attack({
+					--		Attacker = character,
+					--		Victim = Target,
+					--		Info = AttackInfo,
+					--	}):andThen(function(Data: types.AttackData)
+					--		if not Data.State.Success then return end
+					--		table.insert(self.AlreadyHit, Target)
 
-						
-				--	end)
-				--end
-			end,
-			35},
+					--	end)
+					--end
+				end,
+				35,
+			},
 
-			{45}
-		}
+			{ 45 },
+		},
 	}))
 end
 
@@ -125,9 +129,7 @@ function Skill.Interrupt(self)
 	local RootPart = character.RootPart
 	local VFXService = Crane:GetService("VFXService")
 
-	if self.Sequence then
-		self.Sequence:Stop()
-	end
+	if self.Sequence then self.Sequence:Stop() end
 end
 
 return Skill

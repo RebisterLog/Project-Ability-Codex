@@ -49,9 +49,7 @@ local function concat<T, S>(source: Array<T> | T, ...: Array<S> | S): Array<T> &
 			-- `isArray` check. In DEV mode, we throw if it is given an object-like
 			-- table.
 			if __DEV__ then
-				if not isArray(value) then
-					error(RECEIVED_OBJECT_ERROR)
-				end
+				if not isArray(value) then error(RECEIVED_OBJECT_ERROR) end
 			end
 			for k = 1, #value do
 				elementCount += 1

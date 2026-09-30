@@ -17,10 +17,10 @@ local __DEV__ = _G.__DEV__
 local Collections = script.Parent
 local Packages = Collections.Parent
 
-local inspect = require(Collections.inspect)
-local isArray = require(Collections.Array.isArray)
 local arrayForEach = require(Collections.Array.forEach)
 local arrayFromString = require(Collections.Array.from.fromString)
+local inspect = require(Collections.inspect)
+local isArray = require(Collections.Array.isArray)
 
 local types = require(Packages.ES7Types)
 
@@ -48,7 +48,7 @@ local Set: Set<any> & Set_Statics = (
 			return result
 		end,
 	} :: any
-) :: Set<any> & Set_Statics;
+) :: Set<any> & Set_Statics
 (Set :: any).__index = Set
 
 function Set.new<T>(iterable: Array<T> | Set<T> | string | nil): Set<T>
@@ -90,11 +90,13 @@ function Set.new<T>(iterable: Array<T> | Set<T> | string | nil): Set<T>
 		array = {}
 	end
 
-	return (setmetatable({
-		size = #array,
-		_map = map,
-		_array = array,
-	}, Set) :: any) :: Set<T>
+	return (
+		setmetatable({
+			size = #array,
+			_map = map,
+			_array = array,
+		}, Set) :: any
+	) :: Set<T>
 end
 
 function Set:add(value)
@@ -114,25 +116,22 @@ function Set:clear()
 end
 
 function Set:delete(value): boolean
-	if not self._map[value] then
-		return false
-	end
+	if not self._map[value] then return false end
 	-- Luau FIXME: analyze should know self is Map<K, V> which includes size as a number
 	self.size = self.size :: number - 1
 	self._map[value] = nil
 	local index = table.find(self._array, value)
-	if index then
-		table.remove(self._array, index)
-	end
+	if index then table.remove(self._array, index) end
 	return true
 end
 
 -- Implements Javascript's `Map.prototype.forEach` as defined below
 -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set/forEach
-function Set:forEach(callback: setCallbackFn<any> | setCallbackFnWithThisArg<any>, thisArg: Object?): ()
-	if typeof(callback) ~= "function" then
-		error("callback is not a function")
-	end
+function Set:forEach(
+	callback: setCallbackFn<any> | setCallbackFnWithThisArg<any>,
+	thisArg: Object?
+): ()
+	if typeof(callback) ~= "function" then error("callback is not a function") end
 
 	-- note: we can't turn this into a simple for-in loop, because the callbacks can modify the table and React, GQL, and Jest rely on JS behavior in that scenario
 	arrayForEach(self._array, function(value)

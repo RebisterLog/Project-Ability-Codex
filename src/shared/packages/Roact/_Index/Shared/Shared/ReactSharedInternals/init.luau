@@ -33,10 +33,10 @@ end
 -- import assign from 'object-assign';
 local ReactCurrentDispatcher = require(script.ReactCurrentDispatcher)
 export type Dispatcher = ReactCurrentDispatcher.Dispatcher
+local IsSomeRendererActing = require(script.IsSomeRendererActing)
 local ReactCurrentBatchConfig = require(script.ReactCurrentBatchConfig)
 local ReactCurrentOwner = require(script.ReactCurrentOwner)
 local ReactDebugCurrentFrame = require(script.ReactDebugCurrentFrame)
-local IsSomeRendererActing = require(script.IsSomeRendererActing)
 
 local ReactSharedInternals = {
 	ReactCurrentDispatcher = ReactCurrentDispatcher,

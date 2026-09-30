@@ -27,7 +27,11 @@ export type Promise = {
 }
 
 export type TypedPromise<T...> = {
-	andThen: (self: Promise, successHandler: (T...) -> ...any, failureHandler: ((...any) -> ...any)?) -> Promise,
+	andThen: (
+		self: Promise,
+		successHandler: (T...) -> ...any,
+		failureHandler: ((...any) -> ...any)?
+	) -> Promise,
 	andThenCall: <T...>(self: Promise, callback: (T...) -> ...any, T...) -> Promise,
 	andThenReturn: (self: Promise, ...any) -> Promise,
 

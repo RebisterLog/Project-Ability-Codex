@@ -2,29 +2,29 @@ local SkillCharacters = {
 	Hit = "Hit",
 	Ragdoll = "Ragdoll",
 	Defense = "Defense",
-	Escape ="Escape",
+	Escape = "Escape",
 	Stun = "Stun",
 	Counter = "Counter",
-	
+
 	ComboStarter = "ComboStarter",
 	ComboExtender = "ComboExtender",
 	ComboEnder = "ComboEnder",
-	
+
 	Solo = "Solo",
 	Automatic = "Automatic",
-	
+
 	Buff = "Buff",
 	Debuff = "Debuff",
 	Heal = "Heal",
-	
+
 	Grab = "Grab",
-	
+
 	Blockable = "Blockable",
 	IgnoreBlock = "IgnoreBlock",
 	BlockBreaker = "BlockBreak",
 	PerfectBlockable = "PerfectBlock",
 	Armored = "Armored",
-	
+
 	Projectile = "Projectile",
 }
 
@@ -35,15 +35,15 @@ local SkillConditions = {
 
 	TARGET_ARMORED = "TARGET_ARMORED",
 	TARGET_ATTACKING = "TARGET_ATTACKING",
-	
+
 	TARGET_PERFECT_BLOCKABLE = "TARGET_PERFECT_BLOCKABLE",
 	TARGET_BLOCKABLE = "TARGET_BLOCKABLE",
-	
+
 	TARGET_IGNORE_BLOCK = "TARGET_IGNORE_BLOCK",
 	TARGET_BLOCK_BREAKING = "TARGET_BLOCK_BREAKING",
 	TARGET_PERFECT_BLOCKING = "TARGET_PERFECT_BLOCKING",
 	TARGET_BLOCKING = "TARGET_BLOCKING",
-	
+
 	TARGET_STUNNED = "TARGET_STUNNED",
 	TARGET_RAGDOLLED = "TARGET_RAGDOLLED",
 
@@ -53,7 +53,7 @@ local SkillConditions = {
 
 export type SkillCharacter = keyof<typeof(SkillCharacters)>
 export type SkillCondition = keyof<typeof(SkillConditions)>
-export type SkillCombo = {string}
+export type SkillCombo = { string }
 
 export type BotCharacterConfig = {
 	-- Characteristics
@@ -67,13 +67,13 @@ export type BotCharacterConfig = {
 	Skills: {
 		[string]: {
 			Distance: number?,
-			RequiredConditions: {SkillCondition}?,
-			RejectedConditions: {SkillCondition}?,
-			HoldUntil: {SkillCondition}?,
-		}
+			RequiredConditions: { SkillCondition }?,
+			RejectedConditions: { SkillCondition }?,
+			HoldUntil: { SkillCondition }?,
+		},
 	},
-	
-	Combos: {SkillCombo},
+
+	Combos: { SkillCombo },
 }
 
 return {

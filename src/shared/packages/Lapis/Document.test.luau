@@ -16,7 +16,8 @@ return function(x)
 	local shouldThrow = x.shouldThrow
 
 	x.test("it should not merge close into save when save is running", function(context)
-		local document = context.lapis.createCollection("collection", defaultOptions()):load("doc"):expect()
+		local document =
+			context.lapis.createCollection("collection", defaultOptions()):load("doc"):expect()
 
 		-- It's not safe to merge saves when UpdateAsync is running.
 		-- This will yield the UpdateAsync call until stopYield is called.
@@ -37,7 +38,8 @@ return function(x)
 	end)
 
 	x.test("it should merge pending saves", function(context)
-		local document = context.lapis.createCollection("collection", defaultOptions()):load("doc"):expect()
+		local document =
+			context.lapis.createCollection("collection", defaultOptions()):load("doc"):expect()
 
 		context.dataStoreService.yield:startYield()
 
@@ -68,7 +70,8 @@ return function(x)
 	end)
 
 	x.test("saves data", function(context)
-		local document = context.lapis.createCollection("12345", defaultOptions()):load("doc"):expect()
+		local document =
+			context.lapis.createCollection("12345", defaultOptions()):load("doc"):expect()
 
 		document:write({
 			foo = "new value",
@@ -128,7 +131,8 @@ return function(x)
 	end)
 
 	x.test("close returns first promise when called again", function(context)
-		local document = context.lapis.createCollection("col", defaultOptions()):load("doc"):expect()
+		local document =
+			context.lapis.createCollection("col", defaultOptions()):load("doc"):expect()
 
 		local promise = document:close()
 
@@ -203,7 +207,8 @@ return function(x)
 		-- This makes sure the test doesn't pass by retyring after budget is added.
 		context.lapis.setConfig({ loadAttempts = 1 })
 
-		local document = context.lapis.createCollection("bye", defaultOptions()):load("bye"):expect()
+		local document =
+			context.lapis.createCollection("bye", defaultOptions()):load("bye"):expect()
 
 		context.dataStoreService.budget.budgets[Enum.DataStoreRequestType.GetAsync] = 0
 		context.dataStoreService.budget.budgets[Enum.DataStoreRequestType.SetIncrementAsync] = 0
@@ -220,7 +225,8 @@ return function(x)
 	end)
 
 	x.test(":save doesn't resolve with any value", function(context)
-		local document = context.lapis.createCollection("12345", defaultOptions()):load("doc"):expect()
+		local document =
+			context.lapis.createCollection("12345", defaultOptions()):load("doc"):expect()
 
 		local a, b = document:save():expect()
 
@@ -229,7 +235,8 @@ return function(x)
 	end)
 
 	x.test(":close doesn't resolve with any value", function(context)
-		local document = context.lapis.createCollection("12345", defaultOptions()):load("doc"):expect()
+		local document =
+			context.lapis.createCollection("12345", defaultOptions()):load("doc"):expect()
 
 		local a, b = document:close():expect()
 
@@ -239,7 +246,10 @@ return function(x)
 
 	x.nested("Document:beforeSave", function()
 		x.test("throws when yielding", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeSave(function()
 				task.wait()
@@ -251,7 +261,10 @@ return function(x)
 		end)
 
 		x.test("throws when setting twice", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeSave(function() end)
 
@@ -261,7 +274,10 @@ return function(x)
 		end)
 
 		x.test("throws when calling close in callback", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeSave(function()
 				document:close()
@@ -273,7 +289,10 @@ return function(x)
 		end)
 
 		x.test("throws when calling save in callback", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeSave(function()
 				document:save()
@@ -285,7 +304,10 @@ return function(x)
 		end)
 
 		x.test("saves new data in document:save", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeSave(function()
 				document:read() -- This checks that read doesn't error in the callback.
@@ -298,7 +320,10 @@ return function(x)
 		end)
 
 		x.test("saves new data in document:close", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeSave(function()
 				document:write({ foo = "new" })
@@ -312,7 +337,10 @@ return function(x)
 
 	x.nested("Document:beforeClose", function()
 		x.test("throws when yielding", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeClose(function()
 				task.wait()
@@ -324,7 +352,10 @@ return function(x)
 		end)
 
 		x.test("throws when setting twice", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeClose(function() end)
 
@@ -334,7 +365,10 @@ return function(x)
 		end)
 
 		x.test("throws when calling close in callback", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeClose(function()
 				document:close()
@@ -346,7 +380,10 @@ return function(x)
 		end)
 
 		x.test("throws when calling save in callback", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeClose(function()
 				document:save()
@@ -384,7 +421,10 @@ return function(x)
 		end)
 
 		x.test("saves new data", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			document:beforeClose(function()
 				document:read() -- This checks that read doesn't error in the callback.
@@ -398,7 +438,10 @@ return function(x)
 		end)
 
 		x.test("beforeSave runs before beforeClose", function(context)
-			local document = context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+			local document = context.lapis
+				.createCollection("collection", defaultOptions())
+				:load("document")
+				:expect()
 
 			local order = ""
 
@@ -440,8 +483,10 @@ return function(x)
 			end)
 
 			x.test("key info is updated after :save", function(context)
-				local document =
-					context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+				local document = context.lapis
+					.createCollection("collection", defaultOptions())
+					:load("document")
+					:expect()
 				local keyInfo = document:keyInfo()
 
 				document:save():expect()
@@ -453,8 +498,10 @@ return function(x)
 			end)
 
 			x.test("key info is updated after :close", function(context)
-				local document =
-					context.lapis.createCollection("collection", defaultOptions()):load("document"):expect()
+				local document = context.lapis
+					.createCollection("collection", defaultOptions())
+					:load("document")
+					:expect()
 				local keyInfo = document:keyInfo()
 
 				document:close():expect()

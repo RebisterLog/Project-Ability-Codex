@@ -8,8 +8,7 @@ local Package = require(PackageIndex["ReactReconciler"]["ReactReconciler"])
 export type Dispatcher = Package.Dispatcher
 export type Fiber = Package.Fiber
 export type FiberRoot = Package.FiberRoot
-export type UpdateQueue<T> = Package.UpdateQueue<T> 
+export type UpdateQueue<T> = Package.UpdateQueue<T>
 export type RootTag = Package.RootTag
-
 
 return Package

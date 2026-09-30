@@ -81,35 +81,31 @@ export type SuspenseListRenderState = {
 
 local exports = {}
 
-exports.shouldCaptureSuspense =
-	function(workInProgress: Fiber, hasInvisibleParent: boolean): boolean
-		-- If it was the primary children that just suspended, capture and render the
-		-- fallback. Otherwise, don't capture and bubble to the next boundary.
-		local nextState: SuspenseState? = workInProgress.memoizedState
-		if nextState then
-			if nextState.dehydrated ~= nil then
-				-- A dehydrated boundary always captures.
-				return true
-			end
-			return false
-		end
-		local props = workInProgress.memoizedProps
-		-- In order to capture, the Suspense component must have a fallback prop.
-		if props.fallback == nil then
-			return false
-		end
-		-- Regular boundaries always capture.
-		if props.unstable_avoidThisFallback ~= true then
+exports.shouldCaptureSuspense = function(
+	workInProgress: Fiber,
+	hasInvisibleParent: boolean
+): boolean
+	-- If it was the primary children that just suspended, capture and render the
+	-- fallback. Otherwise, don't capture and bubble to the next boundary.
+	local nextState: SuspenseState? = workInProgress.memoizedState
+	if nextState then
+		if nextState.dehydrated ~= nil then
+			-- A dehydrated boundary always captures.
 			return true
 		end
-		-- If it's a boundary we should avoid, then we prefer to bubble up to the
-		-- parent boundary if it is currently invisible.
-		if hasInvisibleParent then
-			return false
-		end
-		-- If the parent is not able to handle it, we must handle it.
-		return true
+		return false
 	end
+	local props = workInProgress.memoizedProps
+	-- In order to capture, the Suspense component must have a fallback prop.
+	if props.fallback == nil then return false end
+	-- Regular boundaries always capture.
+	if props.unstable_avoidThisFallback ~= true then return true end
+	-- If it's a boundary we should avoid, then we prefer to bubble up to the
+	-- parent boundary if it is currently invisible.
+	if hasInvisibleParent then return false end
+	-- If the parent is not able to handle it, we must handle it.
+	return true
+end
 
 exports.findFirstSuspended = function(row: Fiber): Fiber?
 	local node = row
@@ -133,21 +129,15 @@ exports.findFirstSuspended = function(row: Fiber): Fiber?
 			and node.memoizedProps.revealOrder ~= nil
 		then
 			local didSuspend = bit32.band(node.flags, DidCapture) ~= NoFlags
-			if didSuspend then
-				return node
-			end
+			if didSuspend then return node end
 		elseif node.child ~= nil then
 			node.child.return_ = node
 			node = node.child
 			continue
 		end
-		if node == row then
-			return nil
-		end
+		if node == row then return nil end
 		while node.sibling == nil do
-			if node.return_ == nil or node.return_ == row then
-				return nil
-			end
+			if node.return_ == nil or node.return_ == row then return nil end
 			-- ROBLOX FIXME Luau: Luau narrowing doesn't understand this loop until nil pattern
 			node = node.return_ :: Fiber
 		end

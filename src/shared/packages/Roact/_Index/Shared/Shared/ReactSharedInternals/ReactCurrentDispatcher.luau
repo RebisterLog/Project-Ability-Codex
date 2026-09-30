@@ -41,20 +41,14 @@ type BasicStateAction<S> = ((S) -> S) | S
 type Dispatch<A> = (A) -> ()
 
 export type Dispatcher = {
-	readContext: <T>(
-		context: ReactContext<T>,
-		observedBits: nil | number | boolean
-	) -> T,
+	readContext: <T>(context: ReactContext<T>, observedBits: nil | number | boolean) -> T,
 	useState: <S>(initialState: (() -> S) | S) -> (S, Dispatch<BasicStateAction<S>>),
 	useReducer: <S, I, A>(
 		reducer: (S, A) -> S,
 		initialArg: I,
 		init: ((I) -> S)?
 	) -> (S, Dispatch<A>),
-	useContext: <T>(
-		context: ReactContext<T>,
-		observedBits: nil | number | boolean
-	) -> T,
+	useContext: <T>(context: ReactContext<T>, observedBits: nil | number | boolean) -> T,
 	-- ROBLOX deviation START: TS models this slightly differently, which is needed to have an initially empty ref and clear the ref, and still typecheck
 	useRef: <T>(initialValue: T) -> { current: T | nil },
 	-- ROBLOX deviation END
@@ -63,12 +57,12 @@ export type Dispatcher = {
 	-- ROBLOX deviation END
 	useEffect: (
 		-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-		create: (() -> ()) | (() -> (() -> ())),
+		create: (() -> ()) | (() -> () -> ()),
 		deps: Array<any> | nil
 	) -> (),
 	useLayoutEffect: (
 		-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-		create: (() -> ()) | (() -> (() -> ())),
+		create: (() -> ()) | (() -> () -> ()),
 		deps: Array<any> | nil
 	) -> (),
 	useCallback: <T>(callback: T, deps: Array<any> | nil) -> T,

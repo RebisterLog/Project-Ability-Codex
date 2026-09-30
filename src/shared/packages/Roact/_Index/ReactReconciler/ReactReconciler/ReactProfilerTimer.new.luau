@@ -45,16 +45,12 @@ function getCommitTime(): number
 end
 
 function recordCommitTime(): ()
-	if not enableProfilerTimer then
-		return
-	end
+	if not enableProfilerTimer then return end
 	commitTime = now()
 end
 
 function startProfilerTimer(fiber: Fiber): ()
-	if not enableProfilerTimer then
-		return
-	end
+	if not enableProfilerTimer then return end
 
 	profilerStartTime = now()
 
@@ -65,34 +61,23 @@ function startProfilerTimer(fiber: Fiber): ()
 end
 
 function stopProfilerTimerIfRunning(fiber: Fiber): ()
-	if not enableProfilerTimer then
-		return
-	end
+	if not enableProfilerTimer then return end
 	profilerStartTime = -1
 end
 
-function stopProfilerTimerIfRunningAndRecordDelta(
-	fiber: Fiber,
-	overrideBaseTime: boolean
-): ()
-	if not enableProfilerTimer then
-		return
-	end
+function stopProfilerTimerIfRunningAndRecordDelta(fiber: Fiber, overrideBaseTime: boolean): ()
+	if not enableProfilerTimer then return end
 
 	if profilerStartTime >= 0 then
 		local elapsedTime_ = now() - profilerStartTime
 		fiber.actualDuration += elapsedTime_
-		if overrideBaseTime then
-			fiber.selfBaseDuration = elapsedTime_
-		end
+		if overrideBaseTime then fiber.selfBaseDuration = elapsedTime_ end
 		profilerStartTime = -1
 	end
 end
 
 function recordLayoutEffectDuration(fiber: Fiber): ()
-	if not enableProfilerTimer or not enableProfilerCommitHooks then
-		return
-	end
+	if not enableProfilerTimer or not enableProfilerCommitHooks then return end
 
 	if layoutEffectStartTime >= 0 then
 		local elapsedTime_ = now() - layoutEffectStartTime
@@ -113,9 +98,7 @@ function recordLayoutEffectDuration(fiber: Fiber): ()
 end
 
 function recordPassiveEffectDuration(fiber: Fiber): ()
-	if not enableProfilerTimer or not enableProfilerCommitHooks then
-		return
-	end
+	if not enableProfilerTimer or not enableProfilerCommitHooks then return end
 
 	if passiveEffectStartTime >= 0 then
 		local elapsedTime_ = now() - passiveEffectStartTime
@@ -141,16 +124,12 @@ function recordPassiveEffectDuration(fiber: Fiber): ()
 end
 
 function startLayoutEffectTimer(): ()
-	if not enableProfilerTimer or not enableProfilerCommitHooks then
-		return
-	end
+	if not enableProfilerTimer or not enableProfilerCommitHooks then return end
 	layoutEffectStartTime = now()
 end
 
 function startPassiveEffectTimer(): ()
-	if not enableProfilerTimer or not enableProfilerCommitHooks then
-		return
-	end
+	if not enableProfilerTimer or not enableProfilerCommitHooks then return end
 	passiveEffectStartTime = now()
 end
 

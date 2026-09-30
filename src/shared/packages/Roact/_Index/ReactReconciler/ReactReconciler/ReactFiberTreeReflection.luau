@@ -18,8 +18,7 @@ type Fiber = ReactInternalTypes.Fiber
 local ReactFiberHostConfig = require(script.Parent.ReactFiberHostConfig)
 type Container = ReactFiberHostConfig.Container
 type SuspenseInstance = ReactFiberHostConfig.SuspenseInstance
-local ReactFiberSuspenseComponent =
-	require(script.Parent["ReactFiberSuspenseComponent.new"])
+local ReactFiberSuspenseComponent = require(script.Parent["ReactFiberSuspenseComponent.new"])
 type SuspenseState = ReactFiberSuspenseComponent.SuspenseState
 
 local invariant = require(Packages.Shared).invariant
@@ -39,8 +38,7 @@ local ReactFiberFlags = require(script.Parent.ReactFiberFlags)
 local NoFlags = ReactFiberFlags.NoFlags
 local Placement = ReactFiberFlags.Placement
 local Hydrating = ReactFiberFlags.Hydrating
-local enableFundamentalAPI =
-	require(Packages.Shared).ReactFeatureFlags.enableFundamentalAPI
+local enableFundamentalAPI = require(Packages.Shared).ReactFeatureFlags.enableFundamentalAPI
 
 local ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner
 
@@ -85,13 +83,9 @@ exports.getSuspenseInstanceFromFiber = function(fiber: Fiber): SuspenseInstance?
 		local suspenseState: SuspenseState? = fiber.memoizedState
 		if suspenseState == nil then
 			local current = fiber.alternate
-			if current ~= nil then
-				suspenseState = current.memoizedState
-			end
+			if current ~= nil then suspenseState = current.memoizedState end
 		end
-		if suspenseState then
-			return suspenseState.dehydrated
-		end
+		if suspenseState then return suspenseState.dehydrated end
 	end
 	return nil
 end
@@ -149,9 +143,7 @@ local function findCurrentFiberUsingSlowPath(fiber: Fiber): Fiber?
 		-- If there is no alternate, then we only need to check if it is mounted.
 		local nearestMounted = getNearestMountedFiber(fiber)
 		invariant(nearestMounted ~= nil, "Unable to find node on an unmounted component.")
-		if nearestMounted ~= fiber then
-			return nil
-		end
+		if nearestMounted ~= fiber then return nil end
 		return fiber
 	end
 	-- If we have two possible branches, we'll walk backwards up to the root
@@ -280,9 +272,7 @@ exports.findCurrentFiberUsingSlowPath = findCurrentFiberUsingSlowPath
 
 exports.findCurrentHostFiber = function(parent: Fiber): Fiber?
 	local currentParent = findCurrentFiberUsingSlowPath(parent)
-	if not currentParent then
-		return nil
-	end
+	if not currentParent then return nil end
 
 	-- Next we'll drill down this component to find the first HostComponent/Text.
 	-- ROBLOX FIXME Luau: Luau doesn't narrow based on above branch
@@ -296,15 +286,11 @@ exports.findCurrentHostFiber = function(parent: Fiber): Fiber?
 			node = child
 			continue
 		end
-		if node == currentParent then
-			return nil
-		end
+		if node == currentParent then return nil end
 		local return_ = node.return_
 		local sibling = node.sibling
 		while not sibling do
-			if not return_ or return_ == currentParent then
-				return nil
-			end
+			if not return_ or return_ == currentParent then return nil end
 			-- ROBLOX FIXME Luau: Luau doesn't narrow based on above branch
 			node = return_ :: Fiber
 		end
@@ -319,9 +305,7 @@ end
 
 exports.findCurrentHostFiberWithNoPortals = function(parent: Fiber): Fiber?
 	local currentParent = findCurrentFiberUsingSlowPath(parent)
-	if not currentParent then
-		return nil
-	end
+	if not currentParent then return nil end
 
 	-- Next we'll drill down this component to find the first HostComponent/Text.
 	local node: Fiber = currentParent :: Fiber
@@ -338,15 +322,11 @@ exports.findCurrentHostFiberWithNoPortals = function(parent: Fiber): Fiber?
 			node = child
 			continue
 		end
-		if node == currentParent then
-			return nil
-		end
+		if node == currentParent then return nil end
 		local return_ = node.return_
 		local sibling = node.sibling
 		while not sibling do
-			if not return_ or return_ == currentParent then
-				return nil
-			end
+			if not return_ or return_ == currentParent then return nil end
 			-- ROBLOX FIXME Luau: Luau doesn't narrow based on above branch
 			node = return_ :: Fiber
 		end
@@ -370,9 +350,7 @@ exports.doesFiberContain = function(parentFiber: Fiber, childFiber: Fiber): bool
 	local node = childFiber
 	local parentFiberAlternate = parentFiber.alternate
 	while node ~= nil do
-		if node == parentFiber or node == parentFiberAlternate then
-			return true
-		end
+		if node == parentFiber or node == parentFiberAlternate then return true end
 		-- ROBLOX FIXME Luau: Luau doesn't understand loop until not nil pattern
 		node = node.return_ :: Fiber
 	end

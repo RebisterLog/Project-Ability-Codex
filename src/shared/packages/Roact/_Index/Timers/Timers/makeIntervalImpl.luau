@@ -28,9 +28,7 @@ return function(delayImpl)
 		}
 
 		-- delayTime is an optional parameter
-		if intervalTime == nil then
-			intervalTime = 0
-		end
+		if intervalTime == nil then intervalTime = 0 end
 
 		-- To mimic the JS interface, we're expecting delayTime to be in ms
 		local intervalTimeMs = intervalTime / 1000
@@ -50,13 +48,9 @@ return function(delayImpl)
 	end
 
 	local function clearInterval(task: Interval)
-		if task == nil then
-			return
-		end
+		if task == nil then return end
 
-		if task[Status] == SCHEDULED then
-			task[Status] = CANCELLED
-		end
+		if task[Status] == SCHEDULED then task[Status] = CANCELLED end
 	end
 
 	return {

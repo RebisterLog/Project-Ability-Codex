@@ -85,9 +85,7 @@ exports.getIteratorFn = function(maybeIterable): nil | (...any) -> Iterator<any>
 	if typeof(maybeIterable) == "table" then
 		-- ROBLOX deviation: Upstream understands that portal objects are not
 		-- iterable; we need to check explicitly
-		if maybeIterable["$$typeof"] == exports.REACT_PORTAL_TYPE then
-			return nil
-		end
+		if maybeIterable["$$typeof"] == exports.REACT_PORTAL_TYPE then return nil end
 		return function()
 			local currentKey: any, currentValue: any
 			return {

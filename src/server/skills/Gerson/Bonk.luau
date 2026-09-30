@@ -1,15 +1,15 @@
-local ServerScriptService = game:GetService("ServerScriptService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
 local Enums = require(ServerScriptService.server.Enums)
 local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+local types = require(ServerScriptService.server.types)
 
 local Skill: types.SkillData = {
 	DisplayName = "Bonk",
 	Cooldown = 2,
-	
+
 	SkillCharacters = {
 		"Ragdoll",
 		"PerfectBlockable",
@@ -21,10 +21,10 @@ local Skill: types.SkillData = {
 
 	AttackInfo = {
 		Priority = Enums.IFrames.Ragdoll,
-		
+
 		Hitbox = {
 			Size = 7,
-			Offset = CFrame.new(0,-2.5,-7),
+			Offset = CFrame.new(0, -2.5, -7),
 			Debug = true,
 		},
 
@@ -38,7 +38,7 @@ local Skill: types.SkillData = {
 
 		Stun = {
 			Priority = Enums.Stun.Medium,
-			Duration = 0.7
+			Duration = 0.7,
 		},
 
 		Ragdoll = {
@@ -51,9 +51,9 @@ local Skill: types.SkillData = {
 			Velocity = Vector3.new(0, 20, 0),
 			Speed = 50,
 		},
-		
+
 		Angular = {
-			Velocity = Vector3.new(-15,0,0),
+			Velocity = Vector3.new(-15, 0, 0),
 			Duration = 0.2,
 		},
 	},
@@ -76,58 +76,69 @@ function Skill.onInit(self)
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
-			{0, function(seq)
-				seq.Cleaner:Add(CombatService:AddArmor(character, true))
-				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
-				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+			{
+				0,
+				function(seq)
+					seq.Cleaner:Add(CombatService:AddArmor(character, true))
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
+					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-				table.clear(self.AlreadyHit)
+					table.clear(self.AlreadyHit)
 
-				VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-					Animation = Anims["Bonk"],
-					Speed = seq.Speed, 
-				})
-				
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["BonkSlam"])
-			end,
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+						Animation = Anims["Bonk"],
+						Speed = seq.Speed,
+					})
+
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						RootPart,
+						Sounds["BonkSlam"]
+					)
+				end,
 			},
 
-			{24, function()
-				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-					Particle = Models["BonkSlam"],
-					Origin = RootPart.CFrame,
-					Offset = CFrame.new(0,-2.5,-7),
-				})
-			end,},
-			
-			{25, function(seq, Frame)
-				local Targets = CombatService:Hitbox({
-					Caster = character,
-					Info = AttackInfo.Hitbox,
-					Skill = self,
-				})	
+			{
+				24,
+				function()
+					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+						Particle = Models["BonkSlam"],
+						Origin = RootPart.CFrame,
+						Offset = CFrame.new(0, -2.5, -7),
+					})
+				end,
+			},
 
-				for _, Target in Targets do
-					if table.find(self.AlreadyHit, Target) then
-						continue
+			{
+				25,
+				function(seq, Frame)
+					local Targets = CombatService:Hitbox({
+						Caster = character,
+						Info = AttackInfo.Hitbox,
+						Skill = self,
+					})
+
+					for _, Target in Targets do
+						if table.find(self.AlreadyHit, Target) then continue end
+
+						CombatService:Attack({
+							Attacker = character,
+							Victim = Target,
+							Info = AttackInfo,
+						}):andThen(function(Data: types.AttackData)
+							if not Data.State.Success then return end
+							table.insert(self.AlreadyHit, Target)
+
+							--VFXService:StartEffect(Players:GetPlayers(), "Sound", Data.Victim.RootPart.CFrame, Sounds["ArcSpearStrikeHit"])
+						end)
 					end
+				end,
+				35,
+			},
 
-					CombatService:Attack({
-						Attacker = character,
-						Victim = Target,
-						Info = AttackInfo,
-					}):andThen(function(Data: types.AttackData)
-						if not Data.State.Success then return end
-						table.insert(self.AlreadyHit, Target)
-
-						--VFXService:StartEffect(Players:GetPlayers(), "Sound", Data.Victim.RootPart.CFrame, Sounds["ArcSpearStrikeHit"])
-					end)
-				end
-			end,
-			35},
-
-			{36}
-		}
+			{ 36 },
+		},
 	}))
 end
 
@@ -146,13 +157,11 @@ function Skill.Interrupt(self)
 	local Anims = self.Spec.Data.Assets.Animations
 	local Sounds = self.Spec.Data.Assets.Sounds
 
-	if self.Sequence then
-		self.Sequence:Stop()
-	end
+	if self.Sequence then self.Sequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
 		Animation = Anims["Bonk"].Animation,
-	})	
+	})
 end
 
 return Skill

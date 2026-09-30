@@ -10,8 +10,8 @@ local TracingSubscriptions = require(script.Parent.TracingSubscriptions)
 -- ROBLOX deviation: export Tracing type from the package exports to avoid direct file access
 export type Interaction = Tracing.Interaction
 
-local initializeScheduler = require(script.Parent.Scheduler)
 local HostConfig = require(script.Parent.forks["SchedulerHostConfig.mock"])
+local initializeScheduler = require(script.Parent.Scheduler)
 
 local Scheduler = initializeScheduler(HostConfig)
 

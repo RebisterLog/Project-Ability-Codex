@@ -37,7 +37,7 @@ type BindingInternal<T> = {
 	map: <U>(BindingInternal<T>, (T) -> U) -> any,
 
 	update: (T) -> (),
-	subscribe: ((T) -> ()) -> (() -> ()),
+	subscribe: ((T) -> ()) -> () -> (),
 }
 
 local BindingInternalApi = {}
@@ -48,10 +48,7 @@ function bindingPrototype.getValue<T>(binding: BindingInternal<T>): T
 	return BindingInternalApi.getValue(binding)
 end
 
-function bindingPrototype.map<T, U>(
-	binding: BindingInternal<T>,
-	predicate: (T) -> U
-): Binding<U>
+function bindingPrototype.map<T, U>(binding: BindingInternal<T>, predicate: (T) -> U): Binding<U>
 	return BindingInternalApi.map(binding, predicate)
 end
 
@@ -151,9 +148,7 @@ end
 
 -- The `join` API is used statically, so the input will be a table with values
 -- typed as the public Binding type
-function BindingInternalApi.join<T>(
-	upstreamBindings: { [string | number]: Binding<any> }
-): Binding<T>
+function BindingInternalApi.join<T>(upstreamBindings: { [string | number]: Binding<any> }): Binding<T>
 	if _G.__DEV__ then
 		assert(typeof(upstreamBindings) == "table", "Expected arg #1 to be of type table")
 
@@ -194,9 +189,7 @@ function BindingInternalApi.join<T>(
 		end
 
 		return function()
-			if disconnects == nil then
-				return
-			end
+			if disconnects == nil then return end
 
 			for _, disconnect in disconnects do
 				disconnect()

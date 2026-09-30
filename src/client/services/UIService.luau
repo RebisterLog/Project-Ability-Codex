@@ -8,12 +8,12 @@ local Configuration = LocalPlayer.PlayerScripts.client.Configuration
 local UIStartPoint = Configuration.UIStartPoint.Value
 
 local UIService = Crane:CreateService({
-	Name = "UIService"
+	Name = "UIService",
 })
 
 function UIService:onStart()
 	local PlayerService = Crane:GetService("PlayerService")
-	
+
 	if UIStartPoint and UIStartPoint:IsA("ModuleScript") then
 		require(UIStartPoint)(PlayerService.Proxy, PlayerService.GameProxy)
 	end

@@ -14,24 +14,26 @@ type Data = {
 
 type StopData = {
 	Animation: Animation,
-	FadeTime: number?
+	FadeTime: number?,
 }
 
 function Animation:Validate(character: Model)
 	if character.ClassName ~= "Model" then return end
 	if not character then return false end
-	
-	if (character:GetPivot().Position - workspace.CurrentCamera.CFrame.Position).Magnitude > 150 then return false end
+
+	if
+		(character:GetPivot().Position - workspace.CurrentCamera.CFrame.Position).Magnitude > 150
+	then
+		return false
+	end
 	return true
 end
 
 function Animation:onStart(character: Model, Data: Data)
 	local Animation = Data.Animation
-	
-	if not Animation then
-		return
-	end
-	
+
+	if not Animation then return end
+
 	AnimationActor:SendMessage("Play", character, Animation.Animation, {
 		Speed = Data.Speed,
 		Priority = Animation.Priority,
@@ -42,13 +44,11 @@ end
 
 function Animation:onStop(character: Model, Data: StopData)
 	local Animation = Data.Animation
-	
-	if not Animation then
-		return
-	end
+
+	if not Animation then return end
 
 	AnimationActor:SendMessage("Stop", character, Animation, {
-		FadeOutTime = Data.FadeTime	
+		FadeOutTime = Data.FadeTime,
 	})
 end
 

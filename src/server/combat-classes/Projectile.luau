@@ -11,11 +11,9 @@ local Projectile = {}
 Projectile.__index = Projectile
 
 function Projectile.new()
-    local self = setmetatable({
+	local self = setmetatable({}, Projectile)
 
-    }, Projectile)
-
-    return self
+	return self
 end
 
 return Projectile

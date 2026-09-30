@@ -15,16 +15,11 @@ local LuauPolyfill = require(Packages.LuauPolyfill)
 local Array = LuauPolyfill.Array
 local Object = LuauPolyfill.Object
 local inspect = LuauPolyfill.util.inspect
-type React_StatelessFunctionalComponent<Props> = Shared.React_StatelessFunctionalComponent<
-	Props
->
+type React_StatelessFunctionalComponent<Props> = Shared.React_StatelessFunctionalComponent<Props>
 type React_ElementType = Shared.React_ElementType
 type React_Component<Props, State> = Shared.React_Component<Props, State>
 type React_ComponentType<Props> = Shared.React_ComponentType<Props>
-type React_AbstractComponent<Config, Instance> = Shared.React_AbstractComponent<
-	Config,
-	Instance
->
+type React_AbstractComponent<Config, Instance> = Shared.React_AbstractComponent<Config, Instance>
 
 local ReactSymbols = Shared.ReactSymbols
 local REACT_MEMO_TYPE = ReactSymbols.REACT_MEMO_TYPE
@@ -48,10 +43,7 @@ exports.memo = function<Props, T>(
 		-- succeed and there will likely be errors in render.
 		if not validType then
 			local info = ""
-			if
-				type_ == nil
-				or (typeof(type_) == "table" and #Object.keys(type_) == 0)
-			then
+			if type_ == nil or (typeof(type_) == "table" and #Object.keys(type_) == 0) then
 				info = info
 					.. (
 						" You likely forgot to export your component from the file "
@@ -68,10 +60,8 @@ exports.memo = function<Props, T>(
 				and typeof(type_) == "table"
 				and (type_)["$$typeof"] == REACT_ELEMENT_TYPE
 			then
-				typeString = string.format(
-					"<%s />",
-					getComponentName((type_ :: any).type) or "UNKNOWN"
-				)
+				typeString =
+					string.format("<%s />", getComponentName((type_ :: any).type) or "UNKNOWN")
 				info =
 					" Did you accidentally export a JSX literal or Element instead of a component?"
 			else
@@ -100,9 +90,7 @@ exports.memo = function<Props, T>(
 		-- ROBLOX deviation: use metatables to approximate Object.defineProperty logic
 		setmetatable(elementType, {
 			__index = function(self, key)
-				if key == "displayName" then
-					return name
-				end
+				if key == "displayName" then return name end
 				return rawget(self, key)
 			end,
 			__newindex = function(self, key, value)
@@ -111,8 +99,7 @@ exports.memo = function<Props, T>(
 					-- ROBLOX deviation: render is a function and cannot have properties
 					if
 						typeof(type_) == "table"
-						and (type_ :: React_AbstractComponent<Props, T>).displayName
-							== nil
+						and (type_ :: React_AbstractComponent<Props, T>).displayName == nil
 					then
 						(type_ :: React_AbstractComponent<Props, T>).displayName = name
 					end

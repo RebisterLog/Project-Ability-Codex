@@ -19,9 +19,7 @@ local function resolveDefaultProps(Component: any, baseProps: Object): Object
 		local props = table.clone(baseProps) :: Object
 		local defaultProps = Component.defaultProps
 		for propName, _ in defaultProps do
-			if props[propName] == nil then
-				props[propName] = defaultProps[propName]
-			end
+			if props[propName] == nil then props[propName] = defaultProps[propName] end
 		end
 		return props
 	end

@@ -33,7 +33,12 @@ local function findOr(str: string, patternTable: { string }, initIndex: number?)
 			local prefix = string.sub(str, 1, iStart - 1)
 			local prefixEnd, invalidBytePosition = utf8.len(prefix)
 			if prefixEnd == nil then
-				error(("string `%s` has an invalid byte at position %s"):format(prefix, tostring(invalidBytePosition)))
+				error(
+					("string `%s` has an invalid byte at position %s"):format(
+						prefix,
+						tostring(invalidBytePosition)
+					)
+				)
 			end
 			local iStartIndex = prefixEnd :: number + 1
 			local match = {
@@ -45,9 +50,7 @@ local function findOr(str: string, patternTable: { string }, initIndex: number?)
 	end
 
 	-- if no matches, return nil
-	if #matches == 0 then
-		return nil
-	end
+	if #matches == 0 then return nil end
 
 	-- find the first matched index (after the init param)
 	-- for each, if we get a hit, return the earliest index and matched term
@@ -55,13 +58,9 @@ local function findOr(str: string, patternTable: { string }, initIndex: number?)
 	local firstMatch
 	for _, value in matches do
 		-- load first condition
-		if firstMatch == nil then
-			firstMatch = value
-		end
+		if firstMatch == nil then firstMatch = value end
 		-- identify if current match comes before first match
-		if value.index < firstMatch.index then
-			firstMatch = value
-		end
+		if value.index < firstMatch.index then firstMatch = value end
 	end
 
 	-- return first match

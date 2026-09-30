@@ -31,8 +31,7 @@ type SuspenseInstance = ReactFiberHostConfig.SuspenseInstance
 type Container = ReactFiberHostConfig.Container
 type HostContext = ReactFiberHostConfig.HostContext
 
-local ReactFiberSuspenseComponent =
-	require(script.Parent["ReactFiberSuspenseComponent.new"])
+local ReactFiberSuspenseComponent = require(script.Parent["ReactFiberSuspenseComponent.new"])
 type SuspenseState = ReactFiberSuspenseComponent.SuspenseState
 
 local ReactWorkTags = require(script.Parent.ReactWorkTags)
@@ -64,8 +63,7 @@ local getNextHydratableInstanceAfterSuspenseInstance =
 	ReactFiberHostConfig.getNextHydratableInstanceAfterSuspenseInstance
 local didNotMatchHydratedContainerTextInstance =
 	ReactFiberHostConfig.didNotMatchHydratedContainerTextInstance
-local didNotMatchHydratedTextInstance =
-	ReactFiberHostConfig.didNotMatchHydratedTextInstance
+local didNotMatchHydratedTextInstance = ReactFiberHostConfig.didNotMatchHydratedTextInstance
 local shouldSetTextContent = ReactFiberHostConfig.shouldSetTextContent
 
 -- local {
@@ -99,9 +97,7 @@ function warnIfHydrating()
 end
 
 function enterHydrationState(fiber: Fiber): boolean
-	if not supportsHydration then
-		return false
-	end
+	if not supportsHydration then return false end
 
 	local parentInstance = fiber.stateNode.containerInfo
 	nextHydratableInstance = getFirstHydratableChild(parentInstance)
@@ -114,9 +110,7 @@ function reenterHydrationStateFromDehydratedSuspenseInstance(
 	fiber: Fiber,
 	suspenseInstance: SuspenseInstance
 ): boolean
-	if not supportsHydration then
-		return false
-	end
+	if not supportsHydration then return false end
 
 	nextHydratableInstance = getNextHydratableSibling(suspenseInstance)
 	popToNextHostParent(fiber)
@@ -255,8 +249,7 @@ function tryHydrate(fiber, nextInstance)
 				-- This simplifies the code for getHostSibling and deleting nodes,
 				-- since it doesn't have to consider all Suspense boundaries and
 				-- check if they're dehydrated ones or not.
-				local dehydratedFragment =
-					createFiberFromDehydratedFragment(suspenseInstance)
+				local dehydratedFragment = createFiberFromDehydratedFragment(suspenseInstance)
 				dehydratedFragment.return_ = fiber
 				fiber.child = dehydratedFragment
 				return true
@@ -269,9 +262,7 @@ function tryHydrate(fiber, nextInstance)
 end
 
 function tryToClaimNextHydratableInstance(fiber: Fiber)
-	if not isHydrating then
-		return
-	end
+	if not isHydrating then return end
 	local nextInstance = nextHydratableInstance
 	if not nextInstance then
 		-- Nothing to hydrate. Make it an insertion.
@@ -330,9 +321,7 @@ function prepareToHydrateHostInstance(
 	fiber.updateQueue = updatePayload
 	-- If the update payload indicates that there is a change or if there
 	-- is a new ref we mark this as an update.
-	if updatePayload ~= nil then
-		return true
-	end
+	if updatePayload ~= nil then return true end
 	return false
 end
 
@@ -441,9 +430,7 @@ function popToNextHostParent(fiber: Fiber)
 end
 
 function popHydrationState(fiber: Fiber): boolean
-	if not supportsHydration then
-		return false
-	end
+	if not supportsHydration then return false end
 	if fiber ~= hydrationParentFiber then
 		-- We're deeper than the current hydration context, inside an inserted
 		-- tree.
@@ -494,9 +481,7 @@ function popHydrationState(fiber: Fiber): boolean
 end
 
 function resetHydrationState()
-	if not supportsHydration then
-		return
-	end
+	if not supportsHydration then return end
 
 	hydrationParentFiber = nil
 	nextHydratableInstance = nil

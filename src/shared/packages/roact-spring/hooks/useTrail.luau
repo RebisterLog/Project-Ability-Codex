@@ -1,15 +1,22 @@
 --!strict
-local React = require(script.Parent.Parent.React)
 local Controller = require(script.Parent.Parent.Controller)
+local React = require(script.Parent.Parent.React)
+local isRoact17 = require(script.Parent.Parent.isRoact17)
 local useSprings = require(script.Parent.useSprings)
 local util = require(script.Parent.Parent.util)
-local isRoact17 = require(script.Parent.Parent.isRoact17)
 
 local useRefKey = if isRoact17 then "current" else "value"
 
-type UseTrailProps<T> = { Controller.ControllerProps<T> } | ((index: number) -> Controller.ControllerProps<T>)
+type UseTrailProps<T> =
+	{ Controller.ControllerProps<T> }
+	| ((index: number) -> Controller.ControllerProps<T>)
 
-local function useTrail<T>(hooks: { [string]: any }, length: number, props: UseTrailProps<T>, deps: { unknown }?)
+local function useTrail<T>(
+	hooks: { [string]: any },
+	length: number,
+	props: UseTrailProps<T>,
+	deps: { unknown }?
+)
 	local mergedProps: UseTrailProps<T> = hooks.useMemo(function()
 		if type(props) == "function" then
 			return props
@@ -67,9 +74,7 @@ local function useTrail<T>(hooks: { [string]: any }, length: number, props: UseT
 end
 
 local exports: any = function(...)
-	if isRoact17 then
-		return useTrail(React, ...)
-	end
+	if isRoact17 then return useTrail(React, ...) end
 
 	return useTrail(...)
 end

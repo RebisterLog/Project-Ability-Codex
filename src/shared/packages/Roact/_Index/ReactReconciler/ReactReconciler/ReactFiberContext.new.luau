@@ -26,8 +26,7 @@ local ReactFiberStack = require(script.Parent["ReactFiberStack.new"])
 type StackCursor<T> = ReactFiberStack.StackCursor<T>
 
 local isFiberMounted = require(script.Parent.ReactFiberTreeReflection).isFiberMounted
-local disableLegacyContext =
-	require(Packages.Shared).ReactFeatureFlags.disableLegacyContext
+local disableLegacyContext = require(Packages.Shared).ReactFeatureFlags.disableLegacyContext
 local ReactWorkTags = require(script.Parent.ReactWorkTags)
 local ClassComponent = ReactWorkTags.ClassComponent
 local HostRoot = ReactWorkTags.HostRoot
@@ -40,14 +39,10 @@ local pop = ReactFiberStack.pop
 
 local warnedAboutMissingGetChildContext
 
-if __DEV__ then
-	warnedAboutMissingGetChildContext = {}
-end
+if __DEV__ then warnedAboutMissingGetChildContext = {} end
 
 local emptyContextObject = {}
-if __DEV__ then
-	Object.freeze(emptyContextObject)
-end
+if __DEV__ then Object.freeze(emptyContextObject) end
 
 -- deviation: Common types
 type Object = { [any]: any }
@@ -108,23 +103,16 @@ local function getMaskedContext(workInProgress: Fiber, unmaskedContext: Object):
 	local type_ = workInProgress.type
 	-- deviation: For function components, we can't support `contextTypes`;
 	-- instead, just return unmaskedContext
-	if type(type_) == "function" then
-		return unmaskedContext
-	end
+	if type(type_) == "function" then return unmaskedContext end
 
 	local contextTypes = type_.contextTypes
-	if not contextTypes then
-		return emptyContextObject
-	end
+	if not contextTypes then return emptyContextObject end
 
 	-- Avoid recreating masked context unless unmasked context has changed.
 	-- Failing to do this will result in unnecessary calls to componentWillReceiveProps.
 	-- This may trigger infinite loops if componentWillReceiveProps calls setState.
 	local instance = workInProgress.stateNode
-	if
-		instance
-		and instance.__reactInternalMemoizedUnmaskedChildContext == unmaskedContext
-	then
+	if instance and instance.__reactInternalMemoizedUnmaskedChildContext == unmaskedContext then
 		return instance.__reactInternalMemoizedMaskedChildContext
 	end
 
@@ -141,9 +129,7 @@ local function getMaskedContext(workInProgress: Fiber, unmaskedContext: Object):
 
 	-- Cache unmasked context so we can avoid recreating masked context unless necessary.
 	-- Context is created before the class component is instantiated so check for instance.
-	if instance then
-		cacheContext(workInProgress, unmaskedContext, context)
-	end
+	if instance then cacheContext(workInProgress, unmaskedContext, context) end
 
 	return context
 	-- end
@@ -165,9 +151,7 @@ function isContextProvider(type_): boolean
 	-- else
 	-- ROBLOX deviation: context types only valid for class components
 	-- ROBLOX performance: type is already guarded as being a ClassComponent and/or typeof == 'table' in all call sites
-	if type(type_) == "function" then
-		return false
-	end
+	if type(type_) == "function" then return false end
 	local childContextTypes = type_.childContextTypes
 	return childContextTypes ~= nil
 	-- end
@@ -193,11 +177,7 @@ local function popTopLevelContextObject(fiber: Fiber): ()
 	-- end
 end
 
-local function pushTopLevelContextObject(
-	fiber: Fiber,
-	context: Object,
-	didChange: boolean
-): ()
+local function pushTopLevelContextObject(fiber: Fiber, context: Object, didChange: boolean): ()
 	-- ROBLOX performance: disable always-false cmp in hot path
 	-- if disableLegacyContext then
 	-- 	return
@@ -216,11 +196,7 @@ local function pushTopLevelContextObject(
 	-- end
 end
 
-local function processChildContext(
-	fiber: Fiber,
-	type_: any,
-	parentContext: Object
-): Object
+local function processChildContext(fiber: Fiber, type_: any, parentContext: Object): Object
 	-- ROBLOX performance: eliminate always-false compare in hot path
 	-- if disableLegacyContext then
 	-- 	return parentContext
@@ -230,10 +206,7 @@ local function processChildContext(
 
 	-- TODO (bvaughn) Replace this behavior with an invariant() in the future.
 	-- It has only been added in Fiber to match the (unintentional) behavior in Stack.
-	if
-		instance.getChildContext == nil
-		or type(instance.getChildContext) ~= "function"
-	then
+	if instance.getChildContext == nil or type(instance.getChildContext) ~= "function" then
 		if __DEV__ then
 			local componentName = getComponentName(type_) or "Unknown"
 
@@ -299,11 +272,7 @@ local function pushContextProvider(workInProgress: Fiber): boolean
 	-- end
 end
 
-local function invalidateContextProvider(
-	workInProgress: Fiber,
-	type_: any,
-	didChange: boolean
-): ()
+local function invalidateContextProvider(workInProgress: Fiber, type_: any, didChange: boolean): ()
 	-- ROBLOX performance: eliminate always-false compare in hot path
 	-- if disableLegacyContext then
 	-- 	return

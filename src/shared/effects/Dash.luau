@@ -21,7 +21,7 @@ end
 
 type SpecData = {
 	SpecId: string,
-	SkinId: string
+	SkinId: string,
 }
 
 type Directions = "Forward" | "Back" | "Left" | "Right"
@@ -29,23 +29,25 @@ type Directions = "Forward" | "Back" | "Left" | "Right"
 function Dash:Validate(character: Model)
 	local primaryPart = character.PrimaryPart
 	if not primaryPart then return false end
-	
+
 	if not workspace.CurrentCamera then return false end
-	
-	if (primaryPart.Position - workspace.CurrentCamera.CFrame.Position).Magnitude > 50 then return false end
-	
+
+	if (primaryPart.Position - workspace.CurrentCamera.CFrame.Position).Magnitude > 50 then
+		return false
+	end
+
 	return true
 end
 
 function Dash.PlayAnimation(Character: Model, SpecData: SpecData, Direction: Directions)
 	local SpecId = SpecData.SpecId
 	local SkinId = SpecData.SkinId or "None"
-	
+
 	if not Skins[SpecId] then return end
 	if not Skins[SpecId][SkinId] then return end
 
-	local AnimData = (Skins[SpecId][SkinId].Animations or {})["Dash"..Direction]
-	
+	local AnimData = (Skins[SpecId][SkinId].Animations or {})["Dash" .. Direction]
+
 	AnimationActor:SendMessage("Play", Character, AnimData.Animation, {
 		Priority = AnimData.Priority,
 		Speed = AnimData.Speed,

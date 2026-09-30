@@ -37,18 +37,16 @@ local story = {
 		end)
 
 		local speed = scope:Computed(function(use)
-			if use(pausedControl) then
-				return 0
-			end
+			if use(pausedControl) then return 0 end
 
 			return use(speedControl)
 		end)
 
-		local helix = scope:Helix {
+		local helix = scope:Helix({
 			Size = size,
 			Speed = speed,
 			Color = Color3.fromRGB(255, 255, 255),
-		}
+		})
 
 		local root = scope:New("Frame")({
 			Name = "HelixStory",

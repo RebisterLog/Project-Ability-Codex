@@ -14,12 +14,10 @@ local Stand = Crane:CreateComponent({
 function Stand:onStart()
 	self.Cleaner = Crane.Buttler.new()
 	self.RootPart = self.instance:FindFirstChild("HumanoidRootPart") or self.instance.PrimartPart
-	
+
 	self:HandleMovement()
 end
 
-function Stand:Destroy()
-	
-end
+function Stand:Destroy() end
 
 return Stand

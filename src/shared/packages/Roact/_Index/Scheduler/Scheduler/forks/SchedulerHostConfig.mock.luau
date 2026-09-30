@@ -48,11 +48,8 @@ exports.shouldYieldToHost = function(): boolean
 	-- https://jira.rbx.com/browse/CLI-35978
 	local values: any = yieldedValues
 	if
-		(
-			expectedNumberOfYields ~= -1
-			and values ~= nil
-			and #values >= expectedNumberOfYields
-		) or (shouldYieldForPaint and needsPaint)
+		(expectedNumberOfYields ~= -1 and values ~= nil and #values >= expectedNumberOfYields)
+		or (shouldYieldForPaint and needsPaint)
 	then
 		-- We yielded at least as many values as expected. Stop flushing.
 		didStop = true
@@ -71,9 +68,7 @@ exports.forceFrameRate = function()
 end
 
 exports.reset = function()
-	if isFlushing then
-		error("Cannot reset while already flushing work.")
-	end
+	if isFlushing then error("Cannot reset while already flushing work.") end
 
 	currentTime = 0
 	scheduledCallback = nil
@@ -88,9 +83,7 @@ end
 
 -- Should only be used via an assertion helper that inspects the yielded values.
 exports.unstable_flushNumberOfYields = function(count: number)
-	if isFlushing then
-		error("Already flushing work.")
-	end
+	if isFlushing then error("Already flushing work.") end
 
 	if scheduledCallback ~= nil then
 		local cb = scheduledCallback
@@ -103,25 +96,19 @@ exports.unstable_flushNumberOfYields = function(count: number)
 				hasMoreWork = cb(true, currentTime)
 			until not hasMoreWork or didStop
 
-			if not hasMoreWork then
-				scheduledCallback = nil
-			end
+			if not hasMoreWork then scheduledCallback = nil end
 		end)
 
 		expectedNumberOfYields = -1
 		didStop = false
 		isFlushing = false
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 	end
 end
 
 exports.unstable_flushUntilNextPaint = function()
-	if isFlushing then
-		error("Already flushing work.")
-	end
+	if isFlushing then error("Already flushing work.") end
 
 	if scheduledCallback ~= nil then
 		local cb = scheduledCallback
@@ -135,9 +122,7 @@ exports.unstable_flushUntilNextPaint = function()
 				hasMoreWork = cb(true, currentTime)
 			until not hasMoreWork or didStop
 
-			if not hasMoreWork then
-				scheduledCallback = nil
-			end
+			if not hasMoreWork then scheduledCallback = nil end
 		end)
 
 		-- ROBLOX finally
@@ -145,16 +130,12 @@ exports.unstable_flushUntilNextPaint = function()
 		didStop = false
 		isFlushing = false
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 	end
 end
 
 exports.unstable_flushExpired = function()
-	if isFlushing then
-		error("Already flushing work.")
-	end
+	if isFlushing then error("Already flushing work.") end
 	if scheduledCallback ~= nil then
 		isFlushing = true
 		local ok, result = pcall(function()
@@ -162,24 +143,18 @@ exports.unstable_flushExpired = function()
 			-- https://jira.rbx.com/browse/CLI-35978
 			local callback: any = scheduledCallback
 			local hasMoreWork = callback(false, currentTime)
-			if not hasMoreWork then
-				scheduledCallback = nil
-			end
+			if not hasMoreWork then scheduledCallback = nil end
 		end)
 
 		isFlushing = false
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 	end
 end
 
 exports.unstable_flushAllWithoutAsserting = function(): boolean
 	-- Returns false if no work was flushed.
-	if isFlushing then
-		error("Already flushing work.")
-	end
+	if isFlushing then error("Already flushing work.") end
 	if scheduledCallback ~= nil then
 		local cb = scheduledCallback
 		isFlushing = true
@@ -189,16 +164,12 @@ exports.unstable_flushAllWithoutAsserting = function(): boolean
 				hasMoreWork = cb(true, currentTime)
 			until not hasMoreWork
 
-			if not hasMoreWork then
-				scheduledCallback = nil
-			end
+			if not hasMoreWork then scheduledCallback = nil end
 		end)
 
 		isFlushing = false
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 
 		return true
 	else
@@ -207,9 +178,7 @@ exports.unstable_flushAllWithoutAsserting = function(): boolean
 end
 
 exports.unstable_clearYields = function(): { [number]: any }
-	if yieldedValues == nil then
-		return {}
-	end
+	if yieldedValues == nil then return {} end
 	local values = yieldedValues
 	yieldedValues = nil
 	return values

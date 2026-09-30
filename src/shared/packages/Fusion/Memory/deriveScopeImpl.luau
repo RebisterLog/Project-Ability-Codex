@@ -19,26 +19,15 @@ local scopePool = require(Package.Memory.scopePool)
 -- checking behaviour.
 local function deriveScopeImpl<T>(
 	existing: Types.Scope<T>,
-	methods: {[unknown]: unknown}?,
-	...: {[unknown]: unknown}
+	methods: { [unknown]: unknown }?,
+	...: { [unknown]: unknown }
 ): any
 	local metatable = getmetatable(existing)
 	if methods ~= nil then
 		metatable = table.clone(metatable)
-		metatable.__index = merge(
-			true, {}, 
-			metatable.__index, 
-			merge(
-				false, {},
-				methods, 
-				...
-			)
-		)
+		metatable.__index = merge(true, {}, metatable.__index, merge(false, {}, methods, ...))
 	end
-	local scope = setmetatable(
-		scopePool.reuseAny() :: any or {},
-		metatable
-	)
+	local scope = setmetatable(scopePool.reuseAny() :: any or {}, metatable)
 	return scope
 end
 

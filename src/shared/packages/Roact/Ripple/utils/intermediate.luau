@@ -69,7 +69,8 @@ local decoders: { [string]: (components: { any }) -> any } = {
 		return Vector2.new(xy.x, xy.y)
 	end,
 	CFrame = function(components: { Vector3 }): CFrame
-		return CFrame.fromMatrix(components[1], components[2], components[3], components[4]):Orthonormalize()
+		return CFrame.fromMatrix(components[1], components[2], components[3], components[4])
+			:Orthonormalize()
 	end,
 	Color3 = function(components: { vector }): Color3
 		local rgb = vector.max(oklab.toSRGB(components[1]), vector.zero)
@@ -97,9 +98,7 @@ local function create<T>(value: T): Intermediate<T>
 	local encode = encoders[kind]
 	local decode = decoders[kind]
 
-	if not encode or not decode then
-		error(`Unsupported type {kind} for Ripple animation value`)
-	end
+	if not encode or not decode then error(`Unsupported type {kind} for Ripple animation value`) end
 
 	encode(components, value)
 
@@ -146,13 +145,9 @@ end
 local function setValue<T>(intermediate: Intermediate<T>, value: T): boolean
 	local currentValue = getValue(intermediate)
 
-	if type(value) == "table" then
-		value = merge(currentValue, value)
-	end
+	if type(value) == "table" then value = merge(currentValue, value) end
 
-	if value == currentValue then
-		return false
-	end
+	if value == currentValue then return false end
 
 	intermediate.encode(intermediate.components, value)
 	intermediate.value = value
@@ -182,7 +177,12 @@ local function assign<T>(intermediate: Intermediate<T>, source: Intermediate<T>)
 	intermediate.dirty = nil
 end
 
-local function lerp<T>(intermediate: Intermediate<T>, from: Intermediate<T>, to: Intermediate<T>, alpha: number)
+local function lerp<T>(
+	intermediate: Intermediate<T>,
+	from: Intermediate<T>,
+	to: Intermediate<T>,
+	alpha: number
+)
 	for key, b in to.components do
 		local a = from.components[key] :: any
 		intermediate.components[key] = a + (b - a) * alpha

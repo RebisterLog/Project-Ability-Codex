@@ -53,7 +53,10 @@ test("should swap from spring to tween", function()
 	motion:tween(vector.one, { duration = 1 })
 	motion:step(0.5)
 	assert(completions == 1, "motion should be incomplete")
-	assert(motion:getPosition() == vector.create(0.5, 0.5, 0.5), "position should be halfway to goal")
+	assert(
+		motion:getPosition() == vector.create(0.5, 0.5, 0.5),
+		"position should be halfway to goal"
+	)
 	assert(motion:getVelocity() == vector.zero, "velocity should be zero during tween")
 
 	motion:step(0.5)
@@ -72,7 +75,10 @@ test("should swap from tween to spring", function()
 	motion:tween(vector.one, { duration = 1 })
 	motion:step(0.5)
 	assert(completions == 0, "motion should be incomplete")
-	assert(motion:getPosition() == vector.create(0.5, 0.5, 0.5), "position should be halfway to goal")
+	assert(
+		motion:getPosition() == vector.create(0.5, 0.5, 0.5),
+		"position should be halfway to goal"
+	)
 	assert(motion:getVelocity() == vector.zero, "velocity should be zero during tween")
 
 	motion:step(0.5)
@@ -135,7 +141,8 @@ describe("spring", function()
 
 	test("should complete if goal is in reach", function()
 		local result
-		local spring = createMotion(vector.one, { spring = { precision = 0.5, restVelocity = 0.5 } })
+		local spring =
+			createMotion(vector.one, { spring = { precision = 0.5, restVelocity = 0.5 } })
 
 		spring:onComplete(function(value)
 			result = value
@@ -161,7 +168,8 @@ describe("spring", function()
 	test("should connect while active", function()
 		local springs = {}
 		for index = 1, 10 do
-			springs[index] = createMotion(vector.zero, { start = true, spring = { precision = 0.1 } })
+			springs[index] =
+				createMotion(vector.zero, { start = true, spring = { precision = 0.1 } })
 		end
 		assert(#scheduler.states == 0, "start with 0 connections")
 
@@ -361,7 +369,10 @@ describe("tween", function()
 			end
 
 			assert(tween:idle(), "did not complete")
-			assert(result == vector.one * case[#case], `{repeats} expected {case[#case]}, got {result}`)
+			assert(
+				result == vector.one * case[#case],
+				`{repeats} expected {case[#case]}, got {result}`
+			)
 		end
 	end)
 
@@ -378,7 +389,9 @@ describe("tween", function()
 		end)
 
 		for repeats, case in cases do
-			tween:configure({ tween = { position = vector.zero, repeats = repeats, reverses = true } })
+			tween:configure({
+				tween = { position = vector.zero, repeats = repeats, reverses = true },
+			})
 
 			for i = 1, repeats * 2 do
 				tween:step(0.5)
@@ -389,7 +402,10 @@ describe("tween", function()
 			end
 
 			assert(tween:idle(), "did not complete")
-			assert(result == vector.one * case[#case], `{repeats} expected {case[#case]}, got {result}`)
+			assert(
+				result == vector.one * case[#case],
+				`{repeats} expected {case[#case]}, got {result}`
+			)
 		end
 	end)
 

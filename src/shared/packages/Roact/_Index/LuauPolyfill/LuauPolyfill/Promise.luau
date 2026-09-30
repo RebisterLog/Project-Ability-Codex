@@ -30,7 +30,7 @@ export type Promise<T> = {
 		reject: ((any) -> ...(nil | T | PromiseLike<T>))?
 	) -> Promise<T>,
 
-	catch: (Promise<T>, ((any) -> ...(nil | T | PromiseLike<nil>))) -> Promise<T>,
+	catch: (Promise<T>, (any) -> ...(nil | T | PromiseLike<nil>)) -> Promise<T>,
 
 	onCancel: (Promise<T>, () -> ()?) -> boolean,
 

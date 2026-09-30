@@ -1,9 +1,9 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
 local enums = require(ServerScriptService.server.Enums)
+local types = require(ServerScriptService.server.types)
 
 local CombatService = Crane:GetService("CombatService")
 
@@ -22,7 +22,7 @@ return {
 			Info.Stun = nil
 			Info.Knockback = nil
 			Info.Angular = nil
-			
+
 			State.Continue = false
 		end
 

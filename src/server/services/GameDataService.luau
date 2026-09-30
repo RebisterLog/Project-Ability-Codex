@@ -26,9 +26,9 @@ end
 
 function GameDataService:onInit()
 	self.Proxy = Proxy(GameDataSchema)
-	
+
 	self.Proxy:Patch({
-		{Name = "ChangeValue", Path = {"ServerRegion"}, Args = {GetRegionName()}}
+		{ Name = "ChangeValue", Path = { "ServerRegion" }, Args = { GetRegionName() } },
 	})
 
 	self.Proxy:OnPatch(function(instructions)
@@ -41,7 +41,6 @@ end
 
 function GameDataService:onStart()
 	self.ConfigService = Crane:GetService("ConfigService")
-
 end
 
 return GameDataService

@@ -8,4 +8,4 @@ local task = nil -- Disable usage of Roblox's task scheduler
 	can return values for them.
 ]]
 
-return setmetatable({}, {__mode = "k"})
+return setmetatable({}, { __mode = "k" })

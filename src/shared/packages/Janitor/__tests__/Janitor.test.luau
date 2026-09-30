@@ -28,13 +28,9 @@ local function AwaitCondition(predicate: () -> boolean, timeout: number?): boole
 	local startTime = os.clock()
 
 	while true do
-		if predicate() then
-			return true
-		end
+		if predicate() then return true end
 
-		if os.clock() - startTime > trueTimeout then
-			return false
-		end
+		if os.clock() - startTime > trueTimeout then return false end
 
 		task.wait()
 	end
@@ -50,11 +46,11 @@ type Static = {
 	new: () -> BasicClass,
 }
 local BasicClass = {} :: BasicClass & Static
-BasicClass.ClassName = "BasicClass";
+BasicClass.ClassName = "BasicClass"
 (BasicClass :: any).__index = BasicClass
 function BasicClass.new()
 	return setmetatable({
-		CleanupFunction = nil;
+		CleanupFunction = nil,
 	}, BasicClass) :: never
 end
 function BasicClass:AddCleanupFunction(Function)
@@ -63,9 +59,7 @@ function BasicClass:AddCleanupFunction(Function)
 end
 function BasicClass:Destroy()
 	local CleanupFunction = self.CleanupFunction
-	if CleanupFunction then
-		CleanupFunction()
-	end
+	if CleanupFunction then CleanupFunction() end
 	table.clear(self)
 	setmetatable(self, nil)
 end
@@ -162,9 +156,12 @@ describe("Janitor.Add", function()
 			BasicClassWasDestroyed = true
 		end)
 
-		NewJanitor:Add(task.delay(1, function()
-			ThreadWasRan = true
-		end), true)
+		NewJanitor:Add(
+			task.delay(1, function()
+				ThreadWasRan = true
+			end),
+			true
+		)
 
 		NewJanitor:Destroy()
 		expect(Part.Parent).toBeUndefined()
@@ -199,17 +196,13 @@ describe("Janitor.Add", function()
 		local Connection = NewJanitor:Add(ReplicatedStorage.AncestryChanged:Connect(NoOperation))
 		NewJanitor:Destroy()
 
-		if IS_DEFERRED then
-			task.wait()
-		end
+		if IS_DEFERRED then task.wait() end
 		expect(Connection.Connected).toBe(false)
 	end)
 end)
 
 describe("Janitor.AddPromise", function()
-	if not Promise then
-		return
-	end
+	if not Promise then return end
 
 	it("should add a Promise", function()
 		local NewJanitor = Janitor.new()
@@ -226,9 +219,7 @@ describe("Janitor.AddPromise", function()
 		NewJanitor:AddPromise(Promise.new(function(Resolve, _, OnCancel)
 			if OnCancel(function()
 				WasCancelled = true
-			end) then
-				return
-			end
+			end) then return end
 
 			return Promise.delay(60):andThen(Resolve)
 		end))

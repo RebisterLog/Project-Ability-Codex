@@ -36,16 +36,12 @@ local function schedule<State>(
 	end
 
 	local function add(state: State)
-		if table.find(states, state) then
-			return
-		end
+		if table.find(states, state) then return end
 
 		table.insert(states, state)
 		count += 1
 
-		if not game or connection then
-			return
-		end
+		if not game or connection then return end
 
 		connection = game:GetService("RunService").Heartbeat:Connect(function(deltaTime)
 			debug.profilebegin(`Ripple{label}`)

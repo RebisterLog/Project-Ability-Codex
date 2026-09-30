@@ -2,10 +2,10 @@ local HttpService = game:GetService("HttpService")
 
 local Document = require(script.Parent.Document)
 local Error = require(script.Parent.Error)
-local freezeDeep = require(script.Parent.freezeDeep)
 local Migration = require(script.Parent.Migration)
 local Promise = require(script.Parent.Parent.Promise)
 local copyDeep = require(script.Parent.copyDeep)
+local freezeDeep = require(script.Parent.freezeDeep)
 
 local LOCK_EXPIRE = 30 * 60
 
@@ -74,13 +74,18 @@ function Collection:load(key, defaultUserIds)
 					local defaultOk, tailoredDefaultData = pcall(self.options.defaultData, key)
 					if not defaultOk then
 						return "fail",
-							Error.new("DefaultDataThrew", `'defaultData' threw an error: {tailoredDefaultData}`)
+							Error.new(
+								"DefaultDataThrew",
+								`'defaultData' threw an error: {tailoredDefaultData}`
+							)
 					end
 
 					if self.options.validate ~= nil then
-						local validateOk, valid, message = pcall(self.options.validate, tailoredDefaultData)
+						local validateOk, valid, message =
+							pcall(self.options.validate, tailoredDefaultData)
 						if not validateOk then
-							return "fail", Error.new("ValidateThrew", `'validate' threw an error: {valid}`)
+							return "fail",
+								Error.new("ValidateThrew", `'validate' threw an error: {valid}`)
 						elseif not valid then
 							return "fail", Error.new("ValidateFailed", `Invalid data: {message}`)
 						end
@@ -96,7 +101,9 @@ function Collection:load(key, defaultUserIds)
 
 				local data = {
 					migrationVersion = #self.options.migrations,
-					lastCompatibleVersion = Migration.getLastCompatibleVersion(self.options.migrations),
+					lastCompatibleVersion = Migration.getLastCompatibleVersion(
+						self.options.migrations
+					),
 					lockId = lockId,
 					data = defaultData,
 				}
@@ -106,17 +113,17 @@ function Collection:load(key, defaultUserIds)
 
 			if
 				value.lockId ~= nil
-				and (DateTime.now().UnixTimestampMillis - keyInfo.UpdatedTime) / 1000 < LOCK_EXPIRE
+				and (DateTime.now().UnixTimestampMillis - keyInfo.UpdatedTime) / 1000
+					< LOCK_EXPIRE
 			then
 				return "retry", Error.new("SessionLocked", "Could not acquire lock")
 			end
 
 			local savedVersion = value.migrationVersion
 
-			local migrationOk, migrated, lastCompatibleVersion = Migration.migrate(self.options.migrations, value)
-			if not migrationOk then
-				return "fail", Error.new("MigrationError", migrated)
-			end
+			local migrationOk, migrated, lastCompatibleVersion =
+				Migration.migrate(self.options.migrations, value)
+			if not migrationOk then return "fail", Error.new("MigrationError", migrated) end
 
 			if self.options.validate ~= nil then
 				local validateOk, valid, message = pcall(self.options.validate, migrated)
@@ -146,9 +153,7 @@ function Collection:load(key, defaultUserIds)
 
 			local data = value.data
 
-			if self.options.freezeData then
-				freezeDeep(data)
-			end
+			if self.options.freezeData then freezeDeep(data) end
 
 			local document = Document.new(self, key, self.options.validate, lockId, data, keyInfo)
 
@@ -183,14 +188,10 @@ end
 ]=]
 function Collection:read(key)
 	return self.data:read(self.dataStore, key):andThen(function(value, keyInfo)
-		if value == nil then
-			return nil
-		end
+		if value == nil then return nil end
 
 		local migrationOk, migrated = Migration.migrate(self.options.migrations, value)
-		if not migrationOk then
-			return Promise.reject(migrated)
-		end
+		if not migrationOk then return Promise.reject(migrated) end
 
 		if self.options.validate ~= nil then
 			local validateOk, valid, message = pcall(self.options.validate, migrated)

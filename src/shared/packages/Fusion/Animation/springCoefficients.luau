@@ -25,15 +25,13 @@ local function springCoefficients(
 	speed: number
 ): (number, number, number, number)
 	-- if time or speed is 0, then the spring won't move
-	if time == 0 or speed == 0 then
-		return 1, 0, 0, 1
-	end
+	if time == 0 or speed == 0 then return 1, 0, 0, 1 end
 	local posPos, posVel, velPos, velVel
 
 	if damping > 1 then
 		-- overdamped spring
 
-		local alpha = math.sqrt(damping^2 - 1)
+		local alpha = math.sqrt(damping ^ 2 - 1)
 		local negHalf_over_alpha_speed = -0.5 / (alpha * speed)
 		local z1 = speed * (alpha + damping) * -1
 		local z2 = speed * (alpha - damping)
@@ -44,7 +42,6 @@ local function springCoefficients(
 		posVel = (exp1 - exp2) * negHalf_over_alpha_speed / speed
 		velPos = (exp2 - exp1) * negHalf_over_alpha_speed * speed
 		velVel = (exp1 * z1 - exp2 * z2) * negHalf_over_alpha_speed
-
 	elseif damping == 1 then
 		-- critically damped spring
 
@@ -59,7 +56,7 @@ local function springCoefficients(
 	else
 		-- underdamped spring
 
-		local alpha = speed * math.sqrt(1 - damping^2)
+		local alpha = speed * math.sqrt(1 - damping ^ 2)
 		local overAlpha = 1 / alpha
 		local exp = math.exp(-1 * time * speed * damping)
 		local sin = math.sin(alpha * time)
@@ -70,7 +67,7 @@ local function springCoefficients(
 
 		posPos = exp_sin_speed_damping_overAlpha + exp_cos
 		posVel = exp_sin * overAlpha
-		velPos = -1 * ( exp_sin * alpha + speed * damping * exp_sin_speed_damping_overAlpha )
+		velPos = -1 * (exp_sin * alpha + speed * damping * exp_sin_speed_damping_overAlpha)
 		velVel = exp_cos - exp_sin_speed_damping_overAlpha
 	end
 

@@ -26,9 +26,7 @@ local valueStack: Array<any> = {}
 
 local fiberStack: Array<Fiber | null>
 
-if _G.__DEV__ then
-	fiberStack = {}
-end
+if _G.__DEV__ then fiberStack = {} end
 
 local index = 0
 
@@ -44,17 +42,13 @@ end
 
 local function pop<T>(cursor: StackCursor<T>, fiber: Fiber): ()
 	if index < 1 then
-		if _G.__DEV__ then
-			console.error("Unexpected pop.")
-		end
+		if _G.__DEV__ then console.error("Unexpected pop.") end
 		return
 	end
 
 	if _G.__DEV__ then
 		-- ROBLOX TODO: workaround for Luau analysis bug
-		if fiber ~= fiberStack[index] :: Fiber then
-			console.error("Unexpected Fiber popped.")
-		end
+		if fiber ~= fiberStack[index] :: Fiber then console.error("Unexpected Fiber popped.") end
 	end
 
 	local value = valueStack[index]
@@ -67,9 +61,7 @@ local function pop<T>(cursor: StackCursor<T>, fiber: Fiber): ()
 
 	valueStack[index] = nil
 
-	if _G.__DEV__ then
-		fiberStack[index] = nil
-	end
+	if _G.__DEV__ then fiberStack[index] = nil end
 
 	index -= 1
 end
@@ -84,9 +76,7 @@ local function push<T>(cursor: StackCursor<T>, value: T, fiber: Fiber): ()
 		valueStack[index] = stackValue
 	end
 
-	if _G.__DEV__ then
-		fiberStack[index] = fiber
-	end
+	if _G.__DEV__ then fiberStack[index] = fiber end
 
 	cursor.current = value
 end

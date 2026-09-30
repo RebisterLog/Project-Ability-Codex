@@ -23,20 +23,21 @@ local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 
+local Component = require(script.Component)
 local Packets = require(script.Packets)
 local Service = require(script.Service)
-local Component = require(script.Component)
 local Utils = require(script.Utils)
 
-local Signal = require(script.packages.Signal)
 local Buttler = require(script.packages.Buttler)
-local Janitor = require(script.packages.Janitor)
 local CacheTab = require(script.packages.CacheTab)
+local Janitor = require(script.packages.Janitor)
+local Signal = require(script.packages.Signal)
 
 _G["CRANE_DEBUGGING"] = false
 _G["CRANE_TRACK_TAGS"] = true
 
-local COMPONENT_ID_ATTRIBUTE = "CraneComponentId"..(RunService:IsServer() and "SERVER" or "CLIENT")
+local COMPONENT_ID_ATTRIBUTE = "CraneComponentId"
+	.. (RunService:IsServer() and "SERVER" or "CLIENT")
 
 -- Types
 export type ServiceDef<A, T> = Service.ServiceDef<A, T>
@@ -47,7 +48,6 @@ export type Component<T = Instance> = Component.Component<T>
 
 type PacketsType = typeof(Packets.packets)
 type PacketName = keyof<PacketsType>
-
 
 type QueriesType = typeof(Packets.queries)
 type QueryName = keyof<QueriesType>
@@ -133,10 +133,10 @@ Crane.__tostring = "CraneFramework"
 
 type CraneData = {
 	IsStarted: boolean,
-	Services: {[string]: Service.Service<string, number>},
-	Components: {[string]: Component.Component},
-	TrackedTags: {[string]: string},
-	InstantiatedComponents: {[string]: {[string]: Component.Component}},
+	Services: { [string]: Service.Service<string, number> },
+	Components: { [string]: Component.Component },
+	TrackedTags: { [string]: string },
+	InstantiatedComponents: { [string]: { [string]: Component.Component } },
 }
 
 export type Crane = setmetatable<CraneData, typeof(Crane)>
@@ -169,9 +169,12 @@ function Crane.Start(self: Crane)
 	if self.IsStarted then error("Crane is already started") end
 	self.IsStarted = true
 
-	table.sort(self.Services :: {Service.Service<string, number>}, function(a: Service.Service<string, number>, b: Service.Service<string, number>)
-		return (a.LoadOrder or 0) < (b.LoadOrder or 0)
-	end)
+	table.sort(
+		self.Services :: { Service.Service<string, number> },
+		function(a: Service.Service<string, number>, b: Service.Service<string, number>)
+			return (a.LoadOrder or 0) < (b.LoadOrder or 0)
+		end
+	)
 
 	-- Init all services
 	for i, service in self.Services do
@@ -227,14 +230,20 @@ end
 	@within Crane
 	@error Throws an error if parents is not a table or is empty
 ]=]
-function Crane.AddServices(self: Crane, parents: {Instance}, descendants: boolean?): {Service.Service<string, number>}
+function Crane.AddServices(
+	self: Crane,
+	parents: { Instance },
+	descendants: boolean?
+): { Service.Service<string, number> }
 	assert(typeof(parents) == "table", `Parents must be a table, got {type(parents)}`)
 	assert(#parents > 0, `Parents must be a non-empty table`)
 
 	local addedServices = {}
 
 	for i, parent in parents do
-		for i, module in (descendants and parent:GetDescendants() or parent:GetChildren()):: {Instance} do
+		for i, module in
+			(descendants and parent:GetDescendants() or parent:GetChildren()) :: { Instance }
+		do
 			if module:IsA("ModuleScript") then
 				local service = require(module) :: Service.Service<string, number>
 				table.insert(addedServices, service)
@@ -269,14 +278,20 @@ end
 	@within Crane
 	@error Throws an error if parents is not a table or is empty
 ]=]
-function Crane.AddComponents(self: Crane, parents: {Instance}, descendants: boolean?): {Component.Component}
+function Crane.AddComponents(
+	self: Crane,
+	parents: { Instance },
+	descendants: boolean?
+): { Component.Component }
 	assert(typeof(parents) == "table", `Parents must be a table, got {type(parents)}`)
 	assert(#parents > 0, `Parents must be a non-empty table`)
 
 	local addedComponents = {}
 
 	for i, parent in parents do
-		for i, instance in (descendants and parent:GetDescendants() or parent:GetChildren()):: {Instance} do
+		for i, instance in
+			(descendants and parent:GetDescendants() or parent:GetChildren()) :: { Instance }
+		do
 			if instance:IsA("ModuleScript") then
 				local component = require(instance) :: Component.Component
 				table.insert(addedComponents, component)
@@ -317,7 +332,10 @@ end
 ]=]
 function Crane.CreateService<A, T>(self: Crane, options: ServiceDef<A, T>)
 	assert(type(options) == "table", `Service must be a table, got {type(options)}`)
-	assert(type(options.Name) == "string", `Service.Name must be a string; got {type(options.Name)}`)
+	assert(
+		type(options.Name) == "string",
+		`Service.Name must be a string; got {type(options.Name)}`
+	)
 	assert(#options.Name > 0, "Service.Name must be a non-empty string")
 	assert(not self.Services[options.Name], `Service "{options.Name}" already exists`)
 	assert(not self.IsStarted, `Services cannot be created after calling "Crane:Start()"`)
@@ -366,19 +384,23 @@ end
 	@error Throws an error if the packet does not exist
 ]=]
 function Crane.GetPacket(self: Crane, name: PacketName)
-	assert((Packets.packets::any)[name], `Packet "{name}" doesn't exists`)
-	return (Packets.packets::any)[name] :: index<typeof(Packets.packets), PacketName>
+	assert((Packets.packets :: any)[name], `Packet "{name}" doesn't exists`)
+	return (Packets.packets :: any)[name] :: index<typeof(Packets.packets), PacketName>
 end
 
 function Crane.GetQuery(self: Crane, name: QueryName)
-	assert((Packets.queries::any)[name], `Query "{name}" doesn't exists`)
-	return (Packets.queries::any)[name] :: index<typeof(Packets.queries), QueryName>
+	assert((Packets.queries :: any)[name], `Query "{name}" doesn't exists`)
+	return (Packets.queries :: any)[name] :: index<typeof(Packets.queries), QueryName>
 end
 
 --[=[
 
 ]=]
-function Crane.GetComponent<T>(self: Crane, name: string, instance: Instance): (Component.Component | nil)
+function Crane.GetComponent<T>(
+	self: Crane,
+	name: string,
+	instance: Instance
+): Component.Component | nil
 	assert(self.Components[name], `Component {name} doesn't exists`)
 	assert(instance, `Instance is required`)
 
@@ -391,16 +413,14 @@ end
 --[=[
 
 ]=]
-function Crane.GetAllComponents<T>(self: Crane, name: string): {Component.Component}
+function Crane.GetAllComponents<T>(self: Crane, name: string): { Component.Component }
 	assert(self.Components[name], `Component {name} doesn't exists`)
 
 	local components = {}
 
 	for id, instanceComponents in self.InstantiatedComponents do
 		for componentName, component in instanceComponents do
-			if componentName == name then
-				table.insert(components, component)
-			end
+			if componentName == name then table.insert(components, component) end
 		end
 	end
 
@@ -436,7 +456,10 @@ end
 ]=]
 function Crane.CreateComponent<T>(self: Crane, options: ComponentDef<T>)
 	assert(type(options) == "table", `Component must be a table, got {type(options)}`)
-	assert(type(options.Name) == "string", `Component.Name must be a string; got {type(options.Name)}`)
+	assert(
+		type(options.Name) == "string",
+		`Component.Name must be a string; got {type(options.Name)}`
+	)
 	assert(#options.Name > 0, "Component.Name must be a non-empty string")
 	assert(not self.Components[options.Name], `Component "{options.Name}" already exists`)
 	assert(not self.IsStarted, `Components cannot be created after calling "Crane:Start()"`)
@@ -445,8 +468,14 @@ function Crane.CreateComponent<T>(self: Crane, options: ComponentDef<T>)
 	self.Components[options.Name] = component
 
 	if _G["CRANE_TRACK_TAGS"] and options.Tag then
-		assert(typeof(options.Tag) == "string", `Component.Tag must be a string; got {type(options.Tag)}`)
-		assert(not table.find(self.TrackedTags, options.Tag), `Component.Tag "{options.Tag}" already exists`)
+		assert(
+			typeof(options.Tag) == "string",
+			`Component.Tag must be a string; got {type(options.Tag)}`
+		)
+		assert(
+			not table.find(self.TrackedTags, options.Tag),
+			`Component.Tag "{options.Tag}" already exists`
+		)
 
 		self.TrackedTags[options.Tag] = options.Name
 	end
@@ -485,7 +514,10 @@ function Crane.AddComponent<T>(self: Crane, instance: T & Instance, name: string
 		or HttpService:GenerateGUID(false)
 
 	self.InstantiatedComponents[componentId] = self.InstantiatedComponents[componentId] or {}
-	assert(not self.InstantiatedComponents[componentId][name], `Component "{name}" already exists on instance "{instance:GetFullName()}"`)
+	assert(
+		not self.InstantiatedComponents[componentId][name],
+		`Component "{name}" already exists on instance "{instance:GetFullName()}"`
+	)
 
 	instance:SetAttribute(COMPONENT_ID_ATTRIBUTE, componentId)
 
@@ -527,7 +559,8 @@ function Crane.RemoveComponent(self: Crane, instance: Instance, name: string)
 	assert(#name > 0, "Component name must be a non-empty string")
 	assert(self.Components[name], `Component "{name}" does not exist`)
 
-	local component = self.InstantiatedComponents[instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string][name]
+	local component =
+		self.InstantiatedComponents[instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string][name]
 	assert(component, `Component "{name}" does not exist on instance "{instance:GetFullName()}"`)
 
 	self.InstantiatedComponents[instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string][name] = nil

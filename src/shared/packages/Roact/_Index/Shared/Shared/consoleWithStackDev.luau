@@ -23,14 +23,10 @@ local printWarning
 
 local exports = {}
 exports.warn = function(format, ...)
-	if _G.__DEV__ then
-		printWarning("warn", format, { ... })
-	end
+	if _G.__DEV__ then printWarning("warn", format, { ... }) end
 end
 exports.error = function(format, ...)
-	if _G.__DEV__ then
-		printWarning("error", format, { ... })
-	end
+	if _G.__DEV__ then printWarning("error", format, { ... }) end
 end
 
 function printWarning(level, format, args)

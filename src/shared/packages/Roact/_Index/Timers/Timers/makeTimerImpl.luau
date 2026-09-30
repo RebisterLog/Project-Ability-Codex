@@ -29,9 +29,7 @@ return function(delayImpl)
 		}
 
 		-- delayTime is an optional parameter
-		if delayTime == nil then
-			delayTime = 0
-		end
+		if delayTime == nil then delayTime = 0 end
 
 		-- To mimic the JS interface, we're expecting delayTime to be in ms
 		local delayTimeMs = delayTime :: number / 1000
@@ -46,12 +44,8 @@ return function(delayImpl)
 	end
 
 	local function clearTimeout(task: Timeout)
-		if task == nil then
-			return
-		end
-		if task[Status] == SCHEDULED then
-			task[Status] = CANCELLED
-		end
+		if task == nil then return end
+		if task[Status] == SCHEDULED then task[Status] = CANCELLED end
 	end
 
 	return {

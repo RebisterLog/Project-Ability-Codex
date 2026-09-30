@@ -9,8 +9,8 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent
-local formatError = require(Package.Logging.formatError)
 local Types = require(Package.Types)
+local formatError = require(Package.Logging.formatError)
 
 local ERROR_INFO_URL = "https://elttob.uk/Fusion/0.3/api-reference/general/errors/#"
 
@@ -33,17 +33,11 @@ local lastUpdateStep = 0
 	Swaps to a new provider for external operations.
 	Returns the old provider, so it can be used again later.
 ]]
-function External.setExternalProvider(
-	newProvider: Types.ExternalProvider?
-): Types.ExternalProvider?
+function External.setExternalProvider(newProvider: Types.ExternalProvider?): Types.ExternalProvider?
 	local oldProvider = currentProvider
-	if oldProvider ~= nil then
-		oldProvider.stopScheduler()
-	end
+	if oldProvider ~= nil then oldProvider.stopScheduler() end
 	currentProvider = newProvider
-	if newProvider ~= nil then
-		newProvider.startScheduler()
-	end
+	if newProvider ~= nil then newProvider.startScheduler() end
 	return oldProvider
 end
 
@@ -57,9 +51,7 @@ end
 --[[
    Sends an immediate task to the external provider. Throws if none is set.
 ]]
-function External.doTaskImmediate(
-	resume: () -> ()
-)
+function External.doTaskImmediate(resume: () -> ())
 	if currentProvider == nil then
 		External.logError("noTaskScheduler")
 	else
@@ -70,9 +62,7 @@ end
 --[[
 	Sends a deferred task to the external provider. Throws if none is set.
 ]]
-function External.doTaskDeferred(
-	resume: () -> ()
-)
+function External.doTaskDeferred(resume: () -> ())
 	if currentProvider == nil then
 		External.logError("noTaskScheduler")
 	else
@@ -83,22 +73,14 @@ end
 --[[
 	Errors in the current thread and halts execution.
 ]]
-function External.logError(
-	messageID: string,
-	errObj: Types.Error?,
-	...: unknown
-): never
+function External.logError(messageID: string, errObj: Types.Error?, ...: unknown): never
 	error(formatError(currentProvider, messageID, errObj, ...), 0)
 end
 
 --[[
 	Errors in a different thread to preserve the flow of execution.
 ]]
-function External.logErrorNonFatal(
-	messageID: string,
-	errObj: Types.Error?,
-	...: unknown
-): ()
+function External.logErrorNonFatal(messageID: string, errObj: Types.Error?, ...: unknown): ()
 	local errorString = formatError(currentProvider, messageID, errObj, ...)
 	if currentProvider ~= nil then
 		currentProvider.logErrorNonFatal(errorString)
@@ -110,10 +92,7 @@ end
 --[[
 	Shows a warning message in the output.
 ]]
-function External.logWarn(
-	messageID: string,
-	...: unknown
-): ()
+function External.logWarn(messageID: string, ...: unknown): ()
 	local errorString = formatError(currentProvider, messageID, debug.traceback(nil, 2), ...)
 	if currentProvider ~= nil then
 		currentProvider.logWarn(errorString)
@@ -132,11 +111,7 @@ end
 	of allowing providers to co-operate to keep the epoch the same, so that
 	monotonicity can be better preserved.
 ]]
-function External.bindToUpdateStep(
-	callback: (
-		now: number
-	) -> ()
-): () -> ()
+function External.bindToUpdateStep(callback: (now: number) -> ()): () -> ()
 	local uniqueIdentifier = {}
 	updateStepCallbacks[uniqueIdentifier] = callback
 	return function()
@@ -149,9 +124,7 @@ end
 	arbitrary epoch. This should be called as early as possible in the external
 	provider's update cycle.
 ]]
-function External.performUpdateStep(
-	now: number
-)
+function External.performUpdateStep(now: number)
 	lastUpdateStep = now
 	for _, callback in updateStepCallbacks do
 		callback(now)

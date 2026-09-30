@@ -35,9 +35,7 @@ return function<T>(array: Array<T>, start: number, deleteCount: number?, ...: T)
 		-- In the JS impl, a negative fromIndex means we should use length -
 		-- index; with Lua, of course, this means that 0 is still valid, but
 		-- refers to the end of the array the way that '-1' would in JS
-		if start < 1 then
-			start = math.max(length - math.abs(start), 1)
-		end
+		if start < 1 then start = math.max(length - math.abs(start), 1) end
 
 		local deletedItems = {} :: Array<T>
 		-- If no deleteCount was provided, we want to delete the rest of the

@@ -17,8 +17,6 @@ return {
 
 		game.Debris:AddItem(BodyVelocity, data.Duration or 0.2)
 	end,
-	
-	onStop = function(self)
-		
-	end,
+
+	onStop = function(self) end,
 }

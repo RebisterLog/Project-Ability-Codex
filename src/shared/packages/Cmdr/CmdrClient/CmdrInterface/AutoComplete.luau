@@ -40,7 +40,10 @@ return function(Cmdr)
 			0,
 			math.max(Title.Field.TextBounds.X + Title.Field.Type.TextBounds.X, Gui.Size.X.Offset),
 			0,
-			math.min(Gui.UIListLayout.AbsoluteContentSize.Y, Gui.Parent.AbsoluteSize.Y - Gui.AbsolutePosition.Y - 10)
+			math.min(
+				Gui.UIListLayout.AbsoluteContentSize.Y,
+				Gui.Parent.AbsoluteSize.Y - Gui.AbsolutePosition.Y - 10
+			)
 		)
 	end
 
@@ -55,16 +58,15 @@ return function(Cmdr)
 		)
 		SetText(Description, Description.Label, options.description)
 
-		Description.Label.TextColor3 = options.invalid and Color3.fromRGB(255, 73, 73) or Color3.fromRGB(255, 255, 255)
+		Description.Label.TextColor3 = options.invalid and Color3.fromRGB(255, 73, 73)
+			or Color3.fromRGB(255, 255, 255)
 		Description.Size = UDim2.new(1, 0, 0, 40)
 
 		-- Flow description text
 		while not Description.Label.TextFits do
 			Description.Size = Description.Size + UDim2.new(0, 0, 0, 2)
 
-			if Description.Size.Y.Offset > 500 then
-				break
-			end
+			if Description.Size.Y.Offset > 500 then break end
 		end
 
 		-- Update container
@@ -90,9 +92,7 @@ return function(Cmdr)
 
 		-- Remove old options.
 		for _, item in pairs(self.Items) do
-			if item.gui then
-				item.gui:Destroy()
-			end
+			if item.gui then item.gui:Destroy() end
 		end
 
 		-- Reset state
@@ -124,14 +124,11 @@ return function(Cmdr)
 				.. string.rep(" ", #leftText)
 				.. string.sub(rightText, stop + 1)
 
-
 			btn.Parent = Gui
 			btn.LayoutOrder = i
 
 			local maxBounds = math.max(btn.Typed.TextBounds.X, btn.Suggest.TextBounds.X) + 20
-			if maxBounds > autocompleteWidth then
-				autocompleteWidth = maxBounds
-			end
+			if maxBounds > autocompleteWidth then autocompleteWidth = maxBounds end
 
 			item.gui = btn
 		end
@@ -141,15 +138,17 @@ return function(Cmdr)
 		-- Todo: Use TextService to find accurate position for auto complete box
 		local text = Entry.TextBox.Text
 		local words = Util.SplitString(text)
-		if text:sub(#text, #text) == " " and not options.at then
-			words[#words + 1] = "e"
-		end
+		if text:sub(#text, #text) == " " and not options.at then words[#words + 1] = "e" end
 		table.remove(words, #words)
 		local extra = (options.at and options.at or (#table.concat(words, " ") + 1)) * 7
 
 		-- Update the auto complete container
-		Gui.Position =
-			UDim2.new(0, Entry.TextBox.AbsolutePosition.X - 10 + extra, 0, Entry.TextBox.AbsolutePosition.Y + 30)
+		Gui.Position = UDim2.new(
+			0,
+			Entry.TextBox.AbsolutePosition.X - 10 + extra,
+			0,
+			Entry.TextBox.AbsolutePosition.Y + 30
+		)
 		Gui.Size = UDim2.new(0, autocompleteWidth, 0, Gui.UIListLayout.AbsoluteContentSize.Y)
 		Gui.Visible = true
 
@@ -159,9 +158,7 @@ return function(Cmdr)
 
 	--- Returns the selected item in the auto complete
 	function AutoComplete:GetSelectedItem()
-		if Gui.Visible == false then
-			return nil
-		end
+		if Gui.Visible == false then return nil end
 
 		return AutoComplete.Items[AutoComplete.SelectedItem]
 	end
@@ -178,9 +175,7 @@ return function(Cmdr)
 
 	--- Changes the user's item selection by the given delta
 	function AutoComplete:Select(delta)
-		if not Gui.Visible then
-			return
-		end
+		if not Gui.Visible then return end
 
 		self.SelectedItem = self.SelectedItem + delta
 

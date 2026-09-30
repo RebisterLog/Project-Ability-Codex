@@ -48,14 +48,12 @@ type ReactNodeList = ReactTypes.ReactNodeList
 local ReactFiberLane = require(script.Parent.ReactFiberLane)
 type Lane = ReactFiberLane.Lane
 type LanePriority = ReactFiberLane.LanePriority
-local ReactFiberSuspenseComponent =
-	require(script.Parent["ReactFiberSuspenseComponent.new"])
+local ReactFiberSuspenseComponent = require(script.Parent["ReactFiberSuspenseComponent.new"])
 type SuspenseState = ReactFiberSuspenseComponent.SuspenseState
 
 local ReactFiberTreeReflection = require(script.Parent.ReactFiberTreeReflection)
 local findCurrentHostFiber = ReactFiberTreeReflection.findCurrentHostFiber
-local findCurrentHostFiberWithNoPortals =
-	ReactFiberTreeReflection.findCurrentHostFiberWithNoPortals
+local findCurrentHostFiberWithNoPortals = ReactFiberTreeReflection.findCurrentHostFiberWithNoPortals
 local getInstance = require(Packages.Shared).ReactInstanceMap.get
 local HostComponent = ReactWorkTags.HostComponent
 local ClassComponent = ReactWorkTags.ClassComponent
@@ -64,8 +62,7 @@ local SuspenseComponent = ReactWorkTags.SuspenseComponent
 local getComponentName = require(Packages.Shared).getComponentName
 local invariant = require(Packages.Shared).invariant
 local describeError = require(Packages.Shared).describeError
-local enableSchedulingProfiler =
-	require(Packages.Shared).ReactFeatureFlags.enableSchedulingProfiler
+local enableSchedulingProfiler = require(Packages.Shared).ReactFeatureFlags.enableSchedulingProfiler
 local ReactSharedInternals = require(Packages.Shared).ReactSharedInternals
 local getPublicInstance = require(script.Parent.ReactFiberHostConfig).getPublicInstance
 local ReactFiberContext = require(script.Parent["ReactFiberContext.new"])
@@ -133,8 +130,7 @@ exports.ReactWorkTags = ReactWorkTags
 exports.ReactTypeOfMode = ReactTypeOfMode
 exports.ReactFiberFlags = ReactFiberFlags
 exports.getNearestMountedFiber = ReactFiberTreeReflection.getNearestMountedFiber
-exports.findCurrentFiberUsingSlowPath =
-	ReactFiberTreeReflection.findCurrentFiberUsingSlowPath
+exports.findCurrentFiberUsingSlowPath = ReactFiberTreeReflection.findCurrentFiberUsingSlowPath
 
 -- exports.registerMutableSourceForHydration = require(script.Parent["ReactMutableSource.new"]).registerMutableSourceForHydration
 exports.createPortal = require(script.Parent.ReactPortal).createPortal
@@ -176,9 +172,7 @@ if __DEV__ then
 end
 
 local function getContextForSubtree(parentComponent: any?): Object
-	if not parentComponent then
-		return emptyContextObject
-	end
+	if not parentComponent then return emptyContextObject end
 
 	local fiber = getInstance(parentComponent)
 	local parentContext = findCurrentUnmaskedContext(fiber)
@@ -208,9 +202,7 @@ local function findHostInstance(component: Object): PublicInstance | nil
 		end
 	end
 	local hostFiber = findCurrentHostFiber(fiber)
-	if hostFiber == nil then
-		return nil
-	end
+	if hostFiber == nil then return nil end
 	return hostFiber.stateNode
 end
 
@@ -233,9 +225,7 @@ local function findHostInstanceWithWarning(
 			end
 		end
 		local hostFiber = findCurrentHostFiber(fiber)
-		if hostFiber == nil then
-			return nil
-		end
+		if hostFiber == nil then return nil end
 		if bit32.band(hostFiber.mode, StrictMode) ~= 0 then
 			local componentName = getComponentName(fiber.type) or "Component"
 			if not didWarnAboutFindNodeInStrictMode[componentName] then
@@ -277,9 +267,7 @@ local function findHostInstanceWithWarning(
 					resetCurrentDebugFiberInDEV()
 				end
 
-				if not ok then
-					error(result)
-				end
+				if not ok then error(result) end
 			end
 		end
 		return hostFiber.stateNode
@@ -302,9 +290,7 @@ exports.updateContainer = function(
 	parentComponent,
 	callback: Function?
 ): Lane
-	if __DEV__ then
-		onScheduleRoot(container, element)
-	end
+	if __DEV__ then onScheduleRoot(container, element) end
 	local current = container.current
 	local eventTime = requestEventTime()
 	if __DEV__ then
@@ -317,9 +303,7 @@ exports.updateContainer = function(
 	end
 	local lane = requestUpdateLane(current)
 
-	if enableSchedulingProfiler then
-		markRenderScheduled(lane)
-	end
+	if enableSchedulingProfiler then markRenderScheduled(lane) end
 
 	local context = getContextForSubtree(parentComponent)
 	if container.context == nil then
@@ -348,9 +332,7 @@ exports.updateContainer = function(
 	local update = createUpdate(eventTime, lane)
 	-- deviation: We need to set element to a placeholder so that it gets
 	-- removed from previous state when merging tables
-	if element == nil then
-		element = Object.None
-	end
+	if element == nil then element = Object.None end
 	-- Caution: React DevTools currently depends on this property
 	-- being called "element".
 	update.payload = {
@@ -391,18 +373,17 @@ exports.flushPassiveEffects = flushPassiveEffects
 exports.IsThisRendererActing = IsThisRendererActing
 exports.act = act
 
-exports.getPublicRootInstance =
-	function(container: OpaqueRoot): React_Component<any, any> | PublicInstance | nil
-		local containerFiber = container.current
-		if not containerFiber.child then
-			return nil
-		end
-		if containerFiber.child.tag == HostComponent then
-			return getPublicInstance(containerFiber.child.stateNode)
-		else
-			return containerFiber.child.stateNode
-		end
+exports.getPublicRootInstance = function(
+	container: OpaqueRoot
+): React_Component<any, any> | PublicInstance | nil
+	local containerFiber = container.current
+	if not containerFiber.child then return nil end
+	if containerFiber.child.tag == HostComponent then
+		return getPublicInstance(containerFiber.child.stateNode)
+	else
+		return containerFiber.child.stateNode
 	end
+end
 
 -- deviation: Declare function ahead of use
 local markRetryLaneIfNotHydrated
@@ -432,8 +413,7 @@ local function markRetryLaneImpl(fiber: Fiber, retryLane: Lane)
 	local suspenseState: SuspenseState? = fiber.memoizedState
 	if suspenseState then
 		if suspenseState ~= nil and suspenseState.dehydrated ~= nil then
-			suspenseState.retryLane =
-				higherPriorityLane(suspenseState.retryLane, retryLane)
+			suspenseState.retryLane = higherPriorityLane(suspenseState.retryLane, retryLane)
 		end
 	end
 end
@@ -443,9 +423,7 @@ markRetryLaneIfNotHydrated = function(fiber: Fiber, retryLane: Lane)
 	markRetryLaneImpl(fiber, retryLane)
 	-- ROBLOX TODO: grab local for this since Luau can't deal with nested type narrowing
 	local alternate = fiber.alternate
-	if alternate then
-		markRetryLaneImpl(alternate, retryLane)
-	end
+	if alternate then markRetryLaneImpl(alternate, retryLane) end
 end
 
 exports.attemptUserBlockingHydration = function(fiber: Fiber)
@@ -494,9 +472,7 @@ exports.runWithPriority = function<T>(priority: LanePriority, fn: () -> T): T
 	setCurrentUpdateLanePriority(priority)
 	local ok, result = xpcall(fn, describeError)
 	setCurrentUpdateLanePriority(previousPriority)
-	if not ok then
-		error(result)
-	end
+	if not ok then error(result) end
 	return result
 end
 
@@ -508,12 +484,8 @@ exports.findHostInstanceWithWarning = findHostInstanceWithWarning
 
 exports.findHostInstanceWithNoPortals = function(fiber: Fiber): PublicInstance?
 	local hostFiber = findCurrentHostFiberWithNoPortals(fiber)
-	if hostFiber == nil then
-		return nil
-	end
-	if hostFiber.tag == FundamentalComponent then
-		return hostFiber.stateNode.instance
-	end
+	if hostFiber == nil then return nil end
+	if hostFiber.tag == FundamentalComponent then return hostFiber.stateNode.instance end
 	return hostFiber.stateNode
 end
 
@@ -536,11 +508,7 @@ local setSuspenseHandler = nil
 
 if __DEV__ then
 	-- deviation: FIXME: obj: `Object | Array<any>`, narrowing not possible with `isArray`
-	local function copyWithDeleteImpl(
-		obj: Object,
-		path: Array<string | number>,
-		index: number
-	)
+	local function copyWithDeleteImpl(obj: Object, path: Array<string | number>, index: number)
 		local key = path[index]
 		local updated
 		if Array.isArray(obj) then
@@ -564,10 +532,7 @@ if __DEV__ then
 	end
 
 	-- deviation: FIXME: obj: `Object | Array<any>`, narrowing not possible with `isArray`
-	local function copyWithDelete(
-		obj: Object,
-		path: Array<string | number>
-	): Object | Array<any>
+	local function copyWithDelete(obj: Object, path: Array<string | number>): Object | Array<any>
 		return copyWithDeleteImpl(obj, path, 0)
 	end
 
@@ -636,9 +601,7 @@ if __DEV__ then
 		index: number,
 		value: any
 	)
-		if index >= (#path + 1) then
-			return value
-		end
+		if index >= (#path + 1) then return value end
 		local key = path[index]
 		local updated
 		if Array.isArray(obj) then
@@ -672,42 +635,40 @@ if __DEV__ then
 	end
 
 	-- Support DevTools editable values for useState and useReducer.
-	overrideHookState =
-		function(fiber: Fiber, id: number, path: Array<string | number>, value: any)
-			local hook = findHook(fiber, id)
-			if hook ~= nil then
-				local newState = copyWithSet(hook.memoizedState, path, value)
-				hook.memoizedState = newState
-				hook.baseState = newState
+	overrideHookState = function(fiber: Fiber, id: number, path: Array<string | number>, value: any)
+		local hook = findHook(fiber, id)
+		if hook ~= nil then
+			local newState = copyWithSet(hook.memoizedState, path, value)
+			hook.memoizedState = newState
+			hook.baseState = newState
 
-				-- We aren't actually adding an update to the queue,
-				-- because there is no update we can add for useReducer hooks that won't trigger an error.
-				-- (There's no appropriate action type for DevTools overrides.)
-				-- As a result though, React will see the scheduled update as a noop and bailout.
-				-- Shallow cloning props works as a workaround for now to bypass the bailout check.
-				fiber.memoizedProps = table.clone(fiber.memoizedProps)
+			-- We aren't actually adding an update to the queue,
+			-- because there is no update we can add for useReducer hooks that won't trigger an error.
+			-- (There's no appropriate action type for DevTools overrides.)
+			-- As a result though, React will see the scheduled update as a noop and bailout.
+			-- Shallow cloning props works as a workaround for now to bypass the bailout check.
+			fiber.memoizedProps = table.clone(fiber.memoizedProps)
 
-				scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
-			end
+			scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
 		end
-	overrideHookStateDeletePath =
-		function(fiber: Fiber, id: number, path: Array<string | number>)
-			local hook = findHook(fiber, id)
-			if hook ~= nil then
-				local newState = copyWithDelete(hook.memoizedState, path)
-				hook.memoizedState = newState
-				hook.baseState = newState
+	end
+	overrideHookStateDeletePath = function(fiber: Fiber, id: number, path: Array<string | number>)
+		local hook = findHook(fiber, id)
+		if hook ~= nil then
+			local newState = copyWithDelete(hook.memoizedState, path)
+			hook.memoizedState = newState
+			hook.baseState = newState
 
-				-- We aren't actually adding an update to the queue,
-				-- because there is no update we can add for useReducer hooks that won't trigger an error.
-				-- (There's no appropriate action type for DevTools overrides.)
-				-- As a result though, React will see the scheduled update as a noop and bailout.
-				-- Shallow cloning props works as a workaround for now to bypass the bailout check.
-				fiber.memoizedProps = table.clone(fiber.memoizedProps)
+			-- We aren't actually adding an update to the queue,
+			-- because there is no update we can add for useReducer hooks that won't trigger an error.
+			-- (There's no appropriate action type for DevTools overrides.)
+			-- As a result though, React will see the scheduled update as a noop and bailout.
+			-- Shallow cloning props works as a workaround for now to bypass the bailout check.
+			fiber.memoizedProps = table.clone(fiber.memoizedProps)
 
-				scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
-			end
+			scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
 		end
+	end
 	overrideHookStateRenamePath = function(
 		fiber: Fiber,
 		id: number,
@@ -736,18 +697,14 @@ if __DEV__ then
 		fiber.pendingProps = copyWithSet(fiber.memoizedProps, path, value)
 		-- ROBLOX TODO: grab local for this since Luau can't deal with nested type narrowing
 		local alternate = fiber.alternate
-		if alternate then
-			alternate.pendingProps = fiber.pendingProps
-		end
+		if alternate then alternate.pendingProps = fiber.pendingProps end
 		scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
 	end
 	overridePropsDeletePath = function(fiber: Fiber, path: Array<string | number>)
 		fiber.pendingProps = copyWithDelete(fiber.memoizedProps, path)
 		-- ROBLOX TODO: grab local for this since Luau can't deal with nested type narrowing
 		local alternate = fiber.alternate
-		if alternate then
-			alternate.pendingProps = fiber.pendingProps
-		end
+		if alternate then alternate.pendingProps = fiber.pendingProps end
 		scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
 	end
 	overridePropsRenamePath = function(
@@ -758,9 +715,7 @@ if __DEV__ then
 		fiber.pendingProps = copyWithRename(fiber.memoizedProps, oldPath, newPath)
 		-- ROBLOX TODO: grab local for this since Luau can't deal with nested type narrowing
 		local alternate = fiber.alternate
-		if alternate then
-			alternate.pendingProps = fiber.pendingProps
-		end
+		if alternate then alternate.pendingProps = fiber.pendingProps end
 		scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
 	end
 
@@ -768,16 +723,14 @@ if __DEV__ then
 		scheduleUpdateOnFiber(fiber, SyncLane, NoTimestamp)
 	end
 
-	setSuspenseHandler = function(newShouldSuspendImpl: (Fiber) -> (boolean))
+	setSuspenseHandler = function(newShouldSuspendImpl: (Fiber) -> boolean)
 		shouldSuspendImpl = newShouldSuspendImpl
 	end
 end
 
 function findHostInstanceByFiber(fiber: Fiber): Instance | TextInstance | nil
 	local hostFiber = findCurrentHostFiber(fiber)
-	if hostFiber == nil then
-		return nil
-	end
+	if hostFiber == nil then return nil end
 	return hostFiber.stateNode
 end
 
@@ -793,9 +746,7 @@ exports.injectIntoDevTools = function(devToolsConfig: DevToolsConfig): boolean
 	local findFiberByHostInstance = devToolsConfig.findFiberByHostInstance
 	local ReactCurrentDispatcher = ReactSharedInternals.ReactCurrentDispatcher
 	local getCurrentFiber = nil
-	if __DEV__ then
-		getCurrentFiber = getCurrentFiberForDevTools
-	end
+	if __DEV__ then getCurrentFiber = getCurrentFiberForDevTools end
 	return injectInternals({
 		bundleType = devToolsConfig.bundleType,
 		version = devToolsConfig.version,

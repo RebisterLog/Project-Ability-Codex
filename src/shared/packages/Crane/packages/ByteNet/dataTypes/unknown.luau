@@ -15,9 +15,7 @@ return function(): types.dataTypeInterface<unknown>
 		read = function(b: buffer, cursor: number)
 			local refs = readRefs.get()
 
-			if not refs then
-				return nil, 1
-			end
+			if not refs then return nil, 1 end
 
 			return refs[buffer.readu8(b, cursor)], 1
 		end,

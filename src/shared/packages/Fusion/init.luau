@@ -6,8 +6,8 @@ local task = nil -- Disable usage of Roblox's task scheduler
 	The entry point for the Fusion library.
 ]]
 
-local Types = require(script.Types)
 local External = require(script.External)
+local Types = require(script.Types)
 
 type Fusion = Types.Fusion
 
@@ -38,9 +38,9 @@ do
 	External.setExternalProvider(RobloxExternal)
 end
 
-local Fusion: Fusion = table.freeze {
+local Fusion: Fusion = table.freeze({
 	-- General
-	version = {major = 0, minor = 3, isRelease = true},
+	version = { major = 0, minor = 3, isRelease = true },
 	Contextual = require(script.Utility.Contextual),
 	Safe = require(script.Utility.Safe),
 
@@ -50,7 +50,7 @@ local Fusion: Fusion = table.freeze {
 	doCleanup = require(script.Memory.doCleanup),
 	innerScope = require(script.Memory.innerScope),
 	scoped = require(script.Memory.scoped),
-	
+
 	-- Graph
 	Observer = require(script.Graph.Observer),
 
@@ -77,6 +77,6 @@ local Fusion: Fusion = table.freeze {
 	-- Animation
 	Tween = require(script.Animation.Tween),
 	Spring = require(script.Animation.Spring),
-}
+})
 
 return Fusion

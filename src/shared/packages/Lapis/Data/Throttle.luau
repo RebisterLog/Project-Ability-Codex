@@ -79,11 +79,15 @@ function Throttle.new(config)
 end
 
 function Throttle:getUpdateAsyncBudget()
-	return self.config:get("dataStoreService"):GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)
+	return self.config
+		:get("dataStoreService")
+		:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)
 end
 
 function Throttle:getGetAsyncBudget()
-	return self.config:get("dataStoreService"):GetRequestBudgetForRequestType(Enum.DataStoreRequestType.GetAsync)
+	return self.config
+		:get("dataStoreService")
+		:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.GetAsync)
 end
 
 function Throttle:getRemoveAsyncBudget()
@@ -120,13 +124,9 @@ function Throttle:start()
 		end
 
 		for _, request in self.updateAsyncQueue do
-			if self:getUpdateAsyncBudget() == 0 then
-				break
-			end
+			if self:getUpdateAsyncBudget() == 0 then break end
 
-			if request.promise ~= nil then
-				continue
-			end
+			if request.promise ~= nil then continue end
 
 			local promise = updateAsync(self, request):andThen(function(result, value, keyInfo)
 				if result == "cancelled" then
@@ -147,9 +147,7 @@ function Throttle:start()
 				request.promise = nil
 			end)
 
-			if promise:getStatus() == Promise.Status.Started then
-				request.promise = promise
-			end
+			if promise:getStatus() == Promise.Status.Started then request.promise = promise end
 		end
 	end
 
@@ -157,19 +155,13 @@ function Throttle:start()
 		for index = #self.getAsyncQueue, 1, -1 do
 			local request = self.getAsyncQueue[index]
 
-			if request.attempts == 0 then
-				table.remove(self.getAsyncQueue, index)
-			end
+			if request.attempts == 0 then table.remove(self.getAsyncQueue, index) end
 		end
 
 		for _, request in self.getAsyncQueue do
-			if self:getGetAsyncBudget() == 0 then
-				break
-			end
+			if self:getGetAsyncBudget() == 0 then break end
 
-			if request.promise ~= nil then
-				continue
-			end
+			if request.promise ~= nil then continue end
 
 			local promise = getAsync(request):andThen(function(ok, value, keyInfo)
 				if ok then
@@ -182,9 +174,7 @@ function Throttle:start()
 				request.promise = nil
 			end)
 
-			if promise:getStatus() == Promise.Status.Started then
-				request.promise = promise
-			end
+			if promise:getStatus() == Promise.Status.Started then request.promise = promise end
 		end
 	end
 
@@ -192,19 +182,13 @@ function Throttle:start()
 		for index = #self.removeAsyncQueue, 1, -1 do
 			local request = self.removeAsyncQueue[index]
 
-			if request.attempts == 0 then
-				table.remove(self.removeAsyncQueue, index)
-			end
+			if request.attempts == 0 then table.remove(self.removeAsyncQueue, index) end
 		end
 
 		for _, request in self.removeAsyncQueue do
-			if self:getRemoveAsyncBudget() == 0 then
-				break
-			end
+			if self:getRemoveAsyncBudget() == 0 then break end
 
-			if request.promise ~= nil then
-				continue
-			end
+			if request.promise ~= nil then continue end
 
 			local promise = removeAsync(request):andThen(function(ok, message)
 				if ok then
@@ -217,9 +201,7 @@ function Throttle:start()
 				request.promise = nil
 			end)
 
-			if promise:getStatus() == Promise.Status.Started then
-				request.promise = promise
-			end
+			if promise:getStatus() == Promise.Status.Started then request.promise = promise end
 		end
 	end
 
@@ -230,7 +212,14 @@ function Throttle:start()
 	end)
 end
 
-function Throttle:updateAsync(dataStore, key, transform, cancelOnGameClose, retryAttempts, retryDelay)
+function Throttle:updateAsync(
+	dataStore,
+	key,
+	transform,
+	cancelOnGameClose,
+	retryAttempts,
+	retryDelay
+)
 	return Promise.new(function(resolve, reject)
 		table.insert(self.updateAsyncQueue, {
 			dataStore = dataStore,

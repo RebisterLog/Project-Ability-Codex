@@ -11,6 +11,4 @@ function QuestService:onStart()
 	self.ConfigService = Crane:GetService("ConfigService")
 end
 
-
-
 return QuestService

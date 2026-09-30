@@ -19,7 +19,12 @@ export type Function = (...any) -> ...any
 export type Table<T, V> = { [T]: V }
 export type Tuple<T, V> = Array<T | V>
 export type mapCallbackFn<K, V> = (element: V, key: K, map: Map<K, V>) -> ()
-export type mapCallbackFnWithThisArg<K, V> = (thisArg: Object, value: V, key: K, map: Map<K, V>) -> ()
+export type mapCallbackFnWithThisArg<K, V> = (
+	thisArg: Object,
+	value: V,
+	key: K,
+	map: Map<K, V>
+) -> ()
 
 export type Map<K, V> = typeof(setmetatable(
 	{} :: {
@@ -70,7 +75,11 @@ export type Set<T> = typeof(setmetatable(
 		add: (self: Set<T>, T) -> Set<T>,
 		clear: (self: Set<T>) -> (),
 		delete: (self: Set<T>, T) -> boolean,
-		forEach: (self: Set<T>, callback: setCallbackFn<T> | setCallbackFnWithThisArg<T>, thisArg: Object?) -> (),
+		forEach: (
+			self: Set<T>,
+			callback: setCallbackFn<T> | setCallbackFnWithThisArg<T>,
+			thisArg: Object?
+		) -> (),
 		has: (self: Set<T>, T) -> boolean,
 		ipairs: (self: Set<T>) -> any,
 	},

@@ -73,14 +73,14 @@ export type ServiceData<A, T> = ServiceDef<A, T> & {
 		@prop onInit ((self: Service) -> ())?
 		@within ServiceData
 	]=]
-	onInit: ((self: Service<A, T>) -> ())?;
+	onInit: ((self: Service<A, T>) -> ())?,
 	--[=[
 		Optional callback function that is called when the service starts.
 
 		@prop onStart ((self: Service) -> ())?
 		@within ServiceData
 	]=]
-	onStart: ((self: Service<A, T>) -> ())?;
+	onStart: ((self: Service<A, T>) -> ())?,
 }
 
 export type Service<A, T> = setmetatable<ServiceData<A, T>, typeof(Service)>

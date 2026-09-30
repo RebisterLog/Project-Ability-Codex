@@ -113,9 +113,7 @@ function Butler.setDebug(enabled: boolean)
 end
 
 local function _log(...)
-	if _debugEnabled then
-		print("[Butler]", ...)
-	end
+	if _debugEnabled then print("[Butler]", ...) end
 end
 
 local function _warn(msg: string)
@@ -144,7 +142,6 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 	local t0 = _debugEnabled and os.clock() or 0
 
 	local packed = table.pack(pcall(function()
-
 		-- 1. Custom cleanup method specified by caller
 		if method then
 			local fn = (object :: any)[method]
@@ -171,9 +168,7 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 			local canceled = pcall(task.cancel, object)
 			if not canceled then
 				local statusOk, status = pcall(coroutine.status, object)
-				if statusOk and status == "suspended" then
-					pcall(coroutine.close, object)
-				end
+				if statusOk and status == "suspended" then pcall(coroutine.close, object) end
 			end
 
 			-- 5. Roblox Instance
@@ -186,9 +181,7 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 				local readOk, value = pcall(function()
 					return (object :: any)[key]
 				end)
-				if readOk then
-					return value
-				end
+				if readOk then return value end
 				return nil
 			end
 
@@ -204,16 +197,12 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 			-- 6a. Promise (evaera / roblox-ts: has getStatus + cancel)
 			if type(getStatus) == "function" and type(cancel) == "function" then
 				local status = object:getStatus()
-				if status == "Started" or status == "Running" then
-					object:cancel()
-				end
+				if status == "Started" or status == "Running" then object:cancel() end
 
 				-- 6b. Tween — cancel BEFORE destroy to stop the animation
 			elseif type(cancelUpper) == "function" and type(play) == "function" then
 				object:Cancel()
-				if type(destroyUpper) == "function" then
-					object:Destroy()
-				end
+				if type(destroyUpper) == "function" then object:Destroy() end
 
 				-- 6c. Standard OOP: Destroy / destroy
 			elseif type(destroyUpper) == "function" then
@@ -226,11 +215,9 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 				object:Disconnect()
 			elseif type(disconnectLower) == "function" then
 				object:disconnect()
-
 			else
 				_warn("Table has no recognized cleanup method (Destroy/Disconnect/cancel)")
 			end
-
 		else
 			_warn(("Unrecognized task type '%s'; skipping"):format(t))
 		end
@@ -259,11 +246,11 @@ end
 ]]
 function Butler.new()
 	local self = setmetatable({
-		_tasks     = {} :: { TaskEntry },
-		_named     = {} :: { [string]: TaskEntry },
-		_onClean   = {} :: { () -> () },
+		_tasks = {} :: { TaskEntry },
+		_named = {} :: { [string]: TaskEntry },
+		_onClean = {} :: { () -> () },
 		_destroyed = false,
-		_linked    = nil :: RBXScriptConnection?,
+		_linked = nil :: RBXScriptConnection?,
 	}, Butler)
 	return self
 end
@@ -271,9 +258,7 @@ end
 -- ─── Internal guards ─────────────────────────────────────────────────────────
 
 local function _alive<T>(self: T & { _destroyed: boolean }, op: string)
-	if self._destroyed then
-		error(("[Butler] :%s() called on a destroyed Butler"):format(op), 3)
-	end
+	if self._destroyed then error(("[Butler] :%s() called on a destroyed Butler"):format(op), 3) end
 end
 
 local function _entry(object: any, method: string?, label: string?): TaskEntry
@@ -395,7 +380,9 @@ end
 ]]
 function Butler:Count(): number
 	local n = #self._tasks
-	for _ in pairs(self._named) do n += 1 end
+	for _ in pairs(self._named) do
+		n += 1
+	end
 	return n
 end
 
@@ -445,23 +432,19 @@ end
 	    end)
 ]]
 function Butler:Until(
-	untilSignal:  RBXScriptSignal,
+	untilSignal: RBXScriptSignal,
 	listenSignal: RBXScriptSignal,
 	fn: (...any) -> ()
 ): RBXScriptConnection
 	_alive(self, "Until")
 
 	local listenConn: RBXScriptConnection? = nil
-	local untilConn:  RBXScriptConnection? = nil
+	local untilConn: RBXScriptConnection? = nil
 
 	listenConn = listenSignal:Connect(fn)
-	untilConn  = untilSignal:Connect(function()
-		if listenConn then
-			self:Remove(listenConn)
-		end
-		if untilConn then
-			self:Remove(untilConn)
-		end
+	untilConn = untilSignal:Connect(function()
+		if listenConn then self:Remove(listenConn) end
+		if untilConn then self:Remove(untilConn) end
 	end)
 
 	local trackedListenConn = listenConn :: RBXScriptConnection
@@ -487,8 +470,10 @@ function Butler:ConnectMany(pairs_: { SignalHandlerPair }): { RBXScriptConnectio
 	local conns: { RBXScriptConnection } = {}
 	for i, pair in ipairs(pairs_) do
 		local signal, fn = pair[1], pair[2]
-		assert(typeof(signal) == "RBXScriptSignal" and type(fn) == "function",
-			("[Butler] ConnectMany entry %d must be {signal, fn}"):format(i))
+		assert(
+			typeof(signal) == "RBXScriptSignal" and type(fn) == "function",
+			("[Butler] ConnectMany entry %d must be {signal, fn}"):format(i)
+		)
 		table.insert(conns, self:Connect(signal :: RBXScriptSignal, fn :: (...any) -> ()))
 	end
 	return conns
@@ -528,9 +513,7 @@ end
 ]]
 function Butler:AddInstance(inst: Instance, parent: Instance?): Instance
 	_alive(self, "AddInstance")
-	if parent then
-		inst.Parent = parent
-	end
+	if parent then inst.Parent = parent end
 	return self:Add(inst)
 end
 
@@ -911,9 +894,7 @@ function Butler:Clean()
 	-- 3. Teardown observers (RxJS finalize pattern)
 	for _, fn in ipairs(self._onClean) do
 		local ok, err = pcall(fn)
-		if not ok then
-			_warn(("OnClean observer error: %s"):format(tostring(err)))
-		end
+		if not ok then _warn(("OnClean observer error: %s"):format(tostring(err))) end
 	end
 
 	_log("Clean() complete.")
@@ -937,10 +918,7 @@ end
 -- ─── Metamethods ─────────────────────────────────────────────────────────────
 
 function Butler:__tostring(): string
-	return ("Butler<%d tasks, %s>"):format(
-		self:Count(),
-		self._destroyed and "destroyed" or "alive"
-	)
+	return ("Butler<%d tasks, %s>"):format(self:Count(), self._destroyed and "destroyed" or "alive")
 end
 
 -- ─── Export ──────────────────────────────────────────────────────────────────

@@ -10,24 +10,20 @@ local function getPrettySize(origin: UDim2)
 	return UDim2.new(origin.X.Scale * 1.1, 0, origin.Y.Scale * 1.1, 0)
 end
 
-local function cancelAllTweens(tweens: {Tween})
+local function cancelAllTweens(tweens: { Tween })
 	for _, tween in tweens do
 		tween:Cancel()
 	end
 end
 
-local function playAllTweens(tweens: {Tween})
+local function playAllTweens(tweens: { Tween })
 	for _, tween in tweens do
 		tween:Play()
 	end
 	return tweens
 end
 
-
-local function Button(
-	scope: Fusion.Scope,
-	button: GuiButton
-)
+local function Button(scope: Fusion.Scope, button: GuiButton)
 	local originalSize = button.Size
 	local prettySize = getPrettySize(originalSize)
 
@@ -38,11 +34,18 @@ local function Button(
 
 	local function onHover()
 		local tweens = {
-			TweenService:Create(button, BTN_TWEEN_INFO, {Size = prettySize})
+			TweenService:Create(button, BTN_TWEEN_INFO, { Size = prettySize }),
 		}
 
 		if icon then
-			table.insert(tweens, TweenService:Create(icon, BTN_ICON_TWEEN_INFO, {Rotation = originalIconRotation + 15}))
+			table.insert(
+				tweens,
+				TweenService:Create(
+					icon,
+					BTN_ICON_TWEEN_INFO,
+					{ Rotation = originalIconRotation + 15 }
+				)
+			)
 		end
 
 		return tweens
@@ -50,16 +53,19 @@ local function Button(
 
 	local function onUnhover()
 		local tweens = {
-			TweenService:Create(button, BTN_TWEEN_INFO, {Size = originalSize})
+			TweenService:Create(button, BTN_TWEEN_INFO, { Size = originalSize }),
 		}
 
 		if icon then
-			table.insert(tweens, TweenService:Create(icon, BTN_ICON_TWEEN_INFO, {Rotation = originalIconRotation}))
+			table.insert(
+				tweens,
+				TweenService:Create(icon, BTN_ICON_TWEEN_INFO, { Rotation = originalIconRotation })
+			)
 		end
 
 		return tweens
 	end
-	
+
 	button.MouseEnter:Connect(function()
 		cancelAllTweens(tweensInProgress)
 		playAllTweens(onHover())
@@ -79,7 +85,7 @@ local function Button(
 		cancelAllTweens(tweensInProgress)
 		playAllTweens(onUnhover())
 	end)
-	
+
 	return button
 end
 

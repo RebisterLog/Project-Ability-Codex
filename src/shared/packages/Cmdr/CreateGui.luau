@@ -156,7 +156,8 @@ return function()
 	Label.Font = Enum.Font.SourceSansLight
 	Label.Name = "Label"
 	Label.Size = UDim2.new(1, 0, 1, 0)
-	Label.Text = "The players to teleport. The players to teleport. The players to teleport. The players to teleport. "
+	Label.Text =
+		"The players to teleport. The players to teleport. The players to teleport. The players to teleport. "
 	Label.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Label.TextSize = 16
 	Label.TextWrapped = true

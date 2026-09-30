@@ -7,5 +7,4 @@ local Package = require(PackageIndex["Symbol"]["Symbol"])
 
 export type Symbol = Package.Symbol
 
-
 return Package

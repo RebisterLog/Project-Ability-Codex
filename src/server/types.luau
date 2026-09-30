@@ -1,11 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
+local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 local PlayerComponent = require(ServerScriptService.server.components.Player)
-local Signal = require(ReplicatedStorage.shared.packages.Signal)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
 local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+local Signal = require(ReplicatedStorage.shared.packages.Signal)
 
 export type PlayerModule = {
 	Name: string,
@@ -59,14 +59,14 @@ export type HitboxData = {
 		Parameters: OverlapParams?,
 		MovementCorrection: boolean?,
 		Debug: boolean?,
-	}
+	},
 }
 
 export type AttackInfo = {
 	Priority: number?,
 	Damage: number?,
 	Stun: {
-		Duration: number, 
+		Duration: number,
 		Priority: number,
 	}?,
 
@@ -77,7 +77,7 @@ export type AttackInfo = {
 		BlockBreak: boolean,
 		BlockIgnore: boolean,
 	}?,
-	
+
 	Knockback: {
 		RelativePart: "Attacker" | "Target",
 		RelativeTowards: "Attacker" | "Target",
@@ -87,22 +87,20 @@ export type AttackInfo = {
 		Duration: number,
 		Velocity: Vector3,
 		MaxForce: Vector3,
-		
+
 		FindCrashObject: boolean,
 	}?,
-	
+
 	Angular: {
 		Velocity: Vector3,
 		Speed: number?,
 		Duration: number?,
 		MaxTorque: number?,
 	}?,
-	
+
 	Ragdoll: {
 		Duration: number,
 	}?,
-	
-	
 }
 
 export type AttackData = {
@@ -112,16 +110,16 @@ export type AttackData = {
 
 	State: {
 		Success: boolean,
-		Continue: boolean, 
-		Blocking: boolean, 
-		Blocked: boolean, 
+		Continue: boolean,
+		Blocking: boolean,
+		Blocked: boolean,
 		BlockBroken: boolean,
 		PerfectBlocking: boolean,
 		PerfectBlocked: boolean,
 		BlockIgnored: boolean,
 		IFrames: number,
 		Armored: boolean,
-	}
+	},
 }
 
 -- [Success]
@@ -234,7 +232,7 @@ export type AttackData = {
 
 type QuestProperities = {
 	Name: string,
-	Data: {any},
+	Data: { any },
 	Player: PlayerComponent,
 	Cleaner: typeof(Crane.Buttler.new()),
 }
@@ -243,10 +241,10 @@ type QuestMethods = {
 	Init: (self: Quest, player: PlayerComponent) -> (),
 	Start: (self: Quest) -> (),
 	Complete: (self: Quest) -> (),
-	
+
 	AddProgress: (self: Quest, amount: any) -> (),
 	RemoveProgress: (self: Quest, amount: any) -> ()?,
-	
+
 	CheckComplete: (self: Quest) -> boolean,
 }
 
@@ -263,14 +261,14 @@ type StandProperities = {
 }
 
 type StandMethods = {
-	Init: (self: Stand, owner: Character)  -> (),
-	
-	IsActive: (self: Stand) -> (boolean),
-	IsVisible: (self: Stand) -> (boolean),
-	
+	Init: (self: Stand, owner: Character) -> (),
+
+	IsActive: (self: Stand) -> boolean,
+	IsVisible: (self: Stand) -> boolean,
+
 	SetActive: (self: Stand, state: boolean) -> (),
 	SetVisible: (self: Stand, state: boolean) -> (),
-	
+
 	WeldToOwner: (self: Stand) -> (),
 	WeldTo: (self: Stand, part: BasePart) -> (),
 }
@@ -286,7 +284,7 @@ export type SkillData = {
 	Cooldown: number,
 	DisplayName: string,
 	AttackInfo: AttackInfo,
-	SkillCharacters: {BotsCharacters.SkillCharacter},
+	SkillCharacters: { BotsCharacters.SkillCharacter },
 	onInit: (self: Skill) -> (),
 	onDestroy: (self: Skill) -> (),
 	Activate: (self: Skill) -> (),
@@ -327,7 +325,7 @@ export type SkillReplicationData = {
 		Bind: Bind,
 		Enabled: boolean,
 		ReleaseTime: number,
-	}
+	},
 }
 
 --SPEC
@@ -338,21 +336,21 @@ export type SpecDef = {
 	Id: string,
 	Name: string,
 	Skin: string,
-	Binds: {[string]: Bind}
+	Binds: { [string]: Bind },
 }
 
-export type SpecData = {	
+export type SpecData = {
 	DisplayName: string,
 	IsPublic: boolean,
 
-	Binds: {[string]: Enum.KeyCode&Enum.UserInputType},
+	Binds: { [string]: Enum.KeyCode & Enum.UserInputType },
 
 	Assets: {
 		Animations: {
 			[string]: {
 				Animation: Animation,
 				Priority: Enum.AnimationPriority,
-			}
+			},
 		},
 
 		Sounds: {
@@ -360,12 +358,12 @@ export type SpecData = {
 				Sound: Sound,
 				Volume: number?,
 				PlaybackSpeed: number?,
-			}
+			},
 		},
 
 		Models: {
 			[string]: Model | BasePart,
-		}
+		},
 	},
 
 	Skills: {
@@ -378,15 +376,15 @@ export type SpecData = {
 type SpecProperities = {
 	Data: SpecData,
 	Initialized: boolean,
-	Skills: {[string]: Skill},
+	Skills: { [string]: Skill },
 	Cleaner: typeof(Crane.Buttler.new()),
 	Character: Character,
 	Proxy: Proxy.ProxyTab<{
 		Skills: {
-			[string]: SkillReplicationData
-		}
+			[string]: SkillReplicationData,
+		},
 	}>,
-	
+
 	OnActivateSkill: Signal.Signal<Skill>,
 	OnInterruptSkill: Signal.Signal<Skill>,
 	OnDeactivateSkill: Signal.Signal<Skill>,
@@ -395,7 +393,7 @@ type SpecProperities = {
 type SpecMethods = {
 	Init: (self: Spec) -> (),
 	AddSkill: (self: Spec, skill: Skill) -> (),
-	GetAvailableSkills: (self: Spec) -> {Skill},
+	GetAvailableSkills: (self: Spec) -> { Skill },
 	ActivateSkill: (self: Spec, skillId: string) -> (),
 	DeactivateSkill: (self: Spec, skillId: string) -> (),
 	InterruptSkill: (self: Spec, skillId: string) -> (),
@@ -412,7 +410,7 @@ type PlayerProperties = {
 	Character: Character?,
 
 	Proxy: Proxy.ProxyTab<PlayerData>,
-	Modules: {[string]: PlayerModule},
+	Modules: { [string]: PlayerModule },
 
 	Janitor: typeof(Crane.Janitor.new()),
 }
@@ -432,42 +430,49 @@ type CharacterProperities = {
 	OnTakeDamage: Signal.Signal<(Character, AttackData)>,
 	Humanoid: Humanoid,
 	RootPart: BasePart,
-	Parameters: {[ParameterName]: 
-		{
-			Watchers: {(value: any) -> ()},
-			Objects: {ParameterObject<any>},
-		}
+	Parameters: {
+		[ParameterName]: {
+			Watchers: { (value: any) -> () },
+			Objects: { ParameterObject<any> },
+		},
 	},
-	
+
 	Block: {
 		Blocking: boolean,
 		PerfectBlockTime: number,
 		PerfectBlockWindow: number,
 		AlwaysPerfect: boolean,
 	},
-	
-	Motors: {Motor6D},
-	RagdollConstraints: {BallSocketConstraint},
-	RagdollColliders: {BasePart},
 
-	Cleaner: typeof(Crane.Buttler.new()),	
+	Motors: { Motor6D },
+	RagdollConstraints: { BallSocketConstraint },
+	RagdollColliders: { BasePart },
+
+	Cleaner: typeof(Crane.Buttler.new()),
 }
 
 type CharacterMethods = {
-	SetSpec:		<T>(self: Character, name: string, skin: string?) -> (),
-	
-	AddParameter: 	<T>(self: Character, param: ParameterName, value: ParameterValue<T>) -> ParameterObject<ParameterName>,
-	GetParameter: 	<T>(self: Character, param: ParameterName) -> (ParameterValue<T>),
-	WatchParameter: <T>(self: Character, param: ParameterName, callback: (value: ParameterValue<T>) -> ()) -> CleanUp,
-	
-	Ragdoll:		<T>(self: Character, state: boolean) -> (),
-	
+	SetSpec: <T>(self: Character, name: string, skin: string?) -> (),
+
+	AddParameter: <T>(
+		self: Character,
+		param: ParameterName,
+		value: ParameterValue<T>
+	) -> ParameterObject<ParameterName>,
+	GetParameter: <T>(self: Character, param: ParameterName) -> ParameterValue<T>,
+	WatchParameter: <T>(
+		self: Character,
+		param: ParameterName,
+		callback: (value: ParameterValue<T>) -> ()
+	) -> CleanUp,
+
+	Ragdoll: <T>(self: Character, state: boolean) -> (),
+
 	SetCollisionToPlayers: <T>(self: Character, collide: boolean) -> (),
 
 	Destroy: (self: Character) -> (),
 }
 
 export type Character = Crane.Component<Model> & CharacterMethods & CharacterProperities
-
 
 return nil

@@ -25,9 +25,7 @@ local buff: buffer
 local references: { [number]: unknown }
 
 local function alloc(bytes: number)
-	if not (cursor + bytes >= size) then
-		return
-	end
+	if not (cursor + bytes >= size) then return end
 
 	size = math.floor(size * 1.5)
 

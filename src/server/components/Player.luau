@@ -1,24 +1,25 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
 local DraftController = require(ReplicatedStorage.shared.packages.DraftController)
+local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
 local Configuration = ServerScriptService.server.Configuration
 
 type PlayerComponentData = {
 	Proxy: Proxy.ProxyTab<PlayerData.PlayerData>,
-	Modules: {[string]: PlayerModule},
+	Modules: { [string]: PlayerModule },
 	Janitor: typeof(Crane.Janitor.new()),
 }
 
-local Player: Crane.Component<Player> & PlayerComponentData = Crane:CreateComponent({
-	Name = "Player",
-}:: Crane.ComponentDef<Player>)
+local Player: Crane.Component<Player> & PlayerComponentData =
+	Crane:CreateComponent({
+		Name = "Player",
+	} :: Crane.ComponentDef<Player>)
 
 export type PlayerModule = {
 	Name: string,
@@ -36,9 +37,7 @@ function Player.onStart(self: typeof(Player))
 	--self.instance.RespawnLocation = point
 end
 
-function Player:SetSpec(abilityName: string)
-	
-end
+function Player:SetSpec(abilityName: string) end
 
 function Player.Destroy(self: typeof(Player))
 	self.Janitor:Cleanup()

@@ -23,9 +23,7 @@ type React_Component<Props, State = nil> = SharedModule.React_Component<Props, S
 local ReactNoopUpdateQueue = require(script.Parent.ReactNoopUpdateQueue)
 local emptyObject = {}
 
-if __DEV__ then
-	Object.freeze(emptyObject)
-end
+if __DEV__ then Object.freeze(emptyObject) end
 
 -- ROBLOX DEVIATION: Initialize state to a singleton that warns on access and
 -- errors on assignment
@@ -53,9 +51,7 @@ local function trimPath(path: string): string
 	-- Works for our codebase, but is pretty brittle.
 
 	local pascalFile = string.match(path, "%.%u[%.%w]-$")
-	if pascalFile then
-		return string.gsub(pascalFile, "^%.", "")
-	end
+	if pascalFile then return string.gsub(pascalFile, "^%.", "") end
 
 	return path
 end
@@ -100,18 +96,10 @@ local function handleNewLifecycle(self, key, value)
 			warnAboutExistingLifecycle(self.__componentName, key, lifecycleNames[key])
 		-- special case for willUpdate which can be defined properly with 2 different names
 		elseif key == "willUpdate" and self["componentWillUpdate"] then
-			warnAboutExistingLifecycle(
-				self.__componentName,
-				key,
-				"UNSAFE_componentWillUpdate"
-			)
+			warnAboutExistingLifecycle(self.__componentName, key, "UNSAFE_componentWillUpdate")
 		-- otherwise if not previously defined, just warn about deprecated name
 		else
-			warnAboutDeprecatedLifecycleName(
-				self.__componentName,
-				key,
-				lifecycleNames[key]
-			)
+			warnAboutDeprecatedLifecycleName(self.__componentName, key, lifecycleNames[key])
 		end
 		-- update key to proper name
 		key = lifecycleNames[key]
@@ -175,10 +163,7 @@ local function setStateInInit(
 
 	-- Use the same warning as in the "real" `setState` below
 	local typeStatePayload = statePayload and type(statePayload)
-	if
-		statePayload == nil
-		or (typeStatePayload ~= "table" and typeStatePayload ~= "function")
-	then
+	if statePayload == nil or (typeStatePayload ~= "table" and typeStatePayload ~= "function") then
 		error(
 			"setState(...): takes an object of state variables to update or a "
 				.. "function which returns an object of state variables."
@@ -402,7 +387,7 @@ end
 -- class inheritance
 
 -- ROBLOX FIXME Luau: this is so we get *some* type checking despite the FIXME Luau above
-local PureComponent = Component:extend("PureComponent") :: React_BaseComponent;
+local PureComponent = Component:extend("PureComponent") :: React_BaseComponent
 
 -- When extend()ing a component, you don't get an extend method.
 -- This is to promote composition over inheritance.

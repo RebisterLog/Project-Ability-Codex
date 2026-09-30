@@ -96,9 +96,7 @@ compare = function(a: Node, b: Node): number
 	-- Compare sort index first, then task id.
 	local diff = a.sortIndex - b.sortIndex
 
-	if diff == 0 then
-		return a.id - b.id
-	end
+	if diff == 0 then return a.id - b.id end
 
 	return diff
 end

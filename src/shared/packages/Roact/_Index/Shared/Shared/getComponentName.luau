@@ -82,9 +82,7 @@ local function getComponentName(type: any): string | nil
 		end
 	end
 
-	if typeofType == "string" then
-		return (type :: any) :: string
-	end
+	if typeofType == "string" then return (type :: any) :: string end
 
 	if type == REACT_FRAGMENT_TYPE then
 		return "Fragment"
@@ -131,17 +129,11 @@ local function getComponentName(type: any): string | nil
 			-- cover this case, but in Lua, class components are tables. We need
 			-- to check for that here and use the name the component was
 			-- assigned.
-			if type.displayName then
-				return type.displayName
-			end
-			if type.name then
-				return type.name
-			end
+			if type.displayName then return type.displayName end
+			if type.name then return type.name end
 			-- ROBLOX note: only use tostring() if its overridden to avoid "table: 0xabcd9012"
 			local mt = getmetatable(type)
-			if mt and rawget(mt, "__tostring") then
-				return tostring(type)
-			end
+			if mt and rawget(mt, "__tostring") then return tostring(type) end
 		end
 	end
 

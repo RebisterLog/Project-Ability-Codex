@@ -16,24 +16,27 @@ Tips
 ]]
 
 return {
-	Name = "help";
-	Description = "Displays a list of all commands, or inspects one command.";
-	Group = "Help";
+	Name = "help",
+	Description = "Displays a list of all commands, or inspects one command.",
+	Group = "Help",
 	Args = {
 		{
-			Type = "command";
-			Name = "Command";
-			Description = "The command to view information on";
-			Optional = true;
+			Type = "command",
+			Name = "Command",
+			Description = "The command to view information on",
+			Optional = true,
 		},
-	};
+	},
 
-	ClientRun = function (context, commandName)
+	ClientRun = function(context, commandName)
 		if commandName then
 			local command = context.Cmdr.Registry:GetCommand(commandName)
 			context:Reply(`Command: {command.Name}`, Color3.fromRGB(230, 126, 34))
 			if command.Aliases and #command.Aliases > 0 then
-				context:Reply(`Aliases: {table.concat(command.Aliases, ", ")}`, Color3.fromRGB(230, 230, 230))
+				context:Reply(
+					`Aliases: {table.concat(command.Aliases, ", ")}`,
+					Color3.fromRGB(230, 230, 230)
+				)
 			end
 			context:Reply(command.Description, Color3.fromRGB(230, 230, 230))
 			for i, arg in ipairs(command.Args) do
@@ -56,9 +59,13 @@ return {
 					context:Reply(`\n{command.Group}\n{string.rep("-", #command.Group)}`)
 					lastGroup = command.Group
 				end
-				context:Reply(if command.Description then `{command.Name} - {command.Description}` else command.Name)
+				context:Reply(
+					if command.Description
+						then `{command.Name} - {command.Description}`
+						else command.Name
+				)
 			end
 		end
 		return ""
-	end;
+	end,
 }

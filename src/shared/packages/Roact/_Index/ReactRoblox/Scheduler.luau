@@ -7,5 +7,4 @@ local Package = require(PackageIndex["Scheduler"]["Scheduler"])
 
 export type Interaction = Package.Interaction
 
-
 return Package

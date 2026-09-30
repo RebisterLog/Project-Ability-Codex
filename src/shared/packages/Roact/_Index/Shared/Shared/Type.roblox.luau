@@ -37,9 +37,7 @@ addType("HostChangeEvent")
 addType("HostEvent")
 
 function TypeInternal.of(value)
-	if typeof(value) ~= "table" then
-		return nil
-	end
+	if typeof(value) ~= "table" then return nil end
 
 	return value[Type]
 end

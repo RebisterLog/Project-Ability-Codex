@@ -119,20 +119,14 @@ local function createMotion<Value>(initialValue: Value, inputOptions: MotionOpti
 		state = state,
 	}, Motion) :: any
 
-	if options.start then
-		self:start()
-	end
+	if options.start then self:start() end
 
 	motionSpring:onChange(function(value: Value, deltaTime: number)
-		if state.current == motionSpring then
-			fireChange(value, deltaTime)
-		end
+		if state.current == motionSpring then fireChange(value, deltaTime) end
 	end)
 
 	motionTween:onChange(function(value: Value, deltaTime: number)
-		if state.current == motionTween then
-			fireChange(value, deltaTime)
-		end
+		if state.current == motionTween then fireChange(value, deltaTime) end
 	end)
 
 	return self
@@ -141,9 +135,7 @@ end
 function Motion:scheduleUpdate()
 	self.state.complete = false
 
-	if self.state.started then
-		scheduler.add(self.state)
-	end
+	if self.state.started then scheduler.add(self.state) end
 end
 
 function Motion:prepareSpring()
@@ -168,9 +160,7 @@ end
 function Motion:start()
 	self.state.started = true
 
-	if not self.state.complete then
-		scheduler.add(self.state)
-	end
+	if not self.state.complete then scheduler.add(self.state) end
 end
 
 function Motion:stop()
@@ -187,17 +177,11 @@ function Motion:step(dt: number): Animatable
 end
 
 function Motion:configure(options: MotionOptions)
-	if options.spring then
-		self.state.spring:configure(options.spring)
-	end
+	if options.spring then self.state.spring:configure(options.spring) end
 
-	if options.tween then
-		self.state.tween:configure(options.tween)
-	end
+	if options.tween then self.state.tween:configure(options.tween) end
 
-	if not self.state.current:idle() then
-		self:scheduleUpdate()
-	end
+	if not self.state.current:idle() then self:scheduleUpdate() end
 end
 
 function Motion:getPosition(): Animatable
@@ -215,18 +199,14 @@ end
 function Motion:setPosition(value: Animatable)
 	self.state.current:setPosition(value)
 
-	if not self.state.current:idle() then
-		self:scheduleUpdate()
-	end
+	if not self.state.current:idle() then self:scheduleUpdate() end
 end
 
 function Motion:setVelocity(value: Animatable)
 	if self.state.current == self.state.spring then
 		self.state.spring:setVelocity(value)
 
-		if not self.state.current:idle() then
-			self:scheduleUpdate()
-		end
+		if not self.state.current:idle() then self:scheduleUpdate() end
 	end
 end
 
@@ -241,27 +221,21 @@ function Motion:setGoal(value: Animatable, options: MotionOptions?)
 
 	self.state.current:setGoal(value)
 
-	if not self.state.current:idle() then
-		self:scheduleUpdate()
-	end
+	if not self.state.current:idle() then self:scheduleUpdate() end
 end
 
 function Motion:spring(value: Animatable, options: SpringOptions?)
 	self:prepareSpring()
 	self.state.spring:setGoal(value, options)
 
-	if not self.state.spring:idle() then
-		self:scheduleUpdate()
-	end
+	if not self.state.spring:idle() then self:scheduleUpdate() end
 end
 
 function Motion:tween(value: Animatable, options: TweenOptions?)
 	self:prepareTween()
 	self.state.tween:setGoal(value, options)
 
-	if not self.state.tween:idle() then
-		self:scheduleUpdate()
-	end
+	if not self.state.tween:idle() then self:scheduleUpdate() end
 end
 
 function Motion:onChange(callback: (value: Animatable, deltaTime: number) -> ()): () -> ()

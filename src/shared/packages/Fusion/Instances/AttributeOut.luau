@@ -9,18 +9,16 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- State
 local castToState = require(Package.State.castToState)
 
-local keyCache: {[string]: Types.SpecialKey} = {}
+local keyCache: { [string]: Types.SpecialKey } = {}
 
-local function AttributeOut(
-	attributeName: string
-): Types.SpecialKey
+local function AttributeOut(attributeName: string): Types.SpecialKey
 	local key = keyCache[attributeName]
 	if key == nil then
 		key = {
@@ -34,26 +32,28 @@ local function AttributeOut(
 				applyTo: Instance
 			)
 				local event = applyTo:GetAttributeChangedSignal(attributeName)
-	
-				if not castToState(value) then
-					External.logError("invalidAttributeOutType")
-				end
+
+				if not castToState(value) then External.logError("invalidAttributeOutType") end
 				local value = value :: Types.StateObject<unknown>
-				if value.kind ~= "Value" then
-					External.logError("invalidAttributeOutType")
-				end
+				if value.kind ~= "Value" then External.logError("invalidAttributeOutType") end
 				local value = value :: Types.Value<unknown>
 				checkLifetime.bOutlivesA(
-					scope, applyTo,
-					value.scope, value.oldestTask,
-					checkLifetime.formatters.attributeOutputsTo, attributeName
+					scope,
+					applyTo,
+					value.scope,
+					value.oldestTask,
+					checkLifetime.formatters.attributeOutputsTo,
+					attributeName
 				)
 
 				value:set((applyTo :: any):GetAttribute(attributeName))
-				table.insert(scope, event:Connect(function()	
-					value:set((applyTo :: any):GetAttribute(attributeName))
-				end))
-			end
+				table.insert(
+					scope,
+					event:Connect(function()
+						value:set((applyTo :: any):GetAttribute(attributeName))
+					end)
+				)
+			end,
 		}
 		keyCache[attributeName] = key
 	end

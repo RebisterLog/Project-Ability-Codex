@@ -5,22 +5,23 @@ if RunService:IsServer() == false then
 	error("Cmdr server module is somehow running on a client!")
 end
 
-local Cmdr do
+local Cmdr
+do
 	Cmdr = setmetatable({
-		ReplicatedRoot = nil;
-		RemoteFunction = nil;
-		RemoteEvent = nil;
-		Util = Util;
-		DefaultCommandsFolder = script.BuiltInCommands;
+		ReplicatedRoot = nil,
+		RemoteFunction = nil,
+		RemoteEvent = nil,
+		Util = Util,
+		DefaultCommandsFolder = script.BuiltInCommands,
 	}, {
-		__index = function (self, k)
+		__index = function(self, k)
 			local r = self.Registry[k]
 			if r and type(r) == "function" then
-				return function (_, ...)
+				return function(_, ...)
 					return r(self.Registry, ...)
 				end
 			end
-		end
+		end,
 	})
 
 	Cmdr.Registry = require(script.Shared.Registry)(Cmdr)
@@ -30,10 +31,8 @@ local Cmdr do
 end
 
 -- Handle command invocations from the clients.
-Cmdr.RemoteFunction.OnServerInvoke = function (player, text, options)
-	if #text > 100_000 then
-		return "Input too long"
-	end
+Cmdr.RemoteFunction.OnServerInvoke = function(player, text, options)
+	if #text > 100_000 then return "Input too long" end
 
 	return Cmdr.Dispatcher:EvaluateAndRun(text, player, options)
 end

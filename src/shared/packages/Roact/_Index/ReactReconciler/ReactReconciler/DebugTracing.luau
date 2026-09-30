@@ -112,9 +112,7 @@ exports.logCommitStarted = logCommitStarted
 
 local function logCommitStopped(): ()
 	if _G.__DEV__ then
-		if enableDebugTracing then
-			groupEnd()
-		end
+		if enableDebugTracing then groupEnd() end
 	end
 end
 exports.logCommitStopped = logCommitStopped
@@ -193,9 +191,7 @@ exports.logLayoutEffectsStarted = logLayoutEffectsStarted
 
 local function logLayoutEffectsStopped(): ()
 	if _G.__DEV__ then
-		if enableDebugTracing then
-			groupEnd()
-		end
+		if enableDebugTracing then groupEnd() end
 	end
 end
 exports.logLayoutEffectsStopped = logLayoutEffectsStopped
@@ -217,9 +213,7 @@ exports.logPassiveEffectsStarted = logPassiveEffectsStarted
 
 local function logPassiveEffectsStopped(): ()
 	if _G.__DEV__ then
-		if enableDebugTracing then
-			groupEnd()
-		end
+		if enableDebugTracing then groupEnd() end
 	end
 end
 exports.logPassiveEffectsStopped = logPassiveEffectsStopped
@@ -241,9 +235,7 @@ exports.logRenderStarted = logRenderStarted
 
 local function logRenderStopped(): ()
 	if _G.__DEV__ then
-		if enableDebugTracing then
-			groupEnd()
-		end
+		if enableDebugTracing then groupEnd() end
 	end
 end
 exports.logRenderStopped = logRenderStopped
@@ -263,11 +255,7 @@ local function logForceUpdateScheduled(componentName: string, lane: Lane): ()
 end
 exports.logForceUpdateScheduled = logForceUpdateScheduled
 
-local function logStateUpdateScheduled(
-	componentName: string,
-	lane: Lane,
-	payloadOrAction: any
-): ()
+local function logStateUpdateScheduled(componentName: string, lane: Lane, payloadOrAction: any): ()
 	if _G.__DEV__ then
 		if enableDebugTracing then
 			log(

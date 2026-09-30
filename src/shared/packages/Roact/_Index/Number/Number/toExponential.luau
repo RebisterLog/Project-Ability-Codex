@@ -22,9 +22,7 @@ return function(value: string | number, fractionDigits: number?): string | nil
 		num = tonumber(value) or NaN -- works because 0 is truthy in Lua
 	end
 	-- returns nil for invalid input instead of nan to be more lua-native
-	if typeof(num) ~= "number" then
-		return "nan"
-	end
+	if typeof(num) ~= "number" then return "nan" end
 
 	if fractionDigits ~= nil then
 		if typeof(fractionDigits) ~= "number" then
@@ -42,7 +40,8 @@ return function(value: string | number, fractionDigits: number?): string | nil
 		formatString = "%." .. tostring(fractionDigits) .. "e"
 	end
 
-	local retval = string.format(formatString, num):gsub("%+0", "+"):gsub("%-0", "-"):gsub("0*e", "e")
+	local retval =
+		string.format(formatString, num):gsub("%+0", "+"):gsub("%-0", "-"):gsub("0*e", "e")
 
 	return retval
 end

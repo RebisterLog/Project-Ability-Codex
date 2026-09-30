@@ -29,10 +29,8 @@ local SimpleMemoComponent = ReactWorkTags.SimpleMemoComponent
 local ClassComponent = ReactWorkTags.ClassComponent
 
 local ReactComponentStackFrame = require(Packages.Shared).ReactComponentStackFrame
-local describeBuiltInComponentFrame =
-	ReactComponentStackFrame.describeBuiltInComponentFrame
-local describeFunctionComponentFrame =
-	ReactComponentStackFrame.describeFunctionComponentFrame
+local describeBuiltInComponentFrame = ReactComponentStackFrame.describeBuiltInComponentFrame
+local describeFunctionComponentFrame = ReactComponentStackFrame.describeFunctionComponentFrame
 local describeClassComponentFrame = ReactComponentStackFrame.describeClassComponentFrame
 
 local function describeFiber(fiber: Fiber): string
@@ -41,14 +39,10 @@ local function describeFiber(fiber: Fiber): string
 	if _G.__DEV__ then
 		-- FIXME (roblox): Luau's limited narrowing necessitates this local
 		local debugOwner = fiber._debugOwner
-		if debugOwner then
-			owner = debugOwner.type
-		end
+		if debugOwner then owner = debugOwner.type end
 	end
 	local source = nil
-	if _G.__DEV__ then
-		source = fiber._debugSource
-	end
+	if _G.__DEV__ then source = fiber._debugSource end
 	if fiber.tag == HostComponent then
 		return describeBuiltInComponentFrame(fiber.type, source, owner)
 	elseif fiber.tag == LazyComponent then

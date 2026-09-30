@@ -128,7 +128,10 @@ local function createErrDiff(actual, expected, operator)
 	if
 		operator == "strictEqual"
 		and (
-			typeof(actual) == "table" and actual ~= nil and typeof(expected) == "table" and expected ~= nil
+			typeof(actual) == "table"
+				and actual ~= nil
+				and typeof(expected) == "table"
+				and expected ~= nil
 			or typeof(actual) == "function" and typeof(expected) == "function"
 		)
 	then
@@ -145,7 +148,9 @@ local function createErrDiff(actual, expected, operator)
 		-- local c = inspect.defaultOptions.colors
 		-- ROBLOX TODO END
 		local actualRaw = if c then removeColors(actualLines[1]) else actualLines[1]
-		local expectedRaw = if Boolean.toJSBoolean(c) then removeColors(expectedLines[1]) else expectedLines[1]
+		local expectedRaw = if Boolean.toJSBoolean(c)
+			then removeColors(expectedLines[1])
+			else expectedLines[1]
 		local inputLength = string.len(actualRaw) + string.len(expectedRaw)
 		-- If the character length of "actual" and "expected" together is less than
 		-- kMaxShortLength and if neither is an object and at least one of them is
@@ -166,7 +171,9 @@ local function createErrDiff(actual, expected, operator)
 			-- not a tty, use a default value of 80 characters.
 			local maxLength = if process.stderr.isTTY then process.stderr.columns else 80
 			if inputLength < maxLength then
-				while string.sub(actualRaw, i + 1, i + 1) == string.sub(expectedRaw, i + 1, i + 1) do
+				while
+					string.sub(actualRaw, i + 1, i + 1) == string.sub(expectedRaw, i + 1, i + 1)
+				do
 					i += 1
 				end
 				-- Ignore the first characters.
@@ -194,9 +201,7 @@ local function createErrDiff(actual, expected, operator)
 		end
 		table.remove(actualLines)
 		table.remove(expectedLines)
-		if #actualLines == 0 or #expectedLines == 0 then
-			break
-		end
+		if #actualLines == 0 or #expectedLines == 0 then break end
 		a = actualLines[#actualLines]
 		b = expectedLines[#expectedLines]
 	end
@@ -217,7 +222,8 @@ local function createErrDiff(actual, expected, operator)
 			end
 		end
 
-		return ("%s\n\n"):format(kReadableOperator.notIdentical) .. ("%s\n"):format(Array.join(actualLines_, "\n"))
+		return ("%s\n\n"):format(kReadableOperator.notIdentical)
+			.. ("%s\n"):format(Array.join(actualLines_, "\n"))
 	end
 
 	-- There were at least five identical lines at the end. Mark a couple of
@@ -233,7 +239,8 @@ local function createErrDiff(actual, expected, operator)
 
 	local printedLines = 0
 	local identical = 0
-	local msg = kReadableOperator[operator] .. ("\n%s+ actual%s %s- expected%s"):format(green, white, red, white)
+	local msg = kReadableOperator[operator]
+		.. ("\n%s+ actual%s %s- expected%s"):format(green, white, red, white)
 	local skippedMsg = (" %s...%s Lines skipped"):format(blue, white)
 
 	local lines = actualLines
@@ -355,7 +362,14 @@ local function createErrDiff(actual, expected, operator)
 		end
 	end
 
-	return ("%s%s\n%s%s%s%s"):format(msg, if skipped then skippedMsg else "", res, other, end_, indicator)
+	return ("%s%s\n%s%s%s%s"):format(
+		msg,
+		if skipped then skippedMsg else "",
+		res,
+		other,
+		end_,
+		indicator
+	)
 end
 -- ROBLOX deviation START: skipped as it is only needed in [inspect.custom] method
 -- local function addEllipsis(string_)
@@ -455,7 +469,10 @@ function AssertionError.new(options: AssertionErrorOptions): AssertionError
 		end
 		if operator == "deepStrictEqual" or operator == "strictEqual" then
 			self = (
-				setmetatable(Error.new(createErrDiff(actual, expected, operator)), AssertionError) :: any
+				setmetatable(
+					Error.new(createErrDiff(actual, expected, operator)),
+					AssertionError
+				) :: any
 			) :: AssertionError
 		elseif operator == "notDeepStrictEqual" or operator == "notStrictEqual" then
 			-- In case the objects are equal but the operator requires unequal, show
@@ -485,13 +502,22 @@ function AssertionError.new(options: AssertionErrorOptions): AssertionError
 			if #res == 1 then
 				self = (
 					setmetatable(
-						Error.new(("%s%s%s"):format(base, if string.len(res[1]) > 5 then "\n\n" else " ", res[1])),
+						Error.new(
+							("%s%s%s"):format(
+								base,
+								if string.len(res[1]) > 5 then "\n\n" else " ",
+								res[1]
+							)
+						),
 						AssertionError
 					) :: any
 				) :: AssertionError
 			else
 				self = (
-					setmetatable(Error.new(("%s\n\n%s\n"):format(base, Array.join(res, "\n"))), AssertionError) :: any
+					setmetatable(
+						Error.new(("%s\n\n%s\n"):format(base, Array.join(res, "\n"))),
+						AssertionError
+					) :: any
 				) :: AssertionError
 			end
 		else
@@ -505,9 +531,7 @@ function AssertionError.new(options: AssertionErrorOptions): AssertionError
 				end
 				self = (setmetatable(Error.new(res), AssertionError) :: any) :: AssertionError
 			else
-				if string.len(res) > 512 then
-					res = ("%s..."):format(String.slice(res, 0, 509))
-				end
+				if string.len(res) > 512 then res = ("%s..."):format(String.slice(res, 0, 509)) end
 				if string.len(other) > 512 then
 					other = ("%s..."):format(String.slice(other, 0, 509))
 				end
@@ -521,7 +545,9 @@ function AssertionError.new(options: AssertionErrorOptions): AssertionError
 						other = (" %s %s"):format(tostring(operator), other)
 					end
 				end
-				self = (setmetatable(Error.new(("%s%s"):format(res, other)), AssertionError) :: any) :: AssertionError
+				self = (
+					setmetatable(Error.new(("%s%s"):format(res, other)), AssertionError) :: any
+				) :: AssertionError
 			end
 		end
 	end

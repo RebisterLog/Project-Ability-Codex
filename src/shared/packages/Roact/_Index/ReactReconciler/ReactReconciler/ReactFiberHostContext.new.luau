@@ -36,8 +36,7 @@ local NO_CONTEXT: NoContextT = {}
 
 local contextStackCursor: StackCursor<HostContext | NoContextT> = createCursor(NO_CONTEXT)
 local contextFiberStackCursor: StackCursor<Fiber | NoContextT> = createCursor(NO_CONTEXT)
-local rootInstanceStackCursor: StackCursor<Container | NoContextT> =
-	createCursor(NO_CONTEXT)
+local rootInstanceStackCursor: StackCursor<Container | NoContextT> = createCursor(NO_CONTEXT)
 
 function requiredContext<Value>(c: Value | NoContextT): Value
 	-- ROBLOX performance: eliminate expensive optional cmp in hot path
@@ -95,9 +94,7 @@ function pushHostContext(fiber: Fiber)
 	local nextContext = getChildHostContext(context, fiber.type, rootInstance)
 
 	-- Don't push this Fiber's context unless it's unique.
-	if context == nextContext then
-		return
-	end
+	if context == nextContext then return end
 
 	-- Track the context and the Fiber that provided it.
 	-- This enables us to pop only Fibers that provide unique contexts.
@@ -108,9 +105,7 @@ end
 function popHostContext(fiber: Fiber)
 	-- Do not pop unless this Fiber provided the current context.
 	-- pushHostContext() only pushes Fibers that provide unique contexts.
-	if contextFiberStackCursor.current ~= fiber then
-		return
-	end
+	if contextFiberStackCursor.current ~= fiber then return end
 
 	pop(contextStackCursor, fiber)
 	pop(contextFiberStackCursor, fiber)

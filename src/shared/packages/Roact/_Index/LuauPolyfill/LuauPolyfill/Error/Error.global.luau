@@ -33,10 +33,12 @@ end
 
 -- ROBLOX NOTE: extracted __createError function so that both Error.new() and Error() can capture the stack trace at the same depth
 local function __createError(message: string?): Error
-	local self = (setmetatable({
-		name = DEFAULT_NAME,
-		message = message or "",
-	}, Error) :: any) :: Error
+	local self = (
+		setmetatable({
+			name = DEFAULT_NAME,
+			message = message or "",
+		}, Error) :: any
+	) :: Error
 	Error.__captureStackTrace(self, 4)
 	return self
 end
@@ -56,16 +58,15 @@ function Error.__captureStackTrace(err_: Error, level: number, options: Function
 		local functionName: string = debug.info(options, "n")
 		local sourceFilePath: string = debug.info(options, "s")
 
-		local espacedSourceFilePath = string.gsub(sourceFilePath, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
+		local espacedSourceFilePath =
+			string.gsub(sourceFilePath, "([%(%)%.%%%+%-%*%?%[%^%$])", "%%%1")
 		local stacktraceLinePattern = espacedSourceFilePath .. ":%d* function " .. functionName
 		local beg = string.find(stack, stacktraceLinePattern)
 		local end_ = nil
 		if beg ~= nil then
 			beg, end_ = string.find(stack, "\n", beg + 1)
 		end
-		if end_ ~= nil then
-			stack = string.sub(stack, end_ + 1)
-		end
+		if end_ ~= nil then stack = string.sub(stack, end_ + 1) end
 		err.__stack = stack
 	else
 		err.__stack = debug.traceback(nil, level)

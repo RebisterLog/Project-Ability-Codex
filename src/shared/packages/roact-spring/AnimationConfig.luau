@@ -116,18 +116,12 @@ function AnimationConfig:mergeConfig(config: any, newConfig: any?): SpringConfig
 	end
 
 	for k, v in pairs(defaults) do
-		if config[k] == nil then
-			config[k] = v
-		end
+		if config[k] == nil then config[k] = v end
 	end
 
 	if config.frequency ~= nil then
-		if config.frequency < 0.01 then
-			config.frequency = 0.01
-		end
-		if config.damping < 0 then
-			config.damping = 0
-		end
+		if config.frequency < 0.01 then config.frequency = 0.01 end
+		if config.damping < 0 then config.damping = 0 end
 		config.tension = ((2 * math.pi / config.frequency) ^ 2) * config.mass
 		config.friction = (4 * math.pi * config.damping * config.mass) / config.frequency
 	end

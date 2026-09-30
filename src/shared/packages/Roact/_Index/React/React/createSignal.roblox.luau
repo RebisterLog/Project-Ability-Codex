@@ -33,16 +33,13 @@ type Function = (...any) -> ...any
 type Connection = { callback: Function, disconnected: boolean }
 type Map<K, V> = { [K]: V }
 
-local function createSignal(): ((Function) -> (() -> ()), (...any) -> ())
+local function createSignal(): ((Function) -> () -> (), (...any) -> ())
 	local connections: Map<Function, Connection> = {}
 	local suspendedConnections = {}
 	local firing = false
 
 	local function subscribe(callback)
-		assert(
-			typeof(callback) == "function",
-			"Can only subscribe to signals with a function."
-		)
+		assert(typeof(callback) == "function", "Can only subscribe to signals with a function.")
 
 		local connection = {
 			callback = callback,
@@ -51,17 +48,12 @@ local function createSignal(): ((Function) -> (() -> ()), (...any) -> ())
 
 		-- If the callback is already registered, don't add to the suspendedConnection. Otherwise, this will disable
 		-- the existing one.
-		if firing and not connections[callback] then
-			suspendedConnections[callback] = connection
-		end
+		if firing and not connections[callback] then suspendedConnections[callback] = connection end
 
 		connections[callback] = connection
 
 		local function disconnect()
-			assert(
-				not connection.disconnected,
-				"Listeners can only be disconnected once."
-			)
+			assert(not connection.disconnected, "Listeners can only be disconnected once.")
 
 			connection.disconnected = true
 			connections[callback] = nil

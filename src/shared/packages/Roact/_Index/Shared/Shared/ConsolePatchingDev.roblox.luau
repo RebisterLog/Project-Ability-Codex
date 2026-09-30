@@ -77,8 +77,7 @@ exports.reenableLogs = function()
 
 		if disabledDepth < 0 then
 			console.error(
-				"disabledDepth fell below zero. "
-					.. "This is a bug in React. Please file an issue."
+				"disabledDepth fell below zero. " .. "This is a bug in React. Please file an issue."
 			)
 		end
 	end

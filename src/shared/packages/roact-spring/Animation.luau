@@ -31,9 +31,7 @@ end
 -- Set the current value. Returns `true` if the value changed
 function Animation:setValue(index: number, value)
 	self.lastPosition[index] = value
-	if self.values[index] == value then
-		return false
-	end
+	if self.values[index] == value then return false end
 	self.values[index] = value
 	return true
 end

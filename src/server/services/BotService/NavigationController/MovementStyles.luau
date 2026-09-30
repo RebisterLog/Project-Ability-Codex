@@ -4,7 +4,7 @@ const MovementStyles = {
 	zigzag = "zigzag",
 	flank = "flank",
 	bait = "bait",
-	puma = "puma"
+	puma = "puma",
 }
 
 export type MovementStyle = keyof<typeof(MovementStyles)>

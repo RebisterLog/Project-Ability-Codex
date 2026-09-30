@@ -1,27 +1,26 @@
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
 local Configuration = ServerScriptService.server.Configuration
-
 
 local PathUtil = Crane:CreateService({
 	Name = "PathUtil",
 })
 
 local RootFolder = game.ServerScriptService.server
-local Selectors: {[string]: (string) -> (Instance?)} = {
+local Selectors: { [string]: (string) -> Instance? } = {
 	["~"] = function(s: string)
 		return RootFolder
 	end,
 }
 
-local Prefixes: {[string]: (typeof(PathUtil), string) -> (Instance?)} = {
+local Prefixes: { [string]: (typeof(PathUtil), string) -> Instance? } = {
 	["@Specs"] = function(self: typeof(PathUtil), s: string)
 		local segments = string.split(s, "/")
 
 		local info = self.SpecService:GetInfo({
-			Id = segments[2]
+			Id = segments[2],
 		})
 		local skillName = ""
 		for Idx = 3, #segments do
@@ -29,12 +28,12 @@ local Prefixes: {[string]: (typeof(PathUtil), string) -> (Instance?)} = {
 		end
 
 		return info.Skills[skillName]
-	end, 
+	end,
 }
 
 function PathUtil:onStart()
 	self.SpecService = Crane:GetService("SpecService")
-	
+
 	task.delay(1, function()
 		--print(self:Parse("@Specs/Standless/Dash"))
 	end)
@@ -44,10 +43,8 @@ function PathUtil:Parse(path: string): Instance? | any
 	local segments = string.split(path, "/")
 	local globalPrefix = segments[1]
 	local current = game
-	
-	if Prefixes[globalPrefix] then
-		return Prefixes[globalPrefix](self, path)
-	end
+
+	if Prefixes[globalPrefix] then return Prefixes[globalPrefix](self, path) end
 
 	for i, segment in segments do
 		local result

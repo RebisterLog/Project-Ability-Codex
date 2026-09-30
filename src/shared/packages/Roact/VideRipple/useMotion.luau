@@ -9,9 +9,7 @@ local function useMotion<T>(initialValue: T, initialOptions: MotionOptions<T>?):
 	local motion = Ripple.createMotion(initialValue, initialOptions)
 	local getter = Vide.source(initialValue)
 
-	if not initialOptions or initialOptions.start ~= false then
-		motion:start()
-	end
+	if not initialOptions or initialOptions.start ~= false then motion:start() end
 
 	Vide.cleanup(motion:onChange(getter))
 	Vide.cleanup(motion)

@@ -8,5 +8,4 @@ local Package = require(PackageIndex["Timers"]["Timers"])
 export type Timeout = Package.Timeout
 export type Interval = Package.Interval
 
-
 return Package

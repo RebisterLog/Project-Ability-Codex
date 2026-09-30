@@ -21,7 +21,9 @@ local function formatError(
 ): string
 	local originalMessageID = messageID
 	local error: Types.Error? = if typeof(errorOrTrace) == "table" then errorOrTrace else nil
-	local trace: string? = if typeof(errorOrTrace) == "table" then errorOrTrace.trace else errorOrTrace
+	local trace: string? = if typeof(errorOrTrace) == "table"
+		then errorOrTrace.trace
+		else errorOrTrace
 	local messageText = messages[messageID]
 	if messageText == nil then
 		messageID = "unknownMessage"

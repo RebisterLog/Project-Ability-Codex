@@ -7,12 +7,12 @@ return {
 	MinBots = 1,
 	CacheBots = true,
 	FightTogether = false,
-	
+
 	Bots = {
 		{
 			Model = NPCFolder.Undyne,
 			BotCharacter = "Undyne",
 			Weight = 10,
 		},
-	}
+	},
 }

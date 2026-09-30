@@ -80,11 +80,7 @@ export type React_Component<Props, State = nil> = {
 
 	-- lifecycle methods
 
-	init: ((
-		self: React_Component<Props, State>,
-		props: Props,
-		context: any?
-	) -> ())?,
+	init: ((self: React_Component<Props, State>, props: Props, context: any?) -> ())?,
 	render: (self: React_Component<Props, State>) -> React_Node,
 	componentWillMount: ((self: React_Component<Props, State>) -> ())?,
 	UNSAFE_componentWillMount: ((self: React_Component<Props, State>) -> ())?,

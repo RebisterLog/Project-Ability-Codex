@@ -28,9 +28,7 @@ function AutoSave:removeDocument(document)
 end
 
 function AutoSave:finishLoad(document)
-	if self.gameClosed then
-		document:close()
-	end
+	if self.gameClosed then document:close() end
 
 	self.ongoingLoads -= 1
 end

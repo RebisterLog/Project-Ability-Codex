@@ -7,12 +7,12 @@ return {
 	MinBots = 1,
 	CacheBots = true,
 	FightTogether = false,
-	
+
 	Bots = {
 		{
 			Model = NPCFolder.DIO,
 			BotCharacter = "Dio",
 			Weight = 10,
 		},
-	}
+	},
 }

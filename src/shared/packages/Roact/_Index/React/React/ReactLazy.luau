@@ -56,11 +56,7 @@ type RejectedPayload = {
 	_result: any,
 }
 
-type Payload<T> =
-	UninitializedPayload<T>
-	| PendingPayload
-	| ResolvedPayload<T>
-	| RejectedPayload
+type Payload<T> = UninitializedPayload<T> | PendingPayload | ResolvedPayload<T> | RejectedPayload
 
 export type LazyComponent<T, P> = {
 	["$$typeof"]: number,
@@ -139,12 +135,8 @@ exports.lazy = function<T>(
 		-- $FlowFixMe
 		setmetatable(lazyType, {
 			__index = function(self, key)
-				if key == "defaultProps" then
-					return defaultProps
-				end
-				if key == "propTypes" then
-					return propTypes
-				end
+				if key == "defaultProps" then return defaultProps end
+				if key == "propTypes" then return propTypes end
 				return
 			end,
 			__newindex = function(self, key, value)

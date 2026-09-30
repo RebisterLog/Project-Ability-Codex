@@ -6,7 +6,7 @@ type SkillData = {
 }
 
 export type PlayerDynamicData = {
-	Skills: {[string]: SkillData} -- [skill id]: SkillData
+	Skills: { [string]: SkillData }, -- [skill id]: SkillData
 }
 
 return {

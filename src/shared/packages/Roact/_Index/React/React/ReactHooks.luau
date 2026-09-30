@@ -35,8 +35,7 @@ type OpaqueIDType = ReactFiberHostConfig.OpaqueIDType
 
 -- local invariant = require(Packages.Shared).invariant
 
-local ReactCurrentDispatcher =
-	require(Packages.Shared).ReactSharedInternals.ReactCurrentDispatcher
+local ReactCurrentDispatcher = require(Packages.Shared).ReactSharedInternals.ReactCurrentDispatcher
 
 type BasicStateAction<S> = ((S) -> S) | S
 type Dispatch<A> = (A) -> ()
@@ -106,20 +105,13 @@ local function useContext<T>(
 end
 exports.useContext = useContext
 
-local function useState<S>(
-	initialState: (() -> S) | S,
-	...
-): (S, Dispatch<BasicStateAction<S>>)
+local function useState<S>(initialState: (() -> S) | S, ...): (S, Dispatch<BasicStateAction<S>>)
 	local dispatcher = resolveDispatcher()
 	return dispatcher.useState(initialState, ...)
 end
 exports.useState = useState
 
-local function useReducer<S, I, A>(
-	reducer: (S, A) -> S,
-	initialArg: I,
-	init: ((I) -> S)?
-): (S, Dispatch<A>)
+local function useReducer<S, I, A>(reducer: (S, A) -> S, initialArg: I, init: ((I) -> S)?): (S, Dispatch<A>)
 	local dispatcher = resolveDispatcher()
 	return dispatcher.useReducer(reducer, initialArg, init)
 end
@@ -137,10 +129,7 @@ exports.useRef = useRef
 -- ROBLOX deviation: TS models this slightly differently, which is needed to have an initially empty ref and clear the ref, and still typecheck
 local function useBinding<T>(
 	initialValue: T
-): (
-	ReactTypes.ReactBinding<T>,
-	ReactTypes.ReactBindingUpdater<T>
-)
+): (ReactTypes.ReactBinding<T>, ReactTypes.ReactBindingUpdater<T>)
 	-- ROBLOX deviation END
 	local dispatcher = resolveDispatcher()
 	return dispatcher.useBinding(initialValue)
@@ -149,7 +138,7 @@ exports.useBinding = useBinding
 
 local function useEffect(
 	-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-	create: (() -> ()) | (() -> (() -> ())),
+	create: (() -> ()) | (() -> () -> ()),
 	deps: Array<any> | nil
 ): ()
 	local dispatcher = resolveDispatcher()
@@ -159,7 +148,7 @@ exports.useEffect = useEffect
 
 local function useLayoutEffect(
 	-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-	create: (() -> ()) | (() -> (() -> ())),
+	create: (() -> ()) | (() -> () -> ()),
 	deps: Array<any> | nil
 ): ()
 	local dispatcher = resolveDispatcher()
@@ -219,14 +208,19 @@ exports.useOpaqueIdentifier = function(): OpaqueIDType | nil
 	return dispatcher.useOpaqueIdentifier()
 end
 
-exports.useMutableSource =
-	function<Source, Snapshot>(
-		source: MutableSource<Source>,
-		getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
-		subscribe: MutableSourceSubscribeFn<Source, Snapshot>
-	): Snapshot
-		local dispatcher = resolveDispatcher()
-		return dispatcher.useMutableSource(source, getSnapshot, subscribe)
-	end
+exports.useMutableSource = function<Source, Snapshot>(
+	source: MutableSource<Source>,
+	getSnapshot: MutableSourceGetSnapshotFn<
+		Source,
+		Snapshot
+	>,
+	subscribe: MutableSourceSubscribeFn<
+		Source,
+		Snapshot
+	>
+): Snapshot
+	local dispatcher = resolveDispatcher()
+	return dispatcher.useMutableSource(source, getSnapshot, subscribe)
+end
 
 return exports

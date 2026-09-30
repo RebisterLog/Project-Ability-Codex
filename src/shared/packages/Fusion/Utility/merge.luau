@@ -12,10 +12,10 @@ local External = require(Package.External)
 
 local function merge(
 	overwrite: boolean,
-	into: {[unknown]: unknown},
-	...: {[unknown]: unknown}
-): {[unknown]: unknown}
-	local fromTables = {...}
+	into: { [unknown]: unknown },
+	...: { [unknown]: unknown }
+): { [unknown]: unknown }
+	local fromTables = { ... }
 	if #fromTables < 1 then
 		return into
 	else

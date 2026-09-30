@@ -9,14 +9,12 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 
-local keyCache: {[string]: Types.SpecialKey} = {}
+local keyCache: { [string]: Types.SpecialKey } = {}
 
-local function OnChange(
-	propertyName: string
-): Types.SpecialKey
+local function OnChange(propertyName: string): Types.SpecialKey
 	local key = keyCache[propertyName]
 	if key == nil then
 		key = {
@@ -35,12 +33,15 @@ local function OnChange(
 				elseif typeof(callback) ~= "function" then
 					External.logError("invalidChangeHandler", nil, propertyName)
 				else
-					local callback = callback :: (...unknown) -> (...unknown)
-					table.insert(scope, event:Connect(function()
-						callback((applyTo :: any)[propertyName])
-					end))
+					local callback = callback :: (...unknown) -> ...unknown
+					table.insert(
+						scope,
+						event:Connect(function()
+							callback((applyTo :: any)[propertyName])
+						end)
+					)
 				end
-			end
+			end,
 		}
 		keyCache[propertyName] = key
 	end

@@ -35,7 +35,11 @@ return function<T, U>(
 	if mapFn then
 		for i = 1, valueStringLength do
 			if thisArg ~= nil then
-				(array :: Array<U>)[i] = (mapFn :: mapFnWithThisArg<T, U>)(thisArg, string.sub(value, i, i) :: any, i)
+				(array :: Array<U>)[i] = (mapFn :: mapFnWithThisArg<T, U>)(
+					thisArg,
+					string.sub(value, i, i) :: any,
+					i
+				)
 			else
 				(array :: Array<U>)[i] = (mapFn :: mapFn<T, U>)(string.sub(value, i, i) :: any, i)
 			end

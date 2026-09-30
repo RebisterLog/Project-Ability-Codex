@@ -11,59 +11,59 @@ local Undyne: BotsCharacters.BotCharacterConfig = {
 	Skills = {
 		["Punch"] = {
 			Distance = 8,
-			
+
 			RejectedConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
-			}
+			},
 		},
-		
+
 		["Block"] = {
 			RequiredConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
-			
+
 			RejectedConditions = {
 				"TARGET_IGNORE_BLOCK",
 			},
 		},
-		
+
 		["Grab"] = {
 			Distance = 6,
-			
+
 			RequiredConditions = {
 				"TARGET_BLOCKING",
 			},
 		},
-		
+
 		["Barrage"] = {
 			Distance = 10,
-		
+
 			RejectedConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_ARMORED",
-			}
+			},
 		},
-		
+
 		["ArcSpearStrike"] = {
 			Distance = 7,
-			
+
 			RejectedConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_PERFECT_BLOCKING",
-			}
-		},
-		
-		["WaitALittleBit"] = {
-			Distance = 8,
-			
-			RequiredConditions = {
-				"TARGET_RAGDOLLED"
 			},
 		},
-		
+
+		["WaitALittleBit"] = {
+			Distance = 8,
+
+			RequiredConditions = {
+				"TARGET_RAGDOLLED",
+			},
+		},
+
 		["Dash"] = {
 			--Distance = 15,
 			--RequiredConditions = {
@@ -72,15 +72,15 @@ local Undyne: BotsCharacters.BotCharacterConfig = {
 			--}
 		},
 	},
-	
+
 	Combos = {
 		{
 			"Punch",
 			"Punch",
 			"Punch",
-			"Barrage"
+			"Barrage",
 		},
-		
+
 		{
 			"Punch",
 			"Punch",
@@ -88,21 +88,21 @@ local Undyne: BotsCharacters.BotCharacterConfig = {
 			"ArcSpearStrike",
 			"WaitALittleBit",
 		},
-		
-		{
-			"Dash",
-			"ArcSpearStrike",
-			"WaitALittleBit",
-		},
-		
+
 		{
 			"Dash",
+			"ArcSpearStrike",
+			"WaitALittleBit",
+		},
+
+		{
+			"Dash",
 			"Punch",
 			"Punch",
 			"ArcSpearStrike",
 			"WaitALittleBit",
 		},
-	}
+	},
 }
 
 return Undyne

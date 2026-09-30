@@ -2,8 +2,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 local LocalPlayer = Players.LocalPlayer
-local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
+local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
 local Configuration = LocalPlayer.PlayerScripts.client.Configuration
 
 local EffectsFolder = Configuration.EffectsFolder.Value
@@ -17,7 +17,7 @@ type Effect = {
 local VFXService = Crane:CreateService({
 	Name = "VFXService",
 })
-VFXService.Effects = {} :: {[string]: Effect}
+VFXService.Effects = {} :: { [string]: Effect }
 
 function VFXService.onStart(self: typeof(VFXService))
 	ForgeVFX.init()
@@ -29,11 +29,11 @@ function VFXService.onStart(self: typeof(VFXService))
 	local StartVFXPacket = Crane:GetPacket("StartVFX")
 	local StopVFXPacket = Crane:GetPacket("StopVFX")
 
-	StartVFXPacket.listen(function(data: {name: string, args: {unknown}})
+	StartVFXPacket.listen(function(data: { name: string, args: { unknown } })
 		self:StartEffect(data.name, table.unpack(data.args))
 	end)
 
-	StopVFXPacket.listen(function(data: {name: string, args: {unknown}})
+	StopVFXPacket.listen(function(data: { name: string, args: { unknown } })
 		self:StopEffect(data.name, table.unpack(data.args))
 	end)
 end

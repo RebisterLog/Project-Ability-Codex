@@ -112,7 +112,8 @@
                     }
                 }
             }
-        ]]--
+        ]]
+--
 --]]
 
 --[[
@@ -157,7 +158,7 @@ end
     @param prefix string? Optional path prefix for recursion
     @return {string} List of dot-separated paths
 --]]
-local function getTabIndexesTree(tab: {[any]: any}, prefix: string?): {string}
+local function getTabIndexesTree(tab: { [any]: any }, prefix: string?): { string }
 	local tree = {}
 
 	for index, value in pairs(tab) do
@@ -197,14 +198,12 @@ end
     @param path string Dot-separated path (e.g., "a.b.c")
     @param value any Value to set at the path
 --]]
-local function setValueOnPath(tab: {[any]: any}, path: string, value: any): ()
+local function setValueOnPath(tab: { [any]: any }, path: string, value: any): ()
 	local keys = string.split(path, ".")
 
 	for i = 1, #keys - 1 do
 		local key = keys[i]
-		if not tab[key] then
-			tab[key] = {}
-		end
+		if not tab[key] then tab[key] = {} end
 		tab = tab[key]
 	end
 
@@ -230,17 +229,13 @@ end
     @return any? Value at path or intermediate node
     @return number Actual depth reached
 --]]
-local function getValueOnPath(tab: {[any]: any}, path: string, maxLevel: number?): (any?, number)
+local function getValueOnPath(tab: { [any]: any }, path: string, maxLevel: number?): (any?, number)
 	local keys = string.split(path, ".")
 
 	for i, key in ipairs(keys) do
-		if not tab or type(tab) ~= "table" then
-			return nil, i - 1
-		end
+		if not tab or type(tab) ~= "table" then return nil, i - 1 end
 
-		if maxLevel and i == maxLevel then
-			return tab[key], i
-		end
+		if maxLevel and i == maxLevel then return tab[key], i end
 
 		tab = tab[key] or tab[tonumber(key)]
 	end
@@ -286,17 +281,13 @@ local function merge<A, B>(pattern: A, template: B): A & B
 	return result
 end
 
-local function areTablesEqual<T, V>(a: T&{}, b: V&{}): boolean
+local function areTablesEqual<T, V>(a: T & {}, b: V & {}): boolean
 	for i, v in pairs(a) do
-		if b[i] ~= v then
-			return false
-		end
+		if b[i] ~= v then return false end
 	end
 
 	for i, v in pairs(b) do
-		if a[i] ~= v then
-			return false
-		end
+		if a[i] ~= v then return false end
 	end
 
 	return true
@@ -320,7 +311,10 @@ end
     @param newVersion {[any]: any} Updated table state
     @return {{action: string, path: string, value: any}} List of changes
 --]]
-local function conversion(oldVersion: {[any]: any}, newVersion: {[any]: any}): {{action: string, path: string, value: any}}
+local function conversion(
+	oldVersion: { [any]: any },
+	newVersion: { [any]: any }
+): { { action: string, path: string, value: any } }
 	local changes = {}
 
 	local oldPaths = getTabIndexesTree(oldVersion)
@@ -336,7 +330,7 @@ local function conversion(oldVersion: {[any]: any}, newVersion: {[any]: any}): {
 			table.insert(changes, {
 				path = path,
 				value = newValue,
-				action = "change"
+				action = "change",
 			})
 			continue
 		end
@@ -346,7 +340,7 @@ local function conversion(oldVersion: {[any]: any}, newVersion: {[any]: any}): {
 			table.insert(changes, {
 				path = path,
 				value = newValue,
-				action = "change"
+				action = "change",
 			})
 
 			-- REMOVED VALUE
@@ -354,7 +348,7 @@ local function conversion(oldVersion: {[any]: any}, newVersion: {[any]: any}): {
 			table.insert(changes, {
 				path = path,
 				value = oldValue,
-				action = "remove"
+				action = "remove",
 			})
 		end
 	end
@@ -368,7 +362,7 @@ local function conversion(oldVersion: {[any]: any}, newVersion: {[any]: any}): {
 			table.insert(changes, {
 				path = path,
 				value = actualValue,
-				action = "add"
+				action = "add",
 			})
 		end
 	end

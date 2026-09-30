@@ -9,18 +9,16 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- State
 local castToState = require(Package.State.castToState)
 
-local keyCache: {[string]: Types.SpecialKey} = {}
+local keyCache: { [string]: Types.SpecialKey } = {}
 
-local function Out(
-	propertyName: string
-): Types.SpecialKey
+local function Out(propertyName: string): Types.SpecialKey
 	local key = keyCache[propertyName]
 	if key == nil then
 		key = {
@@ -37,19 +35,18 @@ local function Out(
 				if not ok then
 					External.logError("invalidOutProperty", nil, applyTo.ClassName, propertyName)
 				end
-	
-				if not castToState(value) then
-					External.logError("invalidOutType")
-				end
+
+				if not castToState(value) then External.logError("invalidOutType") end
 				local value = value :: Types.StateObject<unknown>
-				if value.kind ~= "Value" then
-					External.logError("invalidOutType")
-				end
+				if value.kind ~= "Value" then External.logError("invalidOutType") end
 				local value = value :: Types.Value<unknown>
 				checkLifetime.bOutlivesA(
-					scope, applyTo, 
-					value.scope, value.oldestTask,
-					checkLifetime.formatters.propertyOutputsTo, propertyName
+					scope,
+					applyTo,
+					value.scope,
+					value.oldestTask,
+					checkLifetime.formatters.propertyOutputsTo,
+					propertyName
 				)
 
 				value:set((applyTo :: any)[propertyName])
@@ -59,7 +56,7 @@ local function Out(
 						value:set((applyTo :: any)[propertyName])
 					end)
 				)
-			end
+			end,
 		}
 		keyCache[propertyName] = key
 	end

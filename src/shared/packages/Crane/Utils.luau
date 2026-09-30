@@ -36,9 +36,7 @@ local function Log(owner: string, reason: string, level: LogLevel?)
 
 	local logMsg = `[{owner}] {reason}`
 
-	if level ~= "info" then
-		warn(debug.traceback(logMsg, 5))
-	end
+	if level ~= "info" then warn(debug.traceback(logMsg, 5)) end
 
 	if level == "info" then
 		print(logMsg)
@@ -49,17 +47,13 @@ local function Log(owner: string, reason: string, level: LogLevel?)
 	end
 end
 
-local function DeepClone<T>(t: T&{}): T
-	if typeof(t) ~= "table" then
-		return t
-	end
+local function DeepClone<T>(t: T & {}): T
+	if typeof(t) ~= "table" then return t end
 
-	local new = table.clone(t) :: T&{}
+	local new = table.clone(t) :: T & {}
 
 	for k, v in pairs(t) do
-		if type(v) == "table" then
-			new[k] = DeepClone(v)
-		end
+		if type(v) == "table" then new[k] = DeepClone(v) end
 	end
 
 	return new
@@ -105,17 +99,13 @@ end
 
 local function SafeChangeNetworkOwner(object: BasePart | Model, owner: Player?)
 	if object:IsA("Model") then
-		for _, v in object:QueryDescendants("BasePart") :: {BasePart} do
-			if v:CanSetNetworkOwnership() then
-				v:SetNetworkOwner(owner)
-			end
-		end	
-	end
-	
-	if object:IsA("BasePart") then
-		if object:CanSetNetworkOwnership() then
-			object:SetNetworkOwner(owner)
+		for _, v in object:QueryDescendants("BasePart") :: { BasePart } do
+			if v:CanSetNetworkOwnership() then v:SetNetworkOwner(owner) end
 		end
+	end
+
+	if object:IsA("BasePart") then
+		if object:CanSetNetworkOwnership() then object:SetNetworkOwner(owner) end
 	end
 end
 

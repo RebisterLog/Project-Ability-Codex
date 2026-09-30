@@ -62,9 +62,7 @@ local Tween = {} :: Tween<Animatable>
 (Tween :: any).__index = Tween
 
 local function getAlpha(progress: number, repeats: number, reverses: boolean): number
-	if repeats < 0 then
-		repeats = math.huge
-	end
+	if repeats < 0 then repeats = math.huge end
 
 	if repeats > 1 and progress >= 1 then
 		if reverses then
@@ -133,9 +131,7 @@ local function createTween<Value>(initialValue: Value, inputOptions: TweenOption
 
 	self:configure(options)
 
-	if options.start then
-		self:start()
-	end
+	if options.start then self:start() end
 
 	return self
 end
@@ -147,17 +143,13 @@ function Tween:resumeFromCurrentPosition()
 	state.elapsed = 0
 	state.from = state.position
 
-	if state.started then
-		scheduler.add(state)
-	end
+	if state.started then scheduler.add(state) end
 end
 
 function Tween:start()
 	self.state.started = true
 
-	if not self.state.complete then
-		scheduler.add(self.state)
-	end
+	if not self.state.complete then scheduler.add(self.state) end
 end
 
 function Tween:stop()
@@ -181,13 +173,9 @@ function Tween:configure(options: TweenOptions)
 	state.repeats = options.repeats or state.repeats
 	state.reverses = options.reverses or state.reverses
 
-	if options.position then
-		self:setPosition(options.position)
-	end
+	if options.position then self:setPosition(options.position) end
 
-	if not state.complete and state.elapsed ~= 0 then
-		self:resumeFromCurrentPosition()
-	end
+	if not state.complete and state.elapsed ~= 0 then self:resumeFromCurrentPosition() end
 end
 
 function Tween:getPosition(): Animatable
@@ -213,9 +201,7 @@ function Tween:setPosition(value: Animatable)
 end
 
 function Tween:setGoal(value: Animatable, options: TweenOptions?)
-	if options then
-		self:configure(options)
-	end
+	if options then self:configure(options) end
 
 	local goal = if type(value) == "table" then merge(self.state.goal, value) else value
 

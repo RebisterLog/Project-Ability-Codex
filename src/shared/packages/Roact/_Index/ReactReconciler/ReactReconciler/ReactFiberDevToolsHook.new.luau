@@ -26,17 +26,11 @@ type DevToolsHook = {
 
 -- ROBLOX deviation: we use callable tables instead of functions sometimes, so typeof() == "function" isn't enough
 local function isCallable(value)
-	if typeof(value) == "function" then
-		return true
-	end
+	if typeof(value) == "function" then return true end
 	if typeof(value) == "table" then
 		local mt = getmetatable(value)
-		if mt and rawget(mt, "__call") then
-			return true
-		end
-		if value._isMockFunction then
-			return true
-		end
+		if mt and rawget(mt, "__call") then return true end
+		if value._isMockFunction then return true end
 	end
 	return false
 end
@@ -95,9 +89,7 @@ exports.injectInternals = function(internals: Object): boolean
 
 	if not ok then
 		-- Catch all errors because it is unsafe to throw during initialization.
-		if _G.__DEV__ then
-			console.error("React instrumentation encountered an error: %s.", err)
-		end
+		if _G.__DEV__ then console.error("React instrumentation encountered an error: %s.", err) end
 	end
 	-- DevTools exists
 	return true
@@ -110,8 +102,7 @@ exports.onScheduleRoot = function(root: FiberRoot, children: ReactNodeList)
 			-- ROBLOX deviation: our mocked functions are tables with __call, since they have fields
 			and isCallable(injectedHook.onScheduleFiberRoot)
 		then
-			local ok, err =
-				pcall(injectedHook.onScheduleFiberRoot, rendererID, root, children)
+			local ok, err = pcall(injectedHook.onScheduleFiberRoot, rendererID, root, children)
 
 			if not ok then
 				if _G.__DEV__ and not hasLoggedError then

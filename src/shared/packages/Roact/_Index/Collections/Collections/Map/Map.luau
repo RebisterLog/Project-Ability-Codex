@@ -19,8 +19,8 @@ local Packages = Collections.Parent
 
 local arrayForEach = require(Collections.Array.forEach)
 local arrayMap = require(Collections.Array.map)
-local isArray = require(Collections.Array.isArray)
 local instanceof = require(Packages.InstanceOf)
+local isArray = require(Collections.Array.isArray)
 local types = require(Packages.ES7Types)
 type Object = types.Object
 type Array<T> = types.Array<T>
@@ -44,7 +44,10 @@ function Map.new<K, V>(iterable: (Array<Array<any>> | Map<K, V>)?): Map<K, V>
 		map = {}
 	elseif isArray(iterable) then
 		if __DEV__ then
-			if #(iterable :: Array<Array<any>>) > 0 and typeof((iterable :: Array<Array<any>>)[1]) ~= "table" then
+			if
+				#(iterable :: Array<Array<any>>) > 0
+				and typeof((iterable :: Array<Array<any>>)[1]) ~= "table"
+			then
 				error(
 					"Value `"
 						.. typeof((iterable :: Array<Array<any>>)[1])
@@ -58,15 +61,11 @@ function Map.new<K, V>(iterable: (Array<Array<any>> | Map<K, V>)?): Map<K, V>
 		for _, entry in iterable :: Array<Array<any>> do
 			local key = entry[1]
 			if __DEV__ then
-				if key == nil then
-					error("cannot create Map from a table that isn't an array.")
-				end
+				if key == nil then error("cannot create Map from a table that isn't an array.") end
 			end
 			local val = entry[2]
 			-- only add to array if new
-			if map[key] == nil then
-				table.insert(array, key)
-			end
+			if map[key] == nil then table.insert(array, key) end
 			-- always assign
 			map[key] = val
 		end
@@ -74,14 +73,21 @@ function Map.new<K, V>(iterable: (Array<Array<any>> | Map<K, V>)?): Map<K, V>
 		array = table.clone((iterable :: Map<K, V>)._array)
 		map = table.clone((iterable :: Map<K, V>)._map)
 	else
-		error(("`%s` `%s` is not iterable, cannot make Map using it"):format(typeof(iterable), tostring(iterable)))
+		error(
+			("`%s` `%s` is not iterable, cannot make Map using it"):format(
+				typeof(iterable),
+				tostring(iterable)
+			)
+		)
 	end
 
-	return (setmetatable({
-		size = #array,
-		_map = map,
-		_array = array,
-	}, Map) :: any) :: Map<K, V>
+	return (
+		setmetatable({
+			size = #array,
+			_map = map,
+			_array = array,
+		}, Map) :: any
+	) :: Map<K, V>
 end
 
 -- TODO Luau: annoying type erasure here, probably needs the new Records language feature
@@ -109,26 +115,23 @@ function Map:clear()
 end
 
 function Map:delete(key): boolean
-	if self._map[key] == nil then
-		return false
-	end
+	if self._map[key] == nil then return false end
 	-- Luau FIXME: analyze should know self is Map<K, V> which includes size as a number
 	self.size = self.size :: number - 1
 	self._map[key] = nil
 	local index = table.find(self._array, key)
-	if index then
-		table.remove(self._array, index)
-	end
+	if index then table.remove(self._array, index) end
 	return true
 end
 
 -- Implements Javascript's `Map.prototype.forEach` as defined below
 -- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map/forEach
-function Map:forEach(callback: mapCallbackFn<any, any> | mapCallbackFnWithThisArg<any, any>, thisArg: Object?): ()
+function Map:forEach(
+	callback: mapCallbackFn<any, any> | mapCallbackFnWithThisArg<any, any>,
+	thisArg: Object?
+): ()
 	if __DEV__ then
-		if typeof(callback) ~= "function" then
-			error("callback is not a function")
-		end
+		if typeof(callback) ~= "function" then error("callback is not a function") end
 	end
 	-- note: we can't turn this into a simple for-in loop, because the callbacks can modify the table and React, GQL, and Jest rely on JS behavior in that scenario
 	arrayForEach(self._array, function(key)
@@ -180,9 +183,7 @@ end
 
 function Map.__index(self: Map<any, any>, key)
 	local mapProp = rawget(Map, key)
-	if mapProp ~= nil then
-		return mapProp
-	end
+	if mapProp ~= nil then return mapProp end
 	if __DEV__ then
 		assert(
 			-- FIXME Luau: shouldn't need this cast, the self param is annotated already

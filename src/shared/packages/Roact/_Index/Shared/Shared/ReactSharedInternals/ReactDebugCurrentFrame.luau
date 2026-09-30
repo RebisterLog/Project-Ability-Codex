@@ -14,9 +14,7 @@ local ReactDebugCurrentFrame = {}
 local currentExtraStackFrame = nil :: nil | string
 
 function ReactDebugCurrentFrame.setExtraStackFrame(stack: string?): ()
-	if _G.__DEV__ then
-		currentExtraStackFrame = stack
-	end
+	if _G.__DEV__ then currentExtraStackFrame = stack end
 end
 
 if _G.__DEV__ then
@@ -34,15 +32,11 @@ if _G.__DEV__ then
 		local stack = ""
 
 		-- Add an extra top frame while an element is being validated
-		if currentExtraStackFrame then
-			stack = stack .. currentExtraStackFrame
-		end
+		if currentExtraStackFrame then stack = stack .. currentExtraStackFrame end
 
 		-- Delegate to the injected renderer-specific implementation
 		local impl = ReactDebugCurrentFrame.getCurrentStack
-		if impl then
-			stack = stack .. (impl() or "")
-		end
+		if impl then stack = stack .. (impl() or "") end
 
 		return stack
 	end

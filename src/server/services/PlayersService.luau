@@ -1,11 +1,11 @@
 local Players = game:GetService("Players")
-local ServerScriptService = game:GetService("ServerScriptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
-local Lapis = require(ReplicatedStorage.shared.packages.Lapis)
+local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+local Lapis = require(ReplicatedStorage.shared.packages.Lapis)
 local PlayerDynamicData = require(ReplicatedStorage.shared.schemas.PlayerDynamicData)
+local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+local types = require(ServerScriptService.server.types)
 
 local PlayersService = Crane:CreateService({
 	Name = "PlayersService",
@@ -25,7 +25,8 @@ function PlayersService.onStart(self: typeof(PlayersService))
 		local playerComponent = Crane:AddComponent(player, "Player")
 		self.Players[player] = playerComponent
 
-		self.Collection:load(`Player{player.UserId}`, { player.UserId })
+		self.Collection
+			:load(`Player{player.UserId}`, { player.UserId })
 			:andThen(function(document)
 				if player.Parent == nil then
 					document:close():catch(warn)
@@ -72,7 +73,8 @@ function PlayersService.onStart(self: typeof(PlayersService))
 		local playerComponent = Crane:AddComponent(player, "Player")
 		self.Players[player] = playerComponent
 
-		self.Collection:load(`Player{player.UserId}`, { player.UserId })
+		self.Collection
+			:load(`Player{player.UserId}`, { player.UserId })
 			:andThen(function(document)
 				if player.Parent == nil then
 					document:close():catch(warn)

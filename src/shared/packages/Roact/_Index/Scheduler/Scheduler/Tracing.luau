@@ -90,9 +90,7 @@ exports.__interactionsRef = interactionsRef
 exports.__subscriberRef = subscriberRef
 
 exports.unstable_clear = function(callback: Function)
-	if not enableSchedulerTracing then
-		return callback()
-	end
+	if not enableSchedulerTracing then return callback() end
 
 	local prevInteractions = interactionsRef.current
 	interactionsRef.current = Set.new()
@@ -102,9 +100,7 @@ exports.unstable_clear = function(callback: Function)
 	-- ROBLOX finally
 	interactionsRef.current = prevInteractions
 
-	if not ok then
-		error(result)
-	end
+	if not ok then error(result) end
 
 	return result
 end
@@ -122,109 +118,91 @@ exports.unstable_getThreadID = function(): number
 	return threadIDCounter
 end
 
-exports.unstable_trace =
-	function(name: string, timestamp: number, callback: Function, threadID_: number?): any
-		-- ROBLOX: default argument value
-		local threadID = if threadID_ ~= nil then threadID_ else DEFAULT_THREAD_ID
+exports.unstable_trace = function(
+	name: string,
+	timestamp: number,
+	callback: Function,
+	threadID_: number?
+): any
+	-- ROBLOX: default argument value
+	local threadID = if threadID_ ~= nil then threadID_ else DEFAULT_THREAD_ID
 
-		if not enableSchedulerTracing then
-			return callback()
-		end
+	if not enableSchedulerTracing then return callback() end
 
-		local interaction: Interaction = {
-			__count = 1,
-			id = interactionIDCounter,
-			name = name,
-			timestamp = timestamp,
-		}
-		interactionIDCounter += 1
+	local interaction: Interaction = {
+		__count = 1,
+		id = interactionIDCounter,
+		name = name,
+		timestamp = timestamp,
+	}
+	interactionIDCounter += 1
 
-		local prevInteractions = interactionsRef.current
+	local prevInteractions = interactionsRef.current
 
-		-- Traced interactions should stack/accumulate.
-		-- To do that, clone the current interactions.
-		-- The previous set will be restored upon completion.
-		local interactions = Set.new(prevInteractions)
-		interactions:add(interaction)
-		interactionsRef.current = interactions
+	-- Traced interactions should stack/accumulate.
+	-- To do that, clone the current interactions.
+	-- The previous set will be restored upon completion.
+	local interactions = Set.new(prevInteractions)
+	interactions:add(interaction)
+	interactionsRef.current = interactions
 
-		local subscriber = subscriberRef.current
-		local returnValue
+	local subscriber = subscriberRef.current
+	local returnValue
 
-		-- ROBLOX try
-		local ok, result = pcall(function()
-			if subscriber ~= nil then
-				subscriber.onInteractionTraced(interaction)
-			end
-		end)
-		-- ROBLOX finally
-		-- ROBLOX try 2
-		local ok2, result2 = pcall(function()
-			if subscriber ~= nil then
-				subscriber.onWorkStarted(interactions, threadID)
-			end
-		end)
+	-- ROBLOX try
+	local ok, result = pcall(function()
+		if subscriber ~= nil then subscriber.onInteractionTraced(interaction) end
+	end)
+	-- ROBLOX finally
+	-- ROBLOX try 2
+	local ok2, result2 = pcall(function()
+		if subscriber ~= nil then subscriber.onWorkStarted(interactions, threadID) end
+	end)
 
-		-- ROBLOX finally 2
-		-- ROBLOX try 3
-		local ok3, result3 = pcall(function()
-			returnValue = callback()
-		end)
-		-- ROBLOX finally 3
-		interactionsRef.current = prevInteractions
-		-- ROBLOX try 4
-		local ok4, result4 = pcall(function()
-			if subscriber ~= nil then
-				subscriber.onWorkStopped(interactions, threadID)
-			end
-		end)
-		-- ROBLOX finally 4
-		interaction.__count -= 1
+	-- ROBLOX finally 2
+	-- ROBLOX try 3
+	local ok3, result3 = pcall(function()
+		returnValue = callback()
+	end)
+	-- ROBLOX finally 3
+	interactionsRef.current = prevInteractions
+	-- ROBLOX try 4
+	local ok4, result4 = pcall(function()
+		if subscriber ~= nil then subscriber.onWorkStopped(interactions, threadID) end
+	end)
+	-- ROBLOX finally 4
+	interaction.__count -= 1
 
-		-- If no async work was scheduled for this interaction,
-		-- Notify subscribers that it's completed.
-		if subscriber ~= nil and interaction.__count == 0 then
-			subscriber.onInteractionScheduledWorkCompleted(interaction)
-		end
-
-		if not ok4 then
-			error(result4)
-		end
-
-		if not ok3 then
-			error(result3)
-		end
-
-		if not ok2 then
-			error(result2)
-		end
-
-		if not ok then
-			error(result)
-		end
-
-		return returnValue
+	-- If no async work was scheduled for this interaction,
+	-- Notify subscribers that it's completed.
+	if subscriber ~= nil and interaction.__count == 0 then
+		subscriber.onInteractionScheduledWorkCompleted(interaction)
 	end
+
+	if not ok4 then error(result4) end
+
+	if not ok3 then error(result3) end
+
+	if not ok2 then error(result2) end
+
+	if not ok then error(result) end
+
+	return returnValue
+end
 
 exports.unstable_wrap = function(
 	callback: Function,
 	threadID: number
 ): any -- ROLBOX deviation: any, since __call doesn't map to Function
 	-- ROBLOX: default argument value
-	if threadID == nil then
-		threadID = DEFAULT_THREAD_ID
-	end
+	if threadID == nil then threadID = DEFAULT_THREAD_ID end
 
-	if not enableSchedulerTracing then
-		return callback
-	end
+	if not enableSchedulerTracing then return callback end
 
 	local wrappedInteractions = interactionsRef.current
 
 	local subscriber = subscriberRef.current
-	if subscriber ~= nil then
-		subscriber.onWorkScheduled(wrappedInteractions, threadID)
-	end
+	if subscriber ~= nil then subscriber.onWorkScheduled(wrappedInteractions, threadID) end
 
 	-- Update the pending async work count for the current interactions.
 	-- Update after calling subscribers in case of error.
@@ -258,17 +236,11 @@ exports.unstable_wrap = function(
 			-- ROBLOX finally 3
 			interactionsRef.current = prevInteractions
 
-			if subscriber ~= nil then
-				subscriber.onWorkStopped(wrappedInteractions, threadID)
-			end
+			if subscriber ~= nil then subscriber.onWorkStopped(wrappedInteractions, threadID) end
 
-			if not ok3 then
-				error(result3)
-			end
+			if not ok3 then error(result3) end
 
-			if not ok2 then
-				error(result2)
-			end
+			if not ok2 then error(result2) end
 
 			return returnValue
 		end, ...)
@@ -292,9 +264,7 @@ exports.unstable_wrap = function(
 			end
 		end
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 
 		return result
 	end
@@ -303,9 +273,7 @@ exports.unstable_wrap = function(
 		subscriber = subscriberRef.current
 
 		local ok, result = pcall(function()
-			if subscriber ~= nil then
-				subscriber.onWorkCanceled(wrappedInteractions, threadID)
-			end
+			if subscriber ~= nil then subscriber.onWorkCanceled(wrappedInteractions, threadID) end
 		end)
 		--ROBLOX finally {
 		-- Update pending async counts for all wrapped interactions.
@@ -319,9 +287,7 @@ exports.unstable_wrap = function(
 			end
 		end
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 	end
 
 	local wrapped = {}

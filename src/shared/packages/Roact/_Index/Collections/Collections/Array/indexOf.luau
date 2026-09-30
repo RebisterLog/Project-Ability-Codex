@@ -31,14 +31,10 @@ return function<T>(array: Array<T>, searchElement: T, fromIndex: number?): numbe
 	-- In the JS impl, a negative fromIndex means we should use length - index;
 	-- with Lua, of course, this means that 0 is still valid, but refers to the
 	-- end of the array the way that '-1' would in JS
-	if fromIndex_ < 1 then
-		fromIndex_ = math.max(length - math.abs(fromIndex_), 1)
-	end
+	if fromIndex_ < 1 then fromIndex_ = math.max(length - math.abs(fromIndex_), 1) end
 
 	for i = fromIndex_, length do
-		if array[i] == searchElement then
-			return i
-		end
+		if array[i] == searchElement then return i end
 	end
 
 	return -1

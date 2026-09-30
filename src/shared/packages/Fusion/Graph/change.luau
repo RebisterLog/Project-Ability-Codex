@@ -12,36 +12,28 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 local evaluate = require(Package.Graph.evaluate)
 
 -- How long should this function run before it's considered to be in an infinite
 -- cycle and error out?
 local TERMINATION_TIME = 1
 
-local function change(
-	target: Types.GraphObject
-): ()
-	if target.validity == "busy" then
-		return External.logError("infiniteLoop")
-	end
+local function change(target: Types.GraphObject): ()
+	if target.validity == "busy" then return External.logError("infiniteLoop") end
 
 	local meaningfullyChanged = evaluate(target, true)
-	if not meaningfullyChanged then
-		return
-	end
+	if not meaningfullyChanged then return end
 
-	local searchInNow: {Types.GraphObject} = {}
-	local searchInNext: {Types.GraphObject} = {}
-	local invalidateList: {Types.GraphObject} = {}
+	local searchInNow: { Types.GraphObject } = {}
+	local searchInNext: { Types.GraphObject } = {}
+	local invalidateList: { Types.GraphObject } = {}
 
 	searchInNow[1] = target
 	local terminateBy = os.clock() + TERMINATION_TIME * External.safetyTimerMultiplier
 	repeat
-		if os.clock() > terminateBy then
-			return External.logError("infiniteLoop")
-		end
+		if os.clock() > terminateBy then return External.logError("infiniteLoop") end
 		local done = true
 		for _, searchTarget in searchInNow do
 			for dependent in searchTarget.dependentSet do
@@ -58,13 +50,11 @@ local function change(
 		table.clear(searchInNext)
 	until done
 
-	local eagerList: {Types.GraphObject} = {}
+	local eagerList: { Types.GraphObject } = {}
 
 	for _, invalidateTarget in invalidateList do
 		invalidateTarget.validity = "invalid"
-		if invalidateTarget.timeliness == "eager" then
-			table.insert(eagerList, invalidateTarget)
-		end
+		if invalidateTarget.timeliness == "eager" then table.insert(eagerList, invalidateTarget) end
 	end
 	-- If objects are not executed in order of creations, then dynamic graphs
 	-- may experience 'glitches' where nested graph objects see intermediate

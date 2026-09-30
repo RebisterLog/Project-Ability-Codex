@@ -1,25 +1,30 @@
 --!strict
 
-local React = require(script.Parent.React)
 local Promise = require(script.Parent.Promise)
+local React = require(script.Parent.React)
 local SpringValue = require(script.Parent.SpringValue)
+local common = require(script.Parent.types.common)
 local helpers = require(script.Parent.helpers)
 local util = require(script.Parent.util)
-local common = require(script.Parent.types.common)
 
 local Controller = {}
 Controller.__index = Controller
 
-export type ControllerProps<T = any> = common.AnimationProps & ({
-	from: T?,
-	to: T?,
-} | T)
+export type ControllerProps<T = any> =
+	common.AnimationProps
+	& ({
+		from: T?,
+		to: T?,
+	} | T)
 
 type yes<T> = { T }
 
 -- Need to export this for other files as we can't extract the second type from the tuple returned by `Controller.new`
 export type ControllerApi = {
-	start: (self: ControllerApi, startProps: ControllerProps<common.AnimationStyle>) -> typeof(Promise.new()),
+	start: (
+		self: ControllerApi,
+		startProps: ControllerProps<common.AnimationStyle>
+	) -> typeof(Promise.new()),
 	stop: (self: ControllerApi, keys: { string }?) -> nil,
 	pause: (self: ControllerApi, keys: { string }?) -> nil,
 }

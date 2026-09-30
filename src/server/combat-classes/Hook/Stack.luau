@@ -5,8 +5,8 @@ local Stack = {}
 Stack.__index = Stack
 
 type StackData<T> = {
-	Stack: {[number]: {[string]: T}},
-	Cache: {{Name: string, Value: T, Priority: number}},
+	Stack: { [number]: { [string]: T } },
+	Cache: { { Name: string, Value: T, Priority: number } },
 }
 
 export type Stack<T> = setmetatable<StackData<T>, typeof(Stack)>
@@ -16,7 +16,7 @@ function Stack.new<T>(): Stack<T>
 		Stack = {},
 		Cache = {},
 	}, Stack)
-	
+
 	return self :: Stack<T>
 end
 
@@ -33,7 +33,7 @@ function Stack.Update<T>(self: Stack<T>)
 		end
 	end
 
-	table.sort(self.Cache, function(a: {Priority: number}, b: {Priority: number})
+	table.sort(self.Cache, function(a: { Priority: number }, b: { Priority: number })
 		return a.Priority > b.Priority
 	end)
 end
@@ -59,11 +59,9 @@ end
 
 function Stack.Get<T>(self: Stack<T>, name: string): T?
 	for _, bucket in self.Stack do
-		if bucket[name] then
-			return bucket[name]
-		end
+		if bucket[name] then return bucket[name] end
 	end
-	
+
 	return nil
 end
 

@@ -15,8 +15,7 @@ local ReactInternalTypes = require(script.Parent.ReactInternalTypes)
 type Fiber = ReactInternalTypes.Fiber
 local ReactFiberLane = require(script.Parent.ReactFiberLane)
 type Lanes = ReactFiberLane.Lanes
-local ReactFiberSuspenseComponent =
-	require(script.Parent["ReactFiberSuspenseComponent.new"])
+local ReactFiberSuspenseComponent = require(script.Parent["ReactFiberSuspenseComponent.new"])
 type SuspenseState = ReactFiberSuspenseComponent.SuspenseState
 
 local resetMutableSourceWorkInProgressVersions =
@@ -46,8 +45,7 @@ local popProvider = require(script.Parent["ReactFiberNewContext.new"]).popProvid
 local popRenderLanesRef
 local popRenderLanes = function(...)
 	if not popRenderLanesRef then
-		popRenderLanesRef =
-			require(script.Parent["ReactFiberWorkLoop.new"]).popRenderLanes
+		popRenderLanesRef = require(script.Parent["ReactFiberWorkLoop.new"]).popRenderLanes
 	end
 	return popRenderLanesRef(...)
 end
@@ -59,9 +57,7 @@ local invariant = require(Packages.Shared).invariant
 local function unwindWork(workInProgress: Fiber, renderLanes: Lanes): Fiber?
 	if workInProgress.tag == ReactWorkTags.ClassComponent then
 		local Component = workInProgress.type
-		if isLegacyContextProvider(Component) then
-			popLegacyContext(workInProgress)
-		end
+		if isLegacyContextProvider(Component) then popLegacyContext(workInProgress) end
 		local flags = workInProgress.flags
 		if bit32.band(flags, ReactFiberFlags.ShouldCapture) ~= 0 then
 			workInProgress.flags = bit32.bor(
@@ -158,9 +154,7 @@ function unwindInterruptedWork(interruptedWork: Fiber)
 		if typeof(interruptedWork.type) == "table" then
 			childContextTypes = interruptedWork.type.childContextTypes
 		end
-		if childContextTypes ~= nil then
-			popLegacyContext(interruptedWork)
-		end
+		if childContextTypes ~= nil then popLegacyContext(interruptedWork) end
 	elseif interruptedWork.tag == ReactWorkTags.HostRoot then
 		popHostContainer(interruptedWork)
 		popTopLevelLegacyContextObject(interruptedWork)

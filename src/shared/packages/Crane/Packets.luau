@@ -32,45 +32,38 @@ return ByteNet.defineNamespace("CranePackets", function()
 			RequestProxy = ByteNet.definePacket({
 				value = ByteNet.optional(ByteNet.array(ByteNet.unknown)),
 			}),
-			
+
 			Patch = ByteNet.definePacket({
-				value = ByteNet.array(
-					ByteNet.array(
-						ByteNet.struct({
-							Name = ByteNet.string,
-							Path = ByteNet.array(ByteNet.string),
-							Args = ByteNet.array(ByteNet.unknown)
-						})
-					)
-				)
+				value = ByteNet.array(ByteNet.array(ByteNet.struct({
+					Name = ByteNet.string,
+					Path = ByteNet.array(ByteNet.string),
+					Args = ByteNet.array(ByteNet.unknown),
+				}))),
 			}),
 
 			StartVFX = ByteNet.definePacket({
 				value = ByteNet.struct({
 					name = ByteNet.string,
-					args = ByteNet.array(ByteNet.unknown)
-				})
+					args = ByteNet.array(ByteNet.unknown),
+				}),
 			}),
 
 			StopVFX = ByteNet.definePacket({
 				value = ByteNet.struct({
 					name = ByteNet.string,
-					args = ByteNet.array(ByteNet.unknown)
-				})
+					args = ByteNet.array(ByteNet.unknown),
+				}),
 			}),
-			
+
 			StartSkill = ByteNet.definePacket({
 				value = ByteNet.string,
 			}),
-			
+
 			StopSkill = ByteNet.definePacket({
-				value = ByteNet.string,	
+				value = ByteNet.string,
 			}),
 		},
-		
-		queries = {
 
-		}
+		queries = {},
 	}
 end)
-

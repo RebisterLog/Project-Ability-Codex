@@ -36,23 +36,17 @@ local exports: Exports = {
 
 exports.getCurrentFiberOwnerNameInDevOrNull = function(): string?
 	if __DEV__ then
-		if exports.current == nil then
-			return nil
-		end
+		if exports.current == nil then return nil end
 		-- ROBLOX FIXME Luau: Luau doesn't understand guard above
 		local owner = (exports.current :: Fiber)._debugOwner
-		if owner then
-			return getComponentName(owner.type)
-		end
+		if owner then return getComponentName(owner.type) end
 	end
 	return nil
 end
 
 local function getCurrentFiberStackInDev(): string
 	if __DEV__ then
-		if exports.current == nil then
-			return ""
-		end
+		if exports.current == nil then return "" end
 		-- Safe because if current fiber exists, we are reconciling,
 		-- and it is guaranteed to be the work-in-progress version.
 		-- ROBLOX FIXME Luau: Luau doesn't understand guard above
@@ -80,15 +74,11 @@ exports.setCurrentFiber = function(fiber: Fiber): ()
 end
 
 exports.setIsRendering = function(rendering: boolean): ()
-	if __DEV__ then
-		exports.isRendering = rendering
-	end
+	if __DEV__ then exports.isRendering = rendering end
 end
 
 exports.getIsRendering = function(): boolean
-	if __DEV__ then
-		return exports.isRendering
-	end
+	if __DEV__ then return exports.isRendering end
 	return false
 end
 

@@ -37,16 +37,12 @@ local function mount(element: any, parent: any, key: string?): RoactHandle
 			string.format(
 				"Cannot mount element (`%s`) into a parent that is not a Roblox Instance (got type `%s`) \n%s",
 				(function()
-					if element then
-						return tostring(element.type)
-					end
+					if element then return tostring(element.type) end
 					return "<unknown>"
 				end)(),
 				typeof(parent),
 				(function()
-					if parent ~= nil then
-						return inspect(parent)
-					end
+					if parent ~= nil then return inspect(parent) end
 					return ""
 				end)()
 			)
@@ -105,14 +101,10 @@ local function update(roactHandle: RoactHandle, element)
 	-- `act` explicitly
 	if _G.__ROACT_17_INLINE_ACT__ then
 		ReactRoblox.act(function()
-			roactHandle.root:render(
-				ReactRoblox.createPortal({ [key :: string] = element }, parent)
-			)
+			roactHandle.root:render(ReactRoblox.createPortal({ [key :: string] = element }, parent))
 		end)
 	else
-		roactHandle.root:render(
-			ReactRoblox.createPortal({ [key :: string] = element }, parent)
-		)
+		roactHandle.root:render(ReactRoblox.createPortal({ [key :: string] = element }, parent))
 	end
 
 	return roactHandle

@@ -7,8 +7,8 @@ type CheckCallback<T> = (T) -> boolean
 
 type HookData = {
 	Name: string,
-	Stacks: {[string]: Stack.Stack<CheckCallback<any>>},
-	StackOrder: {string},
+	Stacks: { [string]: Stack.Stack<CheckCallback<any>> },
+	StackOrder: { string },
 }
 
 local Hook = {}
@@ -16,9 +16,15 @@ Hook.__index = Hook
 
 export type Hook = setmetatable<HookData, typeof(Hook)>
 
-function Hook.Hook(self: Hook, stack: string, identifier: string, priority: number, callback: () -> boolean)
+function Hook.Hook(
+	self: Hook,
+	stack: string,
+	identifier: string,
+	priority: number,
+	callback: () -> boolean
+)
 	if not self.Stacks[stack] then return end
-	
+
 	local stack = self.Stacks[stack]
 	stack:Add(identifier, callback, priority)
 end
@@ -26,7 +32,7 @@ end
 function Hook.Unhook(self: Hook, stack: string, identifier: string)
 	if not self.Stacks[stack] then return end
 	if not self.Stacks[stack]:Get(identifier) then return end
-	
+
 	local stack = self.Stacks[stack]
 	stack:Remove(identifier)
 end
@@ -40,7 +46,7 @@ function Hook.Apply<T>(self: Hook, state: T): T
 			if not result then return state end
 		end
 	end
-	
+
 	return state
 end
 
@@ -54,24 +60,24 @@ function Hook.Destroy(self: Hook)
 	for i, stack in self.Stacks do
 		stack:Destroy()
 	end
-	
+
 	table.clear(self.Stacks)
 end
 
 return {
-	new = function(name: string?, stacks: {string}?): Hook
+	new = function(name: string?, stacks: { string }?): Hook
 		local self = setmetatable({
 			Name = name,
 			Stacks = {},
-			StackOrder = {}
+			StackOrder = {},
 		}, Hook) :: Hook
-		
+
 		if stacks then
 			for i, name in stacks do
 				self:CreateStack(name)
 			end
 		end
-		
-		return self																					
+
+		return self
 	end,
 }

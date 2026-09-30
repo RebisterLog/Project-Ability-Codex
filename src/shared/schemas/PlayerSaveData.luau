@@ -1,6 +1,6 @@
 --!strict
 
-type Bind = Enum.KeyCode|Enum.UserInputType
+type Bind = Enum.KeyCode | Enum.UserInputType
 
 type SkinData = {
 	Id: string, -- id(name) of Skin
@@ -19,12 +19,12 @@ export type PlayerSaveData = {
 	Money: number,
 	Experience: number,
 	Level: number,
-	Inventory: {string},
-	
-	SpecBinds: {[string]: {[string]: Bind}}, -- [spec name]: {[skillId]: keycode}
-	Skins: {[string]: SkinData}, -- [unique id]: data
-	Specs: {[string]: SpecData}, -- [unique id]: data
-	
+	Inventory: { string },
+
+	SpecBinds: { [string]: { [string]: Bind } }, -- [spec name]: {[skillId]: keycode}
+	Skins: { [string]: SkinData }, -- [unique id]: data
+	Specs: { [string]: SpecData }, -- [unique id]: data
+
 	Spec: string,
 }
 
@@ -33,9 +33,9 @@ return {
 	Level = 0,
 	Money = 0,
 	Inventory = {},
-	
+
 	Skins = {},
 	Specs = {},
-	
+
 	Spec = "None",
 } :: PlayerSaveData

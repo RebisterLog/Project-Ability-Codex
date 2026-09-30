@@ -48,17 +48,13 @@ return function(x)
 		context.expectUnlocked = function(name, key)
 			local data = dataStoreService.dataStores[name]["global"].data[key]
 
-			if data ~= nil and data.lockId ~= nil then
-				error("Document is locked")
-			end
+			if data ~= nil and data.lockId ~= nil then error("Document is locked") end
 		end
 
 		context.expectLocked = function(name, key)
 			local data = dataStoreService.dataStores[name]["global"].data[key]
 
-			if data == nil or data.lockId == nil then
-				error("Document is not locked")
-			end
+			if data == nil or data.lockId == nil then error("Document is not locked") end
 		end
 
 		context.expectUserIds = function(name, key, targetUserIds)
@@ -66,14 +62,10 @@ return function(x)
 
 			local currentUserIds = if keyInfo ~= nil then keyInfo:GetUserIds() else {}
 
-			if #currentUserIds ~= #targetUserIds then
-				error("Incorrect user ids length")
-			end
+			if #currentUserIds ~= #targetUserIds then error("Incorrect user ids length") end
 
 			for index, value in targetUserIds do
-				if currentUserIds[index] ~= value then
-					error("Invalid user id")
-				end
+				if currentUserIds[index] ~= value then error("Invalid user id") end
 			end
 		end
 
@@ -481,7 +473,10 @@ return function(x)
 				collection:load("document"):expect():close():expect()
 
 				local otherLapis = Internal.new(false)
-				otherLapis.setConfig({ dataStoreService = context.dataStoreService, loadAttempts = 1 })
+				otherLapis.setConfig({
+					dataStoreService = context.dataStoreService,
+					loadAttempts = 1,
+				})
 
 				local otherCollection = otherLapis.createCollection("collection", {
 					defaultData = "a",
@@ -534,7 +529,10 @@ return function(x)
 				collection:load("document"):expect():close():expect()
 
 				local lapisWithV0 = Internal.new(false)
-				lapisWithV0.setConfig({ dataStoreService = context.dataStoreService, loadAttempts = 1 })
+				lapisWithV0.setConfig({
+					dataStoreService = context.dataStoreService,
+					loadAttempts = 1,
+				})
 
 				local collectionWithV0 = lapisWithV0.createCollection("collection", {
 					defaultData = "a",
@@ -545,7 +543,10 @@ return function(x)
 				end, "Saved migration version 3 is not backwards compatible with version 0")
 
 				local lapisWithV1 = Internal.new(false)
-				lapisWithV1.setConfig({ dataStoreService = context.dataStoreService, loadAttempts = 1 })
+				lapisWithV1.setConfig({
+					dataStoreService = context.dataStoreService,
+					loadAttempts = 1,
+				})
 
 				local collectionWithV1 = lapisWithV1.createCollection("collection", {
 					defaultData = "a",
@@ -614,7 +615,10 @@ return function(x)
 			context.lapis.autoSave:onGameClose()
 		end)
 
-		assert(coroutine.status(thread) == "suspended", "onGameClose didn't wait for the documents to finish closing")
+		assert(
+			coroutine.status(thread) == "suspended",
+			"onGameClose didn't wait for the documents to finish closing"
+		)
 
 		-- Verify each document has been closed.
 		for _, document in { one, two, three } do
@@ -816,9 +820,7 @@ return function(x)
 			local collection = context.lapis.createCollection("collection", {
 				freezeData = false,
 				validate = function()
-					if throwError then
-						error("foo")
-					end
+					if throwError then error("foo") end
 
 					return true
 				end,
@@ -1036,9 +1038,7 @@ return function(x)
 			local loaded = false
 			local collection = context.lapis.createCollection("collection", {
 				validate = function()
-					if loaded then
-						error("oh no")
-					end
+					if loaded then error("oh no") end
 					return true
 				end,
 				defaultData = { apples = 20 },
@@ -1077,7 +1077,10 @@ return function(x)
 				context.lapis.autoSave:onGameClose()
 			end)
 
-			assert(coroutine.status(thread) == "suspended", "onGameClose didn't wait for locks to be removed")
+			assert(
+				coroutine.status(thread) == "suspended",
+				"onGameClose didn't wait for locks to be removed"
+			)
 
 			context.dataStoreService.yield:stopYield()
 

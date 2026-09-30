@@ -25,17 +25,11 @@ local runDepth = 0
 local MAX_RUN_DEPTH = 20
 
 local function isCallable(value)
-	if typeof(value) == "function" then
-		return true
-	end
+	if typeof(value) == "function" then return true end
 	if typeof(value) == "table" then
 		local mt = getmetatable(value)
-		if mt and rawget(mt, "__call") then
-			return true
-		end
-		if value._isMockFunction then
-			return true
-		end
+		if mt and rawget(mt, "__call") then return true end
+		if value._isMockFunction then return true end
 	end
 	return false
 end
@@ -63,8 +57,7 @@ type UpdatePayload = Array<any>
 local ReactInternalTypes = require(script.Parent.ReactInternalTypes)
 type Fiber = ReactInternalTypes.Fiber
 type FiberRoot = ReactInternalTypes.FiberRoot
-local ReactFiberSuspenseComponent =
-	require(script.Parent["ReactFiberSuspenseComponent.new"])
+local ReactFiberSuspenseComponent = require(script.Parent["ReactFiberSuspenseComponent.new"])
 type SuspenseState = ReactFiberSuspenseComponent.SuspenseState
 
 local ReactUpdateQueueModule = require(script.Parent["ReactUpdateQueue.new"])
@@ -146,8 +139,7 @@ local ReactCurrentFiber = require(script.Parent.ReactCurrentFiber)
 local currentDebugFiberInDEV = ReactCurrentFiber.current
 local resetCurrentDebugFiberInDEV = ReactCurrentFiber.resetCurrentFiber
 local setCurrentDebugFiberInDEV = ReactCurrentFiber.setCurrentFiber
-local onCommitUnmount =
-	require(script.Parent["ReactFiberDevToolsHook.new"]).onCommitUnmount
+local onCommitUnmount = require(script.Parent["ReactFiberDevToolsHook.new"]).onCommitUnmount
 local resolveDefaultProps =
 	require(script.Parent["ReactFiberLazyComponent.new"]).resolveDefaultProps
 local ReactProfilerTimer = require(script.Parent["ReactProfilerTimer.new"])
@@ -213,14 +205,8 @@ local function schedulePassiveEffectCallback(): ()
 end
 
 -- deviation: stub to allow dependency injection that breaks circular dependency
-local function captureCommitPhaseError(
-	rootFiber: Fiber,
-	sourceFiber: Fiber | nil,
-	error_: any?
-): ()
-	console.warn(
-		"ReactFiberCommitWork: captureCommitPhaseError causes a dependency cycle"
-	)
+local function captureCommitPhaseError(rootFiber: Fiber, sourceFiber: Fiber | nil, error_: any?): ()
+	console.warn("ReactFiberCommitWork: captureCommitPhaseError causes a dependency cycle")
 	error(error_)
 end
 
@@ -273,9 +259,7 @@ local function callComponentWillUnmountWithTimer(current, instance)
 
 		recordLayoutEffectDuration(current)
 
-		if not ok then
-			error(exception)
-		end
+		if not ok then error(exception) end
 	else
 		-- ROBLOX deviation: Call with ":" so that the method receives self
 		instance:componentWillUnmount()
@@ -283,18 +267,11 @@ local function callComponentWillUnmountWithTimer(current, instance)
 end
 
 -- Capture errors so they don't interrupt unmounting.
-function safelyCallComponentWillUnmount(
-	current: Fiber,
-	instance: any,
-	nearestMountedAncestor
-): ()
+function safelyCallComponentWillUnmount(current: Fiber, instance: any, nearestMountedAncestor): ()
 	-- ROBLOX performance: eliminate the __DEV__ and invokeGuardedCallback, like React 18 has done
-	local ok, error_ =
-		xpcall(callComponentWillUnmountWithTimer, describeError, current, instance)
+	local ok, error_ = xpcall(callComponentWillUnmountWithTimer, describeError, current, instance)
 
-	if not ok then
-		captureCommitPhaseError(current, nearestMountedAncestor, error_)
-	end
+	if not ok then captureCommitPhaseError(current, nearestMountedAncestor, error_) end
 end
 
 local function safelyDetachRef(current: Fiber, nearestMountedAncestor: Fiber): ()
@@ -303,9 +280,7 @@ local function safelyDetachRef(current: Fiber, nearestMountedAncestor: Fiber): (
 		if typeof(ref) == "function" then
 			-- ROBLOX performance: eliminate the __DEV__ and invokeGuardedCallback, like React 18 has done
 			local ok, error_ = xpcall(ref, describeError)
-			if not ok then
-				captureCommitPhaseError(current, nearestMountedAncestor, error_)
-			end
+			if not ok then captureCommitPhaseError(current, nearestMountedAncestor, error_) end
 		else
 			-- ROBLOX FIXME Luau: next line gets Expected type table, got 'RefObject | {| [string]: any, _stringRef: string? |}' instead
 			ref.current = nil
@@ -320,15 +295,10 @@ local function safelyCallDestroy(
 ): ()
 	-- ROBLOX performance: eliminate the __DEV__ and invokeGuardedCallback, like React 18 has done
 	local ok, error_ = xpcall(destroy, describeError)
-	if not ok then
-		captureCommitPhaseError(current, nearestMountedAncestor, error_)
-	end
+	if not ok then captureCommitPhaseError(current, nearestMountedAncestor, error_) end
 end
 
-local function commitBeforeMutationLifeCycles(
-	current: Fiber | nil,
-	finishedWork: Fiber
-): ()
+local function commitBeforeMutationLifeCycles(current: Fiber | nil, finishedWork: Fiber): ()
 	if
 		finishedWork.tag == FunctionComponent
 		or finishedWork.tag == ForwardRef
@@ -447,8 +417,7 @@ local function commitHookEffectListUnmount(
 end
 
 local function commitHookEffectListMount(flags: HookFlags, finishedWork: Fiber)
-	local updateQueue: FunctionComponentUpdateQueue | nil =
-		finishedWork.updateQueue :: any
+	local updateQueue: FunctionComponentUpdateQueue | nil = finishedWork.updateQueue :: any
 	local lastEffect = if updateQueue ~= nil then updateQueue.lastEffect else nil
 	if lastEffect ~= nil then
 		local firstEffect = lastEffect.next
@@ -530,9 +499,7 @@ local function recursivelyCommitLayoutEffects(
 	) -> (),
 	_schedulePassiveEffectCallback: () -> ()
 )
-	if _captureCommitPhaseError ~= nil then
-		captureCommitPhaseError = _captureCommitPhaseError
-	end
+	if _captureCommitPhaseError ~= nil then captureCommitPhaseError = _captureCommitPhaseError end
 	if _schedulePassiveEffectCallback ~= nil then
 		schedulePassiveEffectCallback = _schedulePassiveEffectCallback
 	end
@@ -581,9 +548,7 @@ local function recursivelyCommitLayoutEffects(
 						captureCommitPhaseError,
 						schedulePassiveEffectCallback
 					)
-					if not ok then
-						captureCommitPhaseError(child, finishedWork, error_)
-					end
+					if not ok then captureCommitPhaseError(child, finishedWork, error_) end
 				end
 			end
 			child = child.sibling
@@ -604,11 +569,7 @@ local function recursivelyCommitLayoutEffects(
 					)
 					if hasCaughtError() then
 						local error_ = clearCaughtError()
-						captureCommitPhaseError(
-							finishedWork,
-							finishedWork.return_,
-							error_
-						)
+						captureCommitPhaseError(finishedWork, finishedWork.return_, error_)
 					end
 					if prevCurrentFiberInDEV ~= nil then
 						setCurrentDebugFiberInDEV(prevCurrentFiberInDEV)
@@ -624,11 +585,7 @@ local function recursivelyCommitLayoutEffects(
 						finishedRoot
 					)
 					if not ok then
-						captureCommitPhaseError(
-							finishedWork,
-							finishedWork.return_,
-							error_
-						)
+						captureCommitPhaseError(finishedWork, finishedWork.return_, error_)
 					end
 				end
 			end
@@ -719,9 +676,7 @@ local function recursivelyCommitLayoutEffects(
 						)
 					end
 
-					if not ok then
-						captureCommitPhaseError(child, finishedWork, error_)
-					end
+					if not ok then captureCommitPhaseError(child, finishedWork, error_) end
 				end
 			end
 			child = child.sibling
@@ -750,14 +705,9 @@ local function recursivelyCommitLayoutEffects(
 					end, describeError)
 					-- ROBLOX finally
 					recordLayoutEffectDuration(finishedWork)
-					if not ok then
-						error(error_)
-					end
+					if not ok then error(error_) end
 				else
-					commitHookEffectListMount(
-						bit32.bor(HookLayout, HookHasEffect),
-						finishedWork
-					)
+					commitHookEffectListMount(bit32.bor(HookLayout, HookHasEffect), finishedWork)
 				end
 
 				if bit32.band(finishedWork.subtreeFlags, PassiveMask) ~= NoFlags then
@@ -799,9 +749,7 @@ local function recursivelyCommitLayoutEffects(
 		--     commitAttachRef(finishedWork)
 		--   end
 		-- else
-		if bit32.band(flags, Ref) ~= 0 then
-			commitAttachRef(finishedWork)
-		end
+		if bit32.band(flags, Ref) ~= 0 then commitAttachRef(finishedWork) end
 		-- end
 	end
 end
@@ -921,9 +869,7 @@ function commitLayoutEffectsForClassComponent(finishedWork: Fiber)
 				end, describeError)
 				-- finally
 				recordLayoutEffectDuration(finishedWork)
-				if not ok then
-					error(result)
-				end
+				if not ok then error(result) end
 			else
 				-- ROBLOX deviation: Call with ":" so that the method receives self
 				instance:componentDidMount()
@@ -979,9 +925,7 @@ function commitLayoutEffectsForClassComponent(finishedWork: Fiber)
 				end, describeError)
 				-- finally
 				recordLayoutEffectDuration(finishedWork)
-				if not ok then
-					error(result)
-				end
+				if not ok then error(result) end
 			else
 				-- deviation: Call with ":" so that the method receives self
 				instance:componentDidUpdate(
@@ -1098,13 +1042,9 @@ local function hideOrUnhideAllChildren(finishedWork, isHidden)
 				node = node.child :: Fiber
 				continue
 			end
-			if node == finishedWork then
-				return
-			end
+			if node == finishedWork then return end
 			while node.sibling == nil do
-				if node.return_ == nil or node.return_ == finishedWork then
-					return
-				end
+				if node.return_ == nil or node.return_ == finishedWork then return end
 				node = node.return_ :: Fiber -- ROBLOX TODO: Luau narrowing doesn't understand this loop until nil pattern
 			end
 			-- ROBLOX FIXME: cast to any to silence analyze
@@ -1199,18 +1139,10 @@ function commitUnmount(
 								and bit32.band(current.mode, ProfileMode) ~= 0
 							then
 								startLayoutEffectTimer()
-								safelyCallDestroy(
-									current,
-									nearestMountedAncestor,
-									effect.destroy
-								)
+								safelyCallDestroy(current, nearestMountedAncestor, effect.destroy)
 								recordLayoutEffectDuration(current)
 							else
-								safelyCallDestroy(
-									current,
-									nearestMountedAncestor,
-									effect.destroy
-								)
+								safelyCallDestroy(current, nearestMountedAncestor, effect.destroy)
 							end
 						end
 					end
@@ -1301,13 +1233,9 @@ function commitNestedUnmounts(
 			node = node.child :: Fiber
 			continue
 		end
-		if node == root then
-			return
-		end
+		if node == root then return end
 		while node.sibling == nil do
-			if node.return_ == nil or node.return_ == root then
-				return
-			end
+			if node.return_ == nil or node.return_ == root then return end
 			node = node.return_ :: Fiber -- ROBLOX TODO: Luau narrowing doesn't understand this loop until nil pattern
 		end
 		(node.sibling :: Fiber).return_ = node.return_
@@ -1385,9 +1313,7 @@ end
 local function getHostParentFiber(fiber: Fiber): Fiber
 	local parent = fiber.return_
 	while parent ~= nil do
-		if isHostParent(parent) then
-			return parent
-		end
+		if isHostParent(parent) then return parent end
 		parent = parent.return_
 	end
 	-- ROBLOX deviation START: use React 18 approach, which Luau understands better than invariant
@@ -1447,9 +1373,7 @@ function getHostSibling(fiber: Fiber): Instance?
 				node = node.child :: Fiber
 			end
 		end
-		if continueOuter then
-			continue
-		end
+		if continueOuter then continue end
 		-- Check if this host node is stable or about to be placed.
 		if bit32.band(node.flags, Placement) == 0 then
 			-- Found it!
@@ -1459,9 +1383,7 @@ function getHostSibling(fiber: Fiber): Instance?
 end
 
 local function commitPlacement(finishedWork: Fiber)
-	if not supportsMutation then
-		return
-	end
+	if not supportsMutation then return end
 
 	-- Recursively insert all host nodes into the parent.
 	local parentFiber = getHostParentFiber(finishedWork)
@@ -1509,11 +1431,7 @@ local function commitPlacement(finishedWork: Fiber)
 	end
 end
 
-function insertOrAppendPlacementNodeIntoContainer(
-	node: Fiber,
-	before: Instance?,
-	parent: Container
-)
+function insertOrAppendPlacementNodeIntoContainer(node: Fiber, before: Instance?, parent: Container)
 	local tag = node.tag
 	local isHost = tag == HostComponent or tag == HostText
 	-- ROBLOX performance: avoid always-false compare for Roblox renderer in hot path
@@ -1629,12 +1547,7 @@ function unmountHostComponents(
 		end
 
 		if node.tag == HostComponent or node.tag == HostText then
-			commitNestedUnmounts(
-				finishedRoot,
-				node,
-				nearestMountedAncestor,
-				renderPriorityLevel
-			)
+			commitNestedUnmounts(finishedRoot, node, nearestMountedAncestor, renderPriorityLevel)
 			-- After all the children have unmounted, it is now safe to remove the
 			-- node from the tree.
 			if currentParentIsContainer then
@@ -1726,13 +1639,9 @@ function unmountHostComponents(
 				continue
 			end
 		end
-		if node == current then
-			return
-		end
+		if node == current then return end
 		while node.sibling == nil do
-			if node.return_ == nil or node.return_ == current then
-				return
-			end
+			if node.return_ == nil or node.return_ == current then return end
 			-- ROBLOX FIXME Luau: Luau doesn't understand narrowing by guard above
 			node = node.return_ :: Fiber
 			if node.tag == HostPortal then
@@ -1757,12 +1666,7 @@ local function commitDeletion(
 	-- if supportsMutation then
 	-- Recursively delete all host nodes from the parent.
 	-- Detach refs and call componentWillUnmount() on the whole subtree.
-	unmountHostComponents(
-		finishedRoot,
-		current,
-		nearestMountedAncestor,
-		renderPriorityLevel
-	)
+	unmountHostComponents(finishedRoot, current, nearestMountedAncestor, renderPriorityLevel)
 	-- else
 	--   -- Detach refs and call componentWillUnmount() on the whole subtree.
 	--   commitNestedUnmounts(
@@ -1774,9 +1678,7 @@ local function commitDeletion(
 	-- end
 	local alternate = current.alternate
 	detachFiberMutation(current)
-	if alternate ~= nil then
-		detachFiberMutation(alternate)
-	end
+	if alternate ~= nil then detachFiberMutation(alternate) end
 end
 
 local function commitWork(current: Fiber | nil, finishedWork: Fiber)
@@ -1878,9 +1780,7 @@ local function commitWork(current: Fiber | nil, finishedWork: Fiber)
 			end, describeError)
 			-- ROBLOX finally
 			recordLayoutEffectDuration(finishedWork)
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 		else
 			commitHookEffectListUnmount(
 				bit32.bor(HookLayout, HookHasEffect),
@@ -1910,14 +1810,7 @@ local function commitWork(current: Fiber | nil, finishedWork: Fiber)
 			local updatePayload: nil | UpdatePayload = finishedWork.updateQueue :: any
 			finishedWork.updateQueue = nil
 			if updatePayload ~= nil then
-				commitUpdate(
-					instance,
-					updatePayload,
-					type,
-					oldProps,
-					newProps,
-					finishedWork
-				)
+				commitUpdate(instance, updatePayload, type, oldProps, newProps, finishedWork)
 			end
 		end
 		return
@@ -1978,10 +1871,7 @@ local function commitWork(current: Fiber | nil, finishedWork: Fiber)
 	--   return
 	-- end
 	-- break
-	elseif
-		finishedWork.tag == OffscreenComponent
-		or finishedWork.tag == LegacyHiddenComponent
-	then
+	elseif finishedWork.tag == OffscreenComponent or finishedWork.tag == LegacyHiddenComponent then
 		local newState: OffscreenState | nil = finishedWork.memoizedState
 		local isHidden = newState ~= nil
 		hideOrUnhideAllChildren(finishedWork, isHidden)
@@ -2019,9 +1909,7 @@ function commitSuspenseComponent(finishedWork: Fiber)
 		local suspenseCallback = finishedWork.memoizedProps.suspenseCallback
 		if typeof(suspenseCallback) == "function" then
 			local wakeables: Set<Wakeable> | nil = finishedWork.updateQueue :: any
-			if wakeables ~= nil then
-				suspenseCallback(table.clone(wakeables))
-			end
+			if wakeables ~= nil then suspenseCallback(table.clone(wakeables)) end
 		elseif __DEV__ then
 			if suspenseCallback ~= nil then
 				console.error(
@@ -2034,9 +1922,7 @@ function commitSuspenseComponent(finishedWork: Fiber)
 end
 
 function commitSuspenseHydrationCallbacks(finishedRoot: FiberRoot, finishedWork: Fiber)
-	if not supportsHydration then
-		return
-	end
+	if not supportsHydration then return end
 	local newState: SuspenseState | nil = finishedWork.memoizedState
 	if newState == nil then
 		local current = finishedWork.alternate
@@ -2050,9 +1936,7 @@ function commitSuspenseHydrationCallbacks(finishedRoot: FiberRoot, finishedWork:
 						local hydrationCallbacks = finishedRoot.hydrationCallbacks
 						if hydrationCallbacks ~= nil then
 							local onHydrated = hydrationCallbacks.onHydrated
-							if onHydrated then
-								onHydrated(suspenseInstance)
-							end
+							if onHydrated then onHydrated(suspenseInstance) end
 						end
 					end
 				end
@@ -2112,9 +1996,7 @@ function isSuspenseBoundaryBeingHidden(current: Fiber | nil, finishedWork: Fiber
 end
 
 function commitResetTextContent(current: Fiber): ()
-	if not supportsMutation then
-		return
-	end
+	if not supportsMutation then return end
 	resetTextContent(current.stateNode)
 end
 
@@ -2193,9 +2075,7 @@ local function commitPassiveMount(finishedRoot: FiberRoot, finishedWork: Fiber):
 			)
 			-- ROBLOX finally
 			recordPassiveEffectDuration(finishedWork)
-			if not ok then
-				error(error_)
-			end
+			if not ok then error(error_) end
 		else
 			commitHookEffectListMount(bit32.bor(HookPassive, HookHasEffect), finishedWork)
 		end

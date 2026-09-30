@@ -1,46 +1,56 @@
-local Promise = require("./pkg/Promise")
 local ObjectCache = require("./obj/ObjectCache")
+local Promise = require("./pkg/Promise")
 
 export type scope = { any } & {
-  depth: number,
-  effects: EffectsService,
-  _context: { _promises: { any } }?,
-  _onCancel: { () -> () }?,
+	depth: number,
+	effects: EffectsService,
+	_context: { _promises: { any } }?,
+	_onCancel: { () -> () }?,
 }
 
 export type EmitEnv = {
-  Finished: typeof(Promise.resolve()),
-  Clear: (self: EmitEnv) -> (),
+	Finished: typeof(Promise.resolve()),
+	Clear: (self: EmitEnv) -> (),
 }
 
 export type ApiCaches = {
-  shared_part: ObjectCache.ObjectCache,
+	shared_part: ObjectCache.ObjectCache,
 }
 
 export type EffectsService = {
-  init: (api: Api) -> (),
-  deinit: () -> (),
+	init: (api: Api) -> (),
+	deinit: () -> (),
 
-  emit: (depth: number, ...Instance) -> EmitEnv,
-  emitNested: (part: Instance, depth: number, parentScope: scope?) -> EmitEnv,
-  emitFromFolder: (folder: Folder?, targetParent: Instance, depth: number, parentScope: scope?) -> EmitEnv,
-  emitOnFinish: (emitOnFinish: Folder?, targetParent: Instance, depth: number, parentScope: scope?) -> EmitEnv,
+	emit: (depth: number, ...Instance) -> EmitEnv,
+	emitNested: (part: Instance, depth: number, parentScope: scope?) -> EmitEnv,
+	emitFromFolder: (
+		folder: Folder?,
+		targetParent: Instance,
+		depth: number,
+		parentScope: scope?
+	) -> EmitEnv,
+	emitOnFinish: (
+		emitOnFinish: Folder?,
+		targetParent: Instance,
+		depth: number,
+		parentScope: scope?
+	) -> EmitEnv,
 
-  prepareEmitFolder: (obj: Instance, folderName: string, scope: scope) -> Folder?,
-  prepareEmitOnFinish: (obj: Instance, scope: scope) -> Folder?,
+	prepareEmitFolder: (obj: Instance, folderName: string, scope: scope) -> Folder?,
+	prepareEmitOnFinish: (obj: Instance, scope: scope) -> Folder?,
 }
 
 export type Api = {
-  setup: boolean,
+	setup: boolean,
 
-  scope: { unknown },
-  caches: ApiCaches,
+	scope: { unknown },
+	caches: ApiCaches,
 
-  init: (params: any?) -> (),
-  deinit: () -> (),
+	init: (params: any?) -> (),
+	deinit: () -> (),
 
-  emit: (vfxOrScale: number | Instance, ...Instance) -> EmitEnv,
-  emitWithDepth: (depth: number, ...Instance) -> EmitEnv,
+	emit: (vfxOrScale: number | Instance, ...Instance) -> EmitEnv,
+	emitWithDepth: (depth: number, ...Instance) -> EmitEnv,
 }
 
 return {}

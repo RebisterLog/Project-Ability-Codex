@@ -70,13 +70,11 @@ local createUpdate = ReactUpdateQueue.createUpdate
 local CaptureUpdate = ReactUpdateQueue.CaptureUpdate
 local ForceUpdate = ReactUpdateQueue.ForceUpdate
 local enqueueUpdate = ReactUpdateQueue.enqueueUpdate
-local markFailedErrorBoundaryForHotReloading = require(
-	script.Parent["ReactFiberHotReloading.new"]
-).markFailedErrorBoundaryForHotReloading
+local markFailedErrorBoundaryForHotReloading =
+	require(script.Parent["ReactFiberHotReloading.new"]).markFailedErrorBoundaryForHotReloading
 
 local hasSuspenseContext = ReactFiberSuspenseContext.hasSuspenseContext
-local InvisibleParentSuspenseContext =
-	ReactFiberSuspenseContext.InvisibleParentSuspenseContext
+local InvisibleParentSuspenseContext = ReactFiberSuspenseContext.InvisibleParentSuspenseContext
 local suspenseStackCursor = ReactFiberSuspenseContext.suspenseStackCursor
 
 -- ROBLOX FIXME: these will incur a dependency cycle
@@ -88,8 +86,7 @@ local markLegacyErrorBoundaryAsFailedRef, isAlreadyFailedLegacyErrorBoundaryRef,
 local markLegacyErrorBoundaryAsFailed = function(...)
 	if not markLegacyErrorBoundaryAsFailedRef then
 		ReactFiberWorkLoop = require(script.Parent["ReactFiberWorkLoop.new"])
-		markLegacyErrorBoundaryAsFailedRef =
-			ReactFiberWorkLoop.markLegacyErrorBoundaryAsFailed
+		markLegacyErrorBoundaryAsFailedRef = ReactFiberWorkLoop.markLegacyErrorBoundaryAsFailed
 	end
 	return markLegacyErrorBoundaryAsFailedRef(...)
 end
@@ -111,15 +108,13 @@ local isAlreadyFailedLegacyErrorBoundary = function(...)
 	if ReactFiberWorkLoop == nil then
 		ReactFiberWorkLoop = require(script.Parent["ReactFiberWorkLoop.new"])
 	end
-	isAlreadyFailedLegacyErrorBoundaryRef =
-		ReactFiberWorkLoop.isAlreadyFailedLegacyErrorBoundary
+	isAlreadyFailedLegacyErrorBoundaryRef = ReactFiberWorkLoop.isAlreadyFailedLegacyErrorBoundary
 	return isAlreadyFailedLegacyErrorBoundaryRef(...)
 end
 
 local logCapturedError = require(script.Parent.ReactFiberErrorLogger).logCapturedError
 local logComponentSuspended = require(script.Parent.DebugTracing).logComponentSuspended
-local markComponentSuspended =
-	require(script.Parent.SchedulingProfiler).markComponentSuspended
+local markComponentSuspended = require(script.Parent.SchedulingProfiler).markComponentSuspended
 
 local SyncLane = ReactFiberLane.SyncLane
 local NoTimestamp = ReactFiberLane.NoTimestamp
@@ -144,9 +139,7 @@ function createRootErrorUpdate(
 	update.payload = { element = Object.None }
 	local _error = errorInfo.value
 	update.callback = function()
-		if onUncaughtError ~= nil then
-			onUncaughtError(_error)
-		end
+		if onUncaughtError ~= nil then onUncaughtError(_error) end
 		logCapturedError(fiber, errorInfo)
 	end
 	return update
@@ -171,9 +164,7 @@ function createClassErrorUpdate(
 	local inst = fiber.stateNode
 	if inst ~= nil and typeof(inst.componentDidCatch) == "function" then
 		update.callback = function()
-			if _G.__DEV__ then
-				markFailedErrorBoundaryForHotReloading(fiber)
-			end
+			if _G.__DEV__ then markFailedErrorBoundaryForHotReloading(fiber) end
 			if typeof(getDerivedStateFromError) ~= "function" then
 				-- To preserve the preexisting retry behavior of error boundaries,
 				-- we keep track of which ones already failed during this batch.
@@ -219,8 +210,7 @@ local function attachPingListener(root: FiberRoot, wakeable: Wakeable, lanes: La
 	-- Attach a listener to the promise to "ping" the root and retry. But only if
 	-- one does not already exist for the lanes we're currently rendering (which
 	-- acts like a "thread ID" here).
-	local pingCache: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)> | nil =
-		root.pingCache
+	local pingCache: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)> | nil = root.pingCache
 	local threadIDs
 	if pingCache == nil then
 		-- ROBLOX deviation: use table in place of WeakMap
@@ -232,12 +222,11 @@ local function attachPingListener(root: FiberRoot, wakeable: Wakeable, lanes: La
 		pingCache = root.pingCache :: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)>
 	else
 		threadIDs = (
-			pingCache :: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)>
-		)[wakeable] :: Set<any>
+				pingCache :: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)>
+			)[wakeable] :: Set<any>
 		if threadIDs == nil then
-			threadIDs = {} :: Set<any>;
-			(pingCache :: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)>)[wakeable] =
-				threadIDs
+			threadIDs = {} :: Set<any>
+			(pingCache :: Map<Wakeable, (Set<any> | Map<Wakeable, Set<any>>)>)[wakeable] = threadIDs
 		end
 	end
 	if not threadIDs[lanes] then
@@ -262,11 +251,7 @@ function throwException(
 	-- The source fiber did not complete.
 	sourceFiber.flags = bit32.bor(sourceFiber.flags, Incomplete)
 
-	if
-		value ~= nil
-		and typeof(value) == "table"
-		and typeof(value.andThen) == "function"
-	then
+	if value ~= nil and typeof(value) == "table" and typeof(value.andThen) == "function" then
 		-- This is a wakeable.
 		local wakeable: Wakeable = value
 
@@ -279,9 +264,7 @@ function throwException(
 			end
 		end
 
-		if enableSchedulingProfiler then
-			markComponentSuspended(sourceFiber, wakeable)
-		end
+		if enableSchedulingProfiler then markComponentSuspended(sourceFiber, wakeable) end
 
 		if bit32.band(sourceFiber.mode, BlockingMode) == NoMode then
 			-- Reset the memoizedState to what it was before we attempted
@@ -336,8 +319,7 @@ function throwException(
 				-- should *not* suspend the commit.
 				if bit32.band(workInProgress.mode, BlockingMode) == NoMode then
 					workInProgress.flags = bit32.bor(workInProgress.flags, DidCapture)
-					sourceFiber.flags =
-						bit32.bor(sourceFiber.flags, ForceUpdateForLegacySuspense)
+					sourceFiber.flags = bit32.bor(sourceFiber.flags, ForceUpdateForLegacySuspense)
 
 					-- We're going to commit this fiber even though it didn't complete.
 					-- But we shouldn't call any lifecycle methods or callbacks. Remove
@@ -449,8 +431,7 @@ function throwException(
 			local lane = pickArbitraryLane(rootRenderLanes)
 			workInProgress.lanes = mergeLanes(workInProgress.lanes, lane)
 			-- ROBLOX deviation: parameterize method onUncaughtError to avoid circular dependency
-			local update =
-				createRootErrorUpdate(workInProgress, errorInfo, lane, onUncaughtError)
+			local update = createRootErrorUpdate(workInProgress, errorInfo, lane, onUncaughtError)
 			enqueueCapturedUpdate(workInProgress, update)
 			return
 		elseif workInProgress.tag == ClassComponent then

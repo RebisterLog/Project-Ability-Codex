@@ -75,18 +75,14 @@ local function FiberRootNode(containerInfo, tag, hydrate)
 		entanglements = createLaneMap(NoLanes),
 	}
 
-	if supportsHydration then
-		rootNode.mutableSourceEagerHydrationData = nil
-	end
+	if supportsHydration then rootNode.mutableSourceEagerHydrationData = nil end
 
 	if enableSchedulerTracing then
 		rootNode.interactionThreadID = unstable_getThreadID()
 		rootNode.memoizedInteractions = Set.new()
 		rootNode.pendingInteractionMap = Map.new()
 	end
-	if enableSuspenseCallback then
-		rootNode.hydrationCallbacks = nil
-	end
+	if enableSuspenseCallback then rootNode.hydrationCallbacks = nil end
 
 	if _G.__DEV__ then
 		if tag == BlockingRoot then
@@ -108,9 +104,7 @@ exports.createFiberRoot = function(
 	hydrationCallbacks: SuspenseHydrationCallbacks?
 ): FiberRoot
 	local root: FiberRoot = FiberRootNode(containerInfo, tag, hydrate)
-	if enableSuspenseCallback then
-		root.hydrationCallbacks = hydrationCallbacks
-	end
+	if enableSuspenseCallback then root.hydrationCallbacks = hydrationCallbacks end
 
 	-- Cyclic construction. This cheats the type system right now because
 	-- stateNode is any.

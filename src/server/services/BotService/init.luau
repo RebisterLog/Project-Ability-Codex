@@ -17,28 +17,28 @@ local BotsService = Crane:CreateService({
 
 function BotsService:onStart()
 	self.BotConfigs = Crane:GetService("ConfigService"):Get("Bots")
-	
-	self.Bots = {} :: {[types.Character]: typeof(Bot.new())}
+
+	self.Bots = {} :: { [types.Character]: typeof(Bot.new()) }
 end
 
 function BotsService:Instance(botName: string, character: types.Character)
 	local config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
-	
+
 	local bot = Bot.new(character, config)
-	
+
 	return bot
 end
 
 function BotsService:Remove(character: types.Character)
 	if not self.Bots[character] then return end
-	
+
 	self.Bots[character].Cleaner:Cleanup()
 end
 
 function BotsService:Create(botName: string, model: Model)
 	local character = Crane:AddComponent(model, "Character")
 	local bot = self:Instance(botName, character)
-	
+
 	return bot, character
 end
 

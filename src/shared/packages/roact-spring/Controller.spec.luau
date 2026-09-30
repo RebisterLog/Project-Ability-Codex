@@ -41,10 +41,14 @@ return function()
 			expect(styles.x:getValue()).to.equal(100)
 		end)
 
-		it("should set the initial value of `from` if both `from` and `to` are passed to constructor", function()
-			local styles, api = RoactSpring.Controller.new({ from = { x = 0 }, to = { x = 100 } })
-			expect(styles.x:getValue()).to.equal(0)
-		end)
+		it(
+			"should set the initial value of `from` if both `from` and `to` are passed to constructor",
+			function()
+				local styles, api =
+					RoactSpring.Controller.new({ from = { x = 0 }, to = { x = 100 } })
+				expect(styles.x:getValue()).to.equal(0)
+			end
+		)
 
 		describe("the `stop` method", function()
 			it("should stop the animation", function()

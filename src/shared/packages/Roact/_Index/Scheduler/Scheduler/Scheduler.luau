@@ -117,9 +117,7 @@ return function(hostConfig)
 		-- Compare sort index first, then task id.
 		local diff = a.sortIndex - b.sortIndex
 
-		if diff == 0 then
-			return a.id - b.id
-		end
+		if diff == 0 then return a.id - b.id end
 
 		return diff
 	end
@@ -224,9 +222,7 @@ return function(hostConfig)
 	end
 
 	flushWork = function(hasTimeRemaining, initialTime)
-		if enableProfiling then
-			markSchedulerUnsuspended(initialTime)
-		end
+		if enableProfiling then markSchedulerUnsuspended(initialTime) end
 
 		-- We'll need a host callback the next time work is scheduled.
 		isHostCallbackScheduled = false
@@ -244,8 +240,7 @@ return function(hostConfig)
 		if not _G.__YOLO__ then
 			-- ROBLOX performance: don't nest try/catch here, Lua can do better, and it eliminated an anon function creation
 			if enableProfiling then
-				ok, result =
-					xpcall(workLoop, describeError, hasTimeRemaining, initialTime)
+				ok, result = xpcall(workLoop, describeError, hasTimeRemaining, initialTime)
 
 				if not ok then
 					if currentTask ~= nil then
@@ -273,9 +268,7 @@ return function(hostConfig)
 			markSchedulerSuspended(currentTime)
 		end
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 
 		return result
 	end
@@ -284,9 +277,7 @@ return function(hostConfig)
 		local currentTime = initialTime
 		advanceTimers(currentTime)
 		currentTask = peek(taskQueue)
-		while
-			currentTask ~= nil and not (enableSchedulerDebugging and isSchedulerPaused)
-		do
+		while currentTask ~= nil and not (enableSchedulerDebugging and isSchedulerPaused) do
 			if
 				currentTask.expirationTime > currentTime
 				and (not hasTimeRemaining or shouldYieldToHost())
@@ -312,9 +303,7 @@ return function(hostConfig)
 						currentTask.isQueued = false
 					end
 
-					if currentTask == peek(taskQueue) then
-						pop(taskQueue)
-					end
+					if currentTask == peek(taskQueue) then pop(taskQueue) end
 				end
 				advanceTimers(currentTime)
 			else
@@ -365,9 +354,7 @@ return function(hostConfig)
 		-- ROBLOX: finally
 		currentPriorityLevel = previousPriorityLevel
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 
 		return result
 	end
@@ -401,9 +388,7 @@ return function(hostConfig)
 		-- ROBLOX: finally
 		currentPriorityLevel = previousPriorityLevel
 
-		if not ok then
-			error(result)
-		end
+		if not ok then error(result) end
 
 		return result
 	end
@@ -428,9 +413,7 @@ return function(hostConfig)
 			-- ROBLOX: finally
 			currentPriorityLevel = previousPriorityLevel
 
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 
 			return result
 		end
@@ -477,9 +460,7 @@ return function(hostConfig)
 		}
 		taskIdCounter += 1
 
-		if enableProfiling then
-			newTask.isQueued = false
-		end
+		if enableProfiling then newTask.isQueued = false end
 
 		if startTime > currentTime then
 			-- This is a delayed task.

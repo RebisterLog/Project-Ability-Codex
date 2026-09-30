@@ -24,12 +24,12 @@ function CollisionService:onInit()
 	PhysicsService:CollisionGroupSetCollidable("Player", "Player", true)
 	PhysicsService:CollisionGroupSetCollidable("Player", "Ragdoll", false)
 	PhysicsService:CollisionGroupSetCollidable("Player", "NPC", false)
-	
+
 	PhysicsService:CollisionGroupSetCollidable("NoCollision", "Player", false)
 	PhysicsService:CollisionGroupSetCollidable("NoCollision", "NPC", false)
 	PhysicsService:CollisionGroupSetCollidable("NoCollision", "Ragdoll", false)
 	PhysicsService:CollisionGroupSetCollidable("NoCollision", "NoCollision", false)
-	
+
 	PhysicsService:CollisionGroupSetCollidable("NPC", "NPC", false)
 
 	PhysicsService:CollisionGroupSetCollidable("Ragdoll", "Ragdoll", false)
@@ -41,9 +41,7 @@ function CollisionService:SetCollisionGroup(group: string, instance: Instance)
 		return
 	end
 
-	if instance:IsA("BasePart") then
-		instance.CollisionGroup = group
-	end
+	if instance:IsA("BasePart") then instance.CollisionGroup = group end
 
 	for i, part: BasePart in instance:QueryDescendants("BasePart") do
 		part.CollisionGroup = group

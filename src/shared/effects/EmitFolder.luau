@@ -15,11 +15,11 @@ return {
 		end
 
 		local cache = self.Characters[character]
-		local cleaner =  cache[uuid or effectsFolder.Name] or Crane.Buttler.new()
+		local cleaner = cache[uuid or effectsFolder.Name] or Crane.Buttler.new()
 
 		local toEmit = {}
 
-		for i, bodyPartFolder in effectsFolder:GetChildren() :: {Folder} do
+		for i, bodyPartFolder in effectsFolder:GetChildren() :: { Folder } do
 			local bodyPart = character:FindFirstChild(bodyPartFolder.Name)
 
 			if bodyPart then
@@ -31,7 +31,7 @@ return {
 
 		for i, emit in toEmit do
 			cleaner:Set(emit.Name, emit)
-			
+
 			ForgeVFX.emit(emit).Finished:andThen(function()
 				cleaner:Remove(emit.Name)
 			end)

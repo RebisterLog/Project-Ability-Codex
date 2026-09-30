@@ -1,12 +1,10 @@
 local Error = require(script.Parent.Error)
-local freezeDeep = require(script.Parent.freezeDeep)
 local Promise = require(script.Parent.Parent.Promise)
+local freezeDeep = require(script.Parent.freezeDeep)
 local noYield = require(script.Parent.noYield)
 
 local function runCallback(document, name, callback)
-	if callback == nil then
-		return Promise.resolve()
-	end
+	if callback == nil then return Promise.resolve() end
 
 	document.callingCallback = name
 
@@ -16,7 +14,9 @@ local function runCallback(document, name, callback)
 		document.callingCallback = nil
 
 		if not ok then
-			reject(Error.new("BeforeSaveCloseCallbackThrew", `{name} callback threw error: {message}`))
+			reject(
+				Error.new("BeforeSaveCloseCallbackThrew", `{name} callback threw error: {message}`)
+			)
 		else
 			resolve()
 		end
@@ -71,13 +71,9 @@ end
 function Document:write(data)
 	assert(not self.closed, "Cannot write to a closed document")
 
-	if self.validate ~= nil then
-		assert(self.validate(data))
-	end
+	if self.validate ~= nil then assert(self.validate(data)) end
 
-	if self.collection.options.freezeData then
-		freezeDeep(data)
-	end
+	if self.collection.options.freezeData then freezeDeep(data) end
 
 	self.data = data
 end
@@ -93,9 +89,7 @@ end
 function Document:addUserId(userId)
 	assert(not self.closed, "Cannot add user id to a closed document")
 
-	if table.find(self.userIds, userId) == nil then
-		table.insert(self.userIds, userId)
-	end
+	if table.find(self.userIds, userId) == nil then table.insert(self.userIds, userId) end
 end
 
 --[=[
@@ -111,9 +105,7 @@ function Document:removeUserId(userId)
 
 	local index = table.find(self.userIds, userId)
 
-	if index ~= nil then
-		table.remove(self.userIds, index)
-	end
+	if index ~= nil then table.remove(self.userIds, index) end
 end
 
 --[=[
@@ -161,7 +153,8 @@ function Document:save()
 					if not self.collection.options.freezeData and self.validate ~= nil then
 						local validateOk, valid, message = pcall(self.validate, self.data)
 						if not validateOk then
-							return "fail", Error.new("ValidateThrew", `'validate' threw an error: {valid}`)
+							return "fail",
+								Error.new("ValidateThrew", `'validate' threw an error: {valid}`)
 						elseif not valid then
 							return "fail", Error.new("ValidateFailed", `Invalid data: {message}`)
 						end
@@ -204,29 +197,36 @@ function Document:close()
 				self.collection.autoSave:removeDocument(self)
 			end)
 			:andThen(function()
-				return self.collection.data:save(self.collection.dataStore, self.key, function(value, keyInfo)
-					if value == nil then
-						return "fail", Error.new("DocumentRemoved", "The document was removed")
-					end
-
-					if value.lockId ~= self.lockId then
-						return "fail", Error.new("SessionLockStolen", "The session lock was stolen")
-					end
-
-					if not self.collection.options.freezeData and self.validate ~= nil then
-						local validateOk, valid, message = pcall(self.validate, self.data)
-						if not validateOk then
-							return "fail", Error.new("ValidateThrew", `'validate' threw an error: {valid}`)
-						elseif not valid then
-							return "fail", Error.new("ValidateFailed", `Invalid data: {message}`)
+				return self.collection.data:save(
+					self.collection.dataStore,
+					self.key,
+					function(value, keyInfo)
+						if value == nil then
+							return "fail", Error.new("DocumentRemoved", "The document was removed")
 						end
+
+						if value.lockId ~= self.lockId then
+							return "fail",
+								Error.new("SessionLockStolen", "The session lock was stolen")
+						end
+
+						if not self.collection.options.freezeData and self.validate ~= nil then
+							local validateOk, valid, message = pcall(self.validate, self.data)
+							if not validateOk then
+								return "fail",
+									Error.new("ValidateThrew", `'validate' threw an error: {valid}`)
+							elseif not valid then
+								return "fail",
+									Error.new("ValidateFailed", `Invalid data: {message}`)
+							end
+						end
+
+						value.data = self.data
+						value.lockId = nil
+
+						return "succeed", value, self.userIds, keyInfo:GetMetadata()
 					end
-
-					value.data = self.data
-					value.lockId = nil
-
-					return "succeed", value, self.userIds, keyInfo:GetMetadata()
-				end)
+				)
 			end)
 			:andThen(function(_, keyInfo)
 				self.lastKeyInfo = keyInfo

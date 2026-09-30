@@ -30,9 +30,7 @@ return {
 		local self = newproxy(true) :: any
 
 		local wrappedName = "Symbol()"
-		if name then
-			wrappedName = ("Symbol(%s)"):format(name)
-		end
+		if name then wrappedName = ("Symbol(%s)"):format(name) end
 
 		getmetatable(self).__tostring = function()
 			return wrappedName

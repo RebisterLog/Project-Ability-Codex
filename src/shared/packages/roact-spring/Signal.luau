@@ -30,9 +30,7 @@ function Connection.new(signal, fn)
 end
 
 function Connection:Disconnect()
-	if not self.Connected then
-		return
-	end
+	if not self.Connected then return end
 	self.Connected = false
 
 	-- Unhook the node, but DON'T clear it. That way any fire calls that are
@@ -46,9 +44,7 @@ function Connection:Disconnect()
 		while prev and prev._next ~= self do
 			prev = prev._next
 		end
-		if prev then
-			prev._next = self._next
-		end
+		if prev then prev._next = self._next end
 	end
 end
 

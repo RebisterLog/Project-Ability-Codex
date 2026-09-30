@@ -3,9 +3,9 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local types = require(script.Parent.Parent.types)
 local client = require(script.Parent.Parent.process.client)
 local server = require(script.Parent.Parent.process.server)
+local types = require(script.Parent.Parent.types)
 
 local moduleRunContext: "server" | "client" = if RunService:IsServer() then "server" else "client"
 
@@ -68,9 +68,7 @@ return function(props: types.packetProps<types.dataTypeInterface<any>>, id: numb
 
 		function exported.sendToAllExcept(data, except: Player)
 			for _, player: Player in Players:GetPlayers() do
-				if player ~= except then
-					serverSendFunction(player, id, writer, data)
-				end
+				if player ~= except then serverSendFunction(player, id, writer, data) end
 			end
 		end
 
@@ -109,21 +107,21 @@ return function(props: types.packetProps<types.dataTypeInterface<any>>, id: numb
 			exported.disconnect(callback)
 		end
 	end
-	
+
 	function exported.disconnectAll()
 		table.clear(listeners)
 	end
-	
+
 	function exported.disconnect(callback)
 		table.remove(listeners, table.find(listeners, callback))
 	end
-	
+
 	function exported.listenOnce(callback)
 		table.insert(listeners, {
-			["OnceCallback"] = callback	
+			["OnceCallback"] = callback,
 		})
 	end
-	
+
 	function exported.getListeners()
 		return listeners
 	end

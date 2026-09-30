@@ -20,12 +20,12 @@ local Packages = script.Parent
 local LuauPolyfill = require(Packages.LuauPolyfill)
 type Object = LuauPolyfill.Object
 
-local ReactTypes = require(script.ReactTypes)
-local flowtypes = require(script["flowtypes.roblox"])
+local ErrorHandling = require(script["ErrorHandling.roblox"])
 local ReactElementType = require(script.ReactElementType)
 local ReactFiberHostConfig = require(script.ReactFiberHostConfig)
 local ReactSharedInternals = require(script.ReactSharedInternals)
-local ErrorHandling = require(script["ErrorHandling.roblox"])
+local ReactTypes = require(script.ReactTypes)
+local flowtypes = require(script["flowtypes.roblox"])
 
 -- Re-export all top-level public types
 export type ReactEmpty = ReactTypes.ReactEmpty
@@ -38,8 +38,10 @@ export type ReactContext<T> = ReactTypes.ReactContext<T>
 export type ReactPortal = ReactTypes.ReactPortal
 export type RefObject = ReactTypes.RefObject
 export type EventPriority = ReactTypes.EventPriority
-export type ReactFundamentalComponentInstance<C, H> =
-	ReactTypes.ReactFundamentalComponentInstance<C, H>
+export type ReactFundamentalComponentInstance<C, H> = ReactTypes.ReactFundamentalComponentInstance<
+	C,
+	H
+>
 export type ReactFundamentalImpl<C, H> = ReactTypes.ReactFundamentalImpl<C, H>
 export type ReactFundamentalComponent<C, H> = ReactTypes.ReactFundamentalComponent<C, H>
 export type ReactScope = ReactTypes.ReactScope
@@ -50,8 +52,10 @@ export type ReactBinding<T> = ReactTypes.ReactBinding<T>
 export type ReactBindingUpdater<T> = ReactTypes.ReactBindingUpdater<T>
 -- ROBLOX deviation END
 export type MutableSourceVersion = ReactTypes.MutableSourceVersion
-export type MutableSourceGetSnapshotFn<Source, Snapshot> =
-	ReactTypes.MutableSourceGetSnapshotFn<Source, Snapshot>
+export type MutableSourceGetSnapshotFn<Source, Snapshot> = ReactTypes.MutableSourceGetSnapshotFn<
+	Source,
+	Snapshot
+>
 export type MutableSourceSubscribeFn<Source, Snapshot> = ReactTypes.MutableSourceSubscribeFn<
 	Source,
 	Snapshot
@@ -73,10 +77,7 @@ export type React_AbstractComponent<Config, Instance> = flowtypes.React_Abstract
 	Instance
 >
 export type React_ComponentType<Config> = flowtypes.React_ComponentType<Config>
-export type React_PureComponent<Props, State = nil> = flowtypes.React_PureComponent<
-	Props,
-	State
->
+export type React_PureComponent<Props, State = nil> = flowtypes.React_PureComponent<Props, State>
 export type React_Component<Props, State> = flowtypes.React_Component<Props, State>
 export type React_ElementProps<ElementType> = flowtypes.React_ElementProps<ElementType>
 export type React_StatelessFunctionalComponent<Props> =

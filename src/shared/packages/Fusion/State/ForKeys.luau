@@ -14,15 +14,15 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 -- Memory
 local doCleanup = require(Package.Memory.doCleanup)
 -- State
-local For = require(Package.State.For)
-local Value = require(Package.State.Value)
 local Computed = require(Package.State.Computed)
+local For = require(Package.State.For)
 local ForTypes = require(Package.State.For.ForTypes)
+local Value = require(Package.State.Value)
 -- Logging
 local parseError = require(Package.Logging.parseError)
 
@@ -38,8 +38,8 @@ local SUB_OBJECT_META = {
 		end,
 		useOutputPair = function(self, use)
 			return use(self._outputKeyState), self.inputValue
-		end
-	}
+		end,
+	},
 }
 
 local function SubObject<KI, KO, V, S>(
@@ -73,22 +73,23 @@ end
 
 local function ForKeys<KI, KO, V, S>(
 	scope: Types.Scope<S>,
-	inputTable: Types.UsedAs<{[KI]: V}>,
+	inputTable: Types.UsedAs<{ [KI]: V }>,
 	processor: (Types.Use, Types.Scope<S>, KI) -> KO,
 	destructor: unknown?
 ): Types.For<KO, V>
 	if typeof(inputTable) == "function" then
-		External.logError("scopeMissing", nil, "ForKeys", "myScope:ForKeys(inputTable, function(scope, use, key) ... end)")
+		External.logError(
+			"scopeMissing",
+			nil,
+			"ForKeys",
+			"myScope:ForKeys(inputTable, function(scope, use, key) ... end)"
+		)
 	elseif destructor ~= nil then
 		External.logWarn("destructorRedundant", "ForKeys")
 	end
-	return For(
-		scope, 
-		inputTable, 
-		function(scope, initialKey, initialValue)
-			return SubObject(scope, initialKey, initialValue, processor)
-		end
-	)
+	return For(scope, inputTable, function(scope, initialKey, initialValue)
+		return SubObject(scope, initialKey, initialValue, processor)
+	end)
 end
 
 return ForKeys :: Types.ForKeysConstructor

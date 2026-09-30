@@ -10,9 +10,7 @@ function Internal.new(enableAutoSave)
 	local data = Data.new(config)
 	local autoSave = AutoSave.new(data)
 
-	if enableAutoSave then
-		autoSave:start()
-	end
+	if enableAutoSave then autoSave:start() end
 
 	local usedCollections = {}
 
@@ -28,9 +26,7 @@ function Internal.new(enableAutoSave)
 	end
 
 	function internal.createCollection(name, options)
-		if usedCollections[name] then
-			error(`Collection "{name}" already exists`)
-		end
+		if usedCollections[name] then error(`Collection "{name}" already exists`) end
 
 		usedCollections[name] = true
 

@@ -22,9 +22,7 @@ local exports = {}
 
 -- ROBLOX TODO: turn this into newindex property accessor
 exports.workInProgressRootSkippedLanes = function(value: Lanes?): Lanes
-	if value == nil then
-		return _workInProgressRootSkippedLanes
-	end
+	if value == nil then return _workInProgressRootSkippedLanes end
 
 	-- ROBLOX FIXME Luau: Luau should narrow based on guard above
 	_workInProgressRootSkippedLanes = value :: Lanes

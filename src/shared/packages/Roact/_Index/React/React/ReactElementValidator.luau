@@ -21,9 +21,7 @@ type Function = (...any) -> ...any
 
 -- ROBLOX deviation START: import extra types
 local ReactTypes = require(Packages.Shared)
-type React_StatelessFunctionalComponent<P> = ReactTypes.React_StatelessFunctionalComponent<
-	P
->
+type React_StatelessFunctionalComponent<P> = ReactTypes.React_StatelessFunctionalComponent<P>
 type React_ComponentType<P> = ReactTypes.React_ComponentType<P>
 type React_Element<ElementType> = ReactTypes.React_Element<ElementType>
 type React_ElementProps<ElementType> = ReactTypes.React_ElementProps<ElementType>
@@ -65,14 +63,9 @@ local function setCurrentlyValidatingElement(element: ReactElement<any, any> | n
 		if element then
 			local owner = element._owner
 			local ownerArgument = nil
-			if owner then
-				ownerArgument = owner.type
-			end
-			local stack = describeUnknownElementTypeFrameInDEV(
-				element.type,
-				element._source,
-				ownerArgument
-			);
+			if owner then ownerArgument = owner.type end
+			local stack =
+				describeUnknownElementTypeFrameInDEV(element.type, element._source, ownerArgument);
 			-- ROBLOX FIXME Luau: needs normalization: Cannot call non-function (() -> ()) | ((string?) -> (...any))
 			(setExtraStackFrame :: (...any) -> ())(stack)
 		else
@@ -84,9 +77,7 @@ end
 
 local propTypesMisspellWarningShown
 
-if _G.__DEV__ then
-	propTypesMisspellWarningShown = false
-end
+if _G.__DEV__ then propTypesMisspellWarningShown = false end
 
 local function hasOwnProperty(object, key)
 	return object[key] ~= nil
@@ -95,9 +86,7 @@ end
 local function getDeclarationErrorAddendum(): string
 	if ReactCurrentOwner.current then
 		local name = getComponentName(ReactCurrentOwner.current.type)
-		if name then
-			return "\n\nCheck the render method of `" .. name .. "`."
-		end
+		if name then return "\n\nCheck the render method of `" .. name .. "`." end
 	end
 	return ""
 end
@@ -113,12 +102,8 @@ local function getSourceInfoErrorAddendum(source: Source | nil): string
 end
 
 -- ROBLOX FIXME Luau: needs explicit annotation, even though call site and nil check should be enough
-local function getSourceInfoErrorAddendumForProps(
-	elementProps: React_ElementProps<any>?
-): string
-	if elementProps ~= nil then
-		return getSourceInfoErrorAddendum(elementProps.__source)
-	end
+local function getSourceInfoErrorAddendumForProps(elementProps: React_ElementProps<any>?): string
+	if elementProps ~= nil then return getSourceInfoErrorAddendum(elementProps.__source) end
 	return ""
 end
 
@@ -150,10 +135,7 @@ local function getCurrentComponentErrorInfo(
 		end
 
 		if parentName then
-			info = string.format(
-				"\n\nCheck the top-level render call using <%s>.",
-				parentName
-			)
+			info = string.format("\n\nCheck the top-level render call using <%s>.", parentName)
 		end
 	end
 	return info
@@ -172,26 +154,16 @@ end
 --  * @param {*} tableKey ROBLOX deviation: key provided by the children table
 --  */
 -- ROBLOX deviation START: add explicit optional table key parameter, move key check to after we mark it validated, since we may not have an explicit key (and will use tableKey to validate)
-local function validateExplicitKey<P>(
-	element: ReactElement<P, any>,
-	parentType,
-	tableKey: any?
-)
-	if element._store == nil or element._store.validated then
-		return
-	end
+local function validateExplicitKey<P>(element: ReactElement<P, any>, parentType, tableKey: any?)
+	if element._store == nil or element._store.validated then return end
 	-- ROBLOX FIXME Luau: doesn't narrow based on branch above
 	(element._store :: any).validated = true
 	-- ROBLOX note: Consider this element valid if only _one_ key is
 	-- present, otherwise proceed and check for error states
-	if (element.key ~= nil) ~= (tableKey ~= nil) then
-		return
-	end
+	if (element.key ~= nil) ~= (tableKey ~= nil) then return end
 	-- ROBLOX deviation END
 	local currentComponentErrorInfo = getCurrentComponentErrorInfo(parentType)
-	if ownerHasKeyUseWarning[currentComponentErrorInfo] then
-		return
-	end
+	if ownerHasKeyUseWarning[currentComponentErrorInfo] then return end
 	ownerHasKeyUseWarning[currentComponentErrorInfo] = true
 
 	-- // Usually the current owner is the offender, but if it accepts children as a
@@ -248,9 +220,7 @@ end
 --  * @param {*} parentType node's parent's type.
 --  */
 local function validateChildKeys(node, parentType)
-	if typeof(node) ~= "table" then
-		return
-	end
+	if typeof(node) ~= "table" then return end
 
 	if Array.isArray(node) then
 		for i = 1, #node do
@@ -261,9 +231,7 @@ local function validateChildKeys(node, parentType)
 		end
 	elseif isValidElement(node) then
 		-- // This element was passed in a valid location.
-		if node._store then
-			node._store.validated = true
-		end
+		if node._store then node._store.validated = true end
 	elseif node then
 		local iteratorFn = getIteratorFn(node)
 		if typeof(iteratorFn) == "function" then
@@ -293,9 +261,7 @@ end
 local function validatePropTypes<P>(element: ReactElement<P, any>)
 	if _G.__DEV__ or _G.__DISABLE_ALL_WARNINGS_EXCEPT_PROP_VALIDATION__ then
 		local type = element.type
-		if type == nil or typeof(type) == "string" then
-			return
-		end
+		if type == nil or typeof(type) == "string" then return end
 
 		local propTypes
 		local validateProps
@@ -420,9 +386,7 @@ local function jsxWithValidation<P, T>(
 
 	-- // The result can be nullish if a mock or a custom function is used.
 	-- // TODO: Drop this when these are no longer allowed as the type argument.
-	if element == nil then
-		return element
-	end
+	if element == nil then return element end
 
 	-- // Skip key warning if the type isn't valid since our key validation logic
 	-- // doesn't expect a non-string/function type and can throw confusing errors.
@@ -498,9 +462,7 @@ end
 
 -- ROBLOX deviation START: add strong types based on definitely-typed approach on createElement
 local function createElementWithValidation<P, T>(
-	type_: React_StatelessFunctionalComponent<
-		P
-	> | React_ComponentType<P> | string,
+	type_: React_StatelessFunctionalComponent<P> | React_ComponentType<P> | string,
 	props: (P & React_ElementProps<T>)?,
 	...: React_Node
 ): ReactElement<P, T>
@@ -532,10 +494,7 @@ local function createElementWithValidation<P, T>(
 			and typeof(type_) == "table"
 			and type_["$$typeof"] == REACT_ELEMENT_TYPE
 		then
-			typeString = string.format(
-				"<%s />",
-				getComponentName((type_ :: any).type) or "Unknown"
-			)
+			typeString = string.format("<%s />", getComponentName((type_ :: any).type) or "Unknown")
 			info ..= " Did you accidentally export a JSX literal or Element instead of a component?"
 		else
 			typeString = typeof(type_)
@@ -561,9 +520,7 @@ local function createElementWithValidation<P, T>(
 
 	-- // The result can be nullish if a mock or a custom function is used.
 	-- // TODO: Drop this when these are no longer allowed as the type argument.
-	if element == nil then
-		return element
-	end
+	if element == nil then return element end
 
 	-- // Skip key warning if the type isn't valid since our key validation logic
 	-- // doesn't expect a non-string/function type and can throw confusing errors.

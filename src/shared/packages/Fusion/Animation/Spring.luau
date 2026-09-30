@@ -11,13 +11,13 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
-local depend = require(Package.Graph.depend)
 local change = require(Package.Graph.change)
+local depend = require(Package.Graph.depend)
 local evaluate = require(Package.Graph.evaluate)
 -- State
 local castToState = require(Package.State.castToState)
@@ -26,8 +26,8 @@ local peek = require(Package.State.peek)
 local ExternalTime = require(Package.Animation.ExternalTime)
 local Stopwatch = require(Package.Animation.Stopwatch)
 local packType = require(Package.Animation.packType)
-local unpackType = require(Package.Animation.unpackType)
 local springCoefficients = require(Package.Animation.springCoefficients)
+local unpackType = require(Package.Animation.unpackType)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
 
@@ -36,18 +36,18 @@ local EPSILON = 0.00001
 type Self<T> = Types.Spring<T> & {
 	_activeDamping: number,
 	_activeGoal: T,
-	_activeLatestP: {number},
-	_activeLatestV: {number},
+	_activeLatestP: { number },
+	_activeLatestV: { number },
 	_activeNumSprings: number,
 	_activeSpeed: number,
-	_activeStartP: {number},
-	_activeStartV: {number},
-	_activeTargetP: {number},
+	_activeStartP: { number },
+	_activeStartV: { number },
+	_activeTargetP: { number },
 	_activeType: string,
 	_speed: Types.UsedAs<number>,
 	_damping: Types.UsedAs<number>,
 	_goal: Types.UsedAs<T>,
-	_stopwatch: Stopwatch.Stopwatch
+	_stopwatch: Stopwatch.Stopwatch,
 }
 
 local class = {}
@@ -55,7 +55,7 @@ class.type = "State"
 class.kind = "Spring"
 class.timeliness = "eager"
 
-local METATABLE = table.freeze {__index = class}
+local METATABLE = table.freeze({ __index = class })
 
 local function Spring<T>(
 	scope: Types.Scope<unknown>,
@@ -65,7 +65,12 @@ local function Spring<T>(
 ): Types.Spring<T>
 	local createdAt = os.clock()
 	if typeof(scope) ~= "table" or castToState(scope) ~= nil then
-		External.logError("scopeMissing", nil, "Springs", "myScope:Spring(goalState, speed, damping)")
+		External.logError(
+			"scopeMissing",
+			nil,
+			"Springs",
+			"myScope:Spring(goalState, speed, damping)"
+		)
 	end
 
 	local goalState = castToState(goal)
@@ -78,32 +83,29 @@ local function Spring<T>(
 	local speed = speed or 10
 	local damping = damping or 1
 
-	local self: Self<T> = setmetatable(
-		{
-			createdAt = createdAt,
-			dependencySet = {},
-			dependentSet = {},
-			lastChange = nil,
-			scope = scope,
-			validity = "invalid",
-			_activeDamping = -1,
-			_activeGoal = nil,
-			_activeLatestP = {},
-			_activeLatestV = {},
-			_activeNumSprings = 0,
-			_activeSpeed = -1,
-			_activeStartP = {},
-			_activeStartV = {},
-			_activeTargetP = {},
-			_activeType = "",
-			_damping = damping,
-			_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
-			_goal = goal,
-			_speed = speed,
-			_stopwatch = stopwatch
-		},
-		METATABLE
-	) :: any
+	local self: Self<T> = setmetatable({
+		createdAt = createdAt,
+		dependencySet = {},
+		dependentSet = {},
+		lastChange = nil,
+		scope = scope,
+		validity = "invalid",
+		_activeDamping = -1,
+		_activeGoal = nil,
+		_activeLatestP = {},
+		_activeLatestV = {},
+		_activeNumSprings = 0,
+		_activeSpeed = -1,
+		_activeStartP = {},
+		_activeStartV = {},
+		_activeTargetP = {},
+		_activeType = "",
+		_damping = damping,
+		_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
+		_goal = goal,
+		_speed = speed,
+		_stopwatch = stopwatch,
+	}, METATABLE) :: any
 	local destroy = function()
 		self.scope = nil
 		for dependency in pairs(self.dependencySet) do
@@ -113,28 +115,36 @@ local function Spring<T>(
 	self.oldestTask = destroy
 	nicknames[self.oldestTask] = "Spring"
 	table.insert(scope, destroy)
-	
+
 	if goalState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			goalState.scope, goalState.oldestTask,
+			scope,
+			self.oldestTask,
+			goalState.scope,
+			goalState.oldestTask,
 			checkLifetime.formatters.animationGoal
 		)
 	end
 	local speedState = castToState(speed)
 	if speedState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			speedState.scope, speedState.oldestTask,
-			checkLifetime.formatters.parameter, "speed"
+			scope,
+			self.oldestTask,
+			speedState.scope,
+			speedState.oldestTask,
+			checkLifetime.formatters.parameter,
+			"speed"
 		)
 	end
 	local dampingState = castToState(damping)
 	if dampingState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			dampingState.scope, dampingState.oldestTask,
-			checkLifetime.formatters.parameter, "damping"
+			scope,
+			self.oldestTask,
+			dampingState.scope,
+			dampingState.oldestTask,
+			checkLifetime.formatters.parameter,
+			"damping"
 		)
 	end
 
@@ -145,10 +155,7 @@ local function Spring<T>(
 	return self
 end
 
-function class.addVelocity<T>(
-	self: Self<T>,
-	deltaValue: T
-): ()
+function class.addVelocity<T>(self: Self<T>, deltaValue: T): ()
 	evaluate(self, false) -- ensure the _active params are up to date
 	local deltaType = typeof(deltaValue)
 	if deltaType ~= self._activeType then
@@ -165,16 +172,11 @@ function class.addVelocity<T>(
 	change(self)
 end
 
-function class.get<T>(
-	self: Self<T>
-): never
+function class.get<T>(self: Self<T>): never
 	return External.logError("stateGetWasRemoved")
 end
 
-function class.setPosition<T>(
-	self: Self<T>,
-	newValue: T
-): ()
+function class.setPosition<T>(self: Self<T>, newValue: T): ()
 	evaluate(self, false) -- ensure the _active params are up to date
 	local newType = typeof(newValue)
 	if newType ~= self._activeType then
@@ -187,10 +189,7 @@ function class.setPosition<T>(
 	change(self)
 end
 
-function class.setVelocity<T>(
-	self: Self<T>,
-	newValue: T
-): ()
+function class.setVelocity<T>(self: Self<T>, newValue: T): ()
 	evaluate(self, false) -- ensure the _active params are up to date
 	local newType = typeof(newValue)
 	if newType ~= self._activeType then
@@ -203,9 +202,7 @@ function class.setVelocity<T>(
 	change(self)
 end
 
-function class._evaluate<T>(
-	self: Self<T>
-): boolean
+function class._evaluate<T>(self: Self<T>): boolean
 	local goal = castToState(self._goal)
 	-- Allow non-state goals to pass through transparently.
 	if goal == nil then
@@ -241,11 +238,8 @@ function class._evaluate<T>(
 		-- IMPORTANT: use the parameters from last frame, not this frame. We're
 		-- integrating the motion that happened over the last frame, after all.
 		-- The stopwatch will have captured the length of time needed correctly.
-		local posPos, posVel, velPos, velVel = springCoefficients(
-			elapsed, 
-			self._activeDamping, 
-			self._activeSpeed
-		)
+		local posPos, posVel, velPos, velVel =
+			springCoefficients(elapsed, self._activeDamping, self._activeSpeed)
 		local isMoving = false
 		for index = 1, self._activeNumSprings do
 			local startP = self._activeStartP[index]
@@ -258,9 +252,7 @@ function class._evaluate<T>(
 				External.logWarn("springNanMotion")
 				latestD, latestV = 0, 0
 			end
-			if math.abs(latestD) > EPSILON or math.abs(latestV) > EPSILON then
-				isMoving = true
-			end
+			if math.abs(latestD) > EPSILON or math.abs(latestV) > EPSILON then isMoving = true end
 			local latestP = latestD + targetP
 			self._activeLatestP[index] = latestP
 			self._activeLatestV[index] = latestV
@@ -286,10 +278,10 @@ function class._evaluate<T>(
 	local nextFrameSpeed = peek(self._speed) :: number
 	local nextFrameDamping = peek(self._damping) :: number
 	if
-		discontinuous or
-		nextFrameGoal ~= self._activeGoal or
-		nextFrameSpeed ~= self._activeSpeed or
-		nextFrameDamping ~= self._activeDamping
+		discontinuous
+		or nextFrameGoal ~= self._activeGoal
+		or nextFrameSpeed ~= self._activeSpeed
+		or nextFrameDamping ~= self._activeDamping
 	then
 		self._activeTargetP = unpackType(nextFrameGoal, nextFrameGoalType)
 		self._activeNumSprings = #self._activeTargetP

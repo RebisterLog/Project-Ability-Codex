@@ -92,16 +92,14 @@ local HookHasEffect = ReactHookEffectTags.HasEffect
 local HookLayout = ReactHookEffectTags.Layout
 local HookPassive = ReactHookEffectTags.Passive
 local ReactFiberWorkLoop = require(script.Parent["ReactFiberWorkLoop.new"]) :: any
-local warnIfNotCurrentlyActingUpdatesInDEV =
-	ReactFiberWorkLoop.warnIfNotCurrentlyActingUpdatesInDEV
+local warnIfNotCurrentlyActingUpdatesInDEV = ReactFiberWorkLoop.warnIfNotCurrentlyActingUpdatesInDEV
 local scheduleUpdateOnFiber = ReactFiberWorkLoop.scheduleUpdateOnFiber
 local warnIfNotScopedWithMatchingAct = ReactFiberWorkLoop.warnIfNotScopedWithMatchingAct
 local requestEventTime = ReactFiberWorkLoop.requestEventTime
 local requestUpdateLane = ReactFiberWorkLoop.requestUpdateLane
 local markSkippedUpdateLanes = ReactFiberWorkLoop.markSkippedUpdateLanes
 local getWorkInProgressRoot = ReactFiberWorkLoop.getWorkInProgressRoot
-local warnIfNotCurrentlyActingEffectsInDEV =
-	ReactFiberWorkLoop.warnIfNotCurrentlyActingEffectsInDEV
+local warnIfNotCurrentlyActingEffectsInDEV = ReactFiberWorkLoop.warnIfNotCurrentlyActingEffectsInDEV
 -- local {
 --   getWorkInProgressRoot,
 --   requestUpdateLane,
@@ -123,8 +121,7 @@ local markWorkInProgressReceivedUpdate =
 --   runWithPriority,
 --   getCurrentPriorityLevel,
 -- } = require(script.Parent.SchedulerWithReactIntegration.new)
-local getIsHydrating =
-	require(script.Parent["ReactFiberHydrationContext.new"]).getIsHydrating
+local getIsHydrating = require(script.Parent["ReactFiberHydrationContext.new"]).getIsHydrating
 -- local {
 --   makeClientId,
 --   makeClientIdInDEV,
@@ -141,10 +138,8 @@ local setWorkInProgressVersion = ReactMutableSource.setWorkInProgressVersion
 local markSourceAsDirty = ReactMutableSource.markSourceAsDirty
 
 -- local getIsRendering = require(script.Parent.ReactCurrentFiber).getIsRendering
-local logStateUpdateScheduled =
-	require(script.Parent.DebugTracing).logStateUpdateScheduled
-local markStateUpdateScheduled =
-	require(script.Parent.SchedulingProfiler).markStateUpdateScheduled
+local logStateUpdateScheduled = require(script.Parent.DebugTracing).logStateUpdateScheduled
+local markStateUpdateScheduled = require(script.Parent.SchedulingProfiler).markStateUpdateScheduled
 
 local ReactCurrentDispatcher = ReactSharedInternals.ReactCurrentDispatcher
 -- local ReactCurrentBatchConfig = ReactSharedInternals.ReactCurrentBatchConfig
@@ -186,7 +181,7 @@ export type Hook = {
 export type Effect = {
 	tag: HookFlags,
 	-- ROBLOX TODO: this needs Luau type pack support to express accurately
-	create: (() -> (() -> ())) | () -> (),
+	create: (() -> () -> ()) | () -> (),
 	destroy: (() -> ())?,
 	deps: Array<any> | nil,
 	next: Effect,
@@ -268,13 +263,9 @@ end
 -- ROBLOX deviation: Used to better detect dependency arrays with gaps, to be
 -- used in place of Array.isArray
 local function isArrayOrSparseArray(deps: any)
-	if type(deps) ~= "table" then
-		return false
-	end
+	if type(deps) ~= "table" then return false end
 	for k, _v in deps do
-		if type(k) ~= "number" then
-			return false
-		end
+		if type(k) ~= "number" then return false end
 	end
 	return true
 end
@@ -324,8 +315,7 @@ end
 function warnOnHookMismatchInDev(currentHookName: HookType)
 	if __DEV__ then
 		-- ROBLOX deviation: getComponentName will return nil in most Hook cases, use same fallback as elsewhere
-		local componentName = getComponentName(currentlyRenderingFiber.type)
-			or "Component"
+		local componentName = getComponentName(currentlyRenderingFiber.type) or "Component"
 		if not didWarnAboutMismatchedHooksForComponent[componentName] then
 			didWarnAboutMismatchedHooksForComponent[componentName] = true
 
@@ -444,9 +434,7 @@ local function areHookInputsEqual(nextDeps: Array<any>, prevDeps: Array<any>)
 
 	local minDependencyCount = math.min(prevDepsLength, nextDepsLength)
 	for i = 1, minDependencyCount do
-		if is(nextDeps[i], prevDeps[i]) then
-			continue
-		end
+		if is(nextDeps[i], prevDeps[i]) then continue end
 		return false
 	end
 	return true
@@ -459,19 +447,12 @@ exports.bailoutHooks = function(current: Fiber, workInProgress: Fiber, lanes: La
 		workInProgress.flags = bit32.band(
 			workInProgress.flags,
 			bit32.bnot(
-				bit32.bor(
-					MountPassiveDevEffect,
-					PassiveEffect,
-					MountLayoutDevEffect,
-					UpdateEffect
-				)
+				bit32.bor(MountPassiveDevEffect, PassiveEffect, MountLayoutDevEffect, UpdateEffect)
 			)
 		)
 	else
-		workInProgress.flags = bit32.band(
-			workInProgress.flags,
-			bit32.bnot(bit32.bor(PassiveEffect, UpdateEffect))
-		)
+		workInProgress.flags =
+			bit32.band(workInProgress.flags, bit32.bnot(bit32.bor(PassiveEffect, UpdateEffect)))
 	end
 	current.lanes = removeLanes(current.lanes, lanes)
 end
@@ -496,9 +477,7 @@ exports.resetHooksAfterThrow = function(): ()
 		local hook: any = currentlyRenderingFiber.memoizedState
 		while hook ~= nil do
 			local queue = hook.queue
-			if queue ~= nil then
-				queue.pending = nil
-			end
+			if queue ~= nil then queue.pending = nil end
 			hook = hook.next
 		end
 		didScheduleRenderPhaseUpdate = false
@@ -629,11 +608,7 @@ function basicStateReducer<S>(state: S, action: BasicStateAction<S>): S
 	end
 end
 
-function mountReducer<S, I, A>(
-	reducer: (S, A) -> S,
-	initialArg: I,
-	init: ((I) -> S)?
-): (S, Dispatch<A>)
+function mountReducer<S, I, A>(reducer: (S, A) -> S, initialArg: I, init: ((I) -> S)?): (S, Dispatch<A>)
 	local hook = mountWorkInProgressHook()
 	local initialState
 	if init ~= nil then
@@ -666,11 +641,7 @@ function mountReducer<S, I, A>(
 	-- ROBLOX deviation END: Lua version of useState and useReducer return two items, not list like upstream
 end
 
-function updateReducer<S, I, A>(
-	reducer: (S, A) -> S,
-	initialArg: I,
-	init: ((I) -> S)?
-): (S, Dispatch<A>)
+function updateReducer<S, I, A>(reducer: (S, A) -> S, initialArg: I, init: ((I) -> S)?): (S, Dispatch<A>)
 	local hook = updateWorkInProgressHook()
 	local queue = hook.queue
 	-- ROBLOX deviation: change from invariant to avoid funtion call in hot path
@@ -791,9 +762,7 @@ function updateReducer<S, I, A>(
 
 		-- Mark that the fiber performed work, but only if the new state is
 		-- different from the current state.
-		if not is(newState, hook.memoizedState) then
-			markWorkInProgressReceivedUpdate()
-		end
+		if not is(newState, hook.memoizedState) then markWorkInProgressReceivedUpdate() end
 
 		hook.memoizedState = newState
 		hook.baseState = newBaseState
@@ -807,11 +776,7 @@ function updateReducer<S, I, A>(
 	return hook.memoizedState, dispatch
 end
 
-function rerenderReducer<S, I, A>(
-	reducer: (S, A) -> S,
-	initialArg: I,
-	init: ((I) -> S)?
-): (S, Dispatch<A>)
+function rerenderReducer<S, I, A>(reducer: (S, A) -> S, initialArg: I, init: ((I) -> S)?): (S, Dispatch<A>)
 	local hook = updateWorkInProgressHook()
 	local queue = hook.queue
 	-- ROBLOX performance: changed from invariant to avoid function call in hot path
@@ -844,18 +809,14 @@ function rerenderReducer<S, I, A>(
 
 		-- Mark that the fiber performed work, but only if the new state is
 		-- different from the current state.
-		if not is(newState, hook.memoizedState) then
-			markWorkInProgressReceivedUpdate()
-		end
+		if not is(newState, hook.memoizedState) then markWorkInProgressReceivedUpdate() end
 
 		hook.memoizedState = newState
 		-- Don't persist the state accumulated from the render phase updates to
 		-- the base state unless the queue is empty.
 		-- TODO: Not sure if this is the desired semantics, but it's what we
 		-- do for gDSFP. I can't remember why.
-		if hook.baseQueue == nil then
-			hook.baseState = newState
-		end
+		if hook.baseQueue == nil then hook.baseState = newState end
 
 		queue.lastRenderedState = newState
 	end
@@ -880,9 +841,7 @@ function readFromUnsubcribedMutableSource<Source, Snapshot>(
 		Snapshot
 	>
 ): Snapshot
-	if __DEV__ then
-		warnAboutMultipleRenderersDEV(source)
-	end
+	if __DEV__ then warnAboutMultipleRenderersDEV(source) end
 
 	local getVersion = source._getVersion
 	local version_ = getVersion(source._source)
@@ -958,14 +917,8 @@ end
 function useMutableSource<Source, Snapshot>(
 	hook: Hook,
 	source: MutableSource<Source>,
-	getSnapshot: MutableSourceGetSnapshotFn<
-		Source,
-		Snapshot
-	>,
-	subscribe: MutableSourceSubscribeFn<
-		Source,
-		Snapshot
-	>
+	getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
+	subscribe: MutableSourceSubscribeFn<Source, Snapshot>
 ): Snapshot
 	local root: FiberRoot = getWorkInProgressRoot()
 	invariant(
@@ -992,9 +945,7 @@ function useMutableSource<Source, Snapshot>(
 	local stateHook = workInProgressHook
 
 	local memoizedState: MutableSourceMemoizedState<any, any> = hook.memoizedState
-	if memoizedState.refs == nil then
-		error(tostring(debug.traceback()))
-	end
+	if memoizedState.refs == nil then error(tostring(debug.traceback())) end
 	local refs = memoizedState.refs
 	local prevGetSnapshot = refs.getSnapshot
 	local prevSource = memoizedState.source
@@ -1132,14 +1083,8 @@ end
 
 function mountMutableSource<Source, Snapshot>(
 	source: MutableSource<Source>,
-	getSnapshot: MutableSourceGetSnapshotFn<
-		Source,
-		Snapshot
-	>,
-	subscribe: MutableSourceSubscribeFn<
-		Source,
-		Snapshot
-	>
+	getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
+	subscribe: MutableSourceSubscribeFn<Source, Snapshot>
 ): Snapshot
 	local hook = mountWorkInProgressHook()
 	hook.memoizedState = {
@@ -1155,14 +1100,8 @@ end
 
 function updateMutableSource<Source, Snapshot>(
 	source: MutableSource<Source>,
-	getSnapshot: MutableSourceGetSnapshotFn<
-		Source,
-		Snapshot
-	>,
-	subscribe: MutableSourceSubscribeFn<
-		Source,
-		Snapshot
-	>
+	getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
+	subscribe: MutableSourceSubscribeFn<Source, Snapshot>
 ): Snapshot
 	local hook = updateWorkInProgressHook()
 	return useMutableSource(hook, source, getSnapshot, subscribe)
@@ -1284,8 +1223,7 @@ local function mountEffectImpl(fiberFlags, hookFlags, create, deps): ()
 	local nextDeps = deps
 	currentlyRenderingFiber.flags = bit32.bor(currentlyRenderingFiber.flags, fiberFlags)
 
-	hook.memoizedState =
-		pushEffect(bit32.bor(HookHasEffect, hookFlags), create, nil, nextDeps)
+	hook.memoizedState = pushEffect(bit32.bor(HookHasEffect, hookFlags), create, nil, nextDeps)
 end
 
 -- ROBLOX deviation START: must explicitly mark deps argument as optional/nil-able
@@ -1311,13 +1249,12 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps: Array<any>?): ()
 
 	currentlyRenderingFiber.flags = bit32.bor(currentlyRenderingFiber.flags, fiberFlags)
 
-	hook.memoizedState =
-		pushEffect(bit32.bor(HookHasEffect, hookFlags), create, destroy, nextDeps)
+	hook.memoizedState = pushEffect(bit32.bor(HookHasEffect, hookFlags), create, destroy, nextDeps)
 end
 
 local function mountEffect(
 	-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-	create: (() -> ()) | (() -> (() -> ())),
+	create: (() -> ()) | (() -> () -> ()),
 	deps: Array<any>?
 ): ()
 	if __DEV__ then
@@ -1336,18 +1273,13 @@ local function mountEffect(
 			deps
 		)
 	else
-		mountEffectImpl(
-			bit32.bor(PassiveEffect, PassiveStaticEffect),
-			HookPassive,
-			create,
-			deps
-		)
+		mountEffectImpl(bit32.bor(PassiveEffect, PassiveStaticEffect), HookPassive, create, deps)
 	end
 end
 
 local function updateEffect(
 	-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-	create: (() -> ()) | (() -> (() -> ())),
+	create: (() -> ()) | (() -> () -> ()),
 	deps: Array<any>?
 ): ()
 	if __DEV__ then
@@ -1362,16 +1294,11 @@ end
 
 local function mountLayoutEffect(
 	-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-	create: (() -> ()) | (() -> (() -> ())),
+	create: (() -> ()) | (() -> () -> ()),
 	deps: Array<any>?
 ): ()
 	if __DEV__ and enableDoubleInvokingEffects then
-		mountEffectImpl(
-			bit32.bor(MountLayoutDevEffect, UpdateEffect),
-			HookLayout,
-			create,
-			deps
-		)
+		mountEffectImpl(bit32.bor(MountLayoutDevEffect, UpdateEffect), HookLayout, create, deps)
 	else
 		mountEffectImpl(UpdateEffect, HookLayout, create, deps)
 	end
@@ -1379,7 +1306,7 @@ end
 
 local function updateLayoutEffect(
 	-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-	create: (() -> ()) | (() -> (() -> ())),
+	create: (() -> ()) | (() -> () -> ()),
 	deps: Array<any>?
 ): ()
 	updateEffectImpl(UpdateEffect, HookLayout, create, deps)
@@ -1405,15 +1332,12 @@ function imperativeHandleEffect<T>(
 			-- explicit way to know that something is a ref object; instead, we check
 			-- that it's an empty object with a metatable, which is what Roact refs
 			-- look like since they indirect to bindings via their metatable
-			local isRefObject = getmetatable(refObject) ~= nil
-				and #Object.keys(refObject) == 0
+			local isRefObject = getmetatable(refObject) ~= nil and #Object.keys(refObject) == 0
 			if not isRefObject then
 				console.error(
 					"Expected useImperativeHandle() first argument to either be a "
 						.. "ref callback or React.createRef() object. Instead received: %s.",
-					"an object with keys {"
-						.. Array.join(Object.keys(refObject), ", ")
-						.. "}"
+					"an object with keys {" .. Array.join(Object.keys(refObject), ", ") .. "}"
 				)
 			end
 		end
@@ -1448,14 +1372,9 @@ function mountImperativeHandle<T>(
 	local effectDeps = if deps ~= nil then Array.concat(deps, { ref }) else nil
 
 	if __DEV__ and enableDoubleInvokingEffects then
-		return mountEffectImpl(
-			bit32.bor(MountLayoutDevEffect, UpdateEffect),
-			HookLayout,
-			function()
-				return imperativeHandleEffect(create, ref)
-			end,
-			effectDeps
-		)
+		return mountEffectImpl(bit32.bor(MountLayoutDevEffect, UpdateEffect), HookLayout, function()
+			return imperativeHandleEffect(create, ref)
+		end, effectDeps)
 	else
 		return mountEffectImpl(UpdateEffect, HookLayout, function()
 			return imperativeHandleEffect(create, ref)
@@ -1471,9 +1390,7 @@ function updateImperativeHandle<T>(
 	if __DEV__ then
 		if type(create) ~= "function" then
 			local errorArg = "nil"
-			if create then
-				errorArg = type(create)
-			end
+			if create then errorArg = type(create) end
 			console.error(
 				"Expected useImperativeHandle() second argument to be a function "
 					.. "that creates a handle. Instead received: %s.",
@@ -1519,9 +1436,7 @@ function updateCallback<T>(callback: T, deps: Array<any> | nil): T
 		if nextDeps ~= nil then
 			-- ROBLOX TODO: Luau false positive when this is `Array<any>?` (E001) Type 'Array<any>?' could not be converted into 'Array<any>'
 			local prevDeps: Array<any> = prevState[2]
-			if areHookInputsEqual(nextDeps, prevDeps) then
-				return prevState[1]
-			end
+			if areHookInputsEqual(nextDeps, prevDeps) then return prevState[1] end
 		end
 	end
 	-- ROBLOX Luau FIXME: Luau doesn't allow mixed arrays, forcing us to use any here
@@ -1551,9 +1466,7 @@ function updateMemo<T...>(nextCreate: () -> T..., deps: Array<any> | nil): ...an
 		-- Assume these are defined. If they're not, areHookInputsEqual will warn.
 		if nextDeps ~= nil then
 			local prevDeps: Array<any> = prevState[2]
-			if areHookInputsEqual(nextDeps, prevDeps) then
-				return unpack(prevState[1])
-			end
+			if areHookInputsEqual(nextDeps, prevDeps) then return unpack(prevState[1]) end
 		end
 	end
 	-- ROBLOX DEVIATION: Wrap memoized values in a table and unpack to allow for multiple return values
@@ -1693,9 +1606,7 @@ end
 
 local isUpdatingOpaqueValueInRenderPhase = false
 exports.getIsUpdatingOpaqueValueInRenderPhaseInDEV = function(): boolean?
-	if __DEV__ then
-		return isUpdatingOpaqueValueInRenderPhase
-	end
+	if __DEV__ then return isUpdatingOpaqueValueInRenderPhase end
 	return nil
 end
 
@@ -1795,9 +1706,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: UpdateQueue<S, A>, action: A,
 	if __DEV__ then
 		local childrenLength = select("#", ...)
 		local extraArg
-		if childrenLength == 1 then
-			extraArg = select(1, ...)
-		end
+		if childrenLength == 1 then extraArg = select(1, ...) end
 		if type(extraArg) == "function" then
 			console.error(
 				"State updates from the useState() and useReducer() Hooks don't support the "
@@ -1840,9 +1749,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: UpdateQueue<S, A>, action: A,
 		didScheduleRenderPhaseUpdate = true
 		didScheduleRenderPhaseUpdateDuringThisPass = true
 	else
-		if
-			fiber.lanes == NoLanes and (alternate == nil or alternate.lanes == NoLanes)
-		then
+		if fiber.lanes == NoLanes and (alternate == nil or alternate.lanes == NoLanes) then
 			-- The queue is currently empty, which means we can eagerly compute the
 			-- next state before entering the render phase. If the new state is the
 			-- same as the current state, we may be able to bail out entirely.
@@ -1851,8 +1758,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: UpdateQueue<S, A>, action: A,
 				local prevDispatcher
 				if __DEV__ then
 					prevDispatcher = ReactCurrentDispatcher.current
-					ReactCurrentDispatcher.current =
-						InvalidNestedHooksDispatcherOnUpdateInDEV
+					ReactCurrentDispatcher.current = InvalidNestedHooksDispatcherOnUpdateInDEV
 				end
 				-- ROBLOX try
 				local currentState: S = queue.lastRenderedState :: any
@@ -1868,9 +1774,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: UpdateQueue<S, A>, action: A,
 				end
 
 				-- ROBLOX finally
-				if __DEV__ then
-					ReactCurrentDispatcher.current = prevDispatcher
-				end
+				if __DEV__ then ReactCurrentDispatcher.current = prevDispatcher end
 
 				if is(eagerState, currentState) then
 					-- Fast path. We can bail out without scheduling React to re-render.
@@ -1905,9 +1809,7 @@ function dispatchAction<S, A>(fiber: Fiber, queue: UpdateQueue<S, A>, action: A,
 		end
 	end
 
-	if enableSchedulingProfiler then
-		markStateUpdateScheduled(fiber, lane)
-	end
+	if enableSchedulingProfiler then markStateUpdateScheduled(fiber, lane) end
 
 	return
 end
@@ -2041,7 +1943,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2061,7 +1963,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2082,9 +1984,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(mountMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			-- ROBLOX FIXME Luau: TypeError: Type 'boolean' could not be converted into 'T'
 			return unpack(results, 2)
 		end :: any,
@@ -2100,9 +2000,7 @@ if __DEV__ then
 			local ok, result, setResult = pcall(mountReducer, reducer, initialArg, init)
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2126,9 +2024,7 @@ if __DEV__ then
 			-- deviation: Lua version of mountState return two items, not list like upstream.
 			local ok, result, setResult = pcall(mountState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- ROBLOX deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2188,7 +2084,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2206,7 +2102,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2225,9 +2121,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(mountMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			return unpack(results, 2)
 		end :: any,
 		useReducer = function<S, I, A>(
@@ -2242,9 +2136,7 @@ if __DEV__ then
 			local ok, result, setResult = pcall(mountReducer, reducer, initialArg, init)
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2268,9 +2160,7 @@ if __DEV__ then
 			-- deviation: Lua version of mountState return two items, not list like upstream
 			local ok, result, setResult = pcall(mountState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of mountState return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2329,7 +2219,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2347,7 +2237,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2366,9 +2256,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(updateMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			return unpack(results, 2)
 		end :: any,
 		useReducer = function<S, I, A>(
@@ -2383,9 +2271,7 @@ if __DEV__ then
 			local ok, result, setResult = pcall(updateReducer, reducer, initialArg, init)
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2409,9 +2295,7 @@ if __DEV__ then
 			-- deviation: Lua version of updateState returns two items, not list like upstream
 			local ok, result, setResult = pcall(updateState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			return result, setResult
 		end,
@@ -2470,7 +2354,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any> | nil
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2488,7 +2372,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2507,9 +2391,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(updateMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			return unpack(results, 2)
 		end :: any,
 		useReducer = function<S, I, A>(
@@ -2521,13 +2403,10 @@ if __DEV__ then
 			updateHookTypesDev()
 			local prevDispatcher = ReactCurrentDispatcher.current
 			ReactCurrentDispatcher.current = InvalidNestedHooksDispatcherOnRerenderInDEV
-			local ok, result, setResult =
-				pcall(rerenderReducer, reducer, initialArg, init)
+			local ok, result, setResult = pcall(rerenderReducer, reducer, initialArg, init)
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- ROBLOX deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2551,9 +2430,7 @@ if __DEV__ then
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			local ok, result, setResult = pcall(rerenderState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			return result, setResult
 		end,
@@ -2615,7 +2492,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any> | nil
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2635,7 +2512,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any> | nil
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2656,9 +2533,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(mountMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			return unpack(results, 2)
 		end :: any,
 		useReducer = function<S, I, A>(
@@ -2674,9 +2549,7 @@ if __DEV__ then
 			local ok, result, setResult = pcall(mountReducer, reducer, initialArg, init)
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2703,9 +2576,7 @@ if __DEV__ then
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			local ok, result, setResult = pcall(mountState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			return result, setResult
 		end,
@@ -2772,7 +2643,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any> | nil
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2792,7 +2663,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2813,9 +2684,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(updateMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			return unpack(results, 2)
 		end :: any,
 		useReducer = function<S, I, A>(
@@ -2832,9 +2701,7 @@ if __DEV__ then
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
 
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -2861,9 +2728,7 @@ if __DEV__ then
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			local ok, result, setResult = pcall(updateState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			return result, setResult
 		end,
@@ -2930,7 +2795,7 @@ if __DEV__ then
 		end,
 		useEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any> | nil
 		): ()
 			currentHookNameInDev = "useEffect"
@@ -2950,7 +2815,7 @@ if __DEV__ then
 		end,
 		useLayoutEffect = function(
 			-- ROBLOX TODO: Luau needs union type packs for this type to translate idiomatically
-			create: (() -> ()) | (() -> (() -> ())),
+			create: (() -> ()) | (() -> () -> ()),
 			deps: Array<any>?
 		): ()
 			currentHookNameInDev = "useLayoutEffect"
@@ -2971,9 +2836,7 @@ if __DEV__ then
       ]]
 			local results = { pcall(updateMemo, create, deps) }
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not results[1] then
-				error(results[2])
-			end
+			if not results[1] then error(results[2]) end
 			return unpack(results, 2)
 		end :: any,
 		useReducer = function<S, I, A>(
@@ -2986,13 +2849,10 @@ if __DEV__ then
 			updateHookTypesDev()
 			local prevDispatcher = ReactCurrentDispatcher.current
 			ReactCurrentDispatcher.current = InvalidNestedHooksDispatcherOnUpdateInDEV
-			local ok, result, setResult =
-				pcall(rerenderReducer, reducer, initialArg, init)
+			local ok, result, setResult = pcall(rerenderReducer, reducer, initialArg, init)
 			-- ROBLOX finally
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState and useReducer return two items, not list like upstream
 			return result, setResult
 		end,
@@ -3019,9 +2879,7 @@ if __DEV__ then
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			local ok, result, setResult = pcall(rerenderState, initialState)
 			ReactCurrentDispatcher.current = prevDispatcher
-			if not ok then
-				error(result)
-			end
+			if not ok then error(result) end
 			-- deviation: Lua version of useState returns two items, not list like upstream
 			return result, setResult
 		end,
@@ -3181,9 +3039,7 @@ local function renderWithHooks<Props, SecondArg>(
 	-- at the beginning of the render phase and there's no re-entrancy.
 	ReactCurrentDispatcher.current = ContextOnlyDispatcher
 
-	if __DEV__ then
-		workInProgress._debugHookTypes = hookTypesDev
-	end
+	if __DEV__ then workInProgress._debugHookTypes = hookTypesDev end
 
 	-- This check uses currentHook so that it works the same in DEV and prod bundles.
 	-- hookTypesDev could catch more cases (e.g. context) but only in DEV bundles.

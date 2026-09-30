@@ -30,9 +30,7 @@ local REACT_LEGACY_HIDDEN_TYPE = ReactSymbols.REACT_LEGACY_HIDDEN_TYPE
 
 return function(type)
 	local typeofType = typeof(type)
-	if typeofType == "string" or typeofType == "function" then
-		return true
-	end
+	if typeofType == "string" or typeofType == "function" then return true end
 
 	-- Note: typeof might be other than 'symbol' or 'number' (e.g. if it's a polyfill).
 	if
@@ -52,9 +50,7 @@ return function(type)
 	if typeofType == "table" then
 		-- ROBLOX deviation: In React, component classes are of type 'function'; for
 		-- us, they're tables with a special value on their metatable
-		if type.isReactComponent then
-			return true
-		end
+		if type.isReactComponent then return true end
 
 		if
 			type["$$typeof"] == REACT_LAZY_TYPE

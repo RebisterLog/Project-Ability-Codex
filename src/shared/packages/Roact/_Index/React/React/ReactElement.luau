@@ -15,9 +15,7 @@ type Object = LuauPolyfill.Object
 -- ROBLOX: use patched console from shared
 local console = require(Packages.Shared).console
 local ReactTypes = require(Packages.Shared)
-type React_StatelessFunctionalComponent<P> = ReactTypes.React_StatelessFunctionalComponent<
-	P
->
+type React_StatelessFunctionalComponent<P> = ReactTypes.React_StatelessFunctionalComponent<P>
 type React_ComponentType<P> = ReactTypes.React_ComponentType<P>
 type React_AbstractComponent<P, T> = ReactTypes.React_AbstractComponent<P, T>
 type ReactProviderType<T> = ReactTypes.ReactProviderType<T>
@@ -49,9 +47,7 @@ local RESERVED_PROPS = {
 
 local specialPropKeyWarningShown, specialPropRefWarningShown, didWarnAboutStringRefs
 
-if __DEV__ then
-	didWarnAboutStringRefs = {}
-end
+if __DEV__ then didWarnAboutStringRefs = {} end
 
 local exports = {}
 
@@ -60,9 +56,7 @@ local function hasValidRef(config)
 		-- ROBLOX DEVIATION: instead of getters, use `__index` metamethod to
 		-- detect if it's a warning object
 		if config.ref ~= nil and type(config.ref) == "table" then
-			if (config.ref :: any).isReactWarning then
-				return false
-			end
+			if (config.ref :: any).isReactWarning then return false end
 		end
 	end
 
@@ -74,9 +68,7 @@ local function hasValidKey(config)
 		-- ROBLOX DEVIATION: instead of getters, use `__index` metamethod to
 		-- detect if it's a warning object
 		if config.key ~= nil and type(config.key) == "table" then
-			if (config.key :: any).isReactWarning then
-				return false
-			end
+			if (config.key :: any).isReactWarning then return false end
 		end
 	end
 
@@ -424,9 +416,7 @@ local function createElement<P, T>(
 			ref = ((config :: any) :: React_ElementProps<T>).ref
 
 			if __DEV__ then
-				warnIfStringRefCannotBeAutoConverted(
-					(config :: any) :: React_ElementProps<T>
-				)
+				warnIfStringRefCannotBeAutoConverted((config :: any) :: React_ElementProps<T>)
 			end
 		end
 
@@ -455,18 +445,10 @@ local function createElement<P, T>(
 
 		-- Remaining properties are added to a new props object
 		-- ROBLOX deviation START: extreme hot path, so manually unroll RESERVED_PROPS loop and use table.clone
-		if props.key ~= nil then
-			props.key = nil
-		end
-		if props.ref ~= nil then
-			props.ref = nil
-		end
-		if props.__self ~= nil then
-			props.__self = nil
-		end
-		if props.__source ~= nil then
-			props.__source = nil
-		end
+		if props.key ~= nil then props.key = nil end
+		if props.ref ~= nil then props.ref = nil end
+		if props.__self ~= nil then props.__self = nil end
+		if props.__source ~= nil then props.__source = nil end
 		-- ROBLOX deviation END
 	end
 
@@ -488,9 +470,7 @@ local function createElement<P, T>(
 
 		-- ROBLOX deviation END
 
-		if __DEV__ then
-			table.freeze(childArray)
-		end
+		if __DEV__ then table.freeze(childArray) end
 
 		props.children = childArray
 	end
@@ -498,10 +478,7 @@ local function createElement<P, T>(
 	-- Resolve default props
 	-- ROBLOX deviation START: Lua can't index defaultProps on a function
 	-- ROBLOX FIXME Luau: should know this can be a table due to type_ intersection with React_ComponentType<>. needs normalization?
-	if
-		type(type_ :: any) == "table"
-		and (type_ :: T & React_ComponentType<P>).defaultProps
-	then
+	if type(type_ :: any) == "table" and (type_ :: T & React_ComponentType<P>).defaultProps then
 		-- ROBLOX deviation END
 		-- ROBLOX FIXME Luau: defaultProps isn't narrowed by the guard above
 		local defaultProps = (type_ :: T & React_ComponentType<P>).defaultProps :: P
@@ -533,13 +510,9 @@ local function createElement<P, T>(
 			end
 			-- ROBLOX deviation END
 
-			if key then
-				defineKeyPropWarningGetter(props, displayName)
-			end
+			if key then defineKeyPropWarningGetter(props, displayName) end
 
-			if ref then
-				defineRefPropWarningGetter(props, displayName)
-			end
+			if ref then defineRefPropWarningGetter(props, displayName) end
 		end
 
 		-- ROBLOX deviation START: In upstream, JSX transformation is what
@@ -555,15 +528,7 @@ local function createElement<P, T>(
 	end
 
 	-- ROBLOX FIXME Luau: this cast is needed until normalization lands
-	return ReactElement(
-		type_,
-		key,
-		ref,
-		self,
-		source,
-		ReactCurrentOwner.current,
-		props
-	) :: any
+	return ReactElement(type_, key, ref, self, source, ReactCurrentOwner.current, props) :: any
 end
 exports.createElement = createElement
 
@@ -582,19 +547,21 @@ exports.createElement = createElement
 --  factory.type = type
 --  return factory
 --end
-exports.cloneAndReplaceKey =
-	function<P, T>(oldElement: ReactElement<P, T>, newKey: any): ReactElement<P, T>
-		local newElement = ReactElement(
-			oldElement.type,
-			newKey,
-			oldElement.ref,
-			oldElement._self,
-			oldElement._source,
-			oldElement._owner,
-			oldElement.props
-		)
-		return newElement
-	end
+exports.cloneAndReplaceKey = function<P, T>(
+	oldElement: ReactElement<P, T>,
+	newKey: any
+): ReactElement<P, T>
+	local newElement = ReactElement(
+		oldElement.type,
+		newKey,
+		oldElement.ref,
+		oldElement._self,
+		oldElement._source,
+		oldElement._owner,
+		oldElement.props
+	)
+	return newElement
+end
 
 --[[*
 * Clone and return a new ReactElement using element as the starting point.
@@ -666,9 +633,7 @@ exports.cloneElement = function<P, T>(
 
 	-- Remaining properties override existing props
 	local elementType = element.type
-	local defaultProps: P? = if type(elementType) == "table"
-		then elementType.defaultProps
-		else nil
+	local defaultProps: P? = if type(elementType) == "table" then elementType.defaultProps else nil
 
 	-- ROBLOX deviation: cannot call pairs on nil the way you can use `for...in`
 	-- on nil in JS, so we check for nil before iterating

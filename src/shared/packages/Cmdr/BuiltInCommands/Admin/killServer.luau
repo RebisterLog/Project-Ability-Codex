@@ -1,6 +1,4 @@
-
-
-return function (_, players)
+return function(_, players)
 	for _, player in pairs(players) do
 		if player.Character then
 			local humanoid = player.Character:FindFirstChildOfClass("Humanoid") :: Humanoid

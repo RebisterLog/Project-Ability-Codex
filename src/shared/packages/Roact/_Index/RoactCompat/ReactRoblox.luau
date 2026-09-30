@@ -7,5 +7,4 @@ local Package = require(PackageIndex["ReactRoblox"]["ReactRoblox"])
 
 export type RootType = Package.RootType
 
-
 return Package

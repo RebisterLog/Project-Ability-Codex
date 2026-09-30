@@ -19,7 +19,7 @@ Config.RegisterEntityType("SLOW_ENTITY", {
 })
 
 Config.RegisterEntityType("NPC", {
-	TICK_RATE = 1/30,
+	TICK_RATE = 1 / 30,
 	FULL_ROTATION = true,
 
 	NORMAL_TICK_DISTANCE = 100,

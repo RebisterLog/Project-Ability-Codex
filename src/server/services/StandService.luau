@@ -11,7 +11,7 @@ local StandService = Crane:CreateService({
 
 function StandService:onStart()
 	self.ConfigService = Crane:GetService("ConfigService")
-	
+
 	self.Stands = {}
 end
 
@@ -20,21 +20,21 @@ function StandService:AddStandFor(character: types.Character, model: Model)
 		error("User already has stand")
 		return
 	end
-	
+
 	local stand = Crane:AddComponent(model, "Stand") :: types.Stand
 	stand:Init(character)
 
 	self.Stands[character] = stand
-	
+
 	stand.Destroying:Once(function()
 		self.Stands[character] = nil
 		stand.instance:Destroy()
 	end)
-	
+
 	character.Destroying:Once(function()
 		stand:Destroy()
 	end)
-	
+
 	return stand
 end
 

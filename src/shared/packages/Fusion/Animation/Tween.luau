@@ -11,8 +11,8 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
@@ -24,9 +24,9 @@ local peek = require(Package.State.peek)
 -- Animation
 local ExternalTime = require(Package.Animation.ExternalTime)
 local Stopwatch = require(Package.Animation.Stopwatch)
-local lerpType = require(Package.Animation.lerpType)
-local getTweenRatio = require(Package.Animation.getTweenRatio)
 local getTweenDuration = require(Package.Animation.getTweenDuration)
+local getTweenRatio = require(Package.Animation.getTweenRatio)
+local lerpType = require(Package.Animation.lerpType)
 -- Utility
 local nicknames = require(Package.Utility.nicknames)
 
@@ -46,7 +46,7 @@ class.type = "State"
 class.kind = "Tween"
 class.timeliness = "eager"
 
-local METATABLE = table.freeze {__index = class}
+local METATABLE = table.freeze({ __index = class })
 
 local function Tween<T>(
 	scope: Types.Scope<unknown>,
@@ -60,30 +60,25 @@ local function Tween<T>(
 
 	local goalState = castToState(goal)
 	local stopwatch = nil
-	if goalState ~= nil then
-		stopwatch = Stopwatch(scope, ExternalTime(scope))
-	end
+	if goalState ~= nil then stopwatch = Stopwatch(scope, ExternalTime(scope)) end
 
-	local self: Self<T> = setmetatable(
-		{
-			createdAt = createdAt,
-			dependencySet = {},
-			dependentSet = {},
-			lastChange = nil,
-			scope = scope,
-			validity = "invalid",
-			_activeDuration = nil,
-			_activeElapsed = nil,
-			_activeFrom = nil,
-			_activeTo = nil,
-			_activeTweenInfo = nil,
-			_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
-			_goal = goal,
-			_stopwatch = stopwatch,
-			_tweenInfo = tweenInfo or TweenInfo.new()
-		},
-		METATABLE
-	) :: any
+	local self: Self<T> = setmetatable({
+		createdAt = createdAt,
+		dependencySet = {},
+		dependentSet = {},
+		lastChange = nil,
+		scope = scope,
+		validity = "invalid",
+		_activeDuration = nil,
+		_activeElapsed = nil,
+		_activeFrom = nil,
+		_activeTo = nil,
+		_activeTweenInfo = nil,
+		_EXTREMELY_DANGEROUS_usedAsValue = peek(goal),
+		_goal = goal,
+		_stopwatch = stopwatch,
+		_tweenInfo = tweenInfo or TweenInfo.new(),
+	}, METATABLE) :: any
 	local destroy = function()
 		self.scope = nil
 		for dependency in pairs(self.dependencySet) do
@@ -96,8 +91,10 @@ local function Tween<T>(
 
 	if goalState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			goalState.scope, goalState.oldestTask,
+			scope,
+			self.oldestTask,
+			goalState.scope,
+			goalState.oldestTask,
 			checkLifetime.formatters.animationGoal
 		)
 	end
@@ -105,9 +102,12 @@ local function Tween<T>(
 	local tweenInfoState = castToState(tweenInfo)
 	if tweenInfoState ~= nil then
 		checkLifetime.bOutlivesA(
-			scope, self.oldestTask,
-			tweenInfoState.scope, tweenInfoState.oldestTask,
-			checkLifetime.formatters.parameter, "tween info"
+			scope,
+			self.oldestTask,
+			tweenInfoState.scope,
+			tweenInfoState.oldestTask,
+			checkLifetime.formatters.parameter,
+			"tween info"
 		)
 	end
 
@@ -118,15 +118,11 @@ local function Tween<T>(
 	return self
 end
 
-function class.get<T>(
-	self: Self<T>
-): never
+function class.get<T>(self: Self<T>): never
 	return External.logError("stateGetWasRemoved")
 end
 
-function class._evaluate<T>(
-	self: Self<T>
-): boolean
+function class._evaluate<T>(self: Self<T>): boolean
 	local goal = castToState(self._goal)
 	-- Allow non-state goals to pass through transparently.
 	if goal == nil then
@@ -144,9 +140,9 @@ function class._evaluate<T>(
 	local tweenInfo = peek(self._tweenInfo) :: TweenInfo
 	-- Restart animation when the goal changes, or if the tween info changes
 	-- partway through another animation.
-	if 
-		self._activeTo ~= newTweenTo or
-		(self._activeElapsed < self._activeDuration and self._activeTweenInfo ~= tweenInfo)
+	if
+		self._activeTo ~= newTweenTo
+		or (self._activeElapsed < self._activeDuration and self._activeTweenInfo ~= tweenInfo)
 	then
 		self._activeDuration = getTweenDuration(tweenInfo)
 		self._activeFrom = self._EXTREMELY_DANGEROUS_usedAsValue
@@ -158,9 +154,9 @@ function class._evaluate<T>(
 	depend(self, stopwatch)
 	self._activeElapsed = peek(stopwatch)
 	if
-		self._activeFrom == self._activeTo or -- endpoints match
-		self._activeElapsed >= self._activeDuration or -- animation is done
-		typeof(self._activeTo) ~= typeof(self._activeFrom) -- type difference
+		self._activeFrom == self._activeTo -- endpoints match
+		or self._activeElapsed >= self._activeDuration -- animation is done
+		or typeof(self._activeTo) ~= typeof(self._activeFrom) -- type difference
 	then
 		self._activeFrom = self._activeTo
 		self._activeElapsed = self._activeDuration

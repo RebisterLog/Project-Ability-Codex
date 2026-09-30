@@ -85,10 +85,8 @@ local ReactFiberDevToolsHook = require(script.Parent["ReactFiberDevToolsHook.new
 local isDevToolsPresent = ReactFiberDevToolsHook.isDevToolsPresent
 local ReactFiberHotReloading = require(script.Parent["ReactFiberHotReloading.new"])
 local resolveClassForHotReloading = ReactFiberHotReloading.resolveClassForHotReloading
-local resolveFunctionForHotReloading =
-	ReactFiberHotReloading.resolveFunctionForHotReloading
-local resolveForwardRefForHotReloading =
-	ReactFiberHotReloading.resolveForwardRefForHotReloading
+local resolveFunctionForHotReloading = ReactFiberHotReloading.resolveFunctionForHotReloading
+local resolveForwardRefForHotReloading = ReactFiberHotReloading.resolveForwardRefForHotReloading
 local NoLanes = ReactFiberLane.NoLanes
 local NoMode = ReactTypeOfMode.NoMode
 local ConcurrentMode = ReactTypeOfMode.ConcurrentMode
@@ -279,21 +277,13 @@ end
 
 local function resolveLazyComponentTag(Component: any): WorkTag
 	local typeofComponent = typeof(Component)
-	if typeofComponent == "function" then
-		return FunctionComponent
-	end
+	if typeofComponent == "function" then return FunctionComponent end
 
 	if typeofComponent == "table" then
-		if Component.isReactComponent then
-			return ClassComponent
-		end
+		if Component.isReactComponent then return ClassComponent end
 		local __typeof = Component["$$typeof"]
-		if __typeof == REACT_FORWARD_REF_TYPE then
-			return ForwardRef
-		end
-		if __typeof == REACT_MEMO_TYPE then
-			return MemoComponent
-		end
+		if __typeof == REACT_FORWARD_REF_TYPE then return ForwardRef end
+		if __typeof == REACT_MEMO_TYPE then return MemoComponent end
 	end
 
 	return IndeterminateComponent
@@ -415,8 +405,7 @@ local function resetWorkInProgress(workInProgress: Fiber, renderLanes: Lanes)
 
 	-- Reset the effect tag but keep any Placement tags, since that's something
 	-- that child fiber is setting, not the reconciliation.
-	workInProgress.flags =
-		bit32.band(workInProgress.flags, bit32.bor(StaticMask, Placement))
+	workInProgress.flags = bit32.band(workInProgress.flags, bit32.bor(StaticMask, Placement))
 
 	-- The effects are no longer valid
 
@@ -516,14 +505,10 @@ local function createFiberFromTypeAndProps(
 	-- deviation: since our class components aren't functions, we have to look
 	-- for them more explicitly (inlines logic from `shouldConstruct`)
 	if typeOfType_ == "function" then
-		if __DEV__ then
-			resolvedType = resolveFunctionForHotReloading(resolvedType)
-		end
+		if __DEV__ then resolvedType = resolveFunctionForHotReloading(resolvedType) end
 	elseif typeOfType_ == "table" and not not type_.isReactComponent then
 		fiberTag = ClassComponent
-		if __DEV__ then
-			resolvedType = resolveClassForHotReloading(resolvedType)
-		end
+		if __DEV__ then resolvedType = resolveClassForHotReloading(resolvedType) end
 	elseif typeOfType_ == "string" then
 		fiberTag = HostComponent
 	else
@@ -589,19 +574,14 @@ local function createFiberFromTypeAndProps(
 			if not shouldBreak then
 				local info = ""
 				if __DEV__ then
-					if
-						type_ == nil
-						or (typeOfType_ == "table" and #Object.keys(type_) == 0)
-					then
+					if type_ == nil or (typeOfType_ == "table" and #Object.keys(type_) == 0) then
 						info ..= " You likely forgot to export your component from the file " .. "it's defined in, or you might have mixed up default and " .. "named imports."
 					elseif type_ ~= nil and typeOfType_ == "table" then
 						-- ROBLOX deviation: print the table/string in readable form to give a clue, if no other info was gathered
 						info ..= "\n" .. inspect(type_)
 					end
 					local ownerName
-					if owner then
-						ownerName = getComponentName(owner.type)
-					end
+					if owner then ownerName = getComponentName(owner.type) end
 					if ownerName ~= nil and ownerName ~= "" then
 						info ..= "\n\nCheck the render method of `" .. ownerName .. "`."
 					elseif owner then
@@ -618,8 +598,7 @@ local function createFiberFromTypeAndProps(
 				elseif Array.isArray(type_) then
 					typeString = "array"
 				elseif typeOfType_ == "table" and type_typeof == REACT_ELEMENT_TYPE then
-					typeString =
-						string.format("<%s />", getComponentName(type_.type) or "Unknown")
+					typeString = string.format("<%s />", getComponentName(type_.type) or "Unknown")
 					info =
 						" Did you accidentally export a JSX literal or Element instead of a component?"
 				else
@@ -639,30 +618,21 @@ local function createFiberFromTypeAndProps(
 	end
 
 	-- ROBLOX deviation START: we pass in all needed values so the table creation+field assignment is a one-shot
-	local fiber =
-		createFiber(fiberTag, pendingProps, key, mode, type_, resolvedType, nil, lanes)
+	local fiber = createFiber(fiberTag, pendingProps, key, mode, type_, resolvedType, nil, lanes)
 
 	-- fiber.elementType = type_
 	-- fiber.type = resolvedType
 	-- fiber.lanes = lanes
 	-- ROBLOX deviation END
 
-	if __DEV__ then
-		fiber._debugOwner = owner
-	end
+	if __DEV__ then fiber._debugOwner = owner end
 
 	return fiber
 end
 
-local function createFiberFromElement(
-	element: ReactElement,
-	mode: TypeOfMode,
-	lanes: Lanes
-): Fiber
+local function createFiberFromElement(element: ReactElement, mode: TypeOfMode, lanes: Lanes): Fiber
 	local owner = nil
-	if __DEV__ then
-		owner = element._owner
-	end
+	if __DEV__ then owner = element._owner end
 	local type = element.type
 	local key = element.key
 	local pendingProps = element.props
@@ -728,8 +698,7 @@ function createFiberFromScope(
 	key: string?
 ): Fiber
 	-- ROBLOX deviation START: we pass in all needed values so the table creation+field assignment is a one-shot
-	local fiber =
-		createFiber(ScopeComponent, pendingProps, key, mode, scope, scope, nil, lanes)
+	local fiber = createFiber(ScopeComponent, pendingProps, key, mode, scope, scope, nil, lanes)
 	-- fiber.type = scope
 	-- fiber.elementType = scope
 	-- fiber.lanes = lanes
@@ -917,18 +886,13 @@ end
 
 local function createFiberFromDehydratedFragment(dehydratedNode: SuspenseInstance): Fiber
 	-- ROBLOX deviation START: we pass in all needed values so the table creation+field assignment is a one-shot
-	local fiber =
-		createFiber(DehydratedFragment, nil, nil, NoMode, nil, nil, dehydratedNode)
+	local fiber = createFiber(DehydratedFragment, nil, nil, NoMode, nil, nil, dehydratedNode)
 	-- fiber.stateNode = dehydratedNode
 	-- ROBLOX deviation END
 	return fiber
 end
 
-local function createFiberFromPortal(
-	portal: ReactPortal,
-	mode: TypeOfMode,
-	lanes: Lanes
-): Fiber
+local function createFiberFromPortal(portal: ReactPortal, mode: TypeOfMode, lanes: Lanes): Fiber
 	local pendingProps = if portal.children ~= nil then portal.children else {}
 	-- ROBLOX deviation START: we pass in all needed values so the table creation+field assignment is a one-shot
 	local fiber = createFiber(HostPortal, pendingProps, portal.key, mode, nil, nil, {

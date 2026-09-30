@@ -11,51 +11,49 @@ local Gerson: BotsCharacters.BotCharacterConfig = {
 	Skills = {
 		["Punch"] = {
 			Distance = 8,
-			
+
 			RejectedConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
-			}
+			},
 		},
-		
+
 		["Block"] = {
 			RequiredConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
-			
+
 			RejectedConditions = {
 				"TARGET_IGNORE_BLOCK",
 			},
 		},
-		
+
 		["Grab"] = {
 			Distance = 6,
-			
+
 			RequiredConditions = {
 				"TARGET_BLOCKING",
 			},
-			
-			RejectedConditions = {
-				
-			},
+
+			RejectedConditions = {},
 		},
-		
+
 		["Bonk"] = {
 			Distance = 10,
-			
+
 			RejectedConditions = {
 				"TARGET_PERFECT_BLOCKING",
-			}
+			},
 		},
-		
+
 		["ShellLaunch"] = {
 			RejectedConditions = {
 				"TARGET_RAGDOLLED",
-			}
+			},
 		},
-		
+
 		["Dash"] = {
 			--Distance = 15,
 			--RequiredConditions = {
@@ -64,41 +62,41 @@ local Gerson: BotsCharacters.BotCharacterConfig = {
 			--}
 		},
 	},
-	
+
 	Combos = {
 		{
 			"ShellLaunch",
 			"Dash",
 			"Bonk",
 		},
-		
+
 		{
 			"Bonk",
 			"ShellLaunch",
 		},
-		
+
 		{
 			"Dash",
 			"Punch",
 			"Punch",
 			"Punch",
-			"Grab"
+			"Grab",
 		},
-		
+
 		{
 			"Punch",
 			"Punch",
 			"Punch",
 			"Bonk",
 		},
-		
+
 		{
 			"Punch",
 			"Punch",
 			"Punch",
 			"ShellLaunch",
 		},
-	}
+	},
 }
 
 return Gerson

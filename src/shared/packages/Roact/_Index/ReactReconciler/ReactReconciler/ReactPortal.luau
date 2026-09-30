@@ -23,9 +23,7 @@ local function createPortal(
 	implementation: any,
 	key: string?
 ): ReactPortal
-	if key ~= nil then
-		key = tostring(key)
-	end
+	if key ~= nil then key = tostring(key) end
 	return {
 		-- This tag allow us to uniquely identify this as a React Portal
 		["$$typeof"] = REACT_PORTAL_TYPE,

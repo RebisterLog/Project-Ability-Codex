@@ -11,16 +11,11 @@ local task = nil -- Disable usage of Roblox's task scheduler
 ]]
 
 local Package = script.Parent.Parent
-local Types = require(Package.Types)
 local External = require(Package.External)
+local Types = require(Package.Types)
 
-local function evaluate(
-	target: Types.GraphObject,
-	forceComputation: boolean
-): boolean
-	if target.validity == "busy" then
-		return External.logError("infiniteLoop")
-	end
+local function evaluate(target: Types.GraphObject, forceComputation: boolean): boolean
+	if target.validity == "busy" then return External.logError("infiniteLoop") end
 	local firstEvaluation = target.lastChange == nil
 	local isInvalid = target.validity == "invalid"
 	if firstEvaluation or isInvalid or forceComputation then
@@ -43,9 +38,7 @@ local function evaluate(
 			target.validity = "busy"
 			targetMeaningfullyChanged = target:_evaluate() or firstEvaluation
 		end
-		if targetMeaningfullyChanged then
-			target.lastChange = os.clock()
-		end
+		if targetMeaningfullyChanged then target.lastChange = os.clock() end
 		target.validity = "valid"
 		return targetMeaningfullyChanged
 	else

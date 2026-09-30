@@ -108,17 +108,13 @@ end
 
 exports.markTaskCanceled = function(task, ms: number)
 	if enableProfiling then
-		if eventLog ~= nil then
-			logEvent({ TaskCancelEvent, ms * 1000, task.id })
-		end
+		if eventLog ~= nil then logEvent({ TaskCancelEvent, ms * 1000, task.id }) end
 	end
 end
 
 exports.markTaskErrored = function(task, ms: number)
 	if enableProfiling then
-		if eventLog ~= nil then
-			logEvent({ TaskErrorEvent, ms * 1000, task.id })
-		end
+		if eventLog ~= nil then logEvent({ TaskErrorEvent, ms * 1000, task.id }) end
 	end
 end
 
@@ -126,17 +122,13 @@ exports.markTaskRun = function(task, ms: number)
 	if enableProfiling then
 		runIdCounter += 1
 
-		if eventLog ~= nil then
-			logEvent({ TaskRunEvent, ms * 1000, task.id, runIdCounter })
-		end
+		if eventLog ~= nil then logEvent({ TaskRunEvent, ms * 1000, task.id, runIdCounter }) end
 	end
 end
 
 exports.markTaskYield = function(task, ms: number)
 	if enableProfiling then
-		if eventLog ~= nil then
-			logEvent({ TaskYieldEvent, ms * 1000, task.id, runIdCounter })
-		end
+		if eventLog ~= nil then logEvent({ TaskYieldEvent, ms * 1000, task.id, runIdCounter }) end
 	end
 end
 

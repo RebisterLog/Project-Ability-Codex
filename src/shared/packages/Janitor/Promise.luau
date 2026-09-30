@@ -33,9 +33,9 @@ export type Error = typeof(setmetatable(
 		createdTrace: string,
 
 		extend: (self: Error, options: ErrorOptions?) -> Error,
-		getErrorChain: (self: Error) -> {Error},
+		getErrorChain: (self: Error) -> { Error },
 	},
-	{} :: {__tostring: (self: Error) -> string}
+	{} :: { __tostring: (self: Error) -> string }
 ))
 type ErrorStatic = ErrorStaticAndShared & {
 	new: (options: ErrorOptions?, parent: Error?) -> Error,
@@ -69,7 +69,11 @@ export type Promise = {
 	timeout: (self: Promise, seconds: number, rejectionValue: any?) -> Promise,
 }
 export type TypedPromise<T...> = {
-	andThen: (self: Promise, successHandler: (T...) -> ...any, failureHandler: ((...any) -> ...any)?) -> Promise,
+	andThen: (
+		self: Promise,
+		successHandler: (T...) -> ...any,
+		failureHandler: ((...any) -> ...any)?
+	) -> Promise,
 	andThenCall: <TArgs...>(self: Promise, callback: (TArgs...) -> ...any, TArgs...) -> Promise,
 	andThenReturn: (self: Promise, ...any) -> Promise,
 
@@ -107,9 +111,9 @@ export type PromiseStatic = {
 		Cancelled: "Cancelled",
 	},
 
-	all: <T>(promises: {TypedPromise<T>}) -> TypedPromise<{T}>,
-	allSettled: <T>(promise: {TypedPromise<T>}) -> TypedPromise<{Status}>,
-	any: <T>(promise: {TypedPromise<T>}) -> TypedPromise<T>,
+	all: <T>(promises: { TypedPromise<T> }) -> TypedPromise<{ T }>,
+	allSettled: <T>(promise: { TypedPromise<T> }) -> TypedPromise<{ Status }>,
+	any: <T>(promise: { TypedPromise<T> }) -> TypedPromise<T>,
 	defer: <TReturn...>(
 		executor: (
 			resolve: (TReturn...) -> (),
@@ -119,11 +123,11 @@ export type PromiseStatic = {
 	) -> TypedPromise<TReturn...>,
 	delay: (seconds: number) -> TypedPromise<number>,
 	each: <T, TReturn>(
-		list: {T | TypedPromise<T>},
+		list: { T | TypedPromise<T> },
 		predicate: (value: T, index: number) -> TReturn | TypedPromise<TReturn>
-	) -> TypedPromise<{TReturn}>,
+	) -> TypedPromise<{ TReturn }>,
 	fold: <T, TReturn>(
-		list: {T | TypedPromise<T>},
+		list: { T | TypedPromise<T> },
 		reducer: (accumulator: TReturn, value: T, index: number) -> TReturn | TypedPromise<TReturn>
 	) -> TypedPromise<TReturn>,
 	fromEvent: <TReturn...>(
@@ -139,8 +143,10 @@ export type PromiseStatic = {
 		) -> ()
 	) -> TypedPromise<TReturn...>,
 	onUnhandledRejection: (callback: (promise: TypedPromise<any>, ...any) -> ()) -> () -> (),
-	promisify: <TArgs..., TReturn...>(callback: (TArgs...) -> TReturn...) -> (TArgs...) -> TypedPromise<TReturn...>,
-	race: <T>(promises: {TypedPromise<T>}) -> TypedPromise<T>,
+	promisify: <TArgs..., TReturn...>(
+		callback: (TArgs...) -> TReturn...
+	) -> (TArgs...) -> TypedPromise<TReturn...>,
+	race: <T>(promises: { TypedPromise<T> }) -> TypedPromise<T>,
 	reject: (...any) -> TypedPromise<...any>,
 	resolve: <TReturn...>(TReturn...) -> TypedPromise<TReturn...>,
 	retry: <TArgs..., TReturn...>(
@@ -154,8 +160,11 @@ export type PromiseStatic = {
 		seconds: number,
 		TArgs...
 	) -> TypedPromise<TReturn...>,
-	some: <T>(promise: {TypedPromise<T>}, count: number) -> TypedPromise<{T}>,
-	try: <TArgs..., TReturn...>(callback: (TArgs...) -> TReturn..., TArgs...) -> TypedPromise<TReturn...>,
+	some: <T>(promise: { TypedPromise<T> }, count: number) -> TypedPromise<{ T }>,
+	try: <TArgs..., TReturn...>(
+		callback: (TArgs...) -> TReturn...,
+		TArgs...
+	) -> TypedPromise<TReturn...>,
 }
 
 return Promise :: PromiseStatic?

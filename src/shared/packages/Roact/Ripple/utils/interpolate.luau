@@ -15,7 +15,10 @@ local function interpolate(from: any, to: any, alpha: number): Animatable
 	elseif kind == "UDim2" or kind == "CFrame" then
 		return from:Lerp(to, alpha)
 	elseif kind == "UDim" then
-		return UDim.new(math.lerp(from.Scale, to.Scale, alpha), math.lerp(from.Offset, to.Offset, alpha))
+		return UDim.new(
+			math.lerp(from.Scale, to.Scale, alpha),
+			math.lerp(from.Offset, to.Offset, alpha)
+		)
 	elseif kind == "Rect" then
 		return Rect.new(
 			math.lerp(from.Min.X, to.Min.X, alpha),
@@ -29,16 +32,12 @@ local function interpolate(from: any, to: any, alpha: number): Animatable
 		for key, b in to do
 			local a = from[key]
 
-			if not a then
-				continue
-			end
+			if not a then continue end
 
 			local value = a + (b - a) * alpha
 
 			if result[key] ~= value then
-				if result == from then
-					result = table.clone(from)
-				end
+				if result == from then result = table.clone(from) end
 				result[key] = value
 			end
 		end

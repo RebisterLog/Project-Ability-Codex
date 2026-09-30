@@ -51,9 +51,7 @@ return function(parent, childName, constructor)
 	mt.__index = parent
 	mt.__tostring = function(self)
 		-- Printing class name
-		if self == Child then
-			return tostring(childName)
-		end
+		if self == Child then return tostring(childName) end
 		return getmetatable(parent).__tostring(self)
 	end
 

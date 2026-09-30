@@ -1,11 +1,13 @@
 local RunService = game:GetService("RunService")
 
-local clientProcess = require(script.process.client)
 local array = require(script.dataTypes.array)
 local bool = require(script.dataTypes.bool)
 local buff = require(script.dataTypes.buff)
-local color3 = require(script.dataTypes.color3)
 local cframe = require(script.dataTypes.cframe)
+local clientProcess = require(script.process.client)
+local color3 = require(script.dataTypes.color3)
+local definePacket = require(script.packets.definePacket)
+local defineQuery = require(script.queries.defineQuery)
 local float32 = require(script.dataTypes.float32)
 local float64 = require(script.dataTypes.float64)
 local inst = require(script.dataTypes.inst)
@@ -13,22 +15,20 @@ local int16 = require(script.dataTypes.int16)
 local int32 = require(script.dataTypes.int32)
 local int8 = require(script.dataTypes.int8)
 local map = require(script.dataTypes.map)
+local namespace = require(script.namespaces.namespace)
 local nothing = require(script.dataTypes.nothing)
 local optional = require(script.dataTypes.optional)
+local serverProcess = require(script.process.server)
 local string = require(script.dataTypes.string)
 local struct = require(script.dataTypes.struct)
+local types = require(script.types)
 local uint16 = require(script.dataTypes.uint16)
 local uint32 = require(script.dataTypes.uint32)
 local uint8 = require(script.dataTypes.uint8)
 local unknown = require(script.dataTypes.unknown)
+local values = require(script.replicated.values)
 local vec2 = require(script.dataTypes.vec2)
 local vec3 = require(script.dataTypes.vec3)
-local namespace = require(script.namespaces.namespace)
-local definePacket = require(script.packets.definePacket)
-local defineQuery = require(script.queries.defineQuery)
-local serverProcess = require(script.process.server)
-local values = require(script.replicated.values)
-local types = require(script.types)
 
 values.start()
 
@@ -65,12 +65,10 @@ local t = {
 	inst = inst(),
 	unknown = unknown(),
 	nothing = nothing(),
-	
+
 	-- MASK TYPES
 	playerName = string(),
 	playerIdentifier = uint8(),
 }
 
-return (
-	table.freeze(t) :: any
-) :: types.ByteNet
+return (table.freeze(t) :: any) :: types.ByteNet

@@ -15,7 +15,8 @@ local function createUpdater(initialLength, initialProps, initialDeps)
 			update({ newLength, newProps, newDeps })
 			task.wait(0.1)
 		end
-		test.springs, test.api = RoactSpring.useSprings(springProps[1], springProps[2], springProps[3])
+		test.springs, test.api =
+			RoactSpring.useSprings(springProps[1], springProps[2], springProps[3])
 		return nil
 	end
 

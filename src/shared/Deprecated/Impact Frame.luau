@@ -2,17 +2,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CacheTab = require(ReplicatedStorage.shared.packages.CacheTab)
 
 local ImpactFrame = {
-	CachedHighlights = CacheTab.new(script.Highlight, 10,
-		function(highlight: Highlight) highlight.Adornee = nil; highlight.Parent = nil end,
-		function(highlight: Highlight) end
-	),
-	CachedColorCorrection = CacheTab.new(script.ColorCorrection, 10,
-		function(colorCor: ColorCorrectionEffect) colorCor.Parent = nil end,
+	CachedHighlights = CacheTab.new(script.Highlight, 10, function(highlight: Highlight)
+		highlight.Adornee = nil
+		highlight.Parent = nil
+	end, function(highlight: Highlight) end),
+	CachedColorCorrection = CacheTab.new(
+		script.ColorCorrection,
+		10,
+		function(colorCor: ColorCorrectionEffect)
+			colorCor.Parent = nil
+		end,
 		function(colorCor: ColorCorrectionEffect) end
 	),
 }
 
-function ImpactFrame.onStart(self: typeof(ImpactFrame), models: {Model}, time: number?)
+function ImpactFrame.onStart(self: typeof(ImpactFrame), models: { Model }, time: number?)
 	time = time or 0.1
 
 	task.spawn(function()
@@ -27,13 +31,13 @@ function ImpactFrame.onStart(self: typeof(ImpactFrame), models: {Model}, time: n
 	for _, model in models do
 		task.spawn(function()
 			local highlight = self.CachedHighlights:Get()
-			highlight.FillColor = Color3.fromRGB(0,0,0)
+			highlight.FillColor = Color3.fromRGB(0, 0, 0)
 			highlight.FillTransparency = 0
 			highlight.OutlineTransparency = 1
 			highlight.Adornee = model
 			highlight.Parent = workspace.Effects
 			task.wait(time / 2)
-			highlight.FillColor = Color3.new(1, 1, 1) 
+			highlight.FillColor = Color3.new(1, 1, 1)
 			task.wait(time / 2)
 			self.CachedHighlights:Add(highlight)
 		end)

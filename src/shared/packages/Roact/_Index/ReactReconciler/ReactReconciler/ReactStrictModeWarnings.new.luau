@@ -42,9 +42,7 @@ if _G.__DEV__ then
 		-- ROBLOX FIXME Luau: Luau needs to understand while not nil loops
 		local node: Fiber? = fiber
 		while node ~= nil do
-			if bit32.band(node.mode, StrictMode) ~= 0 then
-				maybeStrictRoot = node
-			end
+			if bit32.band(node.mode, StrictMode) ~= 0 then maybeStrictRoot = node end
 			node = node.return_
 		end
 
@@ -70,67 +68,63 @@ if _G.__DEV__ then
 	-- Tracks components we have already warned about.
 	local didWarnAboutUnsafeLifecycles = {}
 
-	ReactStrictModeWarnings.recordUnsafeLifecycleWarnings =
-		function(fiber: Fiber, instance: any)
-			-- Dedupe strategy: Warn once per component.
-			if didWarnAboutUnsafeLifecycles[fiber.type] then
-				return
-			end
+	ReactStrictModeWarnings.recordUnsafeLifecycleWarnings = function(fiber: Fiber, instance: any)
+		-- Dedupe strategy: Warn once per component.
+		if didWarnAboutUnsafeLifecycles[fiber.type] then return end
 
-			if
-				typeof(instance.componentWillMount) == "function"
-				-- Don't warn about react-lifecycles-compat polyfilled components.
-				-- ROBLOX deviation: Lua doesn't allow fields on function
-				-- instance.componentWillMount.__suppressDeprecationWarning ~= true
-			then
-				table.insert(pendingComponentWillMountWarnings, fiber)
-			end
-
-			if
-				bit32.band(fiber.mode, StrictMode) ~= 0
-				and typeof(instance.UNSAFE_componentWillMount) == "function"
-			then
-				table.insert(pendingUNSAFE_ComponentWillMountWarnings, fiber)
-			end
-
-			if
-				typeof(instance.componentWillReceiveProps) == "function"
-				-- ROBLOX deviation: Lua doesn't allow fields on function
-				-- instance.componentWillReceiveProps.__suppressDeprecationWarning ~= true
-			then
-				table.insert(pendingComponentWillReceivePropsWarnings, fiber)
-			end
-
-			if
-				bit32.band(fiber.mode, StrictMode) ~= 0
-				and typeof(instance.UNSAFE_componentWillReceiveProps) == "function"
-			then
-				table.insert(pendingUNSAFE_ComponentWillReceivePropsWarnings, fiber)
-			end
-
-			if
-				typeof(instance.componentWillUpdate) == "function"
-				-- ROBLOX deviation: Lua doesn't allow fields on function
-				-- instance.componentWillUpdate.__suppressDeprecationWarning ~= true
-			then
-				table.insert(pendingComponentWillUpdateWarnings, fiber)
-			end
-
-			if
-				bit32.band(fiber.mode, StrictMode) ~= 0
-				and typeof(instance.UNSAFE_componentWillUpdate) == "function"
-			then
-				table.insert(pendingUNSAFE_ComponentWillUpdateWarnings, fiber)
-			end
+		if
+			typeof(instance.componentWillMount) == "function"
+			-- Don't warn about react-lifecycles-compat polyfilled components.
+			-- ROBLOX deviation: Lua doesn't allow fields on function
+			-- instance.componentWillMount.__suppressDeprecationWarning ~= true
+		then
+			table.insert(pendingComponentWillMountWarnings, fiber)
 		end
+
+		if
+			bit32.band(fiber.mode, StrictMode) ~= 0
+			and typeof(instance.UNSAFE_componentWillMount) == "function"
+		then
+			table.insert(pendingUNSAFE_ComponentWillMountWarnings, fiber)
+		end
+
+		if
+			typeof(instance.componentWillReceiveProps) == "function"
+			-- ROBLOX deviation: Lua doesn't allow fields on function
+			-- instance.componentWillReceiveProps.__suppressDeprecationWarning ~= true
+		then
+			table.insert(pendingComponentWillReceivePropsWarnings, fiber)
+		end
+
+		if
+			bit32.band(fiber.mode, StrictMode) ~= 0
+			and typeof(instance.UNSAFE_componentWillReceiveProps) == "function"
+		then
+			table.insert(pendingUNSAFE_ComponentWillReceivePropsWarnings, fiber)
+		end
+
+		if
+			typeof(instance.componentWillUpdate) == "function"
+			-- ROBLOX deviation: Lua doesn't allow fields on function
+			-- instance.componentWillUpdate.__suppressDeprecationWarning ~= true
+		then
+			table.insert(pendingComponentWillUpdateWarnings, fiber)
+		end
+
+		if
+			bit32.band(fiber.mode, StrictMode) ~= 0
+			and typeof(instance.UNSAFE_componentWillUpdate) == "function"
+		then
+			table.insert(pendingUNSAFE_ComponentWillUpdateWarnings, fiber)
+		end
+	end
 
 	ReactStrictModeWarnings.flushPendingUnsafeLifecycleWarnings = function()
 		-- We do an initial pass to gather component names
 		local componentWillMountUniqueNames = {}
 		if #pendingComponentWillMountWarnings > 0 then
 			for i, fiber in pendingComponentWillMountWarnings do
-				componentWillMountUniqueNames[getComponentName(fiber.type) or "Component"] =
-					true
+				componentWillMountUniqueNames[getComponentName(fiber.type) or "Component"] = true
 				didWarnAboutUnsafeLifecycles[fiber.type] = true
 			end
 			table.clear(pendingComponentWillMountWarnings)
@@ -171,8 +165,7 @@ if _G.__DEV__ then
 		local componentWillUpdateUniqueNames = {}
 		if #pendingComponentWillUpdateWarnings > 0 then
 			for i, fiber in pendingComponentWillUpdateWarnings do
-				componentWillUpdateUniqueNames[getComponentName(fiber.type) or "Component"] =
-					true
+				componentWillUpdateUniqueNames[getComponentName(fiber.type) or "Component"] = true
 				didWarnAboutUnsafeLifecycles[fiber.type] = true
 			end
 
@@ -206,8 +199,7 @@ if _G.__DEV__ then
 
 		-- deviation: use `next` to determine whether set is empty
 		if next(UNSAFE_componentWillReceivePropsUniqueNames) ~= nil then
-			local sortedNames =
-				setToSortedString(UNSAFE_componentWillReceivePropsUniqueNames)
+			local sortedNames = setToSortedString(UNSAFE_componentWillReceivePropsUniqueNames)
 			console.error(
 				"Using UNSAFE_componentWillReceiveProps in strict mode is not recommended "
 					.. "and may indicate bugs in your code. "
@@ -297,51 +289,43 @@ if _G.__DEV__ then
 	-- Tracks components we have already warned about.
 	local didWarnAboutLegacyContext = {}
 
-	ReactStrictModeWarnings.recordLegacyContextWarning =
-		function(fiber: Fiber, instance: any)
-			local strictRoot = findStrictRoot(fiber)
-			if strictRoot == nil then
-				console.error(
-					"Expected to find a StrictMode component in a strict mode tree. "
-						.. "This error is likely caused by a bug in React. Please file an issue."
-				)
-				return
-			end
-
-			-- Dedup strategy: Warn once per component.
-			if didWarnAboutLegacyContext[fiber.type] then
-				return
-			end
-
-			-- ROBLOX FIXME Luau: Luau should narrow based on the nil guard
-			local warningsForRoot = pendingLegacyContextWarning[strictRoot :: Fiber]
-
-			-- ROBLOX deviation: Lua can't have fields on functions
-			if
-				typeof(fiber.type) ~= "function"
-				and (
-					fiber.type.contextTypes ~= nil
-					or fiber.type.childContextTypes ~= nil
-					or (
-						instance ~= nil
-						and typeof(instance.getChildContext) == "function"
-					)
-				)
-			then
-				if warningsForRoot == nil then
-					warningsForRoot = {}
-					-- ROBLOX FIXME Luau: Luau should narrow based on the nil guard
-					pendingLegacyContextWarning[strictRoot :: Fiber] = warningsForRoot
-				end
-				table.insert(warningsForRoot, fiber)
-			end
+	ReactStrictModeWarnings.recordLegacyContextWarning = function(fiber: Fiber, instance: any)
+		local strictRoot = findStrictRoot(fiber)
+		if strictRoot == nil then
+			console.error(
+				"Expected to find a StrictMode component in a strict mode tree. "
+					.. "This error is likely caused by a bug in React. Please file an issue."
+			)
+			return
 		end
+
+		-- Dedup strategy: Warn once per component.
+		if didWarnAboutLegacyContext[fiber.type] then return end
+
+		-- ROBLOX FIXME Luau: Luau should narrow based on the nil guard
+		local warningsForRoot = pendingLegacyContextWarning[strictRoot :: Fiber]
+
+		-- ROBLOX deviation: Lua can't have fields on functions
+		if
+			typeof(fiber.type) ~= "function"
+			and (
+				fiber.type.contextTypes ~= nil
+				or fiber.type.childContextTypes ~= nil
+				or (instance ~= nil and typeof(instance.getChildContext) == "function")
+			)
+		then
+			if warningsForRoot == nil then
+				warningsForRoot = {}
+				-- ROBLOX FIXME Luau: Luau should narrow based on the nil guard
+				pendingLegacyContextWarning[strictRoot :: Fiber] = warningsForRoot
+			end
+			table.insert(warningsForRoot, fiber)
+		end
+	end
 
 	ReactStrictModeWarnings.flushLegacyContextWarning = function()
 		for strictRoot, fiberArray in pendingLegacyContextWarning do
-			if #fiberArray == 0 then
-				return
-			end
+			if #fiberArray == 0 then return end
 			local firstFiber = fiberArray[1]
 
 			local uniqueNames = {}
@@ -367,9 +351,7 @@ if _G.__DEV__ then
 			-- finally
 			resetCurrentDebugFiberInDEV()
 
-			if not ok then
-				error(error_)
-			end
+			if not ok then error(error_) end
 		end
 	end
 

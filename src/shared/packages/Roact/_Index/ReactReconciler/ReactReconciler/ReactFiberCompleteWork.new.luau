@@ -42,8 +42,7 @@ local ReactFiberOffscreenComponent = require(script.Parent.ReactFiberOffscreenCo
 type OffscreenState = ReactFiberOffscreenComponent.OffscreenState
 
 local ReactMutableSource = require(script.Parent["ReactMutableSource.new"])
-local resetMutableSourceWorkInProgressVersions =
-	ReactMutableSource.resetWorkInProgressVersions
+local resetMutableSourceWorkInProgressVersions = ReactMutableSource.resetWorkInProgressVersions
 
 -- local {now} = require(script.Parent.SchedulerWithReactIntegration.new)
 
@@ -72,8 +71,7 @@ local ScopeComponent = ReactWorkTags.ScopeComponent
 local Block = ReactWorkTags.Block
 local OffscreenComponent = ReactWorkTags.OffscreenComponent
 local LegacyHiddenComponent = ReactWorkTags.LegacyHiddenComponent
-local ReactFiberSuspenseComponent =
-	require(script.Parent["ReactFiberSuspenseComponent.new"])
+local ReactFiberSuspenseComponent = require(script.Parent["ReactFiberSuspenseComponent.new"])
 type SuspenseState = ReactFiberSuspenseComponent.SuspenseState
 type SuspenseListRenderState = ReactFiberSuspenseComponent.SuspenseState
 
@@ -128,8 +126,7 @@ local popHostContainer = ReactFiberHostContext.popHostContainer
 local ReactFiberSuspenseContext = require(script.Parent["ReactFiberSuspenseContext.new"])
 local popSuspenseContext = ReactFiberSuspenseContext.popSuspenseContext
 local suspenseStackCursor = ReactFiberSuspenseContext.suspenseStackCursor
-local InvisibleParentSuspenseContext =
-	ReactFiberSuspenseContext.InvisibleParentSuspenseContext
+local InvisibleParentSuspenseContext = ReactFiberSuspenseContext.InvisibleParentSuspenseContext
 local hasSuspenseContext = ReactFiberSuspenseContext.hasSuspenseContext
 type SuspenseContext = ReactFiberSuspenseContext.SuspenseContext
 -- local pushSuspenseContext = ReactFiberSuspenseContext.pushSuspenseContext
@@ -144,17 +141,14 @@ local popLegacyContext = ReactFiberContext.popContext
 local popTopLevelLegacyContextObject = ReactFiberContext.popTopLevelContextObject
 local popProvider = require(script.Parent["ReactFiberNewContext.new"]).popProvider
 
-local ReactFiberHydrationContext =
-	require(script.Parent["ReactFiberHydrationContext.new"])
+local ReactFiberHydrationContext = require(script.Parent["ReactFiberHydrationContext.new"])
 local prepareToHydrateHostSuspenseInstance =
 	ReactFiberHydrationContext.prepareToHydrateHostSuspenseInstance
 local popHydrationState = ReactFiberHydrationContext.popHydrationState
 local resetHydrationState = ReactFiberHydrationContext.resetHydrationState
 -- local getIsHydrating = ReactFiberHydrationContext.getIsHydrating
-local prepareToHydrateHostInstance =
-	ReactFiberHydrationContext.prepareToHydrateHostInstance
-local prepareToHydrateHostTextInstance =
-	ReactFiberHydrationContext.prepareToHydrateHostTextInstance
+local prepareToHydrateHostInstance = ReactFiberHydrationContext.prepareToHydrateHostInstance
+local prepareToHydrateHostTextInstance = ReactFiberHydrationContext.prepareToHydrateHostTextInstance
 local ReactFeatureFlags = require(Packages.Shared).ReactFeatureFlags
 local enableSchedulerTracing = ReactFeatureFlags.enableSchedulerTracing
 local enableSuspenseCallback = ReactFeatureFlags.enableSuspenseCallback
@@ -200,18 +194,12 @@ end
 -- local function hadNoMutationsEffects(current: nil | Fiber, completedWork: Fiber)
 local function hadNoMutationsEffects(current, completedWork: Fiber)
 	local didBailout = current ~= nil and current.child == completedWork.child
-	if didBailout then
-		return true
-	end
+	if didBailout then return true end
 
 	local child = completedWork.child
 	while child ~= nil do
-		if bit32.band(child.flags, MutationMask) ~= NoFlags then
-			return false
-		end
-		if bit32.band(child.subtreeFlags, MutationMask) ~= NoFlags then
-			return false
-		end
+		if bit32.band(child.flags, MutationMask) ~= NoFlags then return false end
+		if bit32.band(child.subtreeFlags, MutationMask) ~= NoFlags then return false end
 		child = child.sibling
 	end
 	return true
@@ -247,13 +235,9 @@ if supportsMutation then
 				node = node.child
 				continue
 			end
-			if node == workInProgress then
-				return
-			end
+			if node == workInProgress then return end
 			while node.sibling == nil do
-				if node.return_ == nil or node.return_ == workInProgress then
-					return
-				end
+				if node.return_ == nil or node.return_ == workInProgress then return end
 				node = node.return_
 			end
 			-- ROBLOX FIXME Luau: Luau doesn't understand loop predicates above results in node.sibling ~= nil
@@ -302,20 +286,11 @@ if supportsMutation then
 		workInProgress.updateQueue = updatePayload
 		-- If the update payload indicates that there is a change or if there
 		-- is a new ref we mark this as an update. All the work is done in commitWork.
-		if updatePayload then
-			markUpdate(workInProgress)
-		end
+		if updatePayload then markUpdate(workInProgress) end
 	end
-	function updateHostText(
-		current: Fiber,
-		workInProgress: Fiber,
-		oldText: string,
-		newText: string
-	)
+	function updateHostText(current: Fiber, workInProgress: Fiber, oldText: string, newText: string)
 		-- If the text differs, mark it as an update. All the work in done in commitWork.
-		if oldText ~= newText then
-			markUpdate(workInProgress)
-		end
+		if oldText ~= newText then markUpdate(workInProgress) end
 	end
 elseif supportsPersistence then
 	-- Persistent host tree mode
@@ -726,10 +701,7 @@ local function bubbleProperties(completedWork: Fiber)
 
 	if not didBailout then
 		-- Bubble up the earliest expiration time.
-		if
-			enableProfilerTimer
-			and bit32.band(completedWork.mode, ProfileMode) ~= NoMode
-		then
+		if enableProfilerTimer and bit32.band(completedWork.mode, ProfileMode) ~= NoMode then
 			-- In profiling mode, resetChildExpirationTime is also used to reset
 			-- profiler durations.
 			local actualDuration = completedWork.actualDuration
@@ -737,8 +709,7 @@ local function bubbleProperties(completedWork: Fiber)
 
 			local child = completedWork.child
 			while child ~= nil do
-				newChildLanes =
-					mergeLanes(newChildLanes, mergeLanes(child.lanes, child.childLanes))
+				newChildLanes = mergeLanes(newChildLanes, mergeLanes(child.lanes, child.childLanes))
 
 				subtreeFlags = bit32.bor(subtreeFlags, child.subtreeFlags)
 				subtreeFlags = bit32.bor(subtreeFlags, child.flags)
@@ -766,8 +737,7 @@ local function bubbleProperties(completedWork: Fiber)
 				--   newChildLanes,
 				--   mergeLanes(child.lanes, child.childLanes)
 				-- )
-				newChildLanes =
-					bit32.bor(newChildLanes, bit32.bor(child.lanes, child.childLanes))
+				newChildLanes = bit32.bor(newChildLanes, bit32.bor(child.lanes, child.childLanes))
 
 				subtreeFlags = bit32.bor(subtreeFlags, child.subtreeFlags)
 				subtreeFlags = bit32.bor(subtreeFlags, child.flags)
@@ -785,27 +755,21 @@ local function bubbleProperties(completedWork: Fiber)
 		completedWork.subtreeFlags = bit32.bor(completedWork.subtreeFlags, subtreeFlags)
 	else
 		-- Bubble up the earliest expiration time.
-		if
-			enableProfilerTimer
-			and bit32.band(completedWork.mode, ProfileMode) ~= NoMode
-		then
+		if enableProfilerTimer and bit32.band(completedWork.mode, ProfileMode) ~= NoMode then
 			-- In profiling mode, resetChildExpirationTime is also used to reset
 			-- profiler durations.
 			local treeBaseDuration = completedWork.selfBaseDuration
 
 			local child = completedWork.child
 			while child ~= nil do
-				newChildLanes =
-					mergeLanes(newChildLanes, mergeLanes(child.lanes, child.childLanes))
+				newChildLanes = mergeLanes(newChildLanes, mergeLanes(child.lanes, child.childLanes))
 
 				-- "Static" flags share the lifetime of the fiber/hook they belong to,
 				-- so we should bubble those up even during a bailout. All the other
 				-- flags have a lifetime only of a single render + commit, so we should
 				-- ignore them.
-				subtreeFlags =
-					bit32.bor(subtreeFlags, bit32.band(child.subtreeFlags, StaticMask))
-				subtreeFlags =
-					bit32.bor(subtreeFlags, bit32.band(child.flags, StaticMask))
+				subtreeFlags = bit32.bor(subtreeFlags, bit32.band(child.subtreeFlags, StaticMask))
+				subtreeFlags = bit32.bor(subtreeFlags, bit32.band(child.flags, StaticMask))
 
 				treeBaseDuration += child.treeBaseDuration
 				child = child.sibling
@@ -820,17 +784,14 @@ local function bubbleProperties(completedWork: Fiber)
 				--   newChildLanes,
 				--   mergeLanes(child.lanes, child.childLanes)
 				-- )
-				newChildLanes =
-					bit32.bor(newChildLanes, bit32.bor(child.lanes, child.childLanes))
+				newChildLanes = bit32.bor(newChildLanes, bit32.bor(child.lanes, child.childLanes))
 
 				-- "Static" flags share the lifetime of the fiber/hook they belong to,
 				-- so we should bubble those up even during a bailout. All the other
 				-- flags have a lifetime only of a single render + commit, so we should
 				-- ignore them.
-				subtreeFlags =
-					bit32.bor(subtreeFlags, bit32.band(child.subtreeFlags, StaticMask))
-				subtreeFlags =
-					bit32.bor(subtreeFlags, bit32.band(child.flags, StaticMask))
+				subtreeFlags = bit32.bor(subtreeFlags, bit32.band(child.subtreeFlags, StaticMask))
+				subtreeFlags = bit32.bor(subtreeFlags, bit32.band(child.flags, StaticMask))
 
 				-- ROBLOX note: this was missed in the "new" version of the file in React 17, but is fixed in React 18
 				-- Update the return pointer so the tree is consistent. This is a code
@@ -856,11 +817,7 @@ end
 --   workInProgress: Fiber,
 --   renderLanes: Lanes
 -- ): Fiber | nil
-local function completeWork(
-	current,
-	workInProgress: Fiber,
-	renderLanes: Lanes
-): Fiber | nil
+local function completeWork(current, workInProgress: Fiber, renderLanes: Lanes): Fiber | nil
 	local newProps = workInProgress.pendingProps
 
 	if
@@ -878,9 +835,7 @@ local function completeWork(
 		return nil
 	elseif workInProgress.tag == ClassComponent then
 		local Component = workInProgress.type
-		if isLegacyContextProvider(Component) then
-			popLegacyContext(workInProgress)
-		end
+		if isLegacyContextProvider(Component) then popLegacyContext(workInProgress) end
 		bubbleProperties(workInProgress)
 		return nil
 	elseif workInProgress.tag == HostRoot then
@@ -918,17 +873,9 @@ local function completeWork(
 		local rootContainerInstance = getRootHostContainer()
 		local type = workInProgress.type
 		if current ~= nil and workInProgress.stateNode ~= nil then
-			updateHostComponent(
-				current,
-				workInProgress,
-				type,
-				newProps,
-				rootContainerInstance
-			)
+			updateHostComponent(current, workInProgress, type, newProps, rootContainerInstance)
 
-			if current.ref ~= workInProgress.ref then
-				markRef(workInProgress)
-			end
+			if current.ref ~= workInProgress.ref then markRef(workInProgress) end
 		else
 			if not newProps then
 				invariant(
@@ -1061,8 +1008,7 @@ local function completeWork(
 			-- contains layout effects, like we do for passive effects.
 			if
 				bit32.band(flags, bit32.bor(LayoutMask, Deletion)) ~= NoFlags
-				or bit32.band(subtreeFlags, bit32.bor(LayoutMask, Deletion))
-					~= NoFlags
+				or bit32.band(subtreeFlags, bit32.bor(LayoutMask, Deletion)) ~= NoFlags
 			then
 				newFlags = bit32.bor(newFlags, OnCommitFlag)
 			end
@@ -1097,9 +1043,7 @@ local function completeWork(
 							.. "This is probably a bug in React."
 					)
 					prepareToHydrateHostSuspenseInstance(workInProgress)
-					if enableSchedulerTracing then
-						markSpawnedWork(OffscreenLane)
-					end
+					if enableSchedulerTracing then markSpawnedWork(OffscreenLane) end
 					bubbleProperties(workInProgress)
 					if enableProfilerTimer then
 						if bit32.band(workInProgress.mode, ProfileMode) ~= NoMode then
@@ -1156,10 +1100,7 @@ local function completeWork(
 			-- Something suspended. Re-render with the fallback children.
 			workInProgress.lanes = renderLanes
 			-- Do not reset the effect list.
-			if
-				enableProfilerTimer
-				and bit32.band(workInProgress.mode, ProfileMode) ~= NoMode
-			then
+			if enableProfilerTimer and bit32.band(workInProgress.mode, ProfileMode) ~= NoMode then
 				transferActualDuration(workInProgress)
 			end
 			-- Don't bubble properties in this case.
@@ -1192,8 +1133,7 @@ local function completeWork(
 				-- and this is the first time we know we're going to suspend we
 				-- should be able to immediately restart from within throwException.
 				local hasInvisibleChildContext = current == nil
-					and workInProgress.memoizedProps.unstable_avoidThisFallback
-						~= true
+					and workInProgress.memoizedProps.unstable_avoidThisFallback ~= true
 				if
 					hasInvisibleChildContext
 					or hasSuspenseContext(
@@ -1258,9 +1198,7 @@ local function completeWork(
 	elseif workInProgress.tag == HostPortal then
 		popHostContainer(workInProgress)
 		updateHostContainer(current, workInProgress)
-		if current == nil then
-			preparePortalMount(workInProgress.stateNode.containerInfo)
-		end
+		if current == nil then preparePortalMount(workInProgress.stateNode.containerInfo) end
 		bubbleProperties(workInProgress)
 		return nil
 	elseif workInProgress.tag == ContextProvider then
@@ -1272,9 +1210,7 @@ local function completeWork(
 		-- Same as class component case. I put it down here so that the tags are
 		-- sequential to ensure this switch is compiled to a jump table.
 		local Component = workInProgress.type
-		if isLegacyContextProvider(Component) then
-			popLegacyContext(workInProgress)
-		end
+		if isLegacyContextProvider(Component) then popLegacyContext(workInProgress) end
 		bubbleProperties(workInProgress)
 		return nil
 	elseif workInProgress.tag == SuspenseListComponent then
@@ -1570,8 +1506,7 @@ local function completeWork(
 	--   return nil
 	-- end
 	elseif
-		workInProgress.tag == OffscreenComponent
-		or workInProgress.tag == LegacyHiddenComponent
+		workInProgress.tag == OffscreenComponent or workInProgress.tag == LegacyHiddenComponent
 	then
 		popRenderLanes(workInProgress)
 		local nextState: OffscreenState | nil = workInProgress.memoizedState
@@ -1592,10 +1527,7 @@ local function completeWork(
 		-- Don't bubble properties for hidden children.
 		if
 			not nextIsHidden
-			or includesSomeLane(
-				ReactFiberWorkLoop.subtreeRenderLanes,
-				OffscreenLane :: Lane
-			)
+			or includesSomeLane(ReactFiberWorkLoop.subtreeRenderLanes, OffscreenLane :: Lane)
 			or bit32.band(workInProgress.mode, ConcurrentMode) == NoMode
 		then
 			bubbleProperties(workInProgress)

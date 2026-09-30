@@ -49,24 +49,18 @@ end
 
 -- Create a mark on React initialization
 if enableSchedulingProfiler then
-	if supportsUserTiming then
-		performance.mark("--react-init-" .. tostring(ReactVersion))
-	end
+	if supportsUserTiming then performance.mark("--react-init-" .. tostring(ReactVersion)) end
 end
 
 exports.markCommitStarted = function(lanes: Lanes): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--commit-start-" .. formatLanes(lanes))
-		end
+		if supportsUserTiming then performance.mark("--commit-start-" .. formatLanes(lanes)) end
 	end
 end
 
 exports.markCommitStopped = function(): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--commit-stop")
-		end
+		if supportsUserTiming then performance.mark("--commit-stop") end
 	end
 end
 
@@ -90,17 +84,11 @@ exports.markComponentSuspended = function(fiber: Fiber, wakeable: Wakeable): ()
 			local id = getWakeableID(wakeable)
 			local componentName = getComponentName(fiber.type) or "Unknown"
 			-- TODO Add component stack id
-			performance.mark(
-				"--suspense-suspend-" .. tostring(id) .. "-" .. componentName
-			)
+			performance.mark("--suspense-suspend-" .. tostring(id) .. "-" .. componentName)
 			wakeable:andThen(function()
-				performance.mark(
-					"--suspense-resolved-" .. tostring(id) .. "-" .. componentName
-				)
+				performance.mark("--suspense-resolved-" .. tostring(id) .. "-" .. componentName)
 			end, function()
-				performance.mark(
-					"--suspense-rejected-" .. tostring(id) .. "-" .. componentName
-				)
+				performance.mark("--suspense-rejected-" .. tostring(id) .. "-" .. componentName)
 			end)
 		end
 	end
@@ -116,9 +104,7 @@ end
 
 exports.markLayoutEffectsStopped = function(): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--layout-effects-stop")
-		end
+		if supportsUserTiming then performance.mark("--layout-effects-stop") end
 	end
 end
 
@@ -132,41 +118,31 @@ end
 
 exports.markPassiveEffectsStopped = function(): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--passive-effects-stop")
-		end
+		if supportsUserTiming then performance.mark("--passive-effects-stop") end
 	end
 end
 
 exports.markRenderStarted = function(lanes: Lanes): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--render-start-" .. formatLanes(lanes))
-		end
+		if supportsUserTiming then performance.mark("--render-start-" .. formatLanes(lanes)) end
 	end
 end
 
 exports.markRenderYielded = function(): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--render-yield")
-		end
+		if supportsUserTiming then performance.mark("--render-yield") end
 	end
 end
 
 exports.markRenderStopped = function(): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--render-stop")
-		end
+		if supportsUserTiming then performance.mark("--render-stop") end
 	end
 end
 
 exports.markRenderScheduled = function(lane: Lane): ()
 	if enableSchedulingProfiler then
-		if supportsUserTiming then
-			performance.mark("--schedule-render-" .. formatLanes(lane))
-		end
+		if supportsUserTiming then performance.mark("--schedule-render-" .. formatLanes(lane)) end
 	end
 end
 

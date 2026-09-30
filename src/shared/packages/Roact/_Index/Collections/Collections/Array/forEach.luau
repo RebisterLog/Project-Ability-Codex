@@ -29,9 +29,7 @@ return function<T, U>(t: Array<T>, callback: callbackFn<T> | callbackFnWithThisA
 		if typeof(t) ~= "table" then
 			error(string.format("Array.forEach called on %s", typeof(t)))
 		end
-		if typeof(callback) ~= "function" then
-			error("callback is not a function")
-		end
+		if typeof(callback) ~= "function" then error("callback is not a function") end
 	end
 
 	local len = #t

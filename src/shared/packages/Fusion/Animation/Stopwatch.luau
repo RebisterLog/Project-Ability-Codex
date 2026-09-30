@@ -15,8 +15,8 @@ local Types = require(Package.Types)
 -- Memory
 local checkLifetime = require(Package.Memory.checkLifetime)
 -- Graph
-local depend = require(Package.Graph.depend)
 local change = require(Package.Graph.change)
+local depend = require(Package.Graph.depend)
 -- State
 local peek = require(Package.State.peek)
 -- Utility
@@ -25,13 +25,13 @@ local nicknames = require(Package.Utility.nicknames)
 export type Stopwatch = Types.StateObject<number> & {
 	zero: (Stopwatch) -> (),
 	pause: (Stopwatch) -> (),
-	unpause: (Stopwatch) -> ()
+	unpause: (Stopwatch) -> (),
 }
 
 type Self = Stopwatch & {
 	_measureTimeSince: number,
 	_playing: boolean,
-	_timer: Types.StateObject<number>
+	_timer: Types.StateObject<number>,
 }
 
 local class = {}
@@ -39,29 +39,23 @@ class.type = "State"
 class.kind = "Stopwatch"
 class.timeliness = "lazy"
 
-local METATABLE = table.freeze {__index = class}
+local METATABLE = table.freeze({ __index = class })
 
-local function Stopwatch(
-	scope: Types.Scope<unknown>,
-	timer: Types.StateObject<number>
-): Stopwatch
+local function Stopwatch(scope: Types.Scope<unknown>, timer: Types.StateObject<number>): Stopwatch
 	local createdAt = os.clock()
-	local self: Self = setmetatable(
-		{
-			awake = true,
-			createdAt = createdAt,
-			dependencySet = {},
-			dependentSet = {},
-			lastChange = nil,
-			scope = scope,
-			validity = "invalid",
-			_EXTREMELY_DANGEROUS_usedAsValue = 0,
-			_measureTimeSince = 0, -- this should be set on unpause
-			_playing = false,
-			_timer = timer
-		}, 
-		METATABLE
-	) :: any
+	local self: Self = setmetatable({
+		awake = true,
+		createdAt = createdAt,
+		dependencySet = {},
+		dependentSet = {},
+		lastChange = nil,
+		scope = scope,
+		validity = "invalid",
+		_EXTREMELY_DANGEROUS_usedAsValue = 0,
+		_measureTimeSince = 0, -- this should be set on unpause
+		_playing = false,
+		_timer = timer,
+	}, METATABLE) :: any
 	local destroy = function()
 		self.scope = nil
 	end
@@ -70,17 +64,18 @@ local function Stopwatch(
 	table.insert(scope, destroy)
 
 	checkLifetime.bOutlivesA(
-		scope, self.oldestTask,
-		timer.scope, timer.oldestTask,
-		checkLifetime.formatters.parameter, "timer"
+		scope,
+		self.oldestTask,
+		timer.scope,
+		timer.oldestTask,
+		checkLifetime.formatters.parameter,
+		"timer"
 	)
 	depend(self, timer)
 	return self
 end
 
-function class.zero(
-	self: Self
-): ()
+function class.zero(self: Self): ()
 	local newTimepoint = peek(self._timer)
 	if newTimepoint ~= self._measureTimeSince then
 		self._measureTimeSince = newTimepoint
@@ -89,18 +84,14 @@ function class.zero(
 	end
 end
 
-function class.pause(
-	self: Self
-): ()
+function class.pause(self: Self): ()
 	if self._playing == true then
 		self._playing = false
 		change(self)
 	end
 end
 
-function class.unpause(
-	self: Self
-): ()
+function class.unpause(self: Self): ()
 	if self._playing == false then
 		self._playing = true
 		self._measureTimeSince = peek(self._timer) - self._EXTREMELY_DANGEROUS_usedAsValue
@@ -108,9 +99,7 @@ function class.unpause(
 	end
 end
 
-function class._evaluate(
-	self: Self
-): boolean
+function class._evaluate(self: Self): boolean
 	if self._playing then
 		depend(self, self._timer)
 		local currentTime = peek(self._timer)
@@ -121,7 +110,6 @@ function class._evaluate(
 	else
 		return false
 	end
-	
 end
 
 table.freeze(class)

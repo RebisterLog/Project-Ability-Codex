@@ -12,7 +12,7 @@ local TerminalService = Crane:CreateService({
 
 function TerminalService:onStart()
 	self.ConfigService = Crane:GetService("ConfigService")
-	
+
 	Cmdr:RegisterDefaultCommands()
 	Cmdr.Registry:RegisterCommandsIn(Configuration.TerminalCommandsFolder.Value)
 	Cmdr:RegisterHooksIn(Configuration.TerminalHooksFolder.Value)

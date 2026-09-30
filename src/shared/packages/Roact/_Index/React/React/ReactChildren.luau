@@ -110,10 +110,7 @@ local function mapIntoArray(
 			invokeCallback = true
 		elseif type == "table" then
 			local childrenType = (children :: any)["$$typeof"]
-			if
-				childrenType == REACT_ELEMENT_TYPE
-				or childrenType == REACT_PORTAL_TYPE
-			then
+			if childrenType == REACT_ELEMENT_TYPE or childrenType == REACT_PORTAL_TYPE then
 				invokeCallback = true
 			end
 		end
@@ -124,14 +121,10 @@ local function mapIntoArray(
 		local mappedChild = callback(child)
 		-- If it's the only child, treat the name as if it was wrapped in an array
 		-- so that it's consistent if the number of children grows:
-		local childKey = if nameSoFar == ""
-			then SEPARATOR .. getElementKey(child, 1)
-			else nameSoFar
+		local childKey = if nameSoFar == "" then SEPARATOR .. getElementKey(child, 1) else nameSoFar
 		if Array.isArray(mappedChild) then
 			local escapedChildKey = ""
-			if childKey ~= nil then
-				escapedChildKey = escapeUserProvidedKey(childKey) .. "/"
-			end
+			if childKey ~= nil then escapedChildKey = escapeUserProvidedKey(childKey) .. "/" end
 			mapIntoArray(mappedChild, array, escapedChildKey, "", function(c)
 				return c
 			end)
@@ -166,9 +159,7 @@ local function mapIntoArray(
 	local child
 	local nextName
 	local subtreeCount = 0 -- Count of children found in the current subtree.
-	local nextNamePrefix = if nameSoFar == ""
-		then SEPARATOR
-		else nameSoFar .. SUBSEPARATOR
+	local nextNamePrefix = if nameSoFar == "" then SEPARATOR else nameSoFar .. SUBSEPARATOR
 
 	if Array.isArray(children) then
 		-- ROBLOX FIXME: Luau doesn't recognize this as non-nil without the `or {}`
@@ -206,13 +197,7 @@ local function mapIntoArray(
 				child = step.value
 				nextName = nextNamePrefix .. getElementKey(child, ii)
 				ii += 1
-				subtreeCount += mapIntoArray(
-					child,
-					array,
-					escapedPrefix,
-					nextName,
-					callback
-				)
+				subtreeCount += mapIntoArray(child, array, escapedPrefix, nextName, callback)
 				step = iterator.next()
 			end
 			--[[ ROBLOX DEVIATION: this condition will never be met with Roact iterator logic.
@@ -255,9 +240,7 @@ local function mapChildren(
 	func: MapFunc,
 	context: any
 ): Array<React_Node>?
-	if children == nil then
-		return nil
-	end
+	if children == nil then return nil end
 	local result = {}
 	local count = 1
 	mapIntoArray(children, result, "", "", function(child)

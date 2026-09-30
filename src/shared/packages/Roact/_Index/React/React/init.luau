@@ -24,8 +24,7 @@ local ReactLazy = require(script.ReactLazy)
 export type LazyComponent<T, P> = ReactLazy.LazyComponent<T, P>
 
 local SharedModule = require(Packages.Shared)
-export type StatelessFunctionalComponent<P> =
-	SharedModule.React_StatelessFunctionalComponent<P>
+export type StatelessFunctionalComponent<P> = SharedModule.React_StatelessFunctionalComponent<P>
 -- ROBLOX deviation START: we use the definitely-typed version of this, which appears to work for flowtype in VirtualizedList, etc
 export type ComponentType<P> = ComponentClass<P> | FC<P>
 -- ROBLOX deviation END
@@ -63,10 +62,7 @@ export type ReactNode = SharedModule.React_Node
 -- ROBLOX deviation END
 
 -- ROBLOX deviation START: export React types that are flowtype built-ins and used by VirtualizedList, etc
-export type React_AbstractComponent<Props, Instance> = SharedModule.React_Component<
-	Props,
-	Instance
->
+export type React_AbstractComponent<Props, Instance> = SharedModule.React_Component<Props, Instance>
 export type React_Component<Props, State> = SharedModule.React_Component<Props, State>
 export type React_ComponentType<P> = SharedModule.React_ComponentType<P>
 export type React_Context<T> = SharedModule.React_Context<T>

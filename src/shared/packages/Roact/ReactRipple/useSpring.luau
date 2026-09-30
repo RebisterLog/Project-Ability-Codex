@@ -6,7 +6,10 @@ type Animatable = Ripple.Animatable
 type Spring<T> = Ripple.Spring<T>
 type SpringOptions<T> = Ripple.SpringOptions<T>
 
-local function useSpring<T>(initialValue: T, initialOptions: SpringOptions<T>?): (Binding<T>, Spring<T>)
+local function useSpring<T>(
+	initialValue: T,
+	initialOptions: SpringOptions<T>?
+): (Binding<T>, Spring<T>)
 	local value, setValue = React.useBinding(initialValue)
 	local springRef = React.useRef((nil :: any) :: Spring<T>)
 
@@ -17,9 +20,7 @@ local function useSpring<T>(initialValue: T, initialOptions: SpringOptions<T>?):
 	React.useEffect(function()
 		local disconnect = springRef.current:onChange(setValue)
 
-		if not initialOptions or initialOptions.start ~= false then
-			springRef.current:start()
-		end
+		if not initialOptions or initialOptions.start ~= false then springRef.current:start() end
 
 		return function()
 			springRef.current:stop()

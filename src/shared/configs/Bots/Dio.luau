@@ -11,40 +11,40 @@ local Dio: BotsCharacters.BotCharacterConfig = {
 	Skills = {
 		["Punch"] = {
 			Distance = 8,
-			
+
 			RejectedConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
-			}
+			},
 		},
-		
+
 		["Block"] = {
 			RequiredConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
-			
+
 			RejectedConditions = {
 				"TARGET_IGNORE_BLOCK",
 			},
 		},
-		
+
 		["Grab"] = {
 			Distance = 6,
-			
+
 			RequiredConditions = {
 				"TARGET_BLOCKING",
 			},
-			
+
 			RejectedConditions = {
 				--"TARGET_RAGDOLLED",
 				--"TARGET_ATTACKING",
 				--"TARGET_ARMORED",
-			}
+			},
 		},
 	},
-	
+
 	Combos = {
 		{
 			"Punch",
@@ -52,7 +52,7 @@ local Dio: BotsCharacters.BotCharacterConfig = {
 			"Punch",
 			"Punch",
 		},
-	}
+	},
 }
 
 return Dio

@@ -78,8 +78,7 @@ exports.logCapturedError = function(boundary: Fiber, errorInfo: CapturedValue<an
 					.. tostring(componentName)
 					.. "> component:"
 			else
-				componentNameMessage =
-					"The above error occurred in one of your React components:"
+				componentNameMessage = "The above error occurred in one of your React components:"
 			end
 
 			local errorBoundaryMessage
