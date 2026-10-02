@@ -15,3 +15,35 @@ rojo serve
 ```
 
 For more help, check out [the Rojo documentation](https://rojo.space/docs).
+
+## Tests
+
+The SkillConstructor core and its tooling have no Roblox dependencies, so every suite
+runs under `lune`:
+
+```bash
+lune run tools/run-tests.luau
+```
+
+Individual suites:
+
+```bash
+lune run src/shared/packages/SkillConstructor/tests/structural.luau
+lune run src/shared/packages/SkillConstructor/tests/emitter.luau
+lune run src/shared/packages/SkillConstructor/tests/against-spec.luau
+lune run tools/tests/json.luau
+```
+
+`against-spec` covers the `Spec` rules through pure fixtures in both Lune and Studio.
+In Studio it additionally exercises the `bot-characters`-backed wrapper, which cannot be
+covered by fixtures.
+
+### Generating a skill
+
+```bash
+lune run tools/generate-skill.luau examples/skills/FirePunch.json --stdout
+```
+
+Omit `--stdout` to write `src/server/skills/<Id>.luau`; `--force` overwrites and
+`--no-stylua` skips formatting. The tool needs `stylua` on `PATH` unless `--no-stylua`
+is passed.

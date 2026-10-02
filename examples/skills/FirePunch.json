@@ -1,0 +1,104 @@
+{
+  "Id": "FirePunch",
+  "DisplayName": "Fire Punch",
+  "Cooldown": 3,
+  "AssetSource": "Spec",
+  "SkillCharacters": ["Hit"],
+  "Metadata": {
+    "Version": 1
+  },
+  "AnimationSlots": [
+    {
+      "Id": "windup",
+      "Name": "Windup",
+      "AnimationId": "Punch",
+      "Speed": 1.2,
+      "FadeTime": 0.1
+    },
+    {
+      "Id": "strike",
+      "Name": "Strike",
+      "AnimationId": "Punch",
+      "Speed": 1.6
+    }
+  ],
+  "Blocks": [
+    {
+      "Id": "blk_play_windup",
+      "Type": "PlayAnimation",
+      "StartFrame": 0,
+      "Properties": {
+        "Slot": "windup"
+      }
+    },
+    {
+      "Id": "blk_particle",
+      "Type": "EmitParticle",
+      "StartFrame": 5,
+      "Properties": {
+        "Particle": "Spark"
+      }
+    },
+    {
+      "Id": "blk_hitbox",
+      "Type": "Hitbox",
+      "StartFrame": 6,
+      "Properties": {
+        "Origin": {
+          "$": "CF",
+          "px": 0,
+          "py": 0,
+          "pz": -3,
+          "rx": 0,
+          "ry": 0,
+          "rz": 0
+        },
+        "Size": {
+          "$": "V3",
+          "x": 7,
+          "y": 7,
+          "z": 7
+        },
+        "MaxTargets": 1
+      }
+    },
+    {
+      "Id": "blk_attack",
+      "Type": "ProcessAttack",
+      "StartFrame": 6,
+      "Properties": {
+        "Damage": 15,
+        "Stun.Duration": 0.7,
+        "Stun.Priority": "Medium"
+      },
+      "Children": {
+        "OnSuccess": [
+          {
+            "Id": "blk_sound",
+            "Type": "PlaySound",
+            "StartFrame": 0,
+            "Properties": {
+              "Sound": "Hit"
+            }
+          }
+        ],
+        "OnBlocked": [
+          {
+            "Id": "blk_iframes",
+            "Type": "SetIFrames",
+            "StartFrame": 0,
+            "Properties": {
+              "Level": "True"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "Id": "blk_end",
+      "Type": "Wait",
+      "StartFrame": 18,
+      "Properties": {}
+    }
+  ]
+}
