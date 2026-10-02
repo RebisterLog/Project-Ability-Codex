@@ -217,23 +217,31 @@ local hitboxPos = data.Info.Origin and data.Info.Origin.Position
 ### Слои
 
 ```
-src/shared/configs/SkillConstructor/
+src/shared/packages/SkillConstructor/
 ├── init.luau            реэкспорт всего
 ├── types.luau           SkillBlueprint, PlacedBlock, AnimationSlot, BlockDefinition
-├── registry.luau        27 блоков: свойства, CleanupStrategy, ChildrenSlots
+├── registry.luau        26 блоков: свойства, CleanupStrategy, ChildrenSlots
 ├── codec.luau           blueprint ↔ JSON (type-tag для Vector3/CFrame/Color3)
-├── validator.luau       validateStructural + validateAgainstSpec
+├── validator.luau       validateStructural + validateAgainstSpec + checkAgainstSpec
+├── tests/
+│   ├── structural.luau  проверки 1–20 и W1–W6, dual-environment
+│   ├── against-spec.luau проверки 21–23, 25–27 и W7, dual-environment
+│   └── emitter.luau      генерация: каркас модуля, Frames, Preview, Errors
 └── emitter.luau         blueprint(JSON) → Luau-исходник + Frames-превью
 
 src/client/ui/components/SkillConstructor/
 ├── init.luau            корневой компонент
+
+├── Theme.luau           цвета, шрифт, отступы, анимации
+├── Store.luau           состояние редактора и мутации blueprint
+├── Command.luau         определение Cmdr-команды и переход на страницу
 ├── BlockPalette.luau    палитра блоков по категориям
 ├── Timeline.luau        линейка, дорожка, playhead, zoom
 ├── BlockInstance.luau   плашка блока с вложенностью
 ├── PropertiesPanel.luau  динамическая форма свойств
 ├── SkillSettings.luau   DisplayName, Cooldown, AssetSource, SkillCharacters
 ├── AnimationSlotsManager.luau
-├── PreviewTab.luau      скомпилированный Frames + скраббер + .luau
+├── PreviewTab.luau      Frames + скраббер + .luau + проверки против спеки
 ├── Toolbar.luau
 └── ContextMenu.luau
 
@@ -456,7 +464,7 @@ CombatService:CreateGrab(character, Target, {
 
 Это покрывает `Grab.luau:127-143` без `Instance` в данных. `BindMode = "None"` → `Victim` без `Bind` (захват без физической привязки).
 
-### VFX (7)
+### VFX (6)
 
 Все через `VFXService:StartEffect` → `Cleanup: "VFXStop"`, кроме `StopAnimation` (`None`).
 
@@ -464,13 +472,13 @@ CombatService:CreateGrab(character, Target, {
 |---|---|---|---|
 | `PlayAnimation` | `Slot` (ссылка на `AnimationSlot`), `Speed` | `effects/Animation.luau:32-43` | вход — `{ Animation, Speed }` |
 | `StopAnimation` | `Slot`, `FadeTime` | `effects/Animation.luau:45-53` | останавливает явно, `Cleanup: "None"` |
-| `PlayDashAnimation` | `Direction` (enum `Forward`/`Back`/`Left`/`Right`), `SpecId`, `SkinId` | `effects/Dash.luau:42-60` | Только анимация из `Skins[SpecId][SkinId].Animations["Dash"..Dir]`. Движения нет — в `Dash.luau:72-79` оно руками через `BodyVelocity` |
+
 | `PlaySound` | `Sound` (string), `Volume`, `MaxDistance`, `MinDistance` | `effects/Sound.luau:23-51` | |
 | `EmitParticle` | `Particle` (string), `Origin` (`Caster`/`Target`/`CFrame`), `Offset` (`CFrame`), `UseForge` (bool) | `effects/EmitParticle.luau:27-92` | `UUID` **не обязателен** (`:55` `if Data.UUID then`) — нужен только для `onStop` (`:88`). Эмиттер генерирует его всегда, чтобы блок можно было останавливать. `Particle` резолвится в `Assets.Models[...]` → `BasePart` |
 | `EmitFolder` | `Folder` (string), `Origin` (`Caster`/`Target`) | `effects/EmitFolder.luau:8-46` | `uuid: string?` для `onStop` — генерируется автоматически |
 | `Highlight` | `FillColor`, `OutlineColor`, `FillTransparency`, `OutlineTransparency`, `Lifetime` | `effects/Highlight.luau:5-59` | Поле называется **`Lifetime`**, не `Duration` |
 
-Исключены: `Barrage` (`onStart(character)` без параметров, `effects/Barrage.luau:4-11`), `Crash` (`onStart(object: Model, projectile: Model)`, `effects/Crash.luau:10`), `ShowHitbox` (дублирует `Hitbox.Debug`, `effects/Hitbox.luau:7-27`).
+Исключены: `PlayDashAnimation` (`Skins[SpecId][SkinId]` плюс ручной `BodyVelocity` в `Dash.luau:72-79` — вне модели данных), `Barrage` (`onStart(character)` без параметров, `effects/Barrage.luau:4-11`), `Crash` (`onStart(object: Model, projectile: Model)`, `effects/Crash.luau:10`), `ShowHitbox` (дублирует `Hitbox.Debug`, `effects/Hitbox.luau:7-27`).
 
 ### Flow (4)
 
@@ -498,16 +506,16 @@ CombatService:CreateGrab(character, Target, {
 | Damage | 1 |
 | State | 10 |
 | Combat | 2 |
-| VFX | 7 |
+| VFX | 6 |
 | Flow | 4 |
 | Target | 2 |
-| **Итого** | **27** |
+| **Итого** | **26** |
 
 ---
 
 ## 6. `AttackInfo` — справочник формы, не поле blueprint
 
-`AttackInfo` **не хранится в blueprint и не попадает в сгенерированный модуль как отдельная таблица**. Причина: `self.Data.AttackInfo` читают только `Grab.luau:74` и `TEMPLATE.luau:57` — то есть тело самого скилла. Если эмиттер пишет `AttackInfo = {...}` в модуль и блоки его не читают (блоки используют только явные значения), таблица мертва.
+`AttackInfo` **не хранится в blueprint** — пользователь не заполняет его руками. Но в сгенерированном модуле поле **есть**: `types.SkillData.AttackInfo` читают `Grab.luau:74` и `TEMPLATE.luau:57`, и без него модуль не проходит тип-чекер. Причина: `self.Data.AttackInfo` читают только `Grab.luau:74` и `TEMPLATE.luau:57` — то есть тело самого скилла. Эмиттер собирает шапку из `ProcessAttack`: **первое непустое значение поля побеждает**, потому что два разных удара честно не сводятся к одному `AttackInfo`. Если непустых значений нет — печатается `AttackInfo = {}`. `Info` внутри тела атаки, наоборот, собирается только из самого блока: общей таблицы у вызовов нет (§7).
 
 Вместо этого справочник задаёт **форму `Info`**, которую собирает `ProcessAttack`, и служит источником значений по умолчанию в UI.
 
@@ -914,12 +922,14 @@ return Skill
 | Тип | Формат | Плейсхолдер в Luau-исходнике |
 |---|---|---|
 | `Vector3` | `{ "$": "V3", "x", "y", "z" }` | `Vector3.new(x, y, z)` |
-| `CFrame` | `{ "$": "CF", "px", "py", "pz", "rx", "ry", "rz" }` | `CFrame.new(px, py, pz, rx, ry, rz)` |
+| `CFrame` | `{ "$": "CF", "px", "py", "pz", "rx", "ry", "rz" }` | `CFrame.new(px, py, pz) * CFrame.fromEulerAnglesYXZ(rx, ry, rz)` |
 | `Color3` | `{ "$": "C3", "r", "g", "b" }` | `Color3.fromRGB(r * 255, g * 255, b * 255)` |
 
 Сериализуются нативно, без tag: `string`, `number`, `boolean`, `nil`/`null`, вложенные массивы и объекты.
 
 Tag для `Instance` / `BasePart` **не требуется** — проблема `CreateGrab.Bind` решена через `BindMode` (§5, Combat).
+
+`rx`, `ry`, `rz` — радианы в порядке `YXZ`, как у `CFrame:ToOrientation()`. Пересборка через `CFrame.fromEulerAnglesYXZ` обязательна: у `CFrame.new` нет перегрузки с шестью аргументами, а прямой `CFrame.Angles(rx, ry, rz)` дал бы другой порядок осей.
 
 `enum`-свойства хранятся **строкой** (`"Medium"`, `"RootToRoot"`, `"Heavy"`), а не числом — чтобы добавление нового значения в `Enums` не ломало старые JSON.
 
@@ -964,16 +974,31 @@ Tag для `Instance` / `BasePart` **не требуется** — пробле�
 
 `Block` **не** проверяется на полноту — частичные поля разрешены (§2.7), UI резолвит эффективные значения.
 
+#### Реализация кодов
+
+Кодов `E` меньше, чем строк в таблице: часть проверок объединена, чтобы один дефект не показывался пользователю несколько раз.
+
+| Code | Что покрывает | Решение |
+|---|---|---|
+| E14 | `Repeat` без тела и `EndFrame <= StartFrame` | одно сообщение со списком причин; `Repeat` исключён из E5 и E13, иначе сломанный `Repeat` давал бы три почти одинаковые ошибки. `EndFrame` по типам разрешён только `Repeat` |
+| E18 | проверки 18 и 19, а заодно `BindMode`, `Direction` и любой другой `enum` | общее правило «значение ∈ `Options» вместо трёх почти одинаковых проверок |
+| E19 | проверка 20 | без изменений |
+| E20 | соответствие значения объявленному типу свойства | добавлена сверх таблицы: мусор в типе иначе проскакивает до эмиттера и падает в сгенерированном файле. Принимает и type-tag после `codec.decode`, и живой Roblox-тип |
+
+Требуемым считается и явно заданное значение, и непустой `Default` — поэтому `Hitbox.Origin` с `Default = CF()` проверку 8 проходит.
+
+W7 срабатывает только когда `Assets.Stand` отсутствует: именно тогда `Punch.luau:37` падает. Если таблица есть, но в ней не хватает ключа, этот ключ уже не найден в E23/E25/E26/E27 — второй код про то же самое не нужен.
+
 ### `validateAgainstSpec(blueprint, specData) -> { errors, warnings }`
 
-Требует `Spec.Data.Assets` по `AssetSource`. Вызывается только в `PreviewTab` в игре.
+Требует `Spec.Data.Assets` по `AssetSource`. Вызывается только в `PreviewTab` в игре. Правила живут в `checkAgainstSpec(blueprint, context)`, а эта функция — обёртка: она достаёт `bot-characters.SkillCharacters` и вызывает ядро. Правила 21–23, 25–27 и W7: номер 24 выбыл вместе с `PlayDashAnimation`, поэтому нумерация кодов имеет пропуск и не переименовывается.
 
 | # | Проверка | Ошибка |
 |---|---|---|
 | 21 | `SkillCharacters` непуст, если есть `Hitbox` | `Hitbox без SkillCharacters: BotService упадёт (Bot.luau:198)` |
 | 22 | каждый тег ∈ `BotsCharacters.SkillCharacter` | `Неизвестный тег: <V>` |
 | 23 | `PlayAnimation.Slot.AnimationId` ∈ `Assets.Animations` | `Анимация <K> не найдена` |
-| 24 | `PlayDashAnimation.Direction` разрешается в `Skins` | `Dash-анимация для <SpecId>/<SkinId>/<Dir> не найдена` |
+
 | 25 | `PlaySound.Sound` ∈ `Assets.Sounds` | `Звук <K> не найдена в Assets` |
 | 26 | `EmitParticle.Particle` ∈ `Assets.Models` | `Модель <K> не найдена в Assets` |
 | 27 | `EmitFolder.Folder` ∈ `Assets.Models` | `Папка <K> не найдена в Assets` |
@@ -1026,14 +1051,14 @@ W1-W4 — **предупреждения, а не запреты**: пользо
 | Аспект | Требование |
 |---|---|
 | Framework | Fusion, как в `src/client/ui/main.luau` |
-| Пропсы | `Fusion.scoped(Fusion.child(...))`, без ручного `Instance.new` |
+| Пропсы | `Fusion.Children` со словарём, без ручного `Instance.new` |
 | Реактивность | Состояние — в Fusion state; обращений к GUI-инстансам извне нет |
 | Тема | Тёмная; один `Theme`-модуль, цвета не хардкодятся в компонентах |
-| Шрифт | `Enum.Font.GothamSSm` |
+| Шрифт | `Enum.Font.Gotham` (см. оговорку в §12) |
 | Скругления | 6px блокам, 4px кнопкам |
 | Отступы | кратно 4px; вложенность — 16px на уровень |
 | Анимации | 0.15s, `Enum.EasingStyle.Quad` |
-| Cleanup | `scope:OnCleanup` на соединения; ручных `:Destroy()` нет |
+| Cleanup | задачи добавляются в scope (`table.insert(scope, connection)`), ручных `:Destroy()` нет |
 | Палитра | сортировка по категориям, поиск через существующий `ui/utils/SearchTextMatch.luau` |
 | Timeline | drag через `UserInputService`; зум 1-8 px/кадр; горизонтальный `ScrollingFrame` |
 | Доступность | зоны клика ≥ 28px, `AutoButtonColor`, `Selectable` на списках |
@@ -1097,21 +1122,30 @@ Roblox не даёт доступа к clipboard из игры, поэтому:
 
 ## 11. `tools/generate-skill.luau`
 
-Запускается из корня репозитория:
+Запускается из корня репозитория; можно и из любого каталога — корень берётся от расположения самого CLI:
 
 ```
-lune tools/generate-skill.luau path/to/skill.json
+lune run tools/generate-skill.luau path/to/skill.json [--force] [--stdout] [--no-stylua]
 ```
 
-Результат: `src/server/skills/<Id>.luau` + отчёт на stdout.
+| Флаг | Смысл |
+| --- | --- |
+| `-f`, `--force` | перезаписать существующий `src/server/skills/<Id>.luau` |
+| `--stdout` | напечатать исходник модуля, не записывая файл и не форматируя |
+| `--no-stylua` | не запускать `stylua` после записи |
+| `-h`, `--help` | справка по всем флагам |
+
+Результат: `src/server/skills/<Id>.luau` и отчёт на stdout. Код выхода `0` — модуль сгенерирован, `1` — ошибка ввода или валидации.
 
 Требования:
 - **не требует Roblox API** — работает поверх JSON-формы; `emitter`, `registry` и `codec` не обращаются к Roblox-типам (§3, §8)
-- читает файл, `json.decode` (для `lune`)
-- `Id` → имя файла; перед записью проверяет коллизию и предупреждает
-- прогоняет **только** `validateStructural`. Проверки 21-27 требуют `Spec`, недоступного в CLI, — они выполняются только в `PreviewTab` в игре
-- ненулевой код выхода при **структурных** ошибках; предупреждения W1-W7 не блокируют генерацию, но печатаются
-- результат соответствует `stylua.toml`; `stylua` прогоняется вручную
+- читает файл и разбирает JSON собственным парсером: `@lune/json` удалён из Lune начиная с 0.9, а `@lune/serde` знает только свой формат, поэтому CLI не зависит от версии рантайма. `null` разворачивается в отсутствующий ключ — так же, как `codec.encode` выбрасывает `nil`
+- `Id` → имя файла: коллизия без `--force` это ошибка, символы, недопустимые в имени файла Windows, запрещены
+- прогоняет **только** `validateStructural`. Проверки 21–23, 25–27 и W7 требуют `Spec`, недоступного в CLI, — они выполняются только в `PreviewTab` в игре
+- ненулевой код выхода при **структурных** ошибках и при `Errors` эмиттера, целевой файл при этом не трогается. Предупреждения W1–W7 не блокируют генерацию, но печатаются
+- `stylua` запускается автоматически, если доступен; его отсутствие или ненулевой код выхода не меняют результат. Исходник эмиттера не отформатирован — отступы вложенных секций и разбиение длинных вызовов делает `stylua`, поэтому `--stdout` печатает неформатированный текст
+- вложенные секции свойств (`Stun = { Duration = ... }`) и плоские имена (`Stun.Duration`) равнозначны: `validateStructural` разворачивает вложенность в плоские ключи, `emitter` понимает обе формы
+- итоговый файл соответствует `stylua.toml`
 
 ---
 
@@ -1120,7 +1154,7 @@ lune tools/generate-skill.luau path/to/skill.json
 ### Фаза 1 — Типы и реестр (4-5 ч)
 
 1. `types.luau` — типы из §4
-2. `registry.luau` — 27 блоков из §5, цвета как hex-строки, без Roblox-глобалов на этапе загрузки
+2. `registry.luau` — 26 блоков из §5, цвета как hex-строки, без Roblox-глобалов на этапе загрузки
 
 Требование к каждому блоку: `Id`, `DisplayName`, `Category`, `Color`, `Properties` с типами и дефолтами, `Cleanup`, `ChildrenSlots`, `RequiredSlots`, `Description`. Дефолты берутся из проверенных источников (§5), а не выдумываются.
 
@@ -1132,7 +1166,17 @@ lune tools/generate-skill.luau path/to/skill.json
 
 ### Фаза 3 — Validator (2-3 ч)
 
-`validateStructural` (20 проверок) + `validateAgainstSpec` (7) + 7 предупреждений (§9). Обе возвращают `{ errors, warnings }` с путями до блока.
+`validateStructural` (20 проверок) + `validateAgainstSpec` (6) + 7 предупреждений (§9). Обе возвращают `{ errors, warnings }` с путями до блока.
+
+Плюс `checkAgainstSpec(blueprint, context)` — те же правила 21–23, 25–27 и W7, но с уже готовым `specData` / `validTags`. `validateAgainstSpec` остаётся обёрткой над ней: в `lune` `require` не умеет брать модуль по инстансу, поэтому правила не должны быть связаны с тем, кто их достал. Постоянные тесты лежат в `src/shared/packages/SkillConstructor/tests/` и запускаются в обеих средах:
+
+```
+lune run src/shared/packages/SkillConstructor/tests/structural.luau
+lune run src/shared/packages/SkillConstructor/tests/against-spec.luau
+lune run src/shared/packages/SkillConstructor/tests/emitter.luau
+```
+
+В Studio те же модули требуются через `require(ReplicatedStorage.shared.packages.SkillConstructor.tests.*)`; в `against-spec` при этом дополнительно проверяется резолв настоящего `bot-characters`.
 
 ### Фаза 4 — Emitter (5-6 ч)
 
@@ -1154,7 +1198,7 @@ lune tools/generate-skill.luau path/to/skill.json
 
 `tools/generate-skill.luau` по §11.
 
-### Фаза 6 — UI (11-15 ч)
+### Фаза 6 — UI (11-15 ч) — выполнена
 
 1. Каркас + `Theme` + переключатель вкладок
 2. `BlockPalette`
@@ -1164,6 +1208,43 @@ lune tools/generate-skill.luau path/to/skill.json
 6. `AnimationSlotsManager`
 7. `PreviewTab` (Frames, scrubber, Code)
 8. `Toolbar` (включая `Import JSON`) + `ContextMenu`
+
+Фактические решения, расходящиеся с текстом ТЗ:
+
+| Пункт ТЗ | Как сделано | Почему |
+|---|---|---|
+| `Fusion.scoped(Fusion.child(...))` | `Fusion.Children` со словарём | В вендоренной Fusion 0.3 ключ `Child` — функция-хелпер, а не спецключ; числовые ключи в `[Children]` она отклоняет (`unrecognisedPropertyKey`) |
+| `Enum.Font.GothamSSm` | `Enum.Font.Gotham` | `GothamSSm` — семейство ассетов, а не элемент перечисления, а `Font.new` отклоняется проверкой типов Fusion (`expected a 'EnumItem' type`) |
+| `Children: { PlacedBlock }` в §4 | `Children = { слот → массив }` | Так в коде (§5, §7) и в JSON §8; плоский список не позволяет отличить `OnSuccess` от `OnBlocked` |
+| `validateAgainstSpec` только в `PreviewTab` | `validator.checkAgainstSpec` + скины из `shared.configs.Skins` | `Spec.Data.Assets` — это скин-конфиг, он лежит в `ReplicatedStorage` и доступен клиенту, поэтому проверки 21–23, 25–27 и W7 выполняются без сервера и без отправки blueprint |
+
+Дополнительно к пунктам выше:
+
+- точка входа — страница `Router` (`SkillConstructor`) плюс клиентская команда
+  Cmdr `skillconstructor` (`ClientRun`); вводится **без** префикса `:` — Cmdr
+  парсит первый токен как имя команды, поэтому `:skillconstructor` не находится
+- команду нельзя объявить модулем в папке Cmdr: `ReplicatedStorage.CmdrClient`
+  (вместе с `Commands`/`Types`) создаётся на сервере в рантайме
+  (`Cmdr/Initialize.luau`), а клиент сканирует папку один раз — в момент
+  `require` `CmdrClient`. Сервер наполняет её позже (`TerminalService`
+  переносит `terminal-commands` и встроенные команды), поэтому на клиенте
+  не остаётся ни одной команды, включая `echo`. Клиентские команды
+  регистрируются явно в `client/services/TerminalService.luau` через
+  `Registry:RegisterCommandObject`, а `ui/components/SkillConstructor/Command.luau`
+  хранит и определение команды, и обработчик перехода, который отдаёт
+  фабрика `ui/main.luau` (роутер живёт внутри неё)
+- `Theme.luau` и `Store.luau` добавлены к дереву из §3: `Theme` обязателен по §10,
+  `Store` отделён от компонентов, чтобы состояние не передавалось через 10 модулей
+- `Store` держит состояние в `Fusion.Value`/`Computed`; blueprint правится на месте,
+  а производные значения помечаются ревизией — иначе Fusion считал бы изменение
+  отсутствием и правки не отражались бы в таймлайне
+- `emitter` экспортирует `maxFrame(json)` и `framesSource(json)`: футер, линейка и
+  вкладка `Frames` берут значения оттуда, а не считают вторую реализацию
+- `IgnoreGuiInset` у корневого `ScreenGui` заменён на `false`: со `true` Roblox
+  сдвигает начало координат GUI вверх на инсет, и верхние панели уезжали за экран
+- инстансы не создаются внутри `Computed` (только данные); отрисовку делают
+  `ForValues`
+
 
 ### Фаза 7 — Интеграция (2-3 ч)
 
@@ -1175,7 +1256,7 @@ lune tools/generate-skill.luau path/to/skill.json
 
 | Фаза | Часы |
 |---|---|
-| 1. Типы + реестр (27 блоков) | 4-5 |
+| 1. Типы + реестр (26 блоков) | 4-5 |
 | 2. Codec | 2-3 |
 | 3. Validator | 2-3 |
 | 4. Emitter + компилятор Frames | 5-6 |
@@ -1287,7 +1368,7 @@ lune tools/generate-skill.luau path/to/skill.json
 ### UI
 | Файл | Образец |
 |---|---|
-| `src/client/ui/main.luau` | `ScreenGui`, `Fusion.scoped`, `Fusion.child` |
+| `src/client/ui/main.luau` | `ScreenGui`, `Fusion.scoped`, `Fusion.Children` |
 | `src/client/ui/views/RegionView.luau` | компонент-экран со слоями |
 | `src/client/ui/views/LoadingScreen.luau` | полноэкранный layout, анимации |
 | `src/client/ui/utils/Router/init.luau` | переключение экранов, `OnEnter`/`OnLeave`, `Buttler` |
@@ -1337,7 +1418,7 @@ lune tools/generate-skill.luau path/to/skill.json
 
 | # | Шаг | Где |
 |---|---|---|
-| 1 | Сгенерировать файл | `lune tools/generate-skill.luau skill.json` → `src/server/skills/<Id>.luau` |
+| 1 | Сгенерировать файл | `lune run tools/generate-skill.luau skill.json` → `src/server/skills/<Id>.luau` |
 | 2 | Убедиться, что `Configuration.SkillsFolder.Value` указывает на папку скиллов | `SkillService.luau:9,52-56` берёт `Configuration.SkillsFolder.Value`. Это `ObjectValue`; в репозитории — `src/server/Configuration/SkillsFolder.model.json` с атрибутом `Rojo_Target_Value`. Должен резолвиться в `ServerScriptService.server.skills` (куда Rojo мапит `src/server`). Если в подключённом Studio `Value == nil` — это предварительное условие, **не следствие конструктора** |
 | 3 | Записать скилл в модуль спеки | `src/server/specs/<Spec>.luau`, поле `Skills`: `["<Id>"] = "~/skills/<Id>"` (образец — `Standless.luau:10-20`) |
 | 4 | Записать бинд | `src/shared/configs/Specs.luau`, поле `Binds`. Без него `SpecService:70-74` сделает `skill:SetBind(nil)` и скилл нельзя вызвать |

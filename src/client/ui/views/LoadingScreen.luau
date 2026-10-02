@@ -35,7 +35,7 @@ local function LoadingString(
 				BackgroundColor3 = Color3.fromRGB(18, 18, 18),
 				BorderColor3 = Color3.new(),
 				BorderSizePixel = 0,
-				Image = "rbxassetid://87150282329384",
+				Image = "rbxassetid://115647499263818",
 				Position = UDim2.fromScale(0.5, 0.5),
 				ScaleType = Enum.ScaleType.Fit,
 				Size = UDim2.fromScale(1, 1),
@@ -43,7 +43,7 @@ local function LoadingString(
 			}),
 
 			scope:Helix({
-				Position = UDim2.fromScale(0.5, 0.9),
+				Position = UDim2.fromScale(0.9, 0.9),
 				Size = UDim2.fromOffset(100, 100),
 			}),
 		},

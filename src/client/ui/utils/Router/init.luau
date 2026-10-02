@@ -75,6 +75,23 @@ local Page = {}
 Page.__index = Page
 
 function Page.new(pageScope: Fusion.Scope, props: PageProps)
+	--- Fusion 0.3 принимает в `[Children]` только словарь: числовые ключи в таблице
+	--- свойств он трактует как опечатку (`unrecognisedPropertyKey`). Страница может
+	--- вернуть как одиночный инстанс, так и список, поэтому список приводится к
+	--- словарю с именами-индексами, а одиночка заворачивается в `Fragment`.
+	local fragment = if typeof(props.Page) == "function" then props.Page(pageScope) else props.Page
+	local children: { [string]: any } = {}
+
+	if fragment == nil then
+		-- Пустая страница: `Children` без детей допустим.
+	elseif fragment:IsA("Instance") then
+		children.Fragment = fragment
+	else
+		for index, child in fragment do
+			children[tostring(index)] = child
+		end
+	end
+
 	local self = {
 		Props = props,
 		Scope = pageScope,
@@ -86,9 +103,7 @@ function Page.new(pageScope: Fusion.Scope, props: PageProps)
 			Position = UDim2.fromScale(0.5, 0.5),
 			BackgroundTransparency = 1,
 
-			[Children] = {
-				if typeof(props.Page) == "function" then props.Page(pageScope) else props.Page,
-			},
+			[Children] = children,
 		}),
 
 		Cleaner = Buttler.new(),

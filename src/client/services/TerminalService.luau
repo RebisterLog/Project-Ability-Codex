@@ -8,7 +8,13 @@ local TerminalService = Crane:CreateService({
 
 function TerminalService:onStart()
 	local CmdrClient = ReplicatedStorage:WaitForChild("CmdrClient")
-	require(CmdrClient)
+	local Cmdr = require(CmdrClient)
+
+	-- `CmdrClient` регистрирует только то, что уже лежит в `CmdrClient/Commands`,
+	-- а папку наполняет сервер — команда, объявленная там, на клиенте не появится.
+	local SkillConstructorCommand =
+		require(script.Parent.Parent.ui.components.SkillConstructor.Command)
+	Cmdr.Registry:RegisterCommandObject(SkillConstructorCommand.cmdr)
 end
 
 return TerminalService
