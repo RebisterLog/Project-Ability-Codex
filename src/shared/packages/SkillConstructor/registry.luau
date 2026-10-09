@@ -39,12 +39,55 @@ local CATEGORY_COLORS = {
 	Target = "#26A69A",
 }
 
---- Значения `Enums.IFrames` (src/server/Enums.luau:2-7). Хранятся именами, а не числами:
---- blueprint переживает добавление новых значений в `Enums` (§8).
-local IFRAME_LEVELS = { "Ragdoll", "Dodge", "Grab", "True" }
+--- `Enums.IFrames` (src/server/Enums.luau:2-7) и `Enums.Stun` (там же: 9-14).
+---
+--- Хранятся именами, а не числами: blueprint переживает добавление новых значений в
+--- `Enums` (§8). Числа продублированы здесь же, потому что `src/server/Enums.luau`
+--- недоступен из UI: без них подсказка «против чего сравнивается `Priority`»
+--- превратилась бы в четыре слова без смысла (`Hooks/IFrames.luau:17` сравнивает
+--- `State.IFrames > Priority`, то есть два числа).
+local ENUMS = {
+	IFrames = {
+		{ Name = "Ragdoll", Value = 10 },
+		{ Name = "Dodge", Value = 15 },
+		{ Name = "Grab", Value = 50 },
+		{ Name = "True", Value = 10000 },
+	},
+	Stun = {
+		{ Name = "None", Value = 0 },
+		{ Name = "Light", Value = 10 },
+		{ Name = "Medium", Value = 20 },
+		{ Name = "Heavy", Value = 30 },
+	},
+}
 
---- Значения `Enums.Stun` (src/server/Enums.luau:9-14).
-local STUN_PRIORITIES = { "None", "Light", "Medium", "Heavy" }
+local function enumNames(group: { { Name: string, Value: number } }): { string }
+	local names: { string } = {}
+	for index, entry in group do
+		names[index] = entry.Name
+	end
+	return names
+end
+
+local IFRAME_LEVELS = enumNames(ENUMS.IFrames)
+local STUN_PRIORITIES = enumNames(ENUMS.Stun)
+
+--- Размер выдачи у `Hitbox`: сколько целей блок оставит в `seq.Ctx.Targets`.
+---
+--- Раньше те же два варианта стояли ещё и у отдельного блока `FilterTargets`, и он был
+--- удалён как лишний: обрезать список мог уже сам `Hitbox`, а повторная обрезка того же
+--- списка в отдельном шаге ничего не добавляла. Блок умел только сортировать и усекать
+--- и не имел доступа к `Data`, то есть отфильтровать цель по результату атаки — в том
+--- числе по `Blocked` — он не мог в принципе.
+local TARGET_SCOPES = { "Nearest", "All" }
+
+--- Формы хитбокса. `Ball` — сфера, `Box` — параллелепипед.
+---
+--- Список сознательно короче возможностей Roblox: `Cylinder` и `Wedge` в этом коде
+--- недостижимы, потому что `CombatService:Hitbox` вызывает только `GetPartBoundsInRadius`
+--- и `GetPartBoundsInBox`. Предлагать форму, которую нечем создать, — это поле,
+--- которое тихо ничего не делает.
+local HITBOX_SHAPES = { "Box", "Ball" }
 
 --- Скрытые дефолты секции `Block` (CombatService/Hooks/Block.luau:24-29).
 --- Реестр их не применяет — UI показывает их как «эффективные» значения для
@@ -102,6 +145,25 @@ local BLOCKS = {
 		Cleanup = "None",
 		Properties = {
 			{
+				-- Форма хитбокса. В `HitboxData.Info` такого поля нет: форма кодируется
+				-- ТИПОМ `Size`, и это не нововведение — `CombatService:Hitbox:95-98` всегда
+				-- различал `number` (радиус, `GetPartBoundsInRadius`) и `Vector3`
+				-- (`GetPartBoundsInBox`). Поле добавлено, чтобы UI вообще мог выбрать
+				-- сферу: оба редактора брали первый элемент объединения и всегда рисовали
+				-- три оси, то есть число было недостижимо и скилл выходил кубом.
+				--
+				-- Печатать его в `Info` нельзя — сервис его не читает и молча проигнорирует,
+				-- а получившийся файл будет врать о том, что происходит в бою. Ровно так же
+				-- устроен `MaxTargets` ниже: поле для UI, эмиттер исполняет его сам.
+				Name = "Shape",
+				Type = "enum",
+				Options = HITBOX_SHAPES,
+				Default = "Box",
+			},
+			{
+				-- Для `Box` это три полные стороны, для `Ball` — РАДИУС, и именно поэтому
+				-- одна и та же строка означает разные вещи: сторона куба и половина
+				-- диаметра шара. Несоответствие формы и типа `Size` ловит E28.
 				Name = "Size",
 				Type = { "Vector3", "number" },
 				Default = V3(7, 7, 7),
@@ -126,11 +188,12 @@ local BLOCKS = {
 				-- В HitboxData.Info такого поля нет, поэтому эмиттер обязан
 				-- обрезать выдачу сам, сразу после вызова CombatService:Hitbox.
 				Name = "MaxTargets",
-				Type = "number",
-				Default = 1,
-				Min = 1,
-				Max = 64,
-				Step = 1,
+				Type = "enum",
+				-- Числом это было `Min = 1, Max = 64`, и обе границы означали одно и то же:
+				-- «сколько целей оставить». Пользователю нужны два состояния — одна цель
+				-- или все задето, — а не 64 различных числа, которые он выбирал вслепую.
+				Options = TARGET_SCOPES,
+				Default = "Nearest",
 			},
 			{ Name = "CanQueryCaster", Type = "boolean", Default = false },
 			{ Name = "MovementCorrection", Type = "boolean", Default = true },
@@ -159,6 +222,27 @@ local BLOCKS = {
 				Min = 0,
 				Max = 10000,
 				Step = 1,
+				-- Число на шкале `Enums.IFrames`. Метка нужна UI: без неё поле
+				-- выглядит как свободное число, хотя рантайм сравнивает его с
+				-- уровнем неуязвимости цели, и 50 здесь — не «пятьдесят», а `Grab`.
+				Hint = "IFrames",
+			},
+			{ Name = "Damage", Type = "number", Default = 15, Min = 0, Step = 0.5 },
+			{
+				-- Отсеивает заблокированных из `OnSuccess`, не отменяя саму атаку.
+				--
+				-- Обычный блок даёт `Success = true, Continue = true, Blocked = true`
+				-- (`Hooks/Block.luau:42`), а слоты печатаются независимыми `if`, не
+				-- `elseif`. Поэтому атака, блокнутая целью, без этого поля исполняла и
+				-- `OnSuccess`, и `OnBlocked` — то есть блок срабатывал как успешный.
+				-- Именно это и мешало: «попадание» и «блок» выглядели одинаково.
+				--
+				-- Название намеренно не `BlockIgnore`: то поле и так есть у секции
+				-- `Block` и означает совершенно другое — пропустить саму механику
+				-- блока и нанести урон сквозь него.
+				Name = "SkipBlocked",
+				Type = "boolean",
+				Default = false,
 			},
 			{ Name = "Damage", Type = "number", Default = 15, Min = 0, Step = 0.5 },
 			{
@@ -175,6 +259,10 @@ local BLOCKS = {
 				Options = STUN_PRIORITIES,
 				Default = "Medium",
 				Group = "Stun",
+				-- Здесь `Options` уже перечисляет значения, но не их числа: эмиттер
+				-- печатает `Enums.Stun.Medium`, и показать, чему оно равно, полезно
+				-- ровно так же, как у шкалы IFrames выше.
+				Hint = "Stun",
 			},
 			{
 				-- Частичная секция разрешена: у неё есть скрытые дефолты (§2.7).
@@ -495,6 +583,26 @@ local BLOCKS = {
 		},
 	},
 
+	RemoveArmor = {
+		Id = "RemoveArmor",
+		DisplayName = "Remove Armor",
+		Category = "Combat",
+		Color = CATEGORY_COLORS.Combat,
+		Description = "Revokes every armor AddArmor granted in this sequence",
+		Cleanup = "None",
+		Properties = {},
+	},
+
+	ReleaseGrab = {
+		Id = "ReleaseGrab",
+		DisplayName = "Release Grab",
+		Category = "Combat",
+		Color = CATEGORY_COLORS.Combat,
+		Description = "Releases every grab CreateGrab made: unrestrains, re-enables collision and unbinds",
+		Cleanup = "None",
+		Properties = {},
+	},
+
 	-- VFX -----------------------------------------------------------------
 
 	PlayAnimation = {
@@ -504,6 +612,7 @@ local BLOCKS = {
 		Color = CATEGORY_COLORS.VFX,
 		Description = "Plays the animation of a slot, referenced by its Id",
 		Cleanup = "VFXStop",
+		SlotSource = "Animation",
 		Properties = {
 			{ Name = "Slot", Type = "string", Default = nil, Required = true },
 			{
@@ -525,6 +634,7 @@ local BLOCKS = {
 		Color = CATEGORY_COLORS.VFX,
 		Description = "Stops the animation of a slot with a fade out",
 		Cleanup = "None",
+		SlotSource = "Animation",
 		Properties = {
 			{ Name = "Slot", Type = "string", Default = nil, Required = true },
 			{
@@ -544,11 +654,64 @@ local BLOCKS = {
 		Color = CATEGORY_COLORS.VFX,
 		Description = "Plays a sound from Assets.Sounds at RootPart",
 		Cleanup = "VFXStop",
+		Cleanup = "VFXStop",
+		SlotSource = "Sound",
 		Properties = {
-			{ Name = "Sound", Type = "string", Default = nil, Required = true },
+			{
+				-- Слот — основной способ сослаться на звук, ровно как у анимации: blueprint
+				-- хранит локальный GUID, а ключ ассета резолвится при генерации, поэтому
+				-- переименование звука в `Spec.Data` не ломает уже написанные скиллы (§8).
+				Name = "Slot",
+				Type = "string",
+				Default = nil,
+			},
+			{
+				-- Оставлено для совместимости с файлами версии 1, где слота не было и
+				-- звук указывался строкой. Эмиттер берёт `Sound`, только если `Slot` пуст,
+				-- а валидатор требует ровно одно из двух, поэтому одновременно заданные
+				-- значения — ошибка, а не «победил кто первый».
+				Name = "Sound",
+				Type = "string",
+				Default = nil,
+				Ref = "Sounds",
+			},
 			{ Name = "Volume", Type = "number", Default = 1, Min = 0, Max = 1, Step = 0.05 },
 			{ Name = "MaxDistance", Type = "number", Default = 100, Min = 1, Step = 1 },
 			{ Name = "MinDistance", Type = "number", Default = 10, Min = 0, Step = 1 },
+		},
+	},
+
+	StopSound = {
+		Id = "StopSound",
+		DisplayName = "Stop Sound",
+		Category = "VFX",
+		Color = CATEGORY_COLORS.VFX,
+		Description = "Stops the sound of a slot early, before the sequence ends",
+		-- `None`, а не `VFXStop`: звук останавливается здесь и сейчас, а `VFXStop`
+		-- сработал бы второй раз на `Sequencer:Stop` (`emitter.luau:894-896`). Двойная
+		-- остановка безопасна, но она же означала бы лишний вызов `StopEffect` в каждом
+		-- скилле со звуком.
+		Cleanup = "None",
+		SlotSource = "Sound",
+		Properties = {
+			{
+				-- Не `Required`, хотя слот и есть основной путь: `Sound` остаётся
+				-- поддержанным для совместимости, и обязательный `Slot` запретил бы его
+				-- наравне — то есть валидатор ругался бы на файлы версии 1, которые сам
+				-- эмиттер ещё печатает. «Ровно одно из двух» проверяет сам валидатор, и
+				-- там это выражено одним правилом, а не двумя флагами в реестре.
+				Name = "Slot",
+				Type = "string",
+				Default = nil,
+			},
+			{
+				-- `Sound` тоже принимается для скиллов версии 1, где `StopSound` не
+				-- существовало и остановить звук посреди sequence было нечем.
+				Name = "Sound",
+				Type = "string",
+				Default = nil,
+				Ref = "Sounds",
+			},
 		},
 	},
 
@@ -560,7 +723,7 @@ local BLOCKS = {
 		Description = "Emits a particle model from Assets.Models",
 		Cleanup = "VFXStop",
 		Properties = {
-			{ Name = "Particle", Type = "string", Default = nil, Required = true },
+			{ Name = "Particle", Type = "string", Default = nil, Required = true, Ref = "Models" },
 			{
 				-- Базовая CFrame хита относительно RootPart кастера; Offset
 				-- применяется поверх неё. Обязательна: Bot.luau читает Info.Origin
@@ -583,7 +746,7 @@ local BLOCKS = {
 		Description = "Distributes effects from a folder across the body parts of the character",
 		Cleanup = "VFXStop",
 		Properties = {
-			{ Name = "Folder", Type = "string", Default = nil, Required = true },
+			{ Name = "Folder", Type = "string", Default = nil, Required = true, Ref = "Models" },
 			{
 				-- Базовая CFrame хита относительно RootPart кастера; Offset
 				-- применяется поверх неё. Обязательна: Bot.luau читает Info.Origin
@@ -702,19 +865,6 @@ local BLOCKS = {
 
 	-- TARGET --------------------------------------------------------------
 
-	FilterTargets = {
-		Id = "FilterTargets",
-		DisplayName = "Filter Targets",
-		Category = "Target",
-		Color = CATEGORY_COLORS.Target,
-		Description = "Trims seq.Ctx.Targets in place and returns nothing",
-		Cleanup = "None",
-		Properties = {
-			{ Name = "MaxTargets", Type = "number", Default = 1, Min = 1, Max = 64, Step = 1 },
-			{ Name = "SortByDistance", Type = "boolean", Default = true },
-		},
-	},
-
 	ClearTargets = {
 		Id = "ClearTargets",
 		DisplayName = "Clear Targets",
@@ -818,6 +968,10 @@ return {
 	CATEGORY_COLORS = CATEGORY_COLORS,
 	DEFAULT_BLOCK = DEFAULT_BLOCK,
 	BLOCKS = BLOCKS,
+	--- Уровни `Enums` с числами: UI показывает их рядом с `Priority`, чтобы было видно,
+	--- на какой шкале стоит число. Раньше списки значений жили локально и наружу не
+	--- отдавались, поэтому редактору оставалось либо угадывать, либо молчать (§8).
+	ENUMS = ENUMS,
 
 	get = get,
 	has = has,

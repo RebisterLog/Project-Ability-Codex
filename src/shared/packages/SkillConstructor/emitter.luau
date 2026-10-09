@@ -67,17 +67,24 @@ local INFO_GROUPS = {
 }
 
 --- Имена параметров персонажа для блоков категории `State`. Ключ — `Type` блока.
+--- Имя параметра `Character` и имя свойства блока, по которому берётся значение.
+---
+--- Два имени в одной записи намеренно: `registry` эмиттер не требует (ему нужен `lune`),
+--- поэтому раньше имя свойства вычислялось отдельно и разошлось с реестром — четыре
+--- блока объявляют `State`, а эмиттер спрашивал `Value`, из-за чего `SetArmor`,
+--- `SetRagdoll` и `SetRestrain` молча не эмитились вовсе. Рядом с именем параметра
+--- сверять его с `registry.luau` можно глазами, и новое свойство нельзя будет забыть.
 local STATE_PARAMETERS = {
-	SetIFrames = "IFrames",
-	SetDamageMultiplier = "DamageMultiplier",
-	SetDamageReceivalMultiplier = "DamageReceivalMultiplier",
-	SetMaxWalkSpeed = "MaxWalkSpeed",
-	SetMinWalkSpeed = "MinWalkSpeed",
-	SetMaxJumpPower = "MaxJumpPower",
-	SetArmor = "Armor",
-	SetRagdoll = "Ragdoll",
-	SetNoCollision = "NoCollision",
-	SetRestrain = "Restrain",
+	SetIFrames = { parameter = "IFrames", field = "Level" },
+	SetDamageMultiplier = { parameter = "DamageMultiplier", field = "Value" },
+	SetDamageReceivalMultiplier = { parameter = "DamageReceivalMultiplier", field = "Value" },
+	SetMaxWalkSpeed = { parameter = "MaxWalkSpeed", field = "Value" },
+	SetMinWalkSpeed = { parameter = "MinWalkSpeed", field = "Value" },
+	SetMaxJumpPower = { parameter = "MaxJumpPower", field = "Value" },
+	SetArmor = { parameter = "Armor", field = "State" },
+	SetRagdoll = { parameter = "Ragdoll", field = "State" },
+	SetNoCollision = { parameter = "NoCollision", field = "State" },
+	SetRestrain = { parameter = "Restrain", field = "State" },
 }
 
 --- `SetNoCollision` принимает только `true`: `Watchers.luau:68` схлопывает `false` в
@@ -226,7 +233,16 @@ type Ctx = {
 	slots: { [string]: string },
 	slotSpeed: { [string]: number },
 	slotFade: { [string]: number },
+	--- Звуковые слоты: та же карта «логальный GUID → ключ ассета», что и `slots`.
+	soundSlots: { [string]: string },
 	attackInfo: { [string]: any },
+	--- Сколько в дереве блоков, создающих именованную `Buttler`-ручку, по типу.
+	---
+	--- Нужно блокам-отменителям: `RemoveArmor` не знает, какой из `AddArmor` в дереве
+	--- к нему относится, а слот назван по порядковому номеру. Считается заранее, до
+	--- эмиссии, потому что отменитель может оказаться раньше создателей в порядке
+	--- обхода — и тогда он всё равно должен знать, какие имена существуют.
+	handles: { [string]: number },
 }
 
 --- Что уже есть в области видимости у блока: `Target` — эмиттер уже обернул блок в
@@ -380,6 +396,44 @@ end
 --- Значения `ProcessAttack` копируются в `AttackInfo` шапки: первое непустое поле
 --- побеждает, потому что два вызова удара с разными значениями нельзя честно
 --- свести к одному, а `AttackInfo` читают `Grab.luau:74` и `TEMPLATE.luau:57`.
+--- `Stun.Duration` → `Stun`, `Duration`; у корневого ключа группа равна `nil`.
+---
+--- Тот же разбор, что в `codec.splitKey`, но здесь он нужен для раскладки шапки, а не
+--- для JSON: имена свойств приходят плоскими и с путём группы внутри ключа (§8).
+local function splitInfoKey(key: string): (string?, string)
+	local dot = string.find(key, ".", 1, true)
+	if not dot then return nil, key end
+	return string.sub(key, 1, dot - 1), string.sub(key, dot + 1)
+end
+
+--- Значения `AttackInfoDefaults` скилла раскладываются по тому же пути, что и свойства
+--- блока, поэтому дефолт секции и дефолт её поля ведут себя одинаково.
+---
+--- Ключ без точки (`Damage`) идёт в корень, с точкой (`Stun.Duration`) — в секцию;
+--- неизвестные ключи игнорируются, потому что выводить их некуда, а валидатор
+--- отсекает их раньше (§9).
+local function seedAttackInfoDefaults(ctx: Ctx, defaults: any)
+	if type(defaults) ~= "table" then return end
+
+	for key, value in defaults do
+		if type(key) ~= "string" or not isPrintable(value) then continue end
+
+		local group, field = splitInfoKey(key)
+
+		if group == nil then
+			if ctx.attackInfo[field] == nil then ctx.attackInfo[field] = value end
+		else
+			local section = ctx.attackInfo[group]
+			if type(section) ~= "table" then
+				section = {}
+				ctx.attackInfo[group] = section
+			end
+
+			if section[field] == nil then section[field] = value end
+		end
+	end
+end
+
 local function mergeAttackInfo(ctx: Ctx, block: any)
 	for _, name in { "Priority", "Damage" } do
 		local value = propertyOf(block, name)
@@ -515,6 +569,39 @@ local function slotBlocks(block: any, slot: string): { any }
 	return result
 end
 
+--- Сколько блоков каждого «создающего ручку» типа в дереве.
+---
+--- `AddArmor` и `CreateGrab` кладут `Buttler` в именованный слот, номер которого
+--- выдаёт `localName`. Соответствующие `RemoveArmor` / `ReleaseGrab` обязаны знать,
+--- сколько таких слотов вообще появится, иначе отменитель сможет сослаться только на
+--- один из них. Подсчёт идёт по всему дереву, включая вложенные блоки: слот
+--- получает любой экземпляр, независимо от того, где он лежит.
+local function countHandles(blocks: { any }): { [string]: number }
+	local result: { [string]: number } = {}
+	if type(blocks) ~= "table" then return result end
+
+	local function walk(list: { any })
+		if type(list) ~= "table" then return end
+
+		for _, block in list do
+			if type(block) ~= "table" then continue end
+
+			local blockType = block.Type
+			if type(blockType) == "string" then result[blockType] = (result[blockType] or 0) + 1 end
+
+			local children = block.Children
+			if type(children) == "table" then
+				for _, nested in children do
+					walk(nested)
+				end
+			end
+		end
+	end
+
+	walk(blocks)
+	return result
+end
+
 --- Путь к вложенным блокам слота: `{ "Blocks", 0, "Children", "OnSuccess" }`.
 local function childPath(path: { string | number }, slot: string): { string | number }
 	local result = table.clone(path) :: { string | number }
@@ -603,8 +690,38 @@ local function emitHitbox(ctx: Ctx, block: any, path: { string | number }): { st
 
 	local info: { string } = {}
 
+	-- `Shape` в `Info` не печатается: форму задаёт ТИП `Size`. Задача эмиттера —
+	-- не допустить, чтобы объявленная форма и фактический тип разошлись: `Ball` с
+	-- `Vector3` молча остался бы кубом, а `Box` с числом — сферой, и ни то, ни другое
+	-- не сообщило бы пользователю ничего. Валидатор ловит то же (E28) для UI, здесь
+	-- проверка нужна потому, что эмиттер может быть вызван напрямую.
+	local shape = valueOf(ctx, block, "Shape", path)
+	if shape ~= nil and shape ~= "Box" and shape ~= "Ball" then shape = "Box" end
+
 	local size = valueOf(ctx, block, "Size", path)
-	if size ~= nil then table.insert(info, `\tSize = {literal(size)},`) end
+	if size ~= nil then
+		local sizeIsNumber = type(size) == "number"
+		local wantsNumber = shape == "Ball"
+
+		-- Сверка только когда форма объявлена ЯВНО. Файл версии 1 поля `Shape` не
+		-- знает и форму выводит из типа `Size`, как и делает сервис; трактовать
+		-- отсутствие поля как `Box` значило бы сломать все старые сферические скиллы.
+		if shape ~= nil and wantsNumber ~= sizeIsNumber then
+			report(
+				ctx,
+				"EMIT_VALUE",
+				`Hitbox {shape} needs Size of type {if wantsNumber then "number" else "Vector3"}, got {type(
+					size
+				)}`,
+				propertyPath(path, "Size"),
+				block.Id,
+				"Size"
+			)
+			size = nil
+		else
+			table.insert(info, `\tSize = {literal(size)},`)
+		end
+	end
 
 	local origin = valueOf(ctx, block, "Origin", path)
 	if origin ~= nil then table.insert(info, `\tOrigin = {cframeLiteral(origin)},`) end
@@ -614,13 +731,33 @@ local function emitHitbox(ctx: Ctx, block: any, path: { string | number }): { st
 		table.insert(info, `\tOffset = {cframeLiteral(offset)},`)
 	end
 
-	for _, name in { "SortByDistance", "CanQueryCaster", "MovementCorrection", "Debug" } do
+	local scope = valueOf(ctx, block, "MaxTargets", path)
+	local all = scope == "All"
+
+	if scope ~= "Nearest" and scope ~= "All" then
+		-- Отсутствует или мусор: дефолт реестра — `Nearest`. Подставлять его молча
+		-- здесь нельзя было бы из-за типов, но и полагаться на реестр тоже не стоит:
+		-- `valueOf` уже вернул `nil`, и «ближайшая» — единственное разумное чтение.
+		scope = "Nearest"
+	end
+
+	-- `Nearest` — это «первая цель в том порядке, который вернул сервис». Ближайшей
+	-- её делает только сортировка, поэтому при `Nearest` она принудительно включается:
+	-- иначе имя обещало бы расстояние, которого в выдаче нет, и результат зависел бы
+	-- от того, как `CombatService:Hitbox` решил перечислить цели.
+	local sortDistance = valueOf(ctx, block, "SortByDistance", path)
+	if scope == "Nearest" then sortDistance = true end
+
+	-- `SortByDistance` печатается всегда: при `Nearest` он принудительно `true`, при
+	-- `All` — то, что задал пользователь, и «все цели» при любом значении выглядит
+	-- одинаково. Раньше значение сливалось с циклом и принудительную сортировку
+	-- тогда приходилось бы дублировать.
+	table.insert(info, `\tSortByDistance = {tostring(sortDistance)}`)
+
+	for _, name in { "CanQueryCaster", "MovementCorrection", "Debug" } do
 		local value = valueOf(ctx, block, name, path)
 		if value ~= nil then table.insert(info, `\t{name} = {tostring(value)},`) end
 	end
-
-	local maxTargets = valueOf(ctx, block, "MaxTargets", path)
-	if type(maxTargets) ~= "number" then maxTargets = 1 end
 
 	local lines: { string } = {
 		`local {targets} = CombatService:Hitbox(\{`,
@@ -635,7 +772,13 @@ local function emitHitbox(ctx: Ctx, block: any, path: { string | number }): { st
 		"",
 		`local {hit} = \{\}`,
 		`for _, Target in {targets} do`,
-		`\tif #{hit} >= {num(maxTargets)} then break end`,
+	})
+
+	-- При `All` цикл идёт по всем целям и обрываться не должен — ради этого `break`
+	-- раньше и существовал, и ради этого он не печатается сейчас.
+	if not all then table.insert(lines, `\tif #{hit} >= 1 then break end`) end
+
+	extend(lines, {
 		`\ttable.insert({hit}, Target)`,
 		"end",
 		"",
@@ -678,6 +821,17 @@ local function emitProcessAttack(
 	local scope: Scope = { Target = true, Data = true }
 	local bodies: { { string } } = {}
 
+	-- `SkipBlocked` сужает ТОЛЬКО условие `OnSuccess`. Остальные слоты не трогаются:
+	-- реакция на блок должна остаться доступной, иначе блок с `SkipBlocked` перестал бы
+	-- различать исходы и вёлся бы как «всегда успех».
+	--
+	-- Условие дописывается на этапе генерации, а не читается в рантайме, потому что
+	-- слоты статичны и их условия известны заранее (§7). `PerfectBlocked` в список
+	-- попал для полноты: сегодня перфект-блок уже обнуляет `Continue` (`Block.luau:40`),
+	-- поэтому в `OnSuccess` он и не доходит, но полагаться на это — значит зависеть от
+	-- порядка хуков в чужом файле.
+	local skipBlocked = valueOf(ctx, block, "SkipBlocked", path) == true
+
 	for _, entry in ATTACK_SLOTS do
 		local slot, condition = entry[1], entry[2]
 		local blocks = slotBlocks(block, slot)
@@ -688,6 +842,11 @@ local function emitProcessAttack(
 
 		local body = emitSlot(ctx, blocks, start, slotPath, level + 2, scope)
 		if #body > 0 then
+			if skipBlocked and slot == "OnSuccess" then
+				condition =
+					`{condition} and not Data.State.Blocked and not Data.State.PerfectBlocked`
+			end
+
 			table.insert(bodies, concat({ { `if {condition} then` }, body, { "end" } }))
 		end
 	end
@@ -712,8 +871,9 @@ end
 --- Блоки категории `State`: все они — один `AddParameter`, обёрнутый в `seq.Cleaner`,
 --- чтобы параметр вернулся к дефолту при остановке sequence (§7, Cleanup).
 local function emitStateParameter(ctx: Ctx, block: any, path: { string | number }): { string }
-	local parameter = STATE_PARAMETERS[block.Type] :: string
-	local field = if block.Type == "SetIFrames" then "Level" else "Value"
+	local entry = STATE_PARAMETERS[block.Type]
+	local parameter = entry.parameter
+	local field = entry.field
 
 	local value = valueOf(ctx, block, field, path)
 	if value == nil then
@@ -740,24 +900,47 @@ local function emitStateParameter(ctx: Ctx, block: any, path: { string | number 
 	return { `seq.Cleaner:Add(character:AddParameter({quoted(parameter)}, {printed}))` }
 end
 
---- `AddArmor` возвращает `Crane.Buttler`, а `Sequencer.Buttler` не знает про `Stop`
---- (§2.4), поэтому останавливать его приходится руками.
+--- `AddArmor` кладёт ручку в ИМЕНОВАННЫЙ слот `Buttler`, а не в локальную переменную.
+---
+--- Раньше ручка попадала в `local Armor1`, объявленный внутри callback'а кадра, а
+--- значит была недостижима из любого более позднего кадра: отменить броню посреди
+--- sequence было нечем, кроме как дождаться конца. `Set` делает слот адресуемым по
+--- имени, и `RemoveArmor` может его снять (`Buttler.luau:342` — безопасный no-op,
+--- если слота нет, в том числе когда броня уже снята или не выдавалась).
 local function emitAddArmor(ctx: Ctx, _block: any, _path: { string | number }): { string }
 	local armor = localName(ctx, "Armor")
 
-	return {
-		`local {armor} = CombatService:AddArmor(character)`,
-		"seq.Cleaner:Add(function()",
-		`\t{armor}:Clean()`,
-		"end)",
-	}
+	return { `seq.Cleaner:Set("{armor}", CombatService:AddArmor(character))` }
 end
 
---- `CreateGrab` требует жертву, поэтому вне цикла по целям эмиттер оборачивает его
---- циклом сам. `CombatService:CreateGrab` сам добавляет `NoCollision` обеим сторонам,
---- когда секция `Attacker` / `Victim` присутствует, — дублировать это нельзя.
+--- `RemoveArmor`: снимает ВСЕ брони, выданные в этой последовательности.
+---
+--- Имена слотов известны заранее (`countHandles`), а не по порядку эмиссии: иначе
+--- отменитель, стоящий в дереве раньше `AddArmor`, сослался бы на слот, который ещё
+--- не существует, и тихо ничего не сделал бы.
+local function emitRemoveArmor(ctx: Ctx, _block: any, _path: { string | number }): { string }
+	local total = ctx.handles.AddArmor or 0
+	if total == 0 then return {} end
+
+	local lines: { string } = {}
+	for index = 1, total do
+		table.insert(lines, `seq.Cleaner:Remove("Armor{index}")`)
+	end
+
+	return lines
+end
+
+--- `CreateGrab` возвращает одну `Buttler`-ручку на обоих участников: и `IFrames`, и
+--- `NoCollision`, и опциональный `Restrain`, и `AlignPosition` с вложениями, которые и
+--- разрывают физическую связь. Отпустить её — значит очистить этот единственный
+--- объект, отдельных ручек на атакующего и жертву нет.
+---
+--- Слот именованный по той же причине, что и у брони: без адресуемости `ReleaseGrab`
+--- не смог бы ничего отменить, а отмена до конца sequence — это и есть «отпустить
+--- посреди броска».
 local function emitCreateGrab(ctx: Ctx, block: any, path: { string | number }): { string }
 	local grabData = localName(ctx, "GrabData")
+	local grabSlot = localName(ctx, "Grab")
 	local attackerRestrain = valueOf(ctx, block, "AttackerRestrain", path)
 	local victimRestrain = valueOf(ctx, block, "VictimRestrain", path)
 	local bindMode = valueOf(ctx, block, "BindMode", path)
@@ -785,8 +968,25 @@ local function emitCreateGrab(ctx: Ctx, block: any, path: { string | number }): 
 	extend(lines, {
 		"\t},",
 		"}",
-		`seq.Cleaner:Add(CombatService:CreateGrab(character, Target, {grabData}))`,
+		`seq.Cleaner:Set("{grabSlot}", CombatService:CreateGrab(character, Target, {grabData}))`,
 	})
+
+	return lines
+end
+
+--- `ReleaseGrab`: снимает все хваты этой последовательности.
+---
+--- Счётчики здесь взаимозаменяемы с брони не случайно: обе сущности живут до конца
+--- sequence и обе должны уметь закончиться раньше. `Buttler:Remove` на отсутствующем
+--- имени — no-op, поэтому отпускание без предварительного захвата не падает.
+local function emitReleaseGrab(ctx: Ctx, _block: any, _path: { string | number }): { string }
+	local total = ctx.handles.CreateGrab or 0
+	if total == 0 then return {} end
+
+	local lines: { string } = {}
+	for index = 1, total do
+		table.insert(lines, `seq.Cleaner:Remove("Grab{index}")`)
+	end
 
 	return lines
 end
@@ -834,13 +1034,13 @@ local function emitPlayAnimation(ctx: Ctx, block: any, path: { string | number }
 	local asset = quoted(key)
 	return {
 		`VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, \{`,
-		`\tAnimation = Anims[{asset}],`,
+		`\tAnimation = Anims[{asset}].Animation,`,
 		`\tSpeed = {speedText},`,
 		"})",
 		"",
 		"seq.Cleaner:Add(function()",
 		`\tVFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, \{`,
-		`\t\tAnimation = Anims[{asset}],`,
+		`\t\tAnimation = Anims[{asset}].Animation,`,
 		"\t})",
 		"end)",
 	}
@@ -862,7 +1062,7 @@ local function emitStopAnimation(ctx: Ctx, block: any, path: { string | number }
 
 	return {
 		`VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, \{`,
-		`\tAnimation = Anims[{quoted(key)}],`,
+		`\tAnimation = Anims[{quoted(key)}].Animation,`,
 		`\tFadeTime = {fadeText},`,
 		"})",
 	}
@@ -873,13 +1073,36 @@ local function emitPlaySound(ctx: Ctx, block: any, path: { string | number }): {
 	use(ctx, "Players")
 	use(ctx, "Sounds")
 
-	local key = valueOf(ctx, block, "Sound", path)
+	-- Ключ резолвится так же, как у анимации: сначала `Slot` (новый путь, файл 2),
+	-- потом прямой `Sound` (файл 1). Ровно одно из двух гарантирует валидатор, но
+	-- эмиттер эмитит и при экспорте «как есть», поэтому оба пути обязаны работать.
+	local key: string?
+	local slotId = propertyOf(block, "Slot")
+
+	if type(slotId) == "string" and slotId ~= "" then
+		key = ctx.soundSlots[slotId]
+
+		if key == nil then
+			report(
+				ctx,
+				"EMIT_SLOT",
+				`Sound slot {slotId} does not exist`,
+				propertyPath(path, "Slot"),
+				block.Id,
+				"Slot"
+			)
+			return {}
+		end
+	else
+		key = valueOf(ctx, block, "Sound", path)
+	end
+
 	if type(key) ~= "string" then
 		report(ctx, "EMIT_ASSET", "PlaySound without a sound", path, block.Id, "Sound")
 		return {}
 	end
 
-	local data: { string } = { `\tSound = Sounds[{quoted(key)}],` }
+	local data: { string } = { `\tSound = Sounds[{quoted(key)}].Sound,` }
 	for _, name in { "Volume", "MaxDistance", "MinDistance" } do
 		local value = valueOf(ctx, block, name, path)
 		if value ~= nil then table.insert(data, `\t{name} = {literal(value)},`) end
@@ -892,11 +1115,54 @@ local function emitPlaySound(ctx: Ctx, block: any, path: { string | number }): {
 		"})",
 		"",
 		"seq.Cleaner:Add(function()",
-		`\tVFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[{quoted(key)}])`,
+		-- onStop вторым аргументом ждёт сам инстанс Sound, а не таблицу `Sounds[key]`:
+		-- `effects/Sound.luau:54` читает `Sound.Name` и обрезал бы весь скилл.
+		`\tVFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[{quoted(
+			key
+		)}].Sound)`,
 		"end)",
 	})
 
 	return lines
+end
+
+--- `StopSound` работает ровно как `StopAnimation`: один вызов `VFXService:StopEffect`,
+--- инстанс передаётся по ссылке на тот же ключ в `Assets.Sounds`. Блок не регистрирует
+--- собственную очистку — сам и останавливает.
+local function emitStopSound(ctx: Ctx, block: any, path: { string | number }): { string }
+	use(ctx, "VFXService")
+	use(ctx, "Players")
+	use(ctx, "Sounds")
+
+	local key: string?
+	local slotId = propertyOf(block, "Slot")
+
+	if type(slotId) == "string" and slotId ~= "" then
+		key = ctx.soundSlots[slotId]
+
+		if key == nil then
+			report(
+				ctx,
+				"EMIT_SLOT",
+				`Sound slot {slotId} does not exist`,
+				propertyPath(path, "Slot"),
+				block.Id,
+				"Slot"
+			)
+			return {}
+		end
+	else
+		key = valueOf(ctx, block, "Sound", path)
+	end
+
+	if type(key) ~= "string" then
+		report(ctx, "EMIT_ASSET", "StopSound without a sound", path, block.Id, "Sound")
+		return {}
+	end
+
+	return {
+		`VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[{quoted(key)}].Sound)`,
+	}
 end
 
 --- `EmitParticle` и `EmitFolder` умеют вешаться на цель. Тогда блоку нужна цель в
@@ -1005,40 +1271,6 @@ local function emitHighlight(ctx: Ctx, block: any, path: { string | number }): {
 	extend(lines, data)
 	table.insert(lines, "})")
 
-	return lines
-end
-
---- `FilterTargets` сортирует и урезает список на месте: отдельной копии
---- `seq.Ctx.Targets` не существует, а `table.sort` / `table.remove` работают по ссылке.
-local function emitFilterTargets(ctx: Ctx, block: any, path: { string | number }): { string }
-	local targets = localName(ctx, "Targets")
-	local sort = valueOf(ctx, block, "SortByDistance", path)
-	local maxTargets = valueOf(ctx, block, "MaxTargets", path)
-	if type(maxTargets) ~= "number" then maxTargets = 1 end
-
-	local lines: { string } = { `local {targets} = seq.Ctx and seq.Ctx.Targets or \{\}` }
-
-	if sort == true then
-		extend(lines, {
-			"",
-			`if #{targets} > 1 then`,
-			`\ttable.sort({targets}, function(A, B)`,
-			"\t\treturn (A.RootPart.Position - RootPart.Position).Magnitude",
-			"\t\t\t< (B.RootPart.Position - RootPart.Position).Magnitude",
-			"\tend)",
-		})
-	end
-
-	if maxTargets > 1 then
-		extend(lines, {
-			"",
-			`while #{targets} > {num(maxTargets)} do`,
-			`\ttable.remove({targets})`,
-			"end",
-		})
-	end
-
-	extend(lines, { "", "seq.Ctx = seq.Ctx or {}", `seq.Ctx.Targets = {targets}` })
 	return lines
 end
 
@@ -1181,12 +1413,14 @@ local SCALAR_EMITTERS = {
 	PlayAnimation = emitPlayAnimation,
 	StopAnimation = emitStopAnimation,
 	PlaySound = emitPlaySound,
+	StopSound = emitStopSound,
 	EmitParticle = emitEmitParticle,
 	EmitFolder = emitEmitFolder,
 	Highlight = emitHighlight,
-	FilterTargets = emitFilterTargets,
 	ClearTargets = emitClearTargets,
 	AddArmor = emitAddArmor,
+	RemoveArmor = emitRemoveArmor,
+	ReleaseGrab = emitReleaseGrab,
 	CustomCallback = emitCustomCallback,
 }
 
@@ -1320,19 +1554,36 @@ local function timelineEnd(blocks: { any }, parentStart: number): number
 	return finish
 end
 
---- Есть ли `Repeat` в поддереве. Такой верхнеуровневый блок обязан стать
---- много-кадровым элементом, иначе диапазон исполнился бы один раз.
-local function hasRepeat(block: any): boolean
-	if type(block) ~= "table" then return false end
-	if block.Type == "Repeat" then return true end
+--- Нижняя граница длительности sequence: `MIN_FRAMES`, `Duration` скилла и последний
+--- занятый кадр.
+---
+--- `Duration` здесь именно пол, а не потолок. Обрезать скилл короче последнего шага
+--- нельзя: эмиттер тогда напечатает кадр за пределами `Frames`, и `verifyEntries`
+--- упадёт с `EMIT_INVARIANT`. Поэтому заданное значение поднимает границу, но не
+--- опускает её — так же, как это делает `MIN_FRAMES`.
+local function frameFloor(json: any, blocks: { any }): number
+	local floor = MIN_FRAMES
 
-	for _, slot in (block.__slots or {}) :: { string } do
-		for _, child in slotBlocks(block, slot) do
-			if hasRepeat(child) then return true end
-		end
+	if type(json) == "table" then
+		local requested = (json :: any).Duration
+		if type(requested) == "number" and requested > floor then floor = requested end
 	end
 
-	return false
+	return math.max(floor, timelineEnd(blocks, 0))
+end
+
+--- Есть ли `Repeat` в поддереве. Такой верхнеуровневый блок обязан стать
+--- много-кадровым элементом, иначе диапазон исполнился бы один раз.
+--- Нужен ли блоку много-кадровый элемент — определяется ТОЛЬКО его собственным типом.
+---
+--- Раньше здесь был обход поддерева, и это стоило дороже, чем выглядело: вложенный
+--- `Repeat` делал много-кадровым весь верхнеуровневый контейнер, внутри которого он
+--- нашёлся, а значит `ProcessAttack` с `Repeat` в `OnSuccess` выполнял атаку один раз
+--- на каждый кадр диапазона. Теперь вложенный `Repeat` запрещён валидатором (E24), а
+--- здесь достаточно прямой проверки: сужение убирает класс ошибок, при котором
+--- блок молча исполняется десятки раз.
+local function hasRepeat(block: any): boolean
+	return type(block) == "table" and block.Type == "Repeat"
 end
 
 --- `Preview`: кадры ровно в том порядке, в котором попадут в `Frames`. Терминатор в
@@ -1694,8 +1945,19 @@ local function makeContext(json: any): Ctx
 		slots = {},
 		slotSpeed = {},
 		slotFade = {},
+		soundSlots = {},
 		attackInfo = {},
+		handles = {},
 	}
+
+	-- `AttackInfo` шапки засевается из скилла раньше, чем будет прочитано хоть одно
+	-- свойство блока: `mergeAttackInfo` заполняет только пустые места, поэтому дефолт,
+	-- записанный здесь, оказывается базой, а любая атака может перекрыть своё поле.
+	-- Порядок важен и потому, что «первое непустое побеждает» — вставка после обхода
+	-- дала бы обратный смысл: тогда бы блоки забивали шапку, а скилл ничего не добавлял.
+	seedAttackInfoDefaults(ctx, json.AttackInfoDefaults)
+
+	ctx.handles = countHandles(if type(json.Blocks) == "table" then json.Blocks else {})
 
 	for _, slot in (json.AnimationSlots or {}) :: { any } do
 		if type(slot) == "table" and type(slot.Id) == "string" then
@@ -1704,6 +1966,14 @@ local function makeContext(json: any): Ctx
 				else slot.Id
 			if type(slot.Speed) == "number" then ctx.slotSpeed[slot.Id] = slot.Speed end
 			if type(slot.FadeTime) == "number" then ctx.slotFade[slot.Id] = slot.FadeTime end
+		end
+	end
+
+	for _, slot in (json.SoundSlots or {}) :: { any } do
+		if type(slot) == "table" and type(slot.Id) == "string" then
+			ctx.soundSlots[slot.Id] = if type(slot.SoundId) == "string"
+				then slot.SoundId
+				else slot.Id
 		end
 	end
 
@@ -1717,7 +1987,7 @@ local function buildAllEntries(json: any): (Ctx, { Entry }, number)
 
 	-- `Wait` не печатается, но продлевает скилл, поэтому итоговый кадр считается по
 	-- сырому дереву, а не по `Frames`.
-	local maxFrameResult = math.max(MIN_FRAMES, timelineEnd(blocks, 0))
+	local maxFrameResult = frameFloor(json, blocks)
 
 	table.insert(entries, {
 		Frame = maxFrameResult,
@@ -1735,7 +2005,7 @@ end
 local function maxFrame(json: any): number
 	if type(json) ~= "table" then return MIN_FRAMES end
 	local blocks = if type(json.Blocks) == "table" then json.Blocks else {}
-	return math.max(MIN_FRAMES, timelineEnd(blocks, 0))
+	return frameFloor(json, blocks)
 end
 
 local function framesSource(json: any): string
@@ -1745,7 +2015,7 @@ local function framesSource(json: any): string
 	local ctx = makeContext(json)
 	local blocks = if type(json.Blocks) == "table" then json.Blocks else {}
 	local entries = buildEntries(ctx, blocks, 0, { "Blocks" })
-	local maxFrameResult = math.max(MIN_FRAMES, timelineEnd(blocks, 0))
+	local maxFrameResult = frameFloor(json, blocks)
 
 	table.insert(entries, {
 		Frame = maxFrameResult,

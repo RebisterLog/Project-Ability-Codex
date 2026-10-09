@@ -1,6 +1,12 @@
 --!strict
 
-local CURRENT_VERSION = 1
+--- Версия формата blueprint.
+---
+--- Поднята до 2 вместе с `Duration`, `AttackInfoDefaults` и `SoundSlots`. Все три поля
+--- добавлены одним проходом намеренно: `decode` собирает результат из фиксированного
+--- списка ключей и **молча выбрасывает** всё, чего в списке нет, поэтому формат,
+--- меняющийся дважды подряд, потребовал бы двух миграций вместо одной.
+local CURRENT_VERSION = 2
 local TAG_KEY = "$"
 
 local V3_KEYS = { "x", "y", "z" } :: { string }
@@ -256,18 +262,24 @@ local function encode(blueprint: any): { [string]: any }
 		slots[index] = encodeSlot(slot)
 	end
 
+	local soundSlots = {}
+	for index, slot in asArray(blueprint.SoundSlots) do
+		soundSlots[index] = encodeSlot(slot)
+	end
+
 	local blocks = {}
 	for index, block in asArray(blueprint.Blocks) do
 		blocks[index] = encodeBlock(block)
 	end
 
-	return {
+	local result: { [string]: any } = {
 		Id = blueprint.Id,
 		DisplayName = blueprint.DisplayName,
 		Cooldown = blueprint.Cooldown,
 		AssetSource = blueprint.AssetSource,
 		SkillCharacters = blueprint.SkillCharacters or {},
 		AnimationSlots = slots,
+		SoundSlots = soundSlots,
 		Blocks = blocks,
 		Metadata = {
 			CreatedAt = metadata.CreatedAt or 0,
@@ -275,6 +287,22 @@ local function encode(blueprint: any): { [string]: any }
 			Version = metadata.Version or CURRENT_VERSION,
 		},
 	}
+
+	-- Пишутся только когда заданы. §8 приравнивает отсутствующий ключ к `null`, а
+	-- §8 же требует, чтобы «не задано» выглядело одинаково в файле и в памяти, поэтому
+	-- пустой `Duration` в JSON был бы неотличим от нулевого — а это разные вещи:
+	-- ноль это «длительность ровно ноль», отсутствие это «не задано».
+	if type(blueprint.Duration) == "number" then result.Duration = blueprint.Duration end
+
+	if type(blueprint.AttackInfoDefaults) == "table" then
+		local defaults: { [string]: any } = {}
+		for key, value in blueprint.AttackInfoDefaults do
+			defaults[tostring(key)] = normalizeTagged(toTagged(value))
+		end
+		result.AttackInfoDefaults = defaults
+	end
+
+	return result
 end
 
 --- Разворачивает JSON-форму в blueprint с плоскими dotted-ключами.
@@ -301,18 +329,24 @@ local function decode(data: any): { [string]: any }
 		slots[index] = decodeSlot(slot)
 	end
 
+	local soundSlots = {}
+	for index, slot in asArray(data.SoundSlots) do
+		soundSlots[index] = decodeSlot(slot)
+	end
+
 	local blocks = {}
 	for index, block in asArray(data.Blocks) do
 		blocks[index] = decodeBlock(block)
 	end
 
-	return {
+	local result: { [string]: any } = {
 		Id = data.Id,
 		DisplayName = data.DisplayName,
 		Cooldown = data.Cooldown,
 		AssetSource = data.AssetSource,
 		SkillCharacters = data.SkillCharacters or {},
 		AnimationSlots = slots,
+		SoundSlots = soundSlots,
 		Blocks = blocks,
 		Metadata = {
 			CreatedAt = metadata.CreatedAt or 0,
@@ -320,6 +354,21 @@ local function decode(data: any): { [string]: any }
 			Version = version or CURRENT_VERSION,
 		},
 	}
+
+	-- Поля версии 2. Файл версии 1 их не содержит, и это нормально: отсутствие здесь
+	-- означает «не задано», а не «потеряно» — расхождение было бы только если бы поле
+	-- было записано, а потом стёрто, и оба состояния выглядели бы одинаково.
+	if type(data.Duration) == "number" then result.Duration = data.Duration end
+
+	if type(data.AttackInfoDefaults) == "table" then
+		local defaults: { [string]: any } = {}
+		for key, value in data.AttackInfoDefaults do
+			defaults[tostring(key)] = normalizeTagged(toTagged(value))
+		end
+		result.AttackInfoDefaults = defaults
+	end
+
+	return result
 end
 
 --- Печатает tagged-значение как исходный код Luau для эмиттера (§3, §8): модуль
@@ -370,6 +419,7 @@ local function newBlueprint(id: string, displayName: string?): { [string]: any }
 		AssetSource = "Spec",
 		SkillCharacters = { "Hit" },
 		AnimationSlots = {},
+		SoundSlots = {},
 		Blocks = {},
 		Metadata = { CreatedAt = 0, UpdatedAt = 0, Version = CURRENT_VERSION },
 	}

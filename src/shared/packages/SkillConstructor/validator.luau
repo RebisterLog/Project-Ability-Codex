@@ -256,6 +256,29 @@ local function validateValue(
 		end
 	end
 
+	if definition.Id == "Hitbox" and property.Name == "Size" then
+		-- Форму задаёт тип `Size`, а `Shape` только описывает её в UI. Если они
+		-- расходятся, скилл не падает и не выглядит сломанным — он просто получается
+		-- не той формы, которую показал интерфейс: `Ball` с `Vector3` молча остаётся
+		-- кубом. Объединение типов само по себе это не ловит, поэтому сверка явная.
+		local properties = block.Properties
+		local shape = if type(properties) == "table" then properties.Shape else nil
+		local wantsNumber = shape == "Ball"
+
+		if shape ~= nil and wantsNumber ~= (type(value) == "number") then
+			report(
+				errors,
+				"E28",
+				`Hitbox Shape={shape} needs Size of type {if wantsNumber
+					then "number"
+					else "Vector3"}, got {type(value)}`,
+				propertyPath,
+				blockId,
+				property.Name
+			)
+		end
+	end
+
 	local rawField = if definition.Id == "Branch" then "Condition" else nil
 	if definition.Id == "CustomCallback" then rawField = "Code" end
 	if rawField ~= nil and property.Name == rawField then
@@ -465,19 +488,6 @@ local function collectWarnings(
 			end
 		end
 
-		for _, child in nested do
-			if type(child) == "table" and child.Type == "Repeat" then
-				report(
-					warnings,
-					"W2",
-					"Repeat inside Repeat: the inner range is merged into the outer one",
-					path,
-					blockId
-				)
-				break
-			end
-		end
-
 		if type(block.StartFrame) == "number" and type(block.EndFrame) == "number" then
 			local width = block.EndFrame - block.StartFrame
 			if width > WIDE_REPEAT_FRAMES then
@@ -527,9 +537,19 @@ local function collectWarnings(
 	end
 end
 
---- Слот анимации: `Slot` есть только у `PlayAnimation` и `StopAnimation`, поэтому
---- проверка вызывается лишь для тех типов, где реестр действительно его объявил.
---- `AnimationSlots` — единственный источник валидных имён, спека сюда не входит.
+--- Слот: `PlayAnimation` / `StopAnimation` берут его из `AnimationSlots`, а
+--- `PlaySound` / `StopSound` — из `SoundSlots`. Реестр говорит, откуда, через
+--- `definition.SlotSource`; без этого проверка шла бы по «анимационному» индексу и
+--- ругалась бы на любой корректный звуковой слот.
+---
+--- Плюс правило «ровно одно из двух» для звуковых блоков. `Slot` дополнил прямую
+--- ссылку `Sound`, и та осталась поддержанной для файлов версии 1, поэтому оба поля
+--- объявлены опциональными и решение принимает здесь, а не флагом `Required`:
+--- обязательный `Slot` запретил бы старый путь наравне с новым.
+---
+--- Оба заполнены — ошибка, потому что полученный ассет зависел бы от порядка чтения.
+--- Не заполнено ни одно — тоже ошибка: блок не значил бы ничего, и `PlaySound` без
+--- звука тихо ничего не издал бы.
 local function validateSlotReference(
 	block: any,
 	definition: any,
@@ -543,13 +563,42 @@ local function validateSlotReference(
 	local properties = block.Properties
 	if type(properties) ~= "table" then return end
 
-	local value = properties.Slot
-	if type(value) == "string" and slots[value] == nil then
+	local slotValue = properties.Slot
+	local hasSlot = type(slotValue) == "string" and slotValue ~= ""
+
+	if hasSlot and slots[slotValue] == nil then
 		report(
 			errors,
 			"E10",
-			`Slot {value} not found`,
+			`Slot {slotValue} not found`,
 			childPath(path, "Properties", "Slot"),
+			blockId,
+			"Slot"
+		)
+	end
+
+	-- Прямая ссылка есть только у звуковых блоков. У анимационных её нет вовсе, и
+	-- сравнивать нечего — правило «одно из двух» к ним не относится.
+	if definition.SlotSource ~= "Sound" then return end
+
+	local sound = properties.Sound
+	local hasSound = type(sound) == "string" and sound ~= ""
+
+	if hasSlot and hasSound then
+		report(
+			errors,
+			"E2",
+			`Both Slot and Sound are set: pick one`,
+			childPath(path, "Properties", "Slot"),
+			blockId,
+			"Slot"
+		)
+	elseif not hasSlot and not hasSound then
+		report(
+			errors,
+			"E8",
+			`{definition.Id} needs either a Slot or a Sound`,
+			childPath(path, "Properties"),
 			blockId,
 			"Slot"
 		)
@@ -561,6 +610,7 @@ local function validateBlock(
 	path: { string | number },
 	parentType: string?,
 	slots: { [string]: string },
+	soundSlots: { [string]: string },
 	errors: { any },
 	warnings: { any }
 )
@@ -597,8 +647,32 @@ local function validateBlock(
 			end
 		end
 
+		-- `Repeat` нельзя вкладывать: эмиттер выражает «каждый кадр диапазона» тем, что
+		-- делает много-кадровым элементом весь верхнеуровневый блок, внутри которого
+		-- встретился `Repeat` (`emitter.luau`, `hasRepeat`). Для верхнего `Repeat` это
+		-- верно, но для контейнера вроде `ProcessAttack` означает, что атака выполнится
+		-- один раз на КАЖДЫЙ кадр диапазона — 90 атак вместо одной, молча и без
+		-- предупреждения. Плоский `Sequencer` не умеет вложенные диапазоны, поэтому
+		-- запрет здесь честнее, чем молчаливое умножение урона.
+		if blockType == "Repeat" and parentType ~= nil then
+			report(
+				errors,
+				"E24",
+				`Repeat cannot be nested inside {parentType}: it repeats every frame of the sequence, so the whole {parentType} would run once per frame`,
+				path,
+				blockId
+			)
+		end
+
 		validateProperties(block, definition, blockId, path, errors)
-		validateSlotReference(block, definition, slots, blockId, path, errors)
+		validateSlotReference(
+			block,
+			definition,
+			if definition.SlotSource == "Sound" then soundSlots else slots,
+			blockId,
+			path,
+			errors
+		)
 		validateSlots(block, definition, blockId, path, errors)
 	end
 
@@ -614,6 +688,7 @@ local function validateBlock(
 						childPath(path, "Children", tostring(slot), index),
 						blockType,
 						slots,
+						soundSlots,
 						errors,
 						warnings
 					)
@@ -623,18 +698,27 @@ local function validateBlock(
 	end
 end
 
-local function slotIndex(blueprint: any): { [string]: string }
+--- Индекс слотов одного вида: GUID → ключ ассета. `AnimationSlots` и `SoundSlots`
+--- используют один и тот же приём, поле с ключом отличается именем.
+local function slotIndexOf(slots: any, keyField: string): { [string]: string }
 	local result: { [string]: string } = {}
 
-	local slots = blueprint.AnimationSlots
 	if type(slots) ~= "table" then return result end
 
 	for _, slot in slots do
 		if type(slot) == "table" and type(slot.Id) == "string" then
-			result[slot.Id] = if type(slot.AnimationId) == "string" then slot.AnimationId else ""
+			result[slot.Id] = if type(slot[keyField]) == "string" then slot[keyField] else ""
 		end
 	end
 	return result
+end
+
+local function slotIndex(blueprint: any): { [string]: string }
+	return slotIndexOf(blueprint.AnimationSlots, "AnimationId")
+end
+
+local function soundSlotIndex(blueprint: any): { [string]: string }
+	return slotIndexOf(blueprint.SoundSlots, "SoundId")
 end
 
 --- Проверки 1–20 и предупреждения W1–W6. Roblox-данных не требует, поэтому
@@ -668,6 +752,33 @@ local function validateStructural(blueprint: any): { [string]: any }
 		)
 	end
 
+	-- `Duration` опционален, но если он есть, обязан быть числом не меньше нуля.
+	-- Иначе эмиттер молча заменил бы его пол в `frameFloor`, и скилл получился бы
+	-- длиннее, чем намеревался пользователь, без всякой видимой причины.
+	if
+		blueprint.Duration ~= nil
+		and (type(blueprint.Duration) ~= "number" or blueprint.Duration < 0)
+	then
+		report(
+			errors,
+			"E2",
+			`Duration must be a non-negative number, got {tostring(blueprint.Duration)}`,
+			{ "Duration" }
+		)
+	end
+
+	-- `AttackInfoDefaults` необязателен, но обязан быть таблицей. Неключевые значения-
+	-- примитивы не эмитятся: `isPrintable` отсекает их, и скилл молча потерял бы общий
+	-- дефолт секции, которая так и не появилась бы в шапке.
+	if blueprint.AttackInfoDefaults ~= nil and type(blueprint.AttackInfoDefaults) ~= "table" then
+		report(
+			errors,
+			"E2",
+			`AttackInfoDefaults must be a table, got {type(blueprint.AttackInfoDefaults)}`,
+			{ "AttackInfoDefaults" }
+		)
+	end
+
 	if
 		type(blueprint.AssetSource) ~= "string" or not VALID_ASSET_SOURCES[blueprint.AssetSource]
 	then
@@ -680,10 +791,11 @@ local function validateStructural(blueprint: any): { [string]: any }
 	end
 
 	local slots = slotIndex(blueprint)
+	local soundSlots = soundSlotIndex(blueprint)
 	local blocks = blueprint.Blocks
 	if type(blocks) == "table" then
 		for index, block in blocks do
-			validateBlock(block, { "Blocks", index }, nil, slots, errors, warnings)
+			validateBlock(block, { "Blocks", index }, nil, slots, soundSlots, errors, warnings)
 		end
 	end
 
@@ -750,6 +862,7 @@ local function checkAgainstSpec(
 	local models = if type(assets) == "table" then assets.Models else nil
 
 	local slots = slotIndex(blueprint)
+	local soundSlots = soundSlotIndex(blueprint)
 
 	--- Путь передаётся вниз, а не собирается из `BlockId`: UI подсвечивает узел по
 	--- индексу в `Blocks`, и тот же путь печатает CLI (§9).
@@ -762,8 +875,12 @@ local function checkAgainstSpec(
 		local properties = block.Properties
 
 		if definition ~= nil and type(properties) == "table" then
-			if blockType == "PlayAnimation" and type(properties.Slot) == "string" then
-				local key = slots[properties.Slot]
+			-- Анимация: ключ либо из слота, либо из прямой ссылки. Проверяетсяраз на блок.
+			if blockType == "PlayAnimation" or blockType == "StopAnimation" then
+				local key = if type(properties.Slot) == "string"
+					then slots[properties.Slot]
+					else nil
+
 				if key ~= nil and key ~= "" and not hasKey(animations, key) then
 					report(
 						errors,
@@ -776,15 +893,22 @@ local function checkAgainstSpec(
 				end
 			end
 
-			if blockType == "PlaySound" and type(properties.Sound) == "string" then
-				if not hasKey(sounds, properties.Sound) then
+			-- Звук: тот же приём. `Slot` берётся из `SoundSlots`, прямой путь — из
+			-- свойства `Sound` (версия 1). Оба блока (`PlaySound` и `StopSound`)
+			-- покрываются одной проверкой.
+			if blockType == "PlaySound" or blockType == "StopSound" then
+				local usesSlot = type(properties.Slot) == "string"
+				local key = if usesSlot then soundSlots[properties.Slot] else properties.Sound
+
+				if type(key) == "string" and key ~= "" and not hasKey(sounds, key) then
+					local property = if usesSlot then "Slot" else "Sound"
 					report(
 						errors,
 						"E25",
-						`Sound {properties.Sound} not found in Assets.Sounds`,
-						childPath(path, "Properties", "Sound"),
+						`Sound {key} not found in Assets.Sounds`,
+						childPath(path, "Properties", property),
 						blockId,
-						"Sound"
+						property
 					)
 				end
 			end

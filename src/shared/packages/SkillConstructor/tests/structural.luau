@@ -73,6 +73,7 @@ local function blueprint(blocks: { any }?, fields: { [string]: any }?): any
 		AssetSource = "Spec",
 		SkillCharacters = { "Hit" },
 		AnimationSlots = {},
+		SoundSlots = {},
 		Blocks = blocks or {},
 		Metadata = { Version = 1 },
 	}
@@ -190,14 +191,41 @@ end
 
 -- 9. Min / Max
 do
-	local wideHitbox = block("b1", "Hitbox", { MaxTargets = 100 })
+	-- `MaxTargets` больше не число, поэтому границы проверяются на `Priority`
+	-- (`Min = 0, Max = 10000`) — единственном числе `ProcessAttack`, у которого шкала
+	-- совпадает с диапазоном реестра и потому проверяется на обоих концах.
+	local highPriority = block("b1", "ProcessAttack", { Priority = 20000 }, {
+		Children = { OnSuccess = { block("c1", "Wait") } },
+	})
 	local negativePriority = block("b2", "ProcessAttack", { Priority = -1 }, {
 		Children = { OnSuccess = { block("c1", "Wait") } },
 	})
 
-	check("E9: above Max", has(run({ wideHitbox }).errors, "E9"))
-	check("E9: below Min", has(run({ negativePriority }).errors, "E9"))
-	check("E9: in range accepted", #run({ block("b1", "Hitbox", { MaxTargets = 64 }) }).errors == 0)
+	-- `ProcessAttack` требует заполненного `OnSuccess` (E13), поэтому «в диапазоне»
+	-- проверяется на блоке вместе с ребёнком — иначе тест мерил бы не диапазон, а
+	-- отсутствующий слот.
+	local inRange = block("b1", "ProcessAttack", { Priority = 10000 }, {
+		Children = { OnSuccess = { block("c1", "Wait") } },
+	})
+	check("E9: in range accepted", #run({ inRange }).errors == 0)
+end
+
+-- 9a. `MaxTargets` стал перечислением: «одна цель» или «все»
+do
+	local function hitbox(scope: any)
+		return block("b1", "Hitbox", { MaxTargets = scope })
+	end
+
+	check("MaxTargets: Nearest accepted", #run({ hitbox("Nearest") }).errors == 0)
+	check("MaxTargets: All accepted", #run({ hitbox("All") }).errors == 0)
+
+	-- E18: строковое значение не из `Options`.
+	check("E18: unknown scope rejected", has(run({ hitbox("Everything") }).errors, "E18"))
+
+	-- Прежнее числовое значение обязано ругаться, а не молча получить дефолт. Ловит
+	-- E20, а не E18: тип проверяется раньше списка значений, и «число вместо строки» —
+	-- более точный диагноз, чем «нет такого варианта».
+	check("E20: legacy number rejected", has(run({ hitbox(4) }).errors, "E20"))
 end
 
 -- 10. Ссылка на AnimationSlot
@@ -217,6 +245,159 @@ do
 			run({ block("b1", "PlayAnimation", { Slot = "ghost" }) }, { AnimationSlots = slots }).errors,
 			"E10"
 		)
+	)
+end
+
+-- 10b. Ссылка на SoundSlot
+--
+-- Отдельная группа, потому что `Slot` у звуковых блоков резолвится в другой список.
+-- Если бы индекс был один, любая проверка прошла бы и по анимационному, и по
+-- звуковому слоту — то есть ошибка была бы не найдена вовсе, а не выбрана неверно.
+do
+	local anim = { { Id = "anim1", Name = "Attack", AnimationId = "Attack1" } }
+	local sound = { { Id = "snd1", Name = "Hit", SoundId = "Hit1" } }
+
+	check(
+		"sound E10: known sound slot accepted",
+		#run({ block("b1", "PlaySound", { Slot = "snd1" }) }, { SoundSlots = sound }).errors == 0
+	)
+	check(
+		"sound E10: unknown sound slot",
+		has(
+			run({ block("b1", "PlaySound", { Slot = "ghost" }) }, { SoundSlots = sound }).errors,
+			"E10"
+		)
+	)
+
+	-- Звуковой блок не должен принимать анимационный слот: имена совпадают по форме, но
+	-- указывают на разные таблицы ассетов.
+	check(
+		"sound E10: animation slot rejected on a sound block",
+		has(
+			run({ block("b1", "PlaySound", { Slot = "anim1" }) }, {
+				AnimationSlots = anim,
+				SoundSlots = sound,
+			}).errors,
+			"E10"
+		)
+	)
+
+	-- И наоборот: анимационный блок не должен принимать звуковой слот.
+	check(
+		"sound E10: sound slot rejected on an animation block",
+		has(
+			run({ block("b1", "PlayAnimation", { Slot = "snd1" }) }, {
+				AnimationSlots = anim,
+				SoundSlots = sound,
+			}).errors,
+			"E10"
+		)
+	)
+
+	check(
+		"sound E10: StopSound resolves against SoundSlots",
+		#run({ block("b1", "StopSound", { Slot = "snd1" }) }, { SoundSlots = sound }).errors == 0
+	)
+end
+
+-- 10c. Ровно одно из `Slot` и `Sound`
+--
+-- `PlaySound` получил `Slot` как замену прямой ссылки, но старые файлы версии 1
+-- присылают `Sound`, поэтому оба поля объявлены опциональными. Оба заполнены — не
+-- «победил кто первый», а ошибка: полученный ассет зависел бы от порядка чтения.
+do
+	local sound = { { Id = "snd1", Name = "Hit", SoundId = "Hit1" } }
+
+	check(
+		"sound: both Slot and Sound rejected",
+		has(
+			run(
+				{ block("b1", "PlaySound", { Slot = "snd1", Sound = "Hit1" }) },
+				{ SoundSlots = sound }
+			).errors,
+			"E2"
+		)
+	)
+	check(
+		"sound: legacy Sound alone still accepted",
+		#run({ block("b1", "PlaySound", { Sound = "Hit1" }) }, { SoundSlots = sound }).errors == 0
+	)
+	check(
+		"sound: Slot alone accepted",
+		#run({ block("b1", "PlaySound", { Slot = "snd1" }) }, { SoundSlots = sound }).errors == 0
+	)
+	check(
+		"sound: StopSound with both rejected",
+		has(
+			run(
+				{ block("b1", "StopSound", { Slot = "snd1", Sound = "Hit1" }) },
+				{ SoundSlots = sound }
+			).errors,
+			"E2"
+		)
+	)
+
+	-- Ни одного — тоже ошибка. Блок без звука не значит ничего, и заметить это можно
+	-- было бы только по скиллу, который молчит.
+	check(
+		"sound: PlaySound with neither is reported",
+		has(run({ block("b1", "PlaySound") }, { SoundSlots = sound }).errors, "E8")
+	)
+	check(
+		"sound: StopSound with neither is reported",
+		has(run({ block("b1", "StopSound") }, { SoundSlots = sound }).errors, "E8")
+	)
+
+	-- Старый путь не должен попадать под E8: `StopSound` в версии 1 не существовало, и
+	-- требование `Slot` запретило бы ровно тот файл, который эмиттер печатает.
+	check(
+		"sound: StopSound legacy Sound alone still accepted",
+		#run({ block("b1", "StopSound", { Sound = "Hit1" }) }, { SoundSlots = sound }).errors == 0
+	)
+end
+
+-- 10d. `Duration`
+--
+-- Нижняя граница, а не потолок: эмиттер берёт `max(60, Duration, последний занятый кадр)`,
+-- поэтому значение меньше дерева просто игнорируется. Проверять надо только тип и знак —
+-- «должно быть длиннее дерева» было бы ошибкой в правиле, а не в данных.
+do
+	check("Duration: absent accepted", #run({ block("b1", "Hitbox") }).errors == 0)
+	check("Duration: zero accepted", #run(nil, { Duration = 0 }).errors == 0)
+	check("Duration: positive accepted", #run(nil, { Duration = 240 }).errors == 0)
+	check("Duration: negative rejected", has(run(nil, { Duration = -1 }).errors, "E2"))
+	check("Duration: non-numeric rejected", has(run(nil, { Duration = "120" }).errors, "E2"))
+
+	-- Ниже последнего шага — не ошибка, а ровно то, что `Duration` и означает.
+	local short = { block("b1", "Hitbox", 600) }
+	check(
+		"Duration: shorter than the tree is not an error",
+		#run(short, { Duration = 30 }).errors == 0
+	)
+end
+
+-- 10e. `AttackInfoDefaults`
+do
+	check("AttackInfoDefaults: absent accepted", #run({ block("b1", "Hitbox") }).errors == 0)
+	check("AttackInfoDefaults: table accepted", #run(nil, { AttackInfoDefaults = {} }).errors == 0)
+	check(
+		"AttackInfoDefaults: dotted keys accepted",
+		#run(nil, { AttackInfoDefaults = { Damage = 10, ["Stun.Duration"] = 1.5 } }).errors == 0
+	)
+
+	-- Не-таблица: `isPrintable` в эмиттере такие значения отбрасывает, то есть секция
+	-- молча исчезла бы из шапки скилла. Тип проверяется здесь, а не там.
+	check(
+		"AttackInfoDefaults: number rejected",
+		has(run(nil, { AttackInfoDefaults = 5 }).errors, "E2")
+	)
+	check(
+		"AttackInfoDefaults: string rejected",
+		has(run(nil, { AttackInfoDefaults = "x" }).errors, "E2")
+	)
+	check(
+		"AttackInfoDefaults: true rejected",
+		has(run(nil, { AttackInfoDefaults = true }).errors, "E2")
 	)
 end
 
@@ -391,6 +572,77 @@ do
 	)
 	check("E20: unknown type not reported", not has(run({ block("b1", "Wait") }).errors, "E20"))
 end
+-- 28. Форма хитбокса против типа `Size`
+--
+-- `CombatService:Hitbox` различает формы по типу `Size`: `number` — радиус и
+-- `GetPartBoundsInRadius`, `Vector3` — `GetPartBoundsInBox`. Объединение типов в
+-- реестре принимает оба, поэтому несоответствие объявленной формы не является
+-- «неправильным типом» — оно не является ошибкой вообще, пока не сказать об этом
+-- явно. Без E28 скилл с `Shape = "Ball"` и векторным `Size` тихо получался кубом,
+-- и ни интерфейс, ни генератор об этом не говорили.
+do
+	check(
+		"E28: Ball with a numeric Size is fine",
+		not has(run({ block("b1", "Hitbox", { Shape = "Ball", Size = 5 }) }).errors, "E28")
+	)
+	check(
+		"E28: Box with a Vector3 Size is fine",
+		not has(
+			run({
+				block(
+					"b1",
+					"Hitbox",
+					{ Shape = "Box", Size = { ["$"] = "V3", x = 7, y = 7, z = 7 } }
+				),
+			}).errors,
+			"E28"
+		)
+	)
+	check(
+		"E28: absent Shape keeps the old behaviour",
+		not has(run({ block("b1", "Hitbox", { Size = 5 }) }).errors, "E28")
+	)
+	check(
+		"E28: absent Shape accepts a Vector3 too",
+		not has(
+			run({ block("b1", "Hitbox", { Size = { ["$"] = "V3", x = 7, y = 7, z = 7 } }) }).errors,
+			"E28"
+		)
+	)
+
+	check(
+		"E28: Ball with a Vector3 Size is rejected",
+		has(
+			run({
+				block(
+					"b1",
+					"Hitbox",
+					{ Shape = "Ball", Size = { ["$"] = "V3", x = 7, y = 7, z = 7 } }
+				),
+			}).errors,
+			"E28"
+		)
+	)
+	check(
+		"E28: Box with a numeric Size is rejected",
+		has(run({ block("b1", "Hitbox", { Shape = "Box", Size = 5 }) }).errors, "E28")
+	)
+
+	-- Сообщение обязано называть обе стороны: иначе непонятно, что именно исправлять —
+	-- форму или размер.
+	local mentions = false
+	for _, entry in
+		run({
+			block("b1", "Hitbox", { Shape = "Ball", Size = { ["$"] = "V3", x = 7, y = 7, z = 7 } }),
+		}).errors
+	do
+		if entry.Code == "E28" and string.find(entry.Message, "Ball", 1, true) then
+			mentions = true
+			break
+		end
+	end
+	check("E28: names the shape", mentions)
+end
 
 -- W1. ProcessAttack внутри Repeat
 do
@@ -413,9 +665,16 @@ do
 	check("W1: not an error", not has(run({ attackInLoop }).errors, "W1"))
 end
 
--- W2. Repeat внутри Repeat
+-- 24. Вложенный `Repeat` запрещён
+--
+-- Раньше это было предупреждением W2 про «диапазон сливается с внешним». Но дело не в
+-- слиянии: эмиттер делал много-кадровым весь верхнеуровневый блок, внутри которого
+-- нашёлся `Repeat`, а `Sequencer` исполняет такой элемент на каждом кадре. То есть
+-- `ProcessAttack` с `Repeat` в `OnSuccess` бил цель один раз на КАДР, и ни одно
+-- предупреждение об этом не говорило. Теперь это ошибка, а `W2` упразднён как
+-- недостижимый: вложенный `Repeat` всё равно сначала ловит E24.
 do
-	local nested = block("r1", "Repeat", nil, {
+	local nestedInRepeat = block("r1", "Repeat", nil, {
 		StartFrame = 0,
 		EndFrame = 10,
 		Children = {
@@ -429,7 +688,42 @@ do
 		},
 	})
 
-	check("W2: nested Repeat", has(run({ nested }).warnings, "W2"))
+	check("E24: Repeat inside Repeat", has(run({ nestedInRepeat }).errors, "E24"))
+
+	local nestedInAttack = block("a1", "ProcessAttack", nil, {
+		Children = {
+			OnSuccess = {
+				block("r2", "Repeat", nil, {
+					StartFrame = 2,
+					EndFrame = 5,
+					Children = { Body = { block("c1", "Wait") } },
+				}),
+			},
+		},
+	})
+
+	check("E24: Repeat inside ProcessAttack", has(run({ nestedInAttack }).errors, "E24"))
+
+	-- Сообщение обязано называть контейнер: иначе в дереве на двадцать блоков непонятно,
+	-- к чему относится претензия, а путь до узла пользователю ещё и искать.
+	local mentionsParent = false
+	for _, entry in run({ nestedInAttack }).errors do
+		if entry.Code == "E24" and string.find(entry.Message, "ProcessAttack", 1, true) then
+			mentionsParent = true
+			break
+		end
+	end
+	check("E24: names the parent container", mentionsParent)
+
+	-- Верхний `Repeat` — ровно то, для чего он и сделан, и на E24 не попадает.
+	local topLevel = block("r1", "Repeat", nil, {
+		StartFrame = 0,
+		EndFrame = 10,
+		Children = { Body = { block("c1", "Wait") } },
+	})
+
+	check("E24: a top-level Repeat is fine", not has(run({ topLevel }).errors, "E24"))
+	check("E24: W2 is gone", not has(run({ nestedInRepeat }).warnings, "W2"))
 end
 
 -- W3. Branch внутри ProcessAttack

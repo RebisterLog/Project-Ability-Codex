@@ -159,7 +159,27 @@ return function(scope: Fusion.Scope, props: any)
 		local raw = entry.Block.Properties[property.Name]
 		local isSet = raw ~= nil
 		local types = if type(property.Type) == "table" then property.Type else { property.Type }
+
+		-- `Hitbox.Size` объявлен как `Vector3 | number`, и первый элемент всегда давал
+		-- `Vector3` — то есть сфера была недостижима, хотя `CombatService:Hitbox:95-98`
+		-- различает формы по типу `Size` и всегда их различал. Форму задаёт `Shape`, и
+		-- она выбирает виджет вместо угадывания по объединению типов.
+		--
+		-- Отсутствующий `Shape` означает «вывести из `Size`», а не «Box»: иначе каждый
+		-- старый сферический хитбокс молча стал бы кубом в интерфейсе.
 		local primary = types[1]
+		if entry.Block.Type == "Hitbox" and property.Name == "Size" then
+			local shape = entry.Block.Properties.Shape
+			if type(shape) ~= "string" then
+				shape = if type(entry.Block.Properties.Size) == "number" then "Ball" else "Box"
+			end
+
+			if shape == "Ball" then
+				primary = "number"
+			elseif shape == "Box" then
+				primary = "Vector3"
+			end
+		end
 
 		local children = {
 			Label = scope:New("TextLabel")({

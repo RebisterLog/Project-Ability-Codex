@@ -33,6 +33,19 @@ export type PropertyType =
 --- Тип свойства. Массив означает объединение — например `{ "Vector3", "number" }` у `Hitbox.Size`.
 export type PropertyTypeSpec = PropertyType | { PropertyType }
 
+--- Таблица ассетов спеки, на которую ссылается свойство.
+export type AssetRef = "Animations" | "Sounds" | "Models"
+
+--- Набор слотов, из которого блок берёт `Slot`.
+---
+--- `PlayAnimation` и `StopAnimation` ссылаются на `AnimationSlots`, `PlaySound` и
+--- `StopSound` — на `SoundSlots`. Обе коллекции живут на blueprint и используют один
+--- формат, поэтому UI спрашивает здесь, а не по имени блока (§8).
+export type SlotSource = "Animation" | "Sound"
+
+--- Именованная числовая шкала, на которую ссылается `BlockProperty.Hint`.
+export type EnumHint = "IFrames" | "Stun"
+
 --- Одно редактируемое свойство блока.
 ---
 --- Имя — плоский путь через точку, если свойство принадлежит группе:
@@ -60,6 +73,24 @@ export type BlockProperty = {
 	--- Имя опциональной секции (`Stun`, `Knockback`, `Angular`, `Ragdoll`, `Block`).
 	--- Секция попадает в результат, только если заполнено хотя бы одно её поле.
 	Group: string?,
+
+	--- Таблица `Spec.Data.Assets`, из которой это свойство берёт значение: `Sound`
+	--- у `PlaySound` ссылается на `Assets.Sounds`, `Particle` и `Folder` — на
+	--- `Assets.Models`.
+	---
+	--- Метка, а не сама проверка: правила 23, 25, 26 остаются в валидаторе (§9), а
+	--- реестр только сообщает UI, какие ключи вообще бывают. Без неё редактор должен
+	--- угадывать по имени свойства, и любое переименование в `Spec.Data` ломает его
+	--- молча (§8).
+	Ref: AssetRef?,
+
+	--- Числовая шкала, относительно которой это свойство осмысленно.
+	---
+	--- У `Priority` это уровни `Enums.IFrames`: `Hooks/IFrames.luau:17` отбрасывает удар,
+	--- когда `State.IFrames > Priority`, то есть сравнивает два числа, и число без
+	--- указания шкалы ни о чём не говорит. Слот `Options` тут не годится — он хранит
+	--- строки, а сравнение в рантайме числовое (§8).
+	Hint: EnumHint?,
 
 	--- Свойство обязательно к заполнению. Независимо от `Default`: `Block.*`
 	--- имеет `Default = nil`, но остаётся опциональным — частичные секции `Block`
@@ -93,6 +124,10 @@ export type BlockDefinition = {
 	--- Слоты, из которых должен быть заполнен хотя бы один, иначе блок бессмысленен
 	--- (§9, проверка 13). Например у `Repeat` — `Body`, у `ProcessAttack` — `OnSuccess`.
 	RequiredSlots: { string }?,
+
+	--- Откуда блок берёт значение свойства `Slot`: `AnimationSlots` или `SoundSlots`.
+	--- `nil`, если блок не ссылается на слот вообще.
+	SlotSource: SlotSource?,
 
 	Cleanup: CleanupStrategy,
 }
@@ -144,6 +179,23 @@ export type AnimationSlot = {
 	FadeTime: number?,
 }
 
+--- Именованная ссылка на звук спеки.
+---
+--- Устроена как `AnimationSlot` и по той же причине: `SoundId` — строка, резолв в
+--- инстанс происходит уже в сгенерированном коде (`Sounds[slot.SoundId]`), поэтому
+--- blueprint не зависит от содержимого `Spec.Data.Assets` и переживает переименование
+--- ключа (§8).
+export type SoundSlot = {
+	--- Локальный GUID слота, на него ссылаются `PlaySound.Slot` и `StopSound.Slot`.
+	Id: string,
+
+	--- Отображаемое имя для UI.
+	Name: string,
+
+	--- Ключ в `Spec.Data.Assets.Sounds`.
+	SoundId: string,
+}
+
 --- Одна найденная проблема blueprint.
 ---
 --- `Message` пользователь видит в UI и в отчёте CLI, поэтому текст английский;
@@ -192,6 +244,23 @@ export type SkillBlueprint = {
 	SkillCharacters: { string },
 
 	AnimationSlots: { AnimationSlot },
+
+	SoundSlots: { SoundSlot },
+
+	--- Нижняя граница длительности sequence, в кадрах.
+	---
+	--- Именно пол, а не потолок: `maxFrame = max(60, Duration, последний занятый кадр)`.
+	--- Обрезать скилл короче последнего шага нельзя — эмиттер тогда печатает кадр за
+	--- пределами `Frames` и падает на `EMIT_INVARIANT`. Ровно та же роль, что у
+	--- `MIN_FRAMES`: оба задают минимум, оба игнорируются, если дерево длиннее.
+	Duration: number?,
+
+	--- Значения, которые попадают в `AttackInfo` шапки раньше, чем любой `ProcessAttack`.
+	---
+	--- Ключи плоские, с путём группы, как у `PlacedBlock.Properties`: `Damage`,
+	--- `Stun.Duration`, `Block.Blockable`. Блок перекрывает дефолт, записав поле у себя,
+	--- поэтому здесь пишут только то, что общее у всех ударов скилла (§6).
+	AttackInfoDefaults: { [string]: any }?,
 
 	Blocks: { PlacedBlock },
 

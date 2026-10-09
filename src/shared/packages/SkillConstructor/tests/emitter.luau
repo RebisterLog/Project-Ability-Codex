@@ -72,6 +72,7 @@ local function blueprint(blocks: { any }?, fields: { [string]: any }?): any
 		AssetSource = "Spec",
 		SkillCharacters = { "Hit" },
 		AnimationSlots = {},
+		SoundSlots = {},
 		Blocks = blocks or {},
 		Metadata = { Version = 1 },
 	}
@@ -464,6 +465,82 @@ do
 	check("Info skips empty groups", not contains(source, "PerfectBlockable"))
 	check("Info opens the Stun group", contains(source, "Stun = {"))
 end
+do
+	-- `SkipBlocked` сужает ТОЛЬКО `OnSuccess`. Раньше обычный блок давал
+	-- `Success = true, Continue = true, Blocked = true` (`Block.luau:42`), а слоты
+	-- печатались независимыми `if`, не `elseif` — атака, блокнутая целью, исполняла и
+	-- успех, и блок одновременно, то есть выглядела как попадание.
+	local result = run({
+		block("a1", "ProcessAttack", { Damage = 10, SkipBlocked = true }, {
+			Children = {
+				OnSuccess = { block("s1", "SetMaxWalkSpeed", { Value = 8 }) },
+				OnBlocked = { block("b1", "SetMaxWalkSpeed", { Value = 4 }) },
+			},
+		}),
+	})
+	local source = result.Source
+
+	check("SkipBlocked has no errors", #result.Errors == 0)
+	check(
+		"SkipBlocked excludes Blocked from OnSuccess",
+		contains(source, "if Data.State.Success and Data.State.Continue ")
+			and contains(source, "and not Data.State.Blocked ")
+			and contains(source, "and not Data.State.PerfectBlocked then")
+	)
+	check("OnBlocked keeps its own guard", contains(source, "if Data.State.Blocked then"))
+end
+
+do
+	-- Без поля поведение прежнее: сужать guard нельзя молча, это изменило бы смысл
+	-- всех уже написанных скиллов.
+	local result = run({
+		block("a1", "ProcessAttack", { Damage = 10 }, {
+			Children = {
+				OnSuccess = { block("s1", "SetMaxWalkSpeed", { Value = 8 }) },
+			},
+		}),
+	})
+
+	check(
+		"without SkipBlocked the guard is untouched",
+		contains(result.Source, "if Data.State.Success and Data.State.Continue then")
+	)
+	check(
+		"without SkipBlocked no Blocked check appears",
+		not contains(result.Source, "not Data.State.Blocked")
+	)
+end
+
+do
+	-- Явный `false` — то же, что отсутствие: поле по умолчанию `false`, и UI обязана
+	-- уметь его снять, не оставляя «включённым» после снятия галочки.
+	local result = run({
+		block("a1", "ProcessAttack", { Damage = 10, SkipBlocked = false }, {
+			Children = {
+				OnSuccess = { block("s1", "SetMaxWalkSpeed", { Value = 8 }) },
+			},
+		}),
+	})
+
+	check(
+		"SkipBlocked=false leaves the guard alone",
+		contains(result.Source, "if Data.State.Success and Data.State.Continue then")
+	)
+end
+
+do
+	-- Поле принадлежит секции `AttackInfo`, а не слоту, поэтому его значение не должно
+	-- попадать в печатаемый `Info`: иначе получился бы неизвестный ключ боевой таблицы.
+	local result = run({
+		block("a1", "ProcessAttack", { Damage = 10, SkipBlocked = true }, {
+			Children = {
+				OnSuccess = { block("s1", "SetMaxWalkSpeed", { Value = 8 }) },
+			},
+		}),
+	})
+
+	check("SkipBlocked is not printed into Info", not contains(result.Source, "SkipBlocked ="))
+end
 
 do
 	-- Без вложенных слотов `andThen` всё равно нужен: `Attack` возвращает промис.
@@ -601,7 +678,10 @@ do
 		#result.Errors == 0,
 		result.Errors[1] and result.Errors[1].Message
 	)
-	check("PlayAnimation resolves the slot", contains(source, 'Animation = Anims["Punch"],'))
+	check(
+		"PlayAnimation resolves the slot",
+		contains(source, 'Animation = Anims["Punch"].Animation,')
+	)
 	check("PlayAnimation falls back to the slot speed", contains(source, "Speed = 1,"))
 	check("PlayAnimation pulls Anims", contains(source, "local Anims = self.Assets.Animations"))
 	check("PlayAnimation pulls Players", contains(source, "local Players = game:GetService"))
@@ -617,7 +697,10 @@ do
 	local source = result.Source
 
 	check("StopAnimation prints FadeTime", contains(source, "FadeTime = 0.5,"))
-	check("StopAnimation keeps the slot key", contains(source, 'Animation = Anims["Punch"],'))
+	check(
+		"StopAnimation keeps the slot key",
+		contains(source, 'Animation = Anims["Punch"].Animation,')
+	)
 end
 
 do
@@ -625,10 +708,127 @@ do
 	local source = result.Source
 
 	check("PlaySound has no errors", #result.Errors == 0)
-	check("PlaySound prints the asset", contains(source, 'Sound = Sounds["Hit"],'))
+	check("PlaySound prints the asset", contains(source, 'Sound = Sounds["Hit"].Sound,'))
 	check("PlaySound prints Volume", contains(source, "Volume = 0.5,"))
 	check("PlaySound pulls Sounds", contains(source, "local Sounds = self.Assets.Sounds"))
-	check("PlaySound stops itself", contains(source, '"Sound", RootPart, Sounds["Hit"])'))
+	check("PlaySound stops itself", contains(source, '"Sound", RootPart, Sounds["Hit"].Sound)'))
+end
+
+do
+	-- Слот — основной путь: ключ берётся из `SoundSlots`, прямой `Sound` не
+	-- указывается, и блок ссылается только на локальный GUID.
+	local result = run({
+		block("v1", "PlaySound", { Slot = "synth", Volume = 0.8 }),
+	}, { SoundSlots = { { Id = "synth", Name = "synth", SoundId = "BonkSlam" } } })
+	local source = result.Source
+
+	check("PlaySound via Slot has no errors", #result.Errors == 0)
+	check(
+		"PlaySound via Slot prints the asset",
+		contains(source, 'Sound = Sounds["BonkSlam"].Sound,')
+	)
+	check("PlaySound via Slot stops itself", contains(source, 'Sounds["BonkSlam"].Sound'))
+end
+
+do
+	-- `StopSound` — посредстоп звука: один `StopEffect`, без `Cleaner`, без нового
+	-- `StartEffect`.
+	local result = run({
+		block("v1", "StopSound", { Slot = "synth" }),
+	}, { SoundSlots = { { Id = "synth", Name = "synth", SoundId = "BonkSlam" } } })
+	local source = result.Source
+
+	check("StopSound has no errors", #result.Errors == 0)
+	check(
+		"StopSound stops the effect",
+		contains(
+			source,
+			'VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["BonkSlam"].Sound)'
+		)
+	)
+	check(
+		"StopSound does not replay the sound",
+		not contains(source, 'StartEffect(Players:GetPlayers(), "Sound"')
+	)
+end
+
+do
+	-- Совместимость v1: без слота `Sound` всё ещё работает в обоих блоках.
+	local play = run({ block("v1", "PlaySound", { Sound = "Hit" }) })
+	local stop = run({ block("v1", "StopSound", { Sound = "Hit" }) })
+
+	check(
+		"PlaySound legacy Sound still emits",
+		contains(play.Source, 'Sound = Sounds["Hit"].Sound,')
+	)
+	check("StopSound legacy Sound still emits", contains(stop.Source, 'Sounds["Hit"].Sound'))
+end
+
+do
+	-- `Duration` как пол. Проверяется `maxFrame`, потому что именно из него эмиттер
+	-- строит `Frames`; искать в исходнике строку `Frames = 240` означало бы проверять
+	-- формат вывода вместо самого правила.
+	local raised =
+		emitter.maxFrame(codec.encode(blueprint({ block("v1", "Hitbox") }, { Duration = 240 })))
+	local baseline = emitter.maxFrame(codec.encode(blueprint({ block("v1", "Hitbox") })))
+
+	check("Duration raises the sequence length", raised == 240)
+	check("Duration absent falls back to MIN_FRAMES", baseline == 60)
+end
+
+do
+	-- Пол, а не потолок: `Duration` короче последнего шага игнорируется, иначе эмиттер
+	-- напечатал бы кадр за пределами `Frames` и `verifyEntries` упал бы.
+	local long = emitter.maxFrame(codec.encode(blueprint({
+		block("v1", "Hitbox", nil, { StartFrame = 600 }),
+	}, { Duration = 30 })))
+
+	check("Duration below the tree is ignored", long == 600)
+end
+
+do
+	-- Не-число не должно превращаться в пол. `frameFloor` читает `type(requested) ==
+	-- "number"`, так что строка молча дала бы `MIN_FRAMES` — ровно то, чего
+	-- пользователь не ожидал. Сообщение об этом даёт валидатор (E2, см. structural), а
+	-- не эмиттер: он не проверяет вход и просто не применяет негодное значение.
+	local encoded = codec.encode(blueprint({ block("v1", "Hitbox") }, { Duration = "240" }))
+	local emitted = emitter.maxFrame(encoded)
+
+	check("Duration as a string does not raise the floor", emitted == 60)
+	check(
+		"Duration as a string is not treated as a number",
+		type((encoded :: any).Duration) ~= "number" or (encoded :: any).Duration == nil
+	)
+end
+
+do
+	-- `AttackInfoDefaults` заполняет шапку скилла. Значение, которое блок не переопределяет,
+	-- берётся отсюда; переопределённое — остаётся своим.
+	local seeded = run(
+		{ block("v1", "ProcessAttack", { Damage = 42 }) },
+		{ AttackInfoDefaults = { Damage = 10, ["Stun.Duration"] = 1.5 } }
+	)
+	local source = seeded.Source
+
+	check("AttackInfoDefaults has no errors", #seeded.Errors == 0)
+	check("AttackInfoDefaults seeds a bare field", contains(source, "Damage = 10,"))
+	check("AttackInfoDefaults seeds a dotted field", contains(source, "Duration = 1.5,"))
+	check("the block's own value wins", contains(source, "Damage = 42,"))
+	check("the block's value is not duplicated", count(source, "Damage = 10,") == 1)
+end
+
+do
+	-- Непримитивные значения `isPrintable` отбрасывает: секция не должна появляться в
+	-- шапке из-за значения, которое эмиттер всё равно не напечатал бы.
+	local noise = run(
+		{ block("v1", "ProcessAttack", { Damage = 42 }) },
+		{ AttackInfoDefaults = { Damage = function() end } }
+	)
+
+	check(
+		"AttackInfoDefaults skips unprintable values",
+		not contains(noise.Source, "Damage = function")
+	)
 end
 
 do
@@ -688,23 +888,41 @@ end
 -- 8. СТЕЙТ, БРОНЯ, ЦЕЛИ ------------------------------------------------------
 
 do
+	-- Имя свойства едет рядом с именем параметра, потому что у блоков оно разное:
+	-- `Value` у чисел и `State` у флагов. Раньше тест подставлял `Value = 3` всем
+	-- пятерым, из-за чего `SetArmor` и `SetRestrain` «проходили», печатая в пустоту.
 	local cases = {
-		{ blockType = "SetMaxWalkSpeed", parameter = "MaxWalkSpeed" },
-		{ blockType = "SetMinWalkSpeed", parameter = "MinWalkSpeed" },
-		{ blockType = "SetMaxJumpPower", parameter = "MaxJumpPower" },
-		{ blockType = "SetArmor", parameter = "Armor" },
-		{ blockType = "SetRestrain", parameter = "Restrain" },
+		{ blockType = "SetMaxWalkSpeed", parameter = "MaxWalkSpeed", field = "Value", value = 3 },
+		{ blockType = "SetMinWalkSpeed", parameter = "MinWalkSpeed", field = "Value", value = 3 },
+		{ blockType = "SetMaxJumpPower", parameter = "MaxJumpPower", field = "Value", value = 3 },
+		{ blockType = "SetArmor", parameter = "Armor", field = "State", value = true },
+		{ blockType = "SetRagdoll", parameter = "Ragdoll", field = "State", value = true },
+		{ blockType = "SetRestrain", parameter = "Restrain", field = "State", value = true },
 	}
 
 	for index, case in cases do
-		local result = run({ block("s1", case.blockType, { Value = 3 }) })
+		local result = run({ block("s1", case.blockType, { [case.field] = case.value }) })
+
 		check(
 			`{case.blockType} sets {case.parameter}`,
-			contains(result.Source, `AddParameter("{case.parameter}", 3)`),
+			contains(result.Source, `AddParameter("{case.parameter}", {tostring(case.value)})`),
 			case.parameter .. " #" .. index
 		)
 		check(`{case.blockType} has no errors`, #result.Errors == 0)
 	end
+end
+
+do
+	-- Обратная сторона: имя свойства теперь различается, поэтому блок, заполненный не
+	-- тем полем, обязан ругаться, а не печатать `AddParameter(..., nil)`. Это и есть
+	-- тот случай, который раньше проходил незамеченным.
+	local wrongField = run({ block("s1", "SetArmor", { Value = true }) })
+
+	check("SetArmor reports a missing State", has(wrongField.Errors, "EMIT_VALUE"))
+	check(
+		"SetArmor prints nothing for a missing State",
+		not contains(wrongField.Source, 'AddParameter("Armor"')
+	)
 end
 
 do
@@ -735,24 +953,136 @@ do
 end
 
 do
+	-- `AddArmor` обязан класть ручку в ИМЕНОВАННЫЙ слот: локальная переменная внутри
+	-- callback'а кадра недостижима из более позднего кадра, и отменить броню посреди
+	-- sequence было нечем. Именованный слот адресуем, и `RemoveArmor` его снимает.
 	local result = run({ block("a1", "AddArmor") })
 	local source = result.Source
 
 	check("AddArmor has no errors", #result.Errors == 0)
-	check("AddArmor cleans the janitor by hand", contains(source, "Armor1:Clean()"))
-	check("AddArmor registers cleanup", contains(source, "seq.Cleaner:Add(function()"))
+	check(
+		"AddArmor stores the handle in a named slot",
+		contains(source, 'seq.Cleaner:Set("Armor1", CombatService:AddArmor(character))')
+	)
+	check("AddArmor binds no per-frame local", not contains(source, "local Armor1"))
 end
 
 do
-	local result = run({ block("f1", "FilterTargets", { MaxTargets = 3, SortByDistance = true }) })
+	-- `RemoveArmor` снимает все брони дерева, а не одну: он не знает, какой из
+	-- `AddArmor` в нём относится к нему.
+	local result = run({
+		block("a1", "AddArmor"),
+		block("a2", "AddArmor"),
+		block("r1", "RemoveArmor"),
+	})
+	local source = result.Source
+
+	check("RemoveArmor has no errors", #result.Errors == 0)
+	check("RemoveArmor clears the first slot", contains(source, 'seq.Cleaner:Remove("Armor1")'))
+	check("RemoveArmor clears the second slot", contains(source, 'seq.Cleaner:Remove("Armor2")'))
+
+	-- Ровно два `Set` и два `Remove` на два блока каждого вида: отменитель не должен
+	-- ни дублировать выдачу брони, ни вычитать лишние слоты.
+	check("two AddArmor produce two Set calls", count(source, 'seq.Cleaner:Set("Armor') == 2)
+	check("two Remove calls in total", count(source, "seq.Cleaner:Remove") == 2)
+end
+
+do
+	-- Отменитель без единого `AddArmor` не должен печатать `Remove` по воздуху: слот
+	-- не существует, и строка была бы шумом в выводе без смысла.
+	local result = run({ block("r1", "RemoveArmor") })
+
+	check("RemoveArmor alone has no errors", #result.Errors == 0)
+	check("RemoveArmor alone prints nothing", not contains(result.Source, "seq.Cleaner:Remove"))
+end
+
+do
+	-- Отменитель, стоящий в дереве ДО создателя, всё равно знает имена: счётчик
+	-- берётся из дерева заранее, а не из порядка эмиссии.
+	local result = run({
+		block("r1", "RemoveArmor"),
+		block("a1", "AddArmor"),
+	})
 	local source = result.Source
 
 	check(
-		"FilterTargets sorts by distance",
-		contains(source, "table.sort(Targets1, function(A, B)")
+		"RemoveArmor before AddArmor knows the name",
+		contains(source, 'seq.Cleaner:Remove("Armor1")')
 	)
-	check("FilterTargets trims in place", contains(source, "while #Targets1 > 3 do"))
-	check("FilterTargets writes back to Ctx", contains(source, "seq.Ctx.Targets = Targets1"))
+end
+
+do
+	-- Вложенный броневой блок тоже занимает слот, иначе номера разъедутся.
+	local result = run({
+		block("a1", "ProcessAttack", nil, {
+			Children = {
+				OnSuccess = {
+					block("a2", "AddArmor"),
+				},
+			},
+		}),
+		block("a3", "AddArmor"),
+		block("r1", "RemoveArmor"),
+	})
+	local source = result.Source
+
+	check("RemoveArmor counts nested AddArmor", contains(source, 'seq.Cleaner:Remove("Armor2")'))
+	check("RemoveArmor counts top-level AddArmor", contains(source, 'seq.Cleaner:Remove("Armor1")'))
+end
+
+do
+	-- Граб кладётся в именованный слот по той же причине, что и броня: иначе
+	-- `ReleaseGrab` нечего отпускать.
+	local result = run({
+		block("g1", "CreateGrab", { BindMode = "None", Offset = CF() }),
+		block("g2", "CreateGrab", { BindMode = "None", Offset = CF() }),
+		block("r1", "ReleaseGrab"),
+	})
+	local source = result.Source
+
+	check(
+		"CreateGrab stores in a named slot",
+		contains(source, 'seq.Cleaner:Set("Grab1", CombatService:CreateGrab')
+	)
+	check(
+		"CreateGrab numbers its slots",
+		contains(source, 'seq.Cleaner:Set("Grab2", CombatService:CreateGrab')
+	)
+	check("ReleaseGrab clears the first grab", contains(source, 'seq.Cleaner:Remove("Grab1")'))
+	check("ReleaseGrab clears the second grab", contains(source, 'seq.Cleaner:Remove("Grab2")'))
+end
+
+do
+	local result = run({ block("r1", "ReleaseGrab") })
+
+	check("ReleaseGrab alone has no errors", #result.Errors == 0)
+	check("ReleaseGrab alone prints nothing", not contains(result.Source, "seq.Cleaner:Remove"))
+end
+
+do
+	-- `ReleaseGrab` не должен оборачиваться в цикл по целям: хват снимается с
+	-- именованного слота, а не с `Target`, и лишний цикл был бы пустым.
+	local result = run({
+		block("g1", "CreateGrab", { BindMode = "None", Offset = CF() }),
+		block("r1", "ReleaseGrab"),
+	})
+	local source = result.Source
+
+	check(
+		"ReleaseGrab takes no target loop",
+		not contains(source, "for _, Target in Targets1 do\n\tseq.Cleaner:Remove")
+	)
+end
+
+do
+	-- `FilterTargets` удалён как лишний: `Hitbox.MaxTargets` и `Hitbox.SortByDistance`
+	-- делают ту же работу, а сам блок умел только сортировать и усекать, не имея
+	-- доступа к `Data`, — то есть отфильтровать цель по результату атаки он не мог.
+	-- Старый blueprint с ним обязан падать понятной ошибкой, а не печатать пустоту.
+	local result = run({ block("f1", "FilterTargets", { MaxTargets = "All" }) })
+
+	check("FilterTargets is no longer a block type", has(result.Errors, "EMIT_BLOCK"))
+	check("FilterTargets prints nothing", not contains(result.Source, "FilterTargets"))
 end
 
 do
@@ -763,7 +1093,11 @@ end
 
 do
 	local result = run({
-		block("h1", "Hitbox", { Size = V3(7, 7, 7), Offset = CF(0, 0, -3), MaxTargets = 2 }),
+		block(
+			"h1",
+			"Hitbox",
+			{ Size = V3(7, 7, 7), Offset = CF(0, 0, -3), MaxTargets = "Nearest" }
+		),
 	})
 	local source = result.Source
 
@@ -775,10 +1109,60 @@ do
 	check("Hitbox passes Skill", contains(source, "Skill = self,"))
 	check("Hitbox passes Caster", contains(source, "Caster = character,"))
 	check("Hitbox prints Vector3", contains(source, "Size = Vector3.new(7, 7, 7),"))
+	check("Hitbox does not print Shape", not contains(source, "Shape"))
+	check("Hitbox prints no Shape even when set", not contains(source, "Shape ="))
 	check("Hitbox prints CFrame", contains(source, "Offset = CFrame.new(0, 0, -3),"))
 	check("Hitbox skips the identity Origin", not contains(source, "Origin = CFrame.new(0, 0, 0),"))
-	check("Hitbox trims to MaxTargets", contains(source, "if #Hit1 >= 2 then break end"))
+	check("Hitbox trims to one nearest hit", contains(source, "if #Hit1 >= 1 then break end"))
+	check("Hitbox forces SortByDistance for Nearest", contains(source, "SortByDistance = true"))
 	check("Hitbox writes targets to Ctx", contains(source, "seq.Ctx.Targets = Hit1"))
+end
+do
+	-- Сфера: `Size` числом — это РАДИУС, и `CombatService:Hitbox:96` сам выбирает по
+	-- типу `GetPartBoundsInRadius`. Отдельного поля `Shape` в `Info` нет и печатать его
+	-- нельзя: сервис его не читает, и файл лишь утверждал бы, что форма задана явно.
+	local result = run({ block("h1", "Hitbox", { Shape = "Ball", Size = 6 }) })
+	local source = result.Source
+
+	check("Ball hitbox has no errors", #result.Errors == 0)
+	check("Ball hitbox prints a numeric radius", contains(source, "Size = 6,"))
+	check("Ball hitbox prints no Vector3", not contains(source, "Size = Vector3"))
+	check("Ball hitbox prints no Shape key", not contains(source, "Shape"))
+end
+
+do
+	-- `Ball` с векторным `Size` обязан быть отвергнут, а не тихо напечатан: получился
+	-- бы куб при заявленной сфере. Эмиттер проверяет это сам, потому что его можно
+	-- вызвать напрямую, минуя валидатор, — как это делает `PreviewTab`.
+	local result = run({ block("h1", "Hitbox", { Shape = "Ball", Size = V3(7, 7, 7) }) })
+	local source = result.Source
+
+	check("Ball with a Vector3 reports EMIT_VALUE", has(result.Errors, "EMIT_VALUE"))
+	check("Ball with a Vector3 prints no Size", not contains(source, "Size ="))
+end
+
+do
+	-- Обратная сторона: `Box` с числом. Без проверки это был бы шар там, где обещан
+	-- куб, — и размер «7» означал бы поперечник вместо стороны.
+	local result = run({ block("h1", "Hitbox", { Shape = "Box", Size = 7 }) })
+
+	check("Box with a numeric Size reports EMIT_VALUE", has(result.Errors, "EMIT_VALUE"))
+	check("Box with a numeric Size prints no Size", not contains(result.Source, "Size ="))
+end
+
+do
+	-- Файл версии 1 не знает про `Shape` и хранит только `Size`. Он обязан остаться
+	-- рабочим: без `Shape` форма выводится из типа `Size` ровно как раньше.
+	local vectorLegacy = run({ block("h1", "Hitbox", { Size = V3(7, 7, 7) }) })
+	local ballLegacy = run({ block("h1", "Hitbox", { Size = 6 }) })
+
+	check("legacy Vector3 Size has no errors", #vectorLegacy.Errors == 0)
+	check("legacy numeric Size has no errors", #ballLegacy.Errors == 0)
+	check("legacy numeric Size prints as a number", contains(ballLegacy.Source, "Size = 6,"))
+	check(
+		"legacy Vector3 Size prints as a Vector3",
+		contains(vectorLegacy.Source, "Size = Vector3.new(7, 7, 7),")
+	)
 end
 
 do

@@ -11,6 +11,7 @@ local process = require("@lune/process")
 
 local SUITES = {
 	{ name = "structural", path = "src/shared/packages/SkillConstructor/tests/structural.luau" },
+	{ name = "codec", path = "src/shared/packages/SkillConstructor/tests/codec.luau" },
 	{ name = "emitter", path = "src/shared/packages/SkillConstructor/tests/emitter.luau" },
 	{
 		name = "against-spec",

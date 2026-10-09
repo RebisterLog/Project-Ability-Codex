@@ -377,7 +377,7 @@ export type Category = "Query" | "Damage" | "State" | "Combat" | "VFX" | "Flow" 
 
 ---
 
-## 5. Каталог блоков (27)
+## 5. Каталог блоков (28)
 
 Все подписи сверены с исходниками. Столбец «Источник» — файл, определяющий контракт.
 
@@ -385,7 +385,7 @@ export type Category = "Query" | "Damage" | "State" | "Combat" | "VFX" | "Flow" 
 
 | Блок | Свойства | Cleanup | Источник |
 |---|---|---|---|
-| `Hitbox` | `Size` (`Vector3 \| number`), `Origin` (`CFrame`), `Offset` (`CFrame`), `SortByDistance` (bool), `MaxTargets` (number), `CanQueryCaster` (bool), `MovementCorrection` (bool), `Debug` (bool) | `None` | `CombatService:Hitbox` `:49-125`, `HitboxData.Info` `types.luau:53-62` |
+| `Hitbox` | `Shape` (enum `Box`/`Ball`, не печатается в `Info`), `Size` (`Vector3 \| number`), `Origin` (`CFrame`), `Offset` (`CFrame`), `SortByDistance` (bool), `MaxTargets` (enum `Nearest`/`All`), `CanQueryCaster` (bool), `MovementCorrection` (bool), `Debug` (bool) | `None` | `CombatService:Hitbox` `:49-125`, `HitboxData.Info` `types.luau:53-62`. Форму задаёт **тип** `Size`, а `Shape` нужен только UI — в `Info` такого поля нет |
 
 Результат пишется в `seq.Ctx.Targets`.
 
@@ -402,7 +402,7 @@ export type Category = "Query" | "Damage" | "State" | "Combat" | "VFX" | "Flow" 
 
 | Блок | Свойства | Cleanup | Источник |
 |---|---|---|---|
-| `ProcessAttack` | `Priority`, `Damage`, `Stun{Duration,Priority}`, `Knockback{...}`, `Angular{...}`, `Ragdoll{Duration}`, `Block{...}` | зависит от детей | `CombatService:Attack` `:128-140` |
+| `ProcessAttack` | `Priority`, `Damage`, `SkipBlocked` (bool), `Stun{Duration,Priority}`, `Knockback{...}`, `Angular{...}`, `Ragdoll{Duration}`, `Block{...}` | ??????? ?? ????? | `CombatService:Attack` `:128-140` |
 
 Форма `Info` собирается по образцу §6. Блок выполняет **один** вызов `CombatService:Attack` на каждую цель из `seq.Ctx.Targets`.
 
@@ -438,12 +438,14 @@ export type Category = "Query" | "Damage" | "State" | "Combat" | "VFX" | "Flow" 
 | `SetNoCollision` | `State` (**только `true`**) | `NoCollision` | баг `false` — §2.8 |
 | `SetRestrain` | `State` (bool) | `Restrain` | `Watchers.luau:71-84` |
 
-### Combat (2)
+### Combat (4)
 
 | Блок | Свойства | Cleanup | Источник |
 |---|---|---|---|
 | `AddArmor` | — | `Janitor` | `CombatService:AddArmor` `:179-197`. Возвращает `Crane.Janitor`, **не принимает Duration** |
 | `CreateGrab` | `AttackerRestrain`, `VictimRestrain` (bool), `BindMode` (enum `None`/`RootToRoot`), `Offset` (`CFrame`) | `Object` | `CombatService:CreateGrab` `:199-265`, возвращает `Buttler` |
+| `RemoveArmor` | - | `None` | `seq.Cleaner:Remove("Armor<N>")`. Снимает **все** брони скилла |
+| `ReleaseGrab` | - | `None` | `seq.Cleaner:Remove("Grab<N>")`. Снимает все хваты: разрывает связь, возвращает `Collision` и `AutoRotate` |
 
 `BindMode` решает проблему `types.luau:40-52`: `GrabData.Victim.Bind` требует `Part0`/`Part1` как `BasePart`, а `CombatService:CreateGrab:239-249` строит по ним `AlignPosition`/`AlignOrientation`. Blueprint не содержит `Instance`, поэтому эмиттер подставляет части сам:
 
@@ -464,7 +466,7 @@ CombatService:CreateGrab(character, Target, {
 
 Это покрывает `Grab.luau:127-143` без `Instance` в данных. `BindMode = "None"` → `Victim` без `Bind` (захват без физической привязки).
 
-### VFX (6)
+### VFX (7)
 
 Все через `VFXService:StartEffect` → `Cleanup: "VFXStop"`, кроме `StopAnimation` (`None`).
 
@@ -491,12 +493,11 @@ CombatService:CreateGrab(character, Target, {
 
 `Condition` и `Code` — сырые строки, попадают в сгенерированный `.luau` **дословно**. Осознанный escape hatch; UI помечает такие блоки иконкой, валидатор возвращает `warnings`.
 
-### Target (2)
+### Target (1)
 
 | Блок | Свойства | Cleanup | Notes |
 |---|---|---|---|
-| `FilterTargets` | `MaxTargets`, `SortByDistance` | `None` | Мутирует `seq.Ctx.Targets` на месте |
-| `ClearTargets` | — | `None` | `seq.Ctx.Targets = {}` |
+| `ClearTargets` | - | `None` | `seq.Ctx.Targets = {}` |
 
 ### Итог
 
@@ -505,11 +506,10 @@ CombatService:CreateGrab(character, Target, {
 | Query | 1 |
 | Damage | 1 |
 | State | 10 |
-| Combat | 2 |
-| VFX | 6 |
-| Flow | 4 |
-| Target | 2 |
-| **Итого** | **26** |
+| Combat | 4 |
+| VFX | 7 |
+| Target | 1 |
+| **Итого** | **28** |
 
 ---
 
@@ -984,6 +984,8 @@ Tag для `Instance` / `BasePart` **не требуется** — пробле�
 | E18 | проверки 18 и 19, а заодно `BindMode`, `Direction` и любой другой `enum` | общее правило «значение ∈ `Options» вместо трёх почти одинаковых проверок |
 | E19 | проверка 20 | без изменений |
 | E20 | соответствие значения объявленному типу свойства | добавлена сверх таблицы: мусор в типе иначе проскакивает до эмиттера и падает в сгенерированном файле. Принимает и type-tag после `codec.decode`, и живой Roblox-тип |
+| E24 | `Repeat` вложен в контейнер | Эмиттер делает много-кадровым весь верхний блок, поэтому `ProcessAttack` с `Repeat` в `OnSuccess` исполнил бы атаку на каждом кадре диапазона. Плоский `Sequencer` не умеет вложенные диапазоны |
+| E28 | `Hitbox.Shape` не совпадает с типом `Size` | `Ball` требует `number` (радиус), `Box` — `Vector3`. Без сверки скилл тихо получался не той формы, что показал интерфейс |
 
 Требуемым считается и явно заданное значение, и непустой `Default` — поэтому `Hitbox.Origin` с `Default = CF()` проверку 8 проходит.
 
@@ -1008,14 +1010,12 @@ W7 срабатывает только когда `Assets.Stand` отсутст�
 | # | Условие | Причина |
 |---|---|---|
 | W1 | `Repeat` содержит `ProcessAttack` | `GetFrames:210-217` дублирует тело `count` раз за один Heartbeat — несколько атак за кадр |
-| W2 | `Repeat` внутри `Repeat` | Плоская форма `{start, fn, end}` не выражает вложенный диапазон — эмиттер сведёт внутренний `Repeat` к внешнему |
-| W3 | `Branch` внутри `ProcessAttack` | Условие выполняется в контексте `andThen`, где нет гарантии порядка относительно `Cast` |
 | W4 | `Repeat` шире 30 кадров | Риск пропуска тела при лаг-спайке (`GetFrames:206-207`) |
 | W5 | используется `Branch.Condition` или `CustomCallback.Code` | Сырой Luau попадёт в сгенерированный файл дословно |
 | W6 | `ProcessAttack` без `Block` | Сработает скрытый дефолт `Hooks/Block.luau:24-29` — стоит показать пользователю осознанно |
 | W7 | `AssetSource = "Stand"`, но в `Assets.Stand` нет части нужных ключей | `Punch.luau:37` падает при `Assets.Stand = nil` |
 
-W1-W4 — **предупреждения, а не запреты**: пользователь может осознанно оставить комбинацию. UI показывает их рамкой на таймлайне и списком в футере.
+W1, W3, W4 — **предупреждения, а не запреты**: пользователь может осознанно оставить комбинацию. UI показывает их рамкой на таймлайне и списком в футере.
 
 ---
 
@@ -1091,7 +1091,7 @@ W1-W4 — **предупреждения, а не запреты**: пользо
   └ OnArmored              (пусто — не рендерится)
 ```
 
-Свёрнутый узел показывает сводку: `ProcessAttack · 5 children`. Блок с предупреждением (W1-W4) обводится жёлтой рамкой.
+Свёрнутый узел показывает сводку: `ProcessAttack · 5 children`. Блок с предупреждением (W1, W3, W4) обводится жёлтой рамкой.
 
 ### Панель свойств: резолв `Block`
 
