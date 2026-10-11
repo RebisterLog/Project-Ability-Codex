@@ -1,5 +1,5 @@
 local Assets = game:GetService("ReplicatedStorage").assets
-local GlobalAnimations = Assets.Default
+local GlobalAssets = Assets.Default
 
 local Animations = Assets.Gerson.None.Animations
 local Sounds = Assets.Gerson.None.Sounds
@@ -56,19 +56,19 @@ local None = {
 
 		-- Dash
 		DashForward = {
-			Animation = GlobalAnimations.Dash.Forward,
+			Animation = GlobalAssets.Dash.Forward,
 			Priority = Enum.AnimationPriority.Action,
 		},
 		DashLeft = {
-			Animation = GlobalAnimations.Dash.Left,
+			Animation = GlobalAssets.Dash.Left,
 			Priority = Enum.AnimationPriority.Action,
 		},
 		DashRight = {
-			Animation = GlobalAnimations.Dash.Right,
+			Animation = GlobalAssets.Dash.Right,
 			Priority = Enum.AnimationPriority.Action,
 		},
 		DashBack = {
-			Animation = GlobalAnimations.Dash.Backward,
+			Animation = GlobalAssets.Dash.Backward,
 			Priority = Enum.AnimationPriority.Action,
 		},
 

@@ -80,7 +80,7 @@ function Character.onStart(self: typeof(Character))
 	self.SkillService = Crane:GetService("SkillService")
 
 	self.Cleaner = Crane.Buttler.new()
-	self.OnTakeDamage = Crane.Signal.new()
+	self.OnTakeDamage = Crane.Signal()
 
 	self.RagdollConstraints = {}
 	self.RagdollColliders = {}

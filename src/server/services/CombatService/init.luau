@@ -20,9 +20,9 @@ function CombatService:onStart()
 	self.VFXService = Crane:GetService("VFXService")
 
 	self.AttackHook = Hook.new("Attack", { "Precast", "Cast", "Postcast" })
-	self.Casted = Signal.new()
-	self.Attacked = Signal.new()
-	self.Interrupted = Signal.new()
+	self.Casted = Signal()
+	self.Attacked = Signal()
+	self.Interrupted = Signal()
 
 	for i, v in pairs(script.Hooks:GetChildren()) do
 		if not v:IsA("ModuleScript") then continue end

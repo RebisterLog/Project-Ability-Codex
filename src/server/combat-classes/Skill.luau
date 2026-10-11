@@ -21,7 +21,7 @@ function Skill.new(character: types.Character, spec: types.Spec, data: types.Ski
 		Holding = false,
 		Cleaner = Crane.Buttler.new(),
 
-		Deactivated = Signal.new(),
+		Deactivated = Signal(),
 
 		Proxy = Proxy({
 			Parameters = {

@@ -123,7 +123,7 @@ setmetatable(Connection, {
 
 	For example:
 	```lua
-	local signal = Signal.new()
+	local signal = Signal()
 
 	signal:Connect(function(msg)
 		print("Got message:", msg)
@@ -169,7 +169,7 @@ function Signal.Wrap<T...>(rbxScriptSignal: RBXScriptSignal): Signal<T...>
 		"Argument #1 to Signal.Wrap must be a RBXScriptSignal; got " .. typeof(rbxScriptSignal)
 	)
 
-	local signal = Signal.new()
+	local signal = Signal()
 	signal._proxyHandler = rbxScriptSignal:Connect(function(...)
 		signal:Fire(...)
 	end)
