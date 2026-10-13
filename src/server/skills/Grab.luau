@@ -72,7 +72,8 @@ function Skill.onInit(self)
 	local Humanoid = character.Humanoid
 
 	local AttackInfo = self.Data.AttackInfo
-	local ThrowInfo = self.Data.Throw
+	local ThrowInfo = table.clone(self.Data.Throw)
+	ThrowInfo.Stun = table.clone(self.Data.Throw.Stun)
 
 	local VFXService = Crane:GetService("VFXService")
 	local CombatService = Crane:GetService("CombatService")
@@ -92,6 +93,7 @@ function Skill.onInit(self)
 	}
 
 	ThrowInfo.Stun.Duration = self.GrabData.FinalFrame / 60
+	self.ThrowInfo = ThrowInfo
 
 	self.AlreadyHit = {}
 	self.Target = nil :: types.Character?
@@ -179,7 +181,7 @@ function Skill.onInit(self)
 					CombatService:Attack({
 						Attacker = character,
 						Victim = self.Target,
-						Info = self.Data.Throw,
+						Info = self.ThrowInfo,
 					})
 				end,
 			},

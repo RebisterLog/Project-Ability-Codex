@@ -130,8 +130,12 @@ function CombatService:Attack(data: types.AttackData)
 	data.State.Success = true
 	data.State.Continue = true
 
-	data.OriginalInfo = (data.Info or {})
-	data.Info = table.clone(data.OriginalInfo)
+	local OriginalInfo = data.Info or {}
+
+	if not table.isfrozen(OriginalInfo) then Crane.Utils.DeepFreeze(OriginalInfo) end
+
+	data.OriginalInfo = OriginalInfo
+	data.Info = table.clone(OriginalInfo)
 
 	return Promise.new(function(resolve)
 		local result = self.AttackHook:Apply(data)

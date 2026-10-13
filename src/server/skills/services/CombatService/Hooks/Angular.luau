@@ -2,7 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
 
 local CombatService = Crane:GetService("CombatService")
@@ -10,7 +9,7 @@ local CombatService = Crane:GetService("CombatService")
 return {
 	Name = "Angular",
 	Type = "Cast",
-	Priority = 90,
+	Priority = 91,
 	Function = function(Data: types.AttackData)
 		local State = Data.State
 		local Info = Data.Info
@@ -19,8 +18,6 @@ return {
 		local attackerPlayer = Players:GetPlayerFromCharacter(Data.Attacker.instance)
 
 		if State.Success then
-			if State.Halt then return true end
-
 			if Info.Angular then
 				local TargetPart = Data.Victim.RootPart
 				local RootAttachment = TargetPart:FindFirstChildOfClass("Attachment")
@@ -58,7 +55,7 @@ return {
 
 						AngularVelocity.AngularVelocity = (Info.Angular.Velocity or Vector3.zero)
 							* Speed
-						AngularVelocity.MaxTorque = Info.Angular.MaxTorque or 100_0000
+						AngularVelocity.MaxTorque = Info.Angular.MaxTorque or 100_000
 
 						game.Debris:AddItem(AngularVelocity, Duration)
 					end

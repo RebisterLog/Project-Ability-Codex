@@ -117,6 +117,7 @@ export type AttackData = {
 		PerfectBlocking: boolean,
 		PerfectBlocked: boolean,
 		BlockIgnored: boolean,
+		BlockCanceled: boolean,
 		IFrames: number,
 		Armored: boolean,
 	},

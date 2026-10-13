@@ -16,19 +16,19 @@ function StandService:onStart()
 end
 
 function StandService:AddStandFor(character: types.Character, model: Model)
-	if self.Stands[character] then
-		error("User already has stand")
-		return
-	end
+    task.wait() -- for getting time to clean stand
 
+    if self.Stands[character] then
+        error("User already have stand")
+    end
+    
 	local stand = Crane:AddComponent(model, "Stand") :: types.Stand
 	stand:Init(character)
 
 	self.Stands[character] = stand
 
 	stand.Destroying:Once(function()
-		self.Stands[character] = nil
-		stand.instance:Destroy()
+		self:RemoveStandFor(character)
 	end)
 
 	character.Destroying:Once(function()
@@ -36,6 +36,15 @@ function StandService:AddStandFor(character: types.Character, model: Model)
 	end)
 
 	return stand
+end
+
+function StandService:RemoveStandFor(character: types.Character)
+    local stand = self.Stands[character]
+    
+    if stand then
+        self.Stands[character] = nil
+        stand.instance:Destroy()
+    end
 end
 
 -- Add standName only if you must to get any model of stand
