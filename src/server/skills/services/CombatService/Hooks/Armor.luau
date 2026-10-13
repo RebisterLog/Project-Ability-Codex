@@ -1,27 +1,27 @@
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
 
 local CombatService = Crane:GetService("CombatService")
 
+local CleanCache = {}
+
 return {
-	Name = "Ragdoll",
-	Type = "Cast",
-	Priority = 89,
+	Name = "Armor",
+	Type = "Precast",
+	Priority = 88,
 	Function = function(Data: types.AttackData)
 		local State = Data.State
 		local Info = Data.Info
 
-		if Info.Ragdoll and State.Success and not State.Halt then
-			local ragdoll =
-				Data.Victim:AddParameter("Ragdoll", true) :: types.ParameterObject<"Ragdoll">
+		if State.Armored then
+			Info.Ragdoll = nil
+			Info.Stun = nil
+			Info.Knockback = nil
+			Info.Angular = nil
 
-			task.delay(Info.Ragdoll.Duration or 1, ragdoll.Destroy, ragdoll)
-
-			CombatService.Interrupted:Fire(Data.Victim)
+			State.Continue = false
 		end
 
 		return true

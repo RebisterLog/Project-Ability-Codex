@@ -59,6 +59,16 @@ local function DeepClone<T>(t: T & {}): T
 	return new
 end
 
+local function DeepFreeze<T>(t: T & {}): T
+	if typeof(t) ~= "table" or table.isfrozen(t) then return t end
+
+	for _, v in pairs(t) do
+		if type(v) == "table" then DeepFreeze(v) end
+	end
+
+	return table.freeze(t)
+end
+
 local function Reconcile<S, T>(src: S, template: T): S & T
 	assert(type(src) == "table", "First argument must be a table")
 	assert(type(template) == "table", "Second argument must be a table")
@@ -128,6 +138,7 @@ end
 return {
 	Log = Log,
 	DeepClone = DeepClone,
+	DeepFreeze = DeepFreeze,
 	Reconcile = Reconcile,
 	Extend = Extend,
 	ChangeNetworkOwner = SafeChangeNetworkOwner,

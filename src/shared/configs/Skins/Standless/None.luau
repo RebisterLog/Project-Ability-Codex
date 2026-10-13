@@ -23,6 +23,11 @@ local None = {
 			Priority = Enum.AnimationPriority.Movement,
 		},
 
+		Jump = {
+		    Animation = GlobalAssets.Movement.Jump,
+			Priority = Enum.AnimationPriority.Movement,
+		},
+
 		-- Grab
 
 		Grab = {

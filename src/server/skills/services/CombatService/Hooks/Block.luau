@@ -1,7 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
 
 local CombatService = Crane:GetService("CombatService")
@@ -28,7 +27,10 @@ return {
 
 		local Block = Crane.Utils.Reconcile(Data.Info.Block or {}, DefaultBlock)
 
-		if Block.BlockIgnore then return true end
+		if Block.BlockIgnore then
+			Data.State.BlockIgnored = true
+			return true
+		end
 
 		if Block.BlockCancel then
 			Data.State.BlockCanceled = true

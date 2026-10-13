@@ -32,7 +32,7 @@ function Block:Activate()
 	local Anims = self.Spec.Data.Assets.Animations
 	local Anim = self.Spec.Data.Assets.Animations["Block"]
 
-	local Collector = Crane.Janitor.new()
+	local Collector = Crane.Buttler.new()
 
 	Promise.new(function(resolve)
 		Collector:Add(character:AddParameter("MaxWalkSpeed", 3))

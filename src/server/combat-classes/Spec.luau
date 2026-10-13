@@ -10,6 +10,8 @@ const MOVEMENT_ANIMATIONS = {
 	"Idle",
 	"Run",
 	"Walk",
+	"Jump",
+	"FreeFall",
 }
 
 local Spec = {}
@@ -24,9 +26,9 @@ function Spec.new(character: types.Character, data: types.SpecData): types.Spec
 		Proxy = Proxy({
 			Skills = {},
 		}),
-		OnInterruptSkill = Crane.Signal.new(),
-		OnActivateSkill = Crane.Signal.new(),
-		OnDeactivateSkill = Crane.Signal.new(),
+		OnInterruptSkill = Crane.Signal(),
+		OnActivateSkill = Crane.Signal(),
+		OnDeactivateSkill = Crane.Signal(),
 	}, Spec) :: types.Spec
 
 	return self
@@ -36,9 +38,17 @@ function Spec.Init(self: types.Spec)
 	if self.Initialized then return end
 	self.Initialized = true
 
+	local defaultMovements = Crane:GetService("ConfigService"):Get("DefaultAnimations").Movement
+
 	for _, name in MOVEMENT_ANIMATIONS do
 		local animation = self.Data.Assets.Animations[name]
-		if not animation then continue end
+		
+		if not animation then
+		    if not defaultMovements[name] then continue end
+
+			self.Character.instance:SetAttribute(name, defaultMovements[name].Animation.AnimationId)
+			continue
+		end
 
 		self.Character.instance:SetAttribute(name, animation.Animation.AnimationId)
 	end

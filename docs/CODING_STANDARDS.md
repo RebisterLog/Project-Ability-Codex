@@ -144,7 +144,7 @@ local component = Crane:GetComponent("Character", characterInstance)
 
 ```luau
 local Signal = Crane.Signal
-self.Attacked = Signal.new()
+self.Attacked = Signal()
 self.Attacked:Connect(function(Type, Data)
     -- handle event
 end)

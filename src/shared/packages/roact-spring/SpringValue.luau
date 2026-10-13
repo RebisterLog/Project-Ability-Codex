@@ -33,7 +33,7 @@ function SpringValue.new(props: SpringValueProps, key: string)
 		},
 
 		onChange = props.onChange or function() end,
-		onComplete = Signal.new(),
+		onComplete = Signal(),
 
 		_memoizedDuration = 0,
 

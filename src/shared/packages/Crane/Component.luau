@@ -148,7 +148,7 @@ end
 function Component.Instantiate<T>(self: Component<T>, instance: T & Instance)
 	local prototype = setmetatable({
 		instance = instance,
-		Destroying = Signal.new(),
+		Destroying = Signal(),
 	}, {
 		__index = self,
 	}) :: Component<T>

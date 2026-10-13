@@ -20,9 +20,9 @@ function CombatService:onStart()
 	self.VFXService = Crane:GetService("VFXService")
 
 	self.AttackHook = Hook.new("Attack", { "Precast", "Cast", "Postcast" })
-	self.Casted = Signal.new()
-	self.Attacked = Signal.new()
-	self.Interrupted = Signal.new()
+	self.Casted = Signal()
+	self.Attacked = Signal()
+	self.Interrupted = Signal()
 
 	for i, v in pairs(script.Hooks:GetChildren()) do
 		if not v:IsA("ModuleScript") then continue end
@@ -130,8 +130,12 @@ function CombatService:Attack(data: types.AttackData)
 	data.State.Success = true
 	data.State.Continue = true
 
-	data.OriginalInfo = (data.Info or {})
-	data.Info = table.clone(data.OriginalInfo)
+	local OriginalInfo = data.Info or {}
+
+	if not table.isfrozen(OriginalInfo) then Crane.Utils.DeepFreeze(OriginalInfo) end
+
+	data.OriginalInfo = OriginalInfo
+	data.Info = table.clone(OriginalInfo)
 
 	return Promise.new(function(resolve)
 		local result = self.AttackHook:Apply(data)

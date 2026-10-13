@@ -63,7 +63,7 @@ setmetatable(Connection, {
 local Signal = {}
 Signal.__index = Signal
 
-function Signal.new()
+function Signal()
 	local self = setmetatable({
 		_handlerListHead = false,
 		_proxyHandler = nil,

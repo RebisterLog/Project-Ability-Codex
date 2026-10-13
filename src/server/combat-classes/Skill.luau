@@ -21,7 +21,7 @@ function Skill.new(character: types.Character, spec: types.Spec, data: types.Ski
 		Holding = false,
 		Cleaner = Crane.Buttler.new(),
 
-		Deactivated = Signal.new(),
+		Deactivated = Signal(),
 
 		Proxy = Proxy({
 			Parameters = {
@@ -70,7 +70,7 @@ function Skill.SetCooldown(self: types.Skill, Time: number)
 		{
 			Name = "SetDictionary",
 			Path = { "Parameters" },
-			Args = { "ReleaseTime", tick() + Time },
+			Args = { "ReleaseTime", os.clock() + Time },
 		},
 	})
 end
@@ -94,7 +94,7 @@ function Skill.SetEnabled(self: types.Skill, enabled: boolean)
 end
 
 function Skill.IsOnCooldown(self: types.Skill)
-	return self.Proxy().Parameters.ReleaseTime > tick()
+	return self.Proxy().Parameters.ReleaseTime > os.clock()
 end
 
 function Skill.Validate(self: types.Skill)

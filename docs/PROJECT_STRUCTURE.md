@@ -52,14 +52,7 @@ PAC/
 │   │   │   ├── CollisionService.luau# Collision detection (COMBAT)
 │   │   │   ├── ConfigsService.luau # Configuration management
 │   │   │   ├── GameDataService.luau# Game data persistence
-│   │   │   ├── PathUtil.luau       # Pathfinding utilities
-│   │   │   ├── PlayersService.luau # Player management
-│   │   │   ├── Sample.luau
-│   │   │   ├── SkillService.luau   # Skill execution service (COMBAT)
-│   │   │   ├── SpecService.luau    # Skill specifications service (COMBAT)
-│   │   │   ├── TestService.luau
-│   │   │   └── VFXService.luau     # Visual effects service
-│   │   │
+│   │   │   ├── PathUtil.luau       # Pathfinding utili/
 │   │   ├── skills/         # Skill implementations
 │   │   │   ├── Gerson/     # Gerson character skills
 │   │   │   ├── Standless/  # Standless character skills

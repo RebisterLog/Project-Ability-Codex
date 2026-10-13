@@ -86,7 +86,7 @@ function Skill:onInit()
 			},
 
 			{
-				15,
+				14,
 				function(seq, Frame)
 					local Models = self.Assets.Models
 

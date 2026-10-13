@@ -2,7 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
 
 local CombatService = Crane:GetService("CombatService")
@@ -16,8 +15,6 @@ return {
 		local Info = Data.Info
 
 		if State.Success then
-			if State.Halt then return true end
-
 			if Info.Knockback then
 				local AttackerPart = Data.Attacker.RootPart
 				local TargetPart = Data.Victim.RootPart
