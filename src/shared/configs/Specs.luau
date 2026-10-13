@@ -21,6 +21,7 @@ local Specs = {
 			["Footrest"] = Enum.KeyCode.E,
 			["Uppercut"] = Enum.KeyCode.R,
 			["CircularKick"] = Enum.KeyCode.G,
+			["Counter"] = Enum.KeyCode.V,
 		},
 	},
 

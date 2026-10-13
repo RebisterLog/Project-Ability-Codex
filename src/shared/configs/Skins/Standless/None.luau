@@ -107,6 +107,22 @@ local None = {
 			Animation = Animations.User.CircularKick,
 			Priority = Enum.AnimationPriority.Action,
 		},
+
+		-- Counter
+		Counter = {
+			Animation = Animations.User.CounterStart,
+			Priority = Enum.AnimationPriority.Action,
+		},
+
+		CounterHit = {
+			Animation = Animations.User.CounterHit,
+			Priority = Enum.AnimationPriority.Action,
+		},
+
+		EnemyCounter = {
+			Animation = Animations.Enemy.Counter,
+			Priority = Enum.AnimationPriority.Action,
+		},
 	},
 	Sounds = {
 		Punch1 = {
@@ -172,6 +188,17 @@ local None = {
 			Sound = Sounds.CircularKickHit,
 			Volume = 1,
 		},
+
+		-- Counter
+		CounterVoice = {
+			Sound = Sounds.CounterVoice,
+			Volume = 1,
+		},
+
+		CounterHit = {
+			Sound = Sounds.CounterHit,
+			Volume = 1,
+		},
 	},
 	Models = {
 
@@ -202,6 +229,12 @@ local None = {
 		Grab = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
 			FinalFrame = 30,
+		},
+
+		Counter = {
+			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
+			StartHitFrame = 30,
+			FinalFrame = 45,
 		},
 	},
 }
