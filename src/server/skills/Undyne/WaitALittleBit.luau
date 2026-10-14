@@ -151,7 +151,7 @@ function Skill:onInit()
 			{
 				125,
 				function(seq)
-					seq:Remove("Armor")
+					seq.Cleaner:Remove("Armor")
 				end,
 			},
 
