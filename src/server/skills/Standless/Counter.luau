@@ -54,7 +54,7 @@ local Skill: types.SkillData = {
 	CounterWindow = 45,
 
 	-- vulnerable frames after the window closed
-	EndLag = 40,
+	EndLag = 30,
 
 	-- the throw that lands on the countered attacker
 	CounterInfo = {
@@ -260,6 +260,16 @@ function Skill:onInit()
 				self.Data.CounterWindow,
 				function()
 					self.CanCounter = false
+					if self.Countered then return end
+
+					VFXService:StartEffect(Players:GetPlayers(), "Highlight", character.instance, {
+						FillColor = Color3.fromRGB(255, 60, 60),
+						OutlineColor = Color3.fromRGB(255, 60, 60),
+						FillTransparency = 0.5,
+						OutlineTransparency = 0,
+						Lifetime = 1,
+						Tween = true,
+					})
 				end,
 			},
 
@@ -279,31 +289,31 @@ function Skill:Activate()
 	end
 end
 
-function Skill:Interrupt()
-	local VFXService = Crane:GetService("VFXService")
-
-	local Anims = self.Spec.Data.Assets.Animations
-
-	if self.Sequence then self.Sequence:Stop() end
-	if self.CounterSequence then self.CounterSequence:Stop() end
-
-	self.CanCounter = false
-	self.Countered = true
-
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
-		Animation = Anims["Counter"].Animation,
-	})
-
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
-		Animation = Anims["CounterHit"].Animation,
-	})
-
-	local target = self.Target
-	if target then
-		VFXService:StopEffect(Players:GetPlayers(), "Animation", target.instance, {
-			Animation = Anims["EnemyCounter"].Animation,
-		})
-	end
-end
+-- function Skill:Interrupt()
+-- 	local VFXService = Crane:GetService("VFXService")
+-- 
+-- 	local Anims = self.Spec.Data.Assets.Animations
+-- 
+-- 	if self.Sequence then self.Sequence:Stop() end
+-- 	if self.CounterSequence then self.CounterSequence:Stop() end
+-- 
+-- 	self.CanCounter = false
+-- 	self.Countered = true
+-- 
+-- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
+-- 		Animation = Anims["Counter"].Animation,
+-- 	})
+-- 
+-- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
+-- 		Animation = Anims["CounterHit"].Animation,
+-- 	})
+-- 
+-- 	local target = self.Target
+-- 	if target then
+-- 		VFXService:StopEffect(Players:GetPlayers(), "Animation", target.instance, {
+-- 			Animation = Anims["EnemyCounter"].Animation,
+-- 		})
+-- 	end
+-- end
 
 return Skill
