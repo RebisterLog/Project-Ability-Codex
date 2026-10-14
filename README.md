@@ -32,6 +32,7 @@ lune run src/shared/packages/SkillConstructor/tests/structural.luau
 lune run src/shared/packages/SkillConstructor/tests/emitter.luau
 lune run src/shared/packages/SkillConstructor/tests/against-spec.luau
 lune run tools/tests/json.luau
+lune run tools/tests/bot-skill-priority.luau
 ```
 
 `against-spec` covers the `Spec` rules through pure fixtures in both Lune and Studio.

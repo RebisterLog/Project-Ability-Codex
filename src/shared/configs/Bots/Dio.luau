@@ -8,39 +8,68 @@ local Dio: BotsCharacters.BotCharacterConfig = {
 	Reaction = 0.6,
 	Agility = 0.6,
 
+	ConditionWeight = 1,
+	ComboWeight = 1,
+
 	Skills = {
 		["Punch"] = {
+			Priority = 1,
 			Distance = 8,
+			PreferredDistance = {
+				Min = 5,
+				Max = 8,
+			},
 
-			RejectedConditions = {
-				"TARGET_ATTACKING",
+			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
+			},
+
+			PenaltyConditions = {
+				"TARGET_ATTACKING",
 			},
 		},
 
 		["Block"] = {
-			RequiredConditions = {
-				"TARGET_ATTACKING",
+			PreferredConditions = {
+				"TARGET_BLOCKABLE",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
 
-			RejectedConditions = {
+			ForbiddenConditions = {
+				"TARGET_IGNORE_BLOCK",
+			},
+
+			HoldWhile = {
+				"TARGET_ATTACKING",
+				"TARGET_BLOCKABLE",
+				"TARGET_PERFECT_BLOCKABLE",
+			},
+
+			HoldUntil = {
+				"TARGET_STUNNED",
+				"TARGET_RAGDOLLED",
+				"TARGET_BLOCKING",
+				"TARGET_PERFECT_BLOCKABLE",
+				"TARGET_PERFECT_BLOCKING",
 				"TARGET_IGNORE_BLOCK",
 			},
 		},
 
 		["Grab"] = {
 			Distance = 6,
+			PreferredDistance = {
+				Min = 4,
+				Max = 6,
+			},
 
 			RequiredConditions = {
 				"TARGET_BLOCKING",
 			},
 
-			RejectedConditions = {
-				--"TARGET_RAGDOLLED",
-				--"TARGET_ATTACKING",
-				--"TARGET_ARMORED",
+			PreferredConditions = {
+				"TARGET_BLOCKING",
+				"TARGET_STUNNED",
 			},
 		},
 	},

@@ -16,6 +16,7 @@ local Skill: Types.SkillData = {
 		"ComboEnder",
 		"Armored",
 		"BlockBreaker",
+		"Blockable",
 	},
 
 	AttackInfo = {

@@ -35,6 +35,7 @@ local Skill: types.SkillData = {
 		"PerfectBlockable",
 		"Armored",
 		"BlockBreaker",
+		"Blockable",
 		"Ragdoll",
 	},
 

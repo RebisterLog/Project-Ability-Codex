@@ -121,7 +121,7 @@ function Skill:onInit()
 					local target = self.Target
 					if not target then return end
 
-					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
@@ -194,7 +194,7 @@ function Skill:onInit()
 			{
 				0,
 				function(seq)
-					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					self.Countered = false
@@ -257,7 +257,7 @@ function Skill:onInit()
 			},
 
 			{
-				self.Data.CounterWindow,
+				150,
 				function()
 					self.CanCounter = false
 					if self.Countered then return end
@@ -273,7 +273,7 @@ function Skill:onInit()
 				end,
 			},
 
-			{ self.Data.CounterWindow + self.Data.EndLag },
+			{ 150 + 60 },
 		},
 	}))
 end

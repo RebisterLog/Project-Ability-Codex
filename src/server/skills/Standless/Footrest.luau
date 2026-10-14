@@ -16,6 +16,7 @@ local Skill = {
 		"ComboEnder",
 		"Armored",
 		"BlockBreaker",
+		"Blockable",
 	},
 
 	AttackInfo = {

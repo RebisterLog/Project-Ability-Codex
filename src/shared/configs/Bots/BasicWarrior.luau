@@ -9,78 +9,153 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 	Agility = 0.6,
 	Debug = false,
 
+	ConditionWeight = 1,
+	ComboWeight = 1,
+
 	Skills = {
 		["Punch"] = {
+			Priority = 1,
 			Distance = 8,
+			PreferredDistance = {
+				Min = 5,
+				Max = 8,
+			},
 
-			RejectedConditions = {
-				"TARGET_ATTACKING",
+			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
+			},
+
+			PenaltyConditions = {
+				"TARGET_ATTACKING",
 			},
 		},
 
 		["Block"] = {
-			RequiredConditions = {
-				"TARGET_ATTACKING",
+			PreferredConditions = {
+				"TARGET_BLOCKABLE",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
 
-			RejectedConditions = {
+			ForbiddenConditions = {
 				"TARGET_IGNORE_BLOCK",
+			},
+
+			HoldWhile = {
+				"TARGET_ATTACKING",
+				"TARGET_BLOCKABLE",
+				"TARGET_PERFECT_BLOCKABLE",
 			},
 
 			HoldUntil = {
 				"TARGET_STUNNED",
-				"TARGET_ATTACKING",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
-				"TARGET_BLOCK_BREAKING",
+				"TARGET_PERFECT_BLOCKABLE",
 				"TARGET_PERFECT_BLOCKING",
+				"TARGET_IGNORE_BLOCK",
+			},
+		},
+
+		["Counter"] = {
+			Priority = 6,
+
+			PreferredDistance = {
+				Min = 3,
+				Max = 10,
+			},
+
+			RequiredConditions = {
+				"TARGET_ATTACKING",
+			},
+
+			PreferredConditions = {
+				"TARGET_BLOCKABLE",
+				"TARGET_ARMORED",
+				"TARGET_IGNORE_BLOCK",
+			},
+
+			ForbiddenConditions = {
+				"TARGET_STUNNED",
+				"TARGET_RAGDOLLED",
 			},
 		},
 
 		["Grab"] = {
 			Distance = 6,
+			PreferredDistance = {
+				Min = 4,
+				Max = 6,
+			},
 
 			RequiredConditions = {
 				"TARGET_BLOCKING",
 			},
 
-			RejectedConditions = {
-				--"TARGET_RAGDOLLED",
-				--"TARGET_ATTACKING",
-				--"TARGET_ARMORED",
+			PreferredConditions = {
+				"TARGET_BLOCKING",
+				"TARGET_STUNNED",
 			},
 		},
 
 		["Footrest"] = {
 			Distance = 6,
+			PreferredDistance = {
+				Min = 4,
+				Max = 6,
+			},
 
-			RejectedConditions = {
+			ForbiddenConditions = {
 				"TARGET_ARMORED",
 				"TARGET_RAGDOLLED",
+			},
+
+			PreferredConditions = {
+				"TARGET_SHORT_RANGE",
+			},
+
+			PenaltyConditions = {
+				"TARGET_BLOCKING",
 			},
 		},
 
 		["Uppercut"] = {
 			Distance = 8,
+			PreferredDistance = {
+				Min = 5,
+				Max = 8,
+			},
 
-			RejectedConditions = {
+			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
+			},
+
+			PreferredConditions = {
+				"TARGET_STUNNED",
+			},
+
+			PenaltyConditions = {
+				"TARGET_BLOCKING",
 			},
 		},
 
 		["Dash"] = {
-			--Distance = 15,
-			--RequiredConditions = {
-			--	"TARGET_IGNORE_BLOCK",
-			--	"TARGET_ATTACKING",
-			--}
+			PreferredDistance = {
+				Min = 12,
+			},
+
+			PreferredConditions = {
+				"TARGET_ATTACKING",
+				"TARGET_IGNORE_BLOCK",
+			},
 		},
 
 		["CircularKick"] = {
 			Distance = 6,
+			PreferredDistance = {
+				Min = 4,
+				Max = 6,
+			},
 
 			RequiredConditions = {
 				"TARGET_RAGDOLLED",

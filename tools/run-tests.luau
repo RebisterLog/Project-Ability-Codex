@@ -18,6 +18,7 @@ local SUITES = {
 		path = "src/shared/packages/SkillConstructor/tests/against-spec.luau",
 	},
 	{ name = "json", path = "tools/tests/json.luau" },
+	{ name = "bot-skill-priority", path = "tools/tests/bot-skill-priority.luau" },
 }
 
 local failed: { string } = {}
