@@ -52,7 +52,7 @@ local Skill: types.SkillData = {
 	},
 
 	AttackInfo = {
-		Damage = 15,
+		Damage = 2.5,
 
 		Block = {
 			Blockable = false,
@@ -82,7 +82,7 @@ local Skill: types.SkillData = {
 		Speed = 120,
 		LifeTime = 2,
 		Distance = 120,
-		HitboxSize = 5,
+		HitboxSize = 2,
 		-- One round, one target, matching the old `soloTarget` flag.
 		CanPierce = false,
 	},

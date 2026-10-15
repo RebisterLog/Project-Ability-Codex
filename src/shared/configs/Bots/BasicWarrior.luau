@@ -129,6 +129,14 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 				"TARGET_RAGDOLLED",
 			},
 		},
+
+		["DualPistols"] = {
+            Distance = 50,
+    
+    		ForbiddenConditions = {
+    			"TARGET_RAGDOLLED",
+    		},
+		},
 	},
 
 	Combos = {
