@@ -153,6 +153,21 @@ function Skill:onInit()
 						})
 					end)
 
+					CombatService:Attack({
+						Attacker = character,
+						Victim = self.Target,
+						Info = {
+							Block = {
+								PerfectBlockable = false,
+							},
+
+							Stun = {
+								Priority = Enums.Stun.Heavy,
+								Duration = 2,
+							},
+						},
+					})
+
 					seq.Cleaner:Set(
 						"GrabObject",
 						CombatService:CreateGrab(character, target, {

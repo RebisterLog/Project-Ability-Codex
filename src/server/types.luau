@@ -229,6 +229,152 @@ export type AttackData = {
 	}
 ]]
 
+-- PROJECTILE
+
+--[=[
+	Per-step context handed to a projectile `MoveFunction`.
+
+	Read-only snapshot of the projectile state for the current frame. Return a new
+	`Velocity` from the callback to override motion, or `nil` to keep the velocity
+	the projectile already has (gravity still applies).
+]=]
+export type ProjectileMoveContext = {
+	Velocity: Vector3,
+	Direction: Vector3,
+	Position: Vector3,
+	DeltaTime: number,
+	Elapsed: number,
+	Traveled: number,
+}
+
+--[=[
+	Custom motion function. Runs once per Heartbeat, before the projectile
+	commits its new position.
+
+	```lua
+	-- homing
+	MoveFunction = function(self, context)
+		local target = findNearestCharacter(context.Position, 100)
+		if not target then return nil end
+
+		local desired = (target.RootPart.Position - context.Position).Unit
+			* context.Velocity.Magnitude
+
+		return context.Velocity:Lerp(desired, math.clamp(context.DeltaTime * 4, 0, 1))
+	end
+	```
+]=]
+export type ProjectileMoveFunction = (
+	self: Projectile,
+	context: ProjectileMoveContext
+) -> Vector3?
+
+--[=[
+	Surface reflection (bouncing). Disabled by default — a plain projectile flies
+	straight until it hits something, then ends with reason `"Wall"`.
+]=]
+export type ProjectileReflection = {
+	Enabled: boolean,
+	-- Fraction of speed kept per bounce, 0..1. `1` is a perfectly elastic bounce.
+	Restitution: number?,
+	-- Bounces allowed before the projectile ends. `-1` for infinite.
+	MaxBounces: number?,
+	-- Skip characters entirely, so only terrain/map bounces.
+	IgnoreCharacters: boolean?,
+	-- How far to nudge off the surface normal, prevents re-hitting the same surface.
+	SurfaceOffset: number?,
+}
+
+export type ProjectileConfig = {
+	-- Character the projectile is attributed to; also drives the hitbox query.
+	Caster: Character,
+	-- Optional skill, forwarded to `CombatService:Hitbox` for cast tracking.
+	Skill: Skill?,
+
+	-- Template instance, cloned by the class. Never mutated.
+	Model: Model | BasePart,
+	Position: Vector3,
+	Direction: Vector3,
+	Speed: number,
+	-- Constant acceleration, default `Vector3.zero`.
+	Gravity: Vector3?,
+
+	-- Box size, or sphere radius when a number is given.
+	HitboxSize: Vector3 | number,
+	HitboxOffset: CFrame?,
+	-- When true the projectile keeps flying after a hit and never damages the
+	-- same target twice. When false it ends on the first hit.
+	CanPierce: boolean,
+
+	-- Seconds before the projectile ends on its own, default 5.
+	Lifetime: number?,
+	-- Studs travelled before the projectile ends on its own.
+	MaxDistance: number?,
+
+	Reflection: ProjectileReflection?,
+	MoveFunction: ProjectileMoveFunction?,
+
+	-- Skip the caster's own character in hit queries, default true.
+	IgnoreCaster: boolean?,
+	Debug: boolean?,
+}
+
+type ProjectileProperities = {
+	Config: ProjectileConfig,
+	-- The cloned visual instance. Parented to `workspace.Effects`.
+	Instance: Model | BasePart,
+
+	Position: Vector3,
+	Velocity: Vector3,
+	Direction: Vector3,
+	Speed: number,
+
+	Elapsed: number,
+	Traveled: number,
+	HitCount: number,
+	-- Targets already hit, so a piercing projectile never hits one twice.
+	AlreadyHit: { [Character]: true },
+
+	-- Normalised reflection config, resolved once in `new`.
+	Reflection: ProjectileReflection,
+	Bounces: number,
+
+	Running: boolean,
+	Finished: boolean,
+	Connection: RBXScriptConnection?,
+	RayParams: RaycastParams,
+	-- Resolved lazily on the first step, since services may not be started yet.
+	CombatService: any?,
+
+	Cleaner: typeof(Crane.Buttler.new()),
+
+	Hit: Signal.Signal<Character, Vector3>,
+	-- Second argument is the post-bounce direction. The result is `nil` when the
+	-- bounce came from a manual `Reflect` rather than the swept surface test.
+	Reflect: Signal.Signal<RaycastResult?, Vector3>,
+	-- Reasons: "Lifetime", "Distance", "Hit", "Bounce", "Wall", "Stopped",
+	-- "Destroyed"
+	End: Signal.Signal<string>,
+	Stepped: Signal.Signal<number>,
+}
+
+type ProjectileMethods = {
+	Start: (self: Projectile) -> (),
+	Stop: (self: Projectile, reason: string?) -> (),
+	Destroy: (self: Projectile) -> (),
+	Step: (self: Projectile, deltaTime: number) -> (),
+
+	SetVelocity: (self: Projectile, velocity: Vector3) -> (),
+	SetDirection: (self: Projectile, direction: Vector3, speed: number?) -> (),
+	-- Manually bounce off a surface normal, bypassing the sweep.
+	Reflect: (self: Projectile, normal: Vector3) -> (),
+	-- Force a hit on a target, respecting the unique-target set. Returns `false`
+	-- when the target had already been hit.
+	HitTarget: (self: Projectile, target: Character, position: Vector3) -> boolean,
+}
+
+export type Projectile = ProjectileProperities & ProjectileMethods
+
 -- QUEST
 
 type QuestProperities = {

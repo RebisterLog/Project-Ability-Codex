@@ -128,6 +128,12 @@ local None = {
 			Animation = Animations.Enemy.Counter,
 			Priority = Enum.AnimationPriority.Action,
 		},
+
+		-- Dual Pistols
+		DualPistols = {
+			Animation = Animations.User.DualPistols,
+			Priority = Enum.AnimationPriority.Action,
+		},
 	},
 	Sounds = {
 		Punch1 = {
@@ -204,6 +210,22 @@ local None = {
 			Sound = Sounds.CounterHit,
 			Volume = 1,
 		},
+
+		-- Dual Pistols
+		DualPistolsVoice = {
+			Sound = Sounds.DualPistolsVoice,
+			Volume = 1,
+		},
+
+		DualPistolsReload = {
+			Sound = Sounds.DualPistolsReload,
+			Volume = 1,
+		},
+
+		DualPistolsShot = {
+			Sound = Sounds.DualPistolsShot,
+			Volume = 1,
+		},
 	},
 	Models = {
 
@@ -228,6 +250,12 @@ local None = {
 
 		-- Circular Kick Ground hit
 		CircularKickGroundHit = Assets.Standless.None.Models.CircularKickGround,
+
+		-- Dual Pistols
+		LeftPistol = Assets.Standless.None.Models.LeftPistol,
+		RightPistol = Assets.Standless.None.Models.RightPistol,
+		Bullet = Assets.Standless.None.Models.Bullet,
+		PistolShotEffectPart = Assets.Standless.None.Models.PistolShotEffectPart,
 	},
 
 	Stats = {

@@ -18,6 +18,7 @@ local Spec = {
 		["Uppercut"] = "@Specs/Standless/Uppercut",
 		["CircularKick"] = "@Specs/Standless/CircularKick",
 		["Counter"] = "@Specs/Standless/Counter",
+		["DualPistols"] = "@Specs/Standless/DualPistols",
 	},
 
 	onInit = function(self: types.Spec)
