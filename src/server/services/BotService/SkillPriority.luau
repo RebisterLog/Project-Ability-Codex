@@ -3,20 +3,30 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+local Conditions = require(script.Parent.Conditions)
 
---- Подсчёт приоритета скиллов бота.
+--- Skill priority scoring for bots.
 ---
---- Модуль ничего не знает про `Spec`, `Skill` и состояние мира: на вход приходит
---- уже отфильтрованный список кандидатов (`Spec:GetAvailableSkills`), список
---- текущих условий цели и расстояние до неё. Всё остальное — чистая арифметика
---- по конфигу, поэтому её можно проверить без студии.
+--- The module knows nothing about `Spec`, `Skill` or the world: it receives an
+--- already filtered list of candidates, the mask of target conditions
+--- (`Sense.Mask`, see `BotService/Conditions`) and the distance to it. Everything
+--- else is pure arithmetic over the config, which is why it can be verified
+--- without Studio.
+---
+--- The guard (`Block`) never reaches this module: the bot has a single action
+--- slot and a defensive skill must not compete with an attack by weights. The
+--- "should we block" question belongs to `BotService/Defense`.
 
 local DEFAULT_CONDITION_WEIGHT = 1
 local DEFAULT_COMBO_WEIGHT = 1
 
---- Кандидат на использование. Нужен только идентификатор: всё остальное скорер
---- берёт из конфига. Структурно совместим с `types.Skill`, поэтому
---- `Spec:GetAvailableSkills()` можно передать как есть.
+-- Bitwise operations come from `bit32`: the formatter version used here chokes on
+-- the `&` and `|` operators.
+local band = bit32.band
+
+--- A candidate to use. Only the id is needed, everything else the scorer takes
+--- from the config. Structurally compatible with `types.Skill`, so
+--- `Spec:GetAvailableSkills()` can be passed as is.
 export type Candidate = {
 	Data: {
 		Id: string,
@@ -30,63 +40,24 @@ export type ScoredSkill = {
 
 local SkillPriority = {}
 
---- Вес одного мягкого условия для конкретного бота.
+--- Weight of a single soft condition for this bot.
 local function GetConditionWeight(config: BotsCharacters.BotCharacterConfig)
 	return config.ConditionWeight or DEFAULT_CONDITION_WEIGHT
 end
 
---- Сколько условий из списка сейчас выполнено.
-local function CountMatched(
-	list: { BotsCharacters.SkillCondition },
-	conditions: { BotsCharacters.SkillCondition }
-)
-	local matched = 0
+--- Hard groups: every `RequiredConditions` entry has to be met, and not a single
+--- `ForbiddenConditions` entry.
+local function IsEligible(options: BotsCharacters.SkillPreference, mask: number): boolean
+	local required = Conditions.Mask(options.RequiredConditions)
+	if band(mask, required) ~= required then return false end
 
-	for _, condition in list do
-		if table.find(conditions, condition) then
-			matched += 1
-		end
-	end
-
-	return matched
-end
-
---- Хотя бы одно из условий выполнено?
-local function AnyMatched(
-	list: { BotsCharacters.SkillCondition },
-	conditions: { BotsCharacters.SkillCondition }
-)
-	for _, condition in list do
-		if table.find(conditions, condition) then return true end
-	end
-
-	return false
-end
-
---- Жёсткие группы: `RequiredConditions` должны быть выполнены все,
---- `ForbiddenConditions` — ни одного.
-local function IsEligible(
-	options: BotsCharacters.SkillPreference,
-	conditions: { BotsCharacters.SkillCondition }
-)
-	local required = options.RequiredConditions
-	if required then
-		for _, condition in required do
-			if not table.find(conditions, condition) then return false end
-		end
-	end
-
-	local forbidden = options.ForbiddenConditions
-	if forbidden then
-		for _, condition in forbidden do
-			if table.find(conditions, condition) then return false end
-		end
-	end
+	local forbidden = Conditions.Mask(options.ForbiddenConditions)
+	if band(mask, forbidden) ~= 0 then return false end
 
 	return true
 end
 
---- Бонус за попадание в мягкую полосу дистанции.
+--- Bonus for landing inside the soft distance band.
 local function IsPreferredDistance(preferred: { Min: number?, Max: number? }, distance: number)
 	local min = preferred.Min
 	if min and distance < min then return false end
@@ -97,32 +68,25 @@ local function IsPreferredDistance(preferred: { Min: number?, Max: number? }, di
 	return true
 end
 
---- Приоритет одного скилла. `isCombo` — стоит ли он сейчас в плане.
+--- Priority of a single skill. `isCombo` tells whether it is the planned step.
 ---
---- Единственное место, где живёт арифметика: и выбор победителя, и проверка
---- удержания считают через неё, поэтому правила не могут разойтись.
+--- The only place where the arithmetic lives: both the winner selection and the
+--- hold check go through it, so the rules cannot drift apart.
 function SkillPriority.Score(
 	config: BotsCharacters.BotCharacterConfig,
 	options: BotsCharacters.SkillPreference,
-	conditions: { BotsCharacters.SkillCondition },
+	mask: number,
 	distance: number,
 	isCombo: boolean
 ): number
 	local conditionWeight = GetConditionWeight(config)
 	local score = options.Priority or 0
 
-	local preferred = options.PreferredConditions
-	if preferred then
-		score += CountMatched(preferred, conditions) * conditionWeight
-	end
+	score += Conditions.Count(mask, options.PreferredConditions) * conditionWeight
+	score -= Conditions.Count(mask, options.PenaltyConditions) * conditionWeight
 
-	local penalty = options.PenaltyConditions
-	if penalty then
-		score -= CountMatched(penalty, conditions) * conditionWeight
-	end
-
-	local preferredDistance = options.PreferredDistance
-	if preferredDistance and IsPreferredDistance(preferredDistance, distance) then
+	local preferred = options.PreferredDistance
+	if preferred and IsPreferredDistance(preferred, distance) then
 		score += conditionWeight
 	end
 
@@ -133,15 +97,15 @@ function SkillPriority.Score(
 	return score
 end
 
---- Возвращает скилл с наибольшим приоритетом или `nil`, если ни один не подошёл.
+--- Returns the skill with the highest priority, or `nil` when nothing fits.
 ---
---- `comboSkillId` — скилл, который сейчас стоит в плане: он получает `ComboWeight`,
---- а при равенстве очков побеждает всегда. Поэтому комбо остаётся основным
---- планом, и условия сдвигают его только когда дают строгое преимущество.
+--- `comboSkillId` is the skill currently in the plan: it gets `ComboWeight` and
+--- wins every tie. That keeps the combo as the backbone of the behaviour, with
+--- conditions only shifting it when they offer a strict advantage.
 function SkillPriority.Select(
 	config: BotsCharacters.BotCharacterConfig,
 	candidates: { Candidate },
-	conditions: { BotsCharacters.SkillCondition },
+	mask: number,
 	distance: number,
 	comboSkillId: string?
 ): ScoredSkill?
@@ -152,13 +116,13 @@ function SkillPriority.Select(
 		local id = candidate.Data.Id
 		local options = config.Skills[id]
 		if not options then continue end
-		if not IsEligible(options, conditions) then continue end
+		if not IsEligible(options, mask) then continue end
 
 		local maxDistance = options.Distance
 		if maxDistance and distance > maxDistance then continue end
 
 		local isCombo = comboSkillId ~= nil and id == comboSkillId
-		local score = SkillPriority.Score(config, options, conditions, distance, isCombo)
+		local score = SkillPriority.Score(config, options, mask, distance, isCombo)
 
 		if not best or score > best.Score then
 			best = { Id = id, Score = score }
@@ -171,7 +135,7 @@ function SkillPriority.Select(
 
 	if not best then return nil end
 
-	-- Ничья: план важнее условий, всё остальное разбирается случайно.
+	-- Tie: the plan wins over conditions, everything else is random.
 	for _, id in ties do
 		if comboSkillId and id == comboSkillId then return { Id = id, Score = best.Score } end
 	end
@@ -179,34 +143,36 @@ function SkillPriority.Select(
 	return { Id = ties[math.random(1, #ties)], Score = best.Score }
 end
 
---- Должен ли бот отпустить удерживаемый скилл прямо сейчас.
+--- Should the bot release a held skill right now.
 ---
---- `bestId` — победитель подсчёта среди кандидатов БЕЗ удерживаемого скилла
---- (`nil`, если вариантов не осталось: тогда держаться есть смысла).
+--- Only the config rules live here: `HoldUntil` (emergency abort) and `HoldWhile`
+--- (keep holding while at least one condition is met). The defense layer passes
+--- no rival for the recompute fallback: the bot has a single action slot and the
+--- question "who owns it" is answered by the posture, not by the attack rating.
+--- `bestId` therefore stays available for attacking skills held as part of a combo.
 ---
---- Порядок:
---- 1. сработал `HoldUntil` — аварийный релиз, ничего не считаем;
---- 2. задан `HoldWhile` — держим, пока есть хоть одно из условий;
---- 3. `HoldWhile` не задан — страховка пересчётом: отпускаем, как только скилл
----    перестал быть лучшим кандидатом. Если кандидатов не осталось (все на
----    кулдауне), держаться есть смысла, поэтому отпускать нечем.
+--- Order:
+--- 1. `HoldUntil` fired — emergency release, nothing is computed;
+--- 2. `HoldWhile` is set — hold while at least one of its conditions is met;
+--- 3. `HoldWhile` is not set — fallback by recomputation: release as soon as the
+---    skill is no longer the best candidate. If no candidates are left (all are on
+---    cooldown) holding still makes sense, so there is nothing to release to.
 ---
---- Пустой список считается отсутствием поля: в Luau `{}` истинно, и без этой
---- проверки `HoldWhile = {}` означало бы «отпускать каждый кадр».
+--- An empty list counts as a missing field: `{}` is truthy in Luau, and without
+--- this check `HoldWhile = {}` would mean "release every frame".
 function SkillPriority.ShouldRelease(
 	config: BotsCharacters.BotCharacterConfig,
 	skillId: string,
-	conditions: { BotsCharacters.SkillCondition },
+	mask: number,
 	bestId: string?
 ): boolean
 	local options = config.Skills[skillId]
 	if not options then return true end
 
-	local holdUntil = options.HoldUntil
-	if holdUntil and #holdUntil > 0 and AnyMatched(holdUntil, conditions) then return true end
+	if Conditions.HasAny(mask, options.HoldUntil) then return true end
 
 	local holdWhile = options.HoldWhile
-	if holdWhile and #holdWhile > 0 then return not AnyMatched(holdWhile, conditions) end
+	if holdWhile and #holdWhile > 0 then return not Conditions.HasAny(mask, holdWhile) end
 
 	if bestId == nil then return false end
 

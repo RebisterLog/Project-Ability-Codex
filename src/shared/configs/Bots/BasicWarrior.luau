@@ -14,12 +14,7 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 
 	Skills = {
 		["Punch"] = {
-			Priority = 1,
-			Distance = 8,
-			PreferredDistance = {
-				Min = 5,
-				Max = 8,
-			},
+			Distance = 6,
 
 			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
@@ -42,28 +37,21 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			},
 
 			HoldWhile = {
-				"TARGET_ATTACKING",
 				"TARGET_BLOCKABLE",
 				"TARGET_PERFECT_BLOCKABLE",
 			},
 
 			HoldUntil = {
+				"TARGET_PERFECT_BLOCKABLE",
 				"TARGET_STUNNED",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
-				"TARGET_PERFECT_BLOCKABLE",
-				"TARGET_PERFECT_BLOCKING",
 				"TARGET_IGNORE_BLOCK",
 			},
 		},
 
 		["Counter"] = {
-			Priority = 6,
-
-			PreferredDistance = {
-				Min = 3,
-				Max = 10,
-			},
+			Distance = 10,
 
 			RequiredConditions = {
 				"TARGET_ATTACKING",
@@ -83,10 +71,6 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 
 		["Grab"] = {
 			Distance = 6,
-			PreferredDistance = {
-				Min = 4,
-				Max = 6,
-			},
 
 			RequiredConditions = {
 				"TARGET_BLOCKING",
@@ -100,10 +84,6 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 
 		["Footrest"] = {
 			Distance = 6,
-			PreferredDistance = {
-				Min = 4,
-				Max = 6,
-			},
 
 			ForbiddenConditions = {
 				"TARGET_ARMORED",
@@ -121,10 +101,6 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 
 		["Uppercut"] = {
 			Distance = 8,
-			PreferredDistance = {
-				Min = 5,
-				Max = 8,
-			},
 
 			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
@@ -140,10 +116,6 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 		},
 
 		["Dash"] = {
-			PreferredDistance = {
-				Min = 12,
-			},
-
 			PreferredConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_IGNORE_BLOCK",
@@ -152,10 +124,6 @@ local BasicWarrior: BotsCharacters.BotCharacterConfig = {
 
 		["CircularKick"] = {
 			Distance = 6,
-			PreferredDistance = {
-				Min = 4,
-				Max = 6,
-			},
 
 			RequiredConditions = {
 				"TARGET_RAGDOLLED",

@@ -5,292 +5,270 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local Enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
 
-local NavigationController = require(script.Parent.NavigationController)
-local StateMachine = require(script.Parent.NavigationController.StateMachine)
-
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
+local NavigationController = require(script.Parent.NavigationController)
 
-local rand = Random.new(tick())
+local Attack = require(script.Parent.Attack)
+local Defense = require(script.Parent.Defense)
+local Posture = require(script.Parent.Posture)
+local Sense = require(script.Parent.Sense)
+local Threat = require(script.Parent.Threat)
+
+--- The bot: target, navigation, spec.
+---
+--- There are exactly two decisions here and they live in separate layers:
+---   * defense is event driven (`OnIncoming`), because the perfect-block window is
+---     0.25 seconds long and a single frame of delay decides whether it happens;
+---   * attack runs on the tick (`Tick`), because plans and priorities are in no
+---     hurry.
+---
+--- Owns the action slot: while the slot is held by the defense the attack leaves it
+--- alone, and an incoming threat preempts the attack. A state machine used to do
+--- this, but the states differed only by posture, so telling them apart was
+--- pointless.
+
+-- How often the bot thinks. The tick is not bound to a frame: the decision is made
+-- on accumulated time so the behaviour does not depend on FPS.
+local TICK_INTERVAL = 1 / 30
+
+--- Only `Casted` is needed from the service, so it is described here instead of
+--- dragging the types of the whole CombatService in, and `typeof` does not accept
+--- calls.
+type CombatServiceLike = {
+	Casted: {
+		Connect: (self: any, callback: (data: types.HitboxData) -> ()) -> RBXScriptConnection,
+	},
+}
 
 type BotProperities = {
 	Target: types.Character?,
 	Navigator: NavigationController.NavigationController,
-	StateMachine: StateMachine.StateMachine,
 	Config: BotsCharacters.BotCharacterConfig,
 	Cleaner: typeof(Crane.Buttler.new()),
 	TargetCleaner: typeof(Crane.Buttler.new()),
 	Character: types.Character,
+
+	CombatService: CombatServiceLike,
+
+	Posture: Posture.Posture,
+
+	Roles: Defense.Roles,
+	Sense: Sense.Sense,
+	Threat: Threat.Threat,
+
+	Combo: BotsCharacters.SkillCombo,
+	ComboIndex: number,
+
+	Random: Random,
+	Accumulator: number,
 }
 
 type BotMethods = {
 	SetTarget: (self: Bot, character: types.Character?) -> (),
 	ClearTarget: (self: Bot) -> (),
+
+	OnIncoming: (self: Bot, data: types.HitboxData) -> (),
+	Tick: (self: Bot, dt: number) -> (),
+	SetPosture: (self: Bot, posture: Posture.Posture) -> (),
+
+	IsGuardHeld: (self: Bot) -> boolean,
+	IsGuardOnCooldown: (self: Bot) -> boolean,
+	ReleaseGuard: (self: Bot) -> (),
+
 	Destroy: (self: Bot) -> (),
 }
 
 export type Bot = BotProperities & BotMethods
 
-type BotState = StateMachine.State & { bot: Bot }
-
-local States: { [string]: BotState } = {
-	Attacking = {
-		Enter = function(self: BotState)
-			local chaoticMultiplier = self.bot.Config.Chaotic
-			local isMelle = rand:NextNumber()
-				< self.bot.Config.Aggressive + rand:NextNumber(0, chaoticMultiplier)
-			local isBaiting = isMelle
-				and (
-					rand:NextNumber()
-					< self.bot.Config.Agility + rand:NextNumber(0, chaoticMultiplier)
-				)
-
-			self.Combo = self.bot:GetCombo()
-			self.ComboIndex = 1
-
-			self.bot.Navigator:SetMovementStyle(if isBaiting then "zigzag" else "puma")
-		end,
-
-		Update = function(self: BotState)
-			local hasActiveSkill = self.bot.Character.Spec:CheckActiveSkills()
-			if hasActiveSkill then return end
-
-			self.bot.Character.Spec:DeactivateSkill("Block")
-
-			if self.ComboIndex > #self.Combo then
-				self.ComboIndex = 1
-				self.Combo = self.bot:GetCombo()
-			end
-
-			local chaoticMultiplier = self.bot.Config.Chaotic
-
-			local conditions = self.bot:GetConditions()
-			local skillName = self.Combo[self.ComboIndex]
-
-			local skill: types.Skill = self.bot.Character.Spec.Skills[skillName]
-			local skillOptions = self.bot.Config.Skills[skillName]
-			local distance = (
-				self.bot.Character.RootPart.Position - self.bot.Target.RootPart.Position
-			).Magnitude
-
-			if skillOptions.Distance and distance > skillOptions.Distance then
-				self.ComboIndex += 1
-				return
-			end
-
-			if skillOptions.RejectedConditions then
-				for i, condition in conditions do
-					if table.find(skillOptions.RejectedConditions, condition) then
-						self.ComboIndex += 1
-						return
-					end
-				end
-			end
-
-			if skillOptions.RequiredConditions then
-				for i, required in skillOptions.RequiredConditions do
-					if not table.find(conditions, required) then
-						self.ComboIndex += 1
-						return
-					end
-				end
-			end
-
-			if skill then
-				self.ComboIndex += 1
-				self.bot.Character.Spec:ActivateSkill(skill.Data.Id)
-				return
-			end
-		end,
-
-		Exit = function(self: BotState)
-			self.ComboIndex = 1
-			self.Combo = {}
-
-			self.bot.Navigator:SetMovementStyle("direct")
-		end,
-	},
-
-	Defending = {
-		Enter = function(self: BotState)
-			local spec = self.bot.Character.Spec
-			self.bot.Navigator:SetMovementStyle("zigzag")
-			self.bot.Navigator:SetHoldDistance(15)
-
-			local conditions = self.bot:GetConditions() :: { BotsCharacters.SkillCondition }
-
-			if table.find(conditions, "TARGET_PERFECT_BLOCKABLE") then
-				task.spawn(function()
-					spec:ActivateSkill("Block")
-				end)
-				return
-			end
-
-			if table.find(conditions, "TARGET_BLOCKABLE") then
-				if spec.Skills["Block"]:IsOnCooldown() then
-					spec:ActivateSkill("Dash")
-				else
-					task.spawn(function()
-						spec:ActivateSkill("Block")
-					end)
-				end
-			end
-
-			spec:ActivateSkill("Dash")
-		end,
-
-		Update = function(self: BotState)
-			local spec = self.bot.Character.Spec
-			local distance = (
-				self.bot.Character.RootPart.Position - self.bot.Target.RootPart.Position
-			).Magnitude
-			local stun = self.bot.Target:GetParameter("Stun")
-
-			if not self.bot.Target.Spec:CheckActiveSkills() then
-				self.bot.StateMachine:ChangeState("Attacking")
-				return
-			end
-		end,
-
-		Exit = function(self: BotState)
-			local spec = self.bot.Character.Spec
-			spec:DeactivateSkill("Block")
-			self.bot.Navigator:SetMovementStyle("direct")
-			self.bot.Navigator:SetHoldDistance()
-		end,
-	},
-}
-
-local function GetAverageValue(nums: { number })
-	local summ = 0
-	local count = 0
-
-	for i, x in nums do
-		summ += x
-		count += 1
-	end
-
-	return summ / count
-end
-
 local Bot = {}
 Bot.__index = Bot
 
-function Bot.SetTarget(self: Bot, character: types.Character)
+--- Defense roles come from the tags of the skills of the spec and not from the
+--- config: the skill itself decides what it is, the guard or the retreat.
+local function CollectRoles(spec: types.Spec): { Defense.RoleSkill }
+	local roles: { Defense.RoleSkill } = {}
+
+	for id, skill in spec.Skills do
+		table.insert(roles, { Id = id, Tags = skill.Data.SkillCharacters })
+	end
+
+	return roles
+end
+
+function Bot.IsGuardHeld(self: Bot): boolean
+	local guardId = self.Roles.Guard
+	if not guardId then return false end
+
+	local guard = self.Character.Spec.Skills[guardId]
+
+	return guard ~= nil and guard.Active
+end
+
+--- No guard counts as "unavailable": the defense then falls back to the escape.
+function Bot.IsGuardOnCooldown(self: Bot): boolean
+	local guardId = self.Roles.Guard
+	if not guardId then return true end
+
+	local guard = self.Character.Spec.Skills[guardId]
+	if not guard then return true end
+
+	return guard:IsOnCooldown()
+end
+
+function Bot.ReleaseGuard(self: Bot)
+	local guardId = self.Roles.Guard
+	if not guardId then return end
+
+	self.Character.Spec:DeactivateSkill(guardId)
+end
+
+function Bot.SetPosture(self: Bot, posture: Posture.Posture)
+	if self.Posture == posture then return end
+
+	local previous = self.Posture
+	self.Posture = posture
+
+	local style = Posture.Get(posture)
+	local movementStyle = if posture == "Attack"
+		then Posture.RollAttackStyle(self.Config, self.Random)
+		else style.Style
+
+	self.Navigator:SetMovementStyle(movementStyle)
+	self.Navigator:SetHoldDistance(style.HoldDistance)
+
+	-- The guard is only held while the bot backs off: in an attack the slot has to
+	-- be free.
+	if previous == "Defend" and posture ~= "Defend" then self:ReleaseGuard() end
+end
+
+--- Reaction to an incoming hit of the target. Called straight from the `Casted`
+--- handler: `Casted` flies before `CombatService:Attack` computes the states of the
+--- victim, so the guard decision belongs here and not on the next tick.
+function Bot.OnIncoming(self: Bot, data: types.HitboxData)
+	local target = self.Target
+	if not target then return end
+
+	if not self.Threat:Track(data, target) then return end
+
+	self:SetPosture("Defend")
+
+	local decision = Defense.React(data, {
+		GuardId = self.Roles.Guard,
+		EscapeId = self.Roles.Escape,
+		GuardHeld = self:IsGuardHeld(),
+		GuardOnCooldown = self:IsGuardOnCooldown(),
+	})
+
+	local skillId = if decision == "Press"
+		then self.Roles.Guard
+		else if decision == "Escape" then self.Roles.Escape else nil
+
+	if not skillId then return end
+
+	-- `Skill:Activate` yields, so the press is spawned: the guard state
+	-- (`PerfectBlockTime`) has to settle before the states of the victim are
+	-- computed.
+	task.spawn(function()
+		self.Character.Spec:ActivateSkill(skillId)
+	end)
+end
+
+function Bot.Tick(self: Bot, dt: number)
+	self.Accumulator += dt
+	if self.Accumulator < TICK_INTERVAL then return end
+
+	self.Accumulator = 0
+
+	if not self.Target then
+		self:SetPosture("Idle")
+		return
+	end
+
+	self.Sense:Refresh()
+
+	local mask = self.Sense.Mask
+	local guardId = self.Roles.Guard
+
+	if
+		guardId
+		and self:IsGuardHeld()
+		and Defense.ShouldReleaseGuard(self.Config, guardId, mask)
+	then
+		self:ReleaseGuard()
+	end
+
+	-- The slot goes to the defense for what a block can take, and for a hit that has
+	-- already landed. "Does it have an active skill" must not be used for this: a
+	-- target holding a block stays active indefinitely, and the bot would back off
+	-- from it for the whole fight; a windup of an unblockable hit is a window for a
+	-- counter attack, and retreating there only gets in the way (see
+	-- `Defense.ShouldDefend`).
+	if Defense.ShouldDefend(mask, self.Threat:IsRecent()) then
+		self:SetPosture("Defend")
+		return
+	end
+
+	self:SetPosture("Attack")
+	Attack.Step(self, mask, self.Sense.Distance, guardId)
+end
+
+function Bot.SetTarget(self: Bot, character: types.Character?)
+	if not character then
+		self:ClearTarget()
+		return
+	end
+
 	if self.Target == character then return end
 	if not character.Spec then return end
 
 	self.TargetCleaner:Clean()
+
 	self.Target = character
 	self.Navigator:SetTarget(character.RootPart)
+	self.Sense:SetTarget(character)
+	self.Threat:Clear()
 
 	self.TargetCleaner:Add(character.Destroying:Once(function()
 		self:ClearTarget()
 	end))
 
-	local hitboxTracker: { [string]: { lastPos: Vector3, lastTime: number, lastDist: number } } = {}
+	self.TargetCleaner:Add(self.CombatService.Casted:Connect(function(data: types.HitboxData)
+		if data.Caster ~= self.Target then return end
 
-	self.TargetCleaner:Add(
-		Crane:GetService("CombatService").Casted:Connect(function(data: types.HitboxData)
-			if data.Caster ~= self.Target then return end
-			if not table.find(data.Skill.Data.SkillCharacters, "Hit") then return end
+		self:OnIncoming(data)
+	end))
 
-			local botPos = self.Character.RootPart.Position
-			local hitboxPos = data.Info.Origin and data.Info.Origin.Position
-				or (self.Target.RootPart.CFrame * data.Info.Offset).Position
-			local hitboxSize = typeof(data.Info.Size) == "Vector3"
-					and GetAverageValue({ data.Info.Size.X, data.Info.Size.Y, data.Info.Size.Z })
-				or data.Info.Size
-			local dist = (botPos - hitboxPos).Magnitude
-			local skillId = data.Skill.Data.Id
-			local now = os.clock()
-			local isProjectile = table.find(data.Skill.Data.SkillCharacters, "Projectile")
-			local track = hitboxTracker[skillId]
-
-			local threshold = hitboxSize + (isProjectile and 30 or 8)
-
-			if track then
-				if dist < track.lastDist and dist <= threshold then
-					self.StateMachine:ChangeState("Defending")
-				end
-			else
-				if dist <= threshold then self.StateMachine:ChangeState("Defending") end
-			end
-
-			hitboxTracker[skillId] = { lastPos = hitboxPos, lastTime = now, lastDist = dist }
-		end)
-	)
-
-	self.StateMachine:ChangeState("Defending")
-end
-
-function Bot.GetCombo(self: Bot)
-	return self.Config.Combos[rand:NextInteger(1, #self.Config.Combos)]
-end
-
-function Bot.GetConditions(self: Bot)
-	local conditions: { BotsCharacters.SkillCondition } = {}
-	local distance = (self.Target.RootPart.Position - self.Character.RootPart.Position).Magnitude
-	local hasActiveSkill, activeSkills = self.Target.Spec:CheckActiveSkills()
-
-	if self.Target:GetParameter("Armor") then table.insert(conditions, "TARGET_ARMORED") end
-
-	local stun = self.Target:GetParameter("Stun")
-	if stun and stun.Priority > Enums.Stun.None then table.insert(conditions, "TARGET_STUNNED") end
-
-	if self.Target:GetParameter("Ragdoll") then table.insert(conditions, "TARGET_RAGDOLLED") end
-
-	local block = self.Target.Block
-
-	if block.Blocking then table.insert(conditions, "TARGET_BLOCKING") end
-
-	if (os.clock() - block.PerfectBlockTime) <= block.PerfectBlockWindow then
-		table.insert(conditions, "TARGET_PERFECT_BLOCKING")
-	end
-
-	for i, skill: types.Skill in activeSkills do
-		if not skill.Data.SkillCharacters then continue end
-
-		local data = skill.Data.SkillCharacters
-
-		if table.find(data, "Hit") and not table.find(conditions, "TARGET_ATTACKING") then
-			table.insert(conditions, "TARGET_ATTACKING")
-		end
-
-		if
-			table.find(data, "PerfectBlockable")
-			and not table.find(conditions, "TARGET_PERFECT_BLOCKABLE")
-		then
-			table.insert(conditions, "TARGET_PERFECT_BLOCKABLE")
-		end
-
-		if table.find(data, "Blockable") and not table.find(conditions, "TARGET_BLOCKABLE") then
-			table.insert(conditions, "TARGET_BLOCKABLE")
-		end
-
-		if
-			table.find(data, "IgnoreBlock") and not table.find(conditions, "TARGET_IGNORE_BLOCK")
-		then
-			table.insert(conditions, "TARGET_IGNORE_BLOCK")
-		end
-	end
-
-	return conditions
+	-- A freshly acquired target is approached defensively: the same posture the old
+	-- state machine entered with `ChangeState("Defending")`.
+	self:SetPosture("Defend")
 end
 
 function Bot.ClearTarget(self: Bot)
 	self.TargetCleaner:Clean()
-	self.StateMachine:ChangeState("None")
+
+	self:ReleaseGuard()
+
+	self.Target = nil
+	self.Sense:ClearTarget()
+	self.Threat:Clear()
+
+	self:SetPosture("Idle")
 	self.Navigator:ClearTarget()
 end
 
-function Bot:Destroy() end
+function Bot.Destroy(self: Bot)
+	self.TargetCleaner:Clean()
+	self.Cleaner:Clean()
+end
 
 return {
 	new = function(character: types.Character, config: BotsCharacters.BotCharacterConfig)
 		character:SetSpec(config.Spec)
+
+		local spec = character.Spec
+		local random = Random.new()
 
 		local navigator = NavigationController.new(character.instance, {
 			ReachDistance = 5,
@@ -308,33 +286,38 @@ return {
 		local cleaner = character.Cleaner:Scope()
 		cleaner:Set("Navigator", navigator)
 
-		local stateMachine = StateMachine.new({
-			CreateNoneState = true,
-			ProhibitNullState = true,
-		})
-
-		cleaner:Add(stateMachine)
-
 		local bot = setmetatable({
 			Navigator = navigator,
-			StateMachine = stateMachine,
 			Config = config,
 			Cleaner = cleaner,
 			TargetCleaner = cleaner:Scope(),
 			Target = nil,
 			Character = character,
+
+			CombatService = Crane:GetService("CombatService"),
+
+			Posture = "Idle",
+			Roles = Defense.ResolveRoles(CollectRoles(spec)),
+			Sense = Sense.new(character),
+			Threat = Threat.new(character),
+
+			Combo = Attack.RollCombo(config, random),
+			ComboIndex = 1,
+
+			Random = random,
+			Accumulator = 0,
 		}, Bot)
 
-		bot.Character.Spec:ActivateSkill("Run")
+		spec:ActivateSkill("Run")
 
-		for name, state in States do
-			local copy = table.clone(state)
-			copy["bot"] = bot
-			bot.StateMachine:AddState(name, copy)
-		end
+		cleaner:Add(character.OnTakeDamage:Connect(function(attacker)
+			if not attacker then return end
 
-		cleaner:Add(character.OnTakeDamage:Connect(function(attacker, data)
 			bot:SetTarget(attacker)
+		end))
+
+		cleaner:Add(RunService.Heartbeat:Connect(function(dt)
+			bot:Tick(dt)
 		end))
 
 		return bot
