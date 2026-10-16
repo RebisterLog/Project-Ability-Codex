@@ -38,6 +38,7 @@ type GrabCharacter = {
 		Part0: BasePart,
 		Part1: BasePart,
 		Offset: CFrame?,
+		Offset1: CFrame?,
 	}?,
 	Restrain: boolean?,
 }

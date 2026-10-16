@@ -240,28 +240,28 @@ function CombatService.CreateGrab(
 
 		if data.Victim.Restrain ~= false then Cleaner:Add(victim:AddParameter("Restrain", true)) end
 
+		--- Связь строится `Weld`, а не `AlignPosition`/`AlignOrientation`: одна жёсткая
+		--- связь дешевле двух констрейнтов и не тащит за собой вложения, но `Weld` не
+		--- двигает части сам — он лишь удерживает уже достигнутое взаимное положение.
+		---
+		--- Положение задаём поэтому до сварки: `Part1.CFrame * C1` должен совпасть с
+		--- `Part0.CFrame * C0` — ровно то, что навязывали вложения. Если отдать эту
+		--- поправку солверу, на быстром броске жертва растянется к атакующему несколько
+		--- физических кадров, а сварка рождается уже в покое и ничего не исправляет.
 		if data.Victim.Bind then
-			local Part0Attachment = Cleaner:Construct(Instance, "Attachment")
-			local Part1Attachment = Cleaner:Construct(Instance, "Attachment")
+			local Bind = data.Victim.Bind
+			local C0 = Bind.Offset or CFrame.identity
+			local C1 = Bind.Offset1 or CFrame.identity
 
-			local AlignPosition = Cleaner:Construct(Instance, "AlignPosition")
-			local AlignOrientation = Cleaner:Construct(Instance, "AlignOrientation")
+			Bind.Part1.CFrame = Bind.Part0.CFrame * C0 * C1:Inverse()
 
-			Part0Attachment.CFrame = data.Victim.Bind.Offset
-			Part1Attachment.CFrame = data.Victim.Bind.Offset1 or CFrame.identity
+			local Weld = Cleaner:Construct(Instance, "Weld") :: Weld
 
-			Part0Attachment.Parent = data.Victim.Bind.Part0
-			Part1Attachment.Parent = data.Victim.Bind.Part1
-
-			AlignPosition.RigidityEnabled = true
-			AlignPosition.Attachment0 = Part1Attachment
-			AlignPosition.Attachment1 = Part0Attachment
-			AlignPosition.Parent = data.Victim.Bind.Part1
-
-			AlignOrientation.RigidityEnabled = true
-			AlignOrientation.Attachment0 = Part1Attachment
-			AlignOrientation.Attachment1 = Part0Attachment
-			AlignOrientation.Parent = data.Victim.Bind.Part1
+			Weld.C0 = C0
+			Weld.C1 = C1
+			Weld.Part0 = Bind.Part0
+			Weld.Part1 = Bind.Part1
+			Weld.Parent = Bind.Part1
 		end
 	end
 
