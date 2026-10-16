@@ -1,11 +1,11 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local CombatService = Crane:GetService("CombatService")
+const CombatService = Crane:GetService("CombatService")
 
-local DefaultBlock = {
+const DefaultBlock = {
 	Blockable = true,
 	PerfectBlockable = true,
 	BlockBreak = false,
@@ -25,7 +25,7 @@ return {
 
 		if not Data.State.Blocking then return true end
 
-		local Block = Crane.Utils.Reconcile(Data.Info.Block or {}, DefaultBlock)
+		const Block = Crane.Utils.Reconcile(Data.Info.Block or {}, DefaultBlock)
 
 		if Block.BlockIgnore then
 			Data.State.BlockIgnored = true

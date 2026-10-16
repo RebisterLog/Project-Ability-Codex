@@ -1,13 +1,13 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Punch",
 	ComboCooldown = 1.5,
 	ComboResetTime = 1.5,
@@ -22,16 +22,16 @@ local Skill: types.SkillData = {
 }
 
 function Skill:onInit()
-	local character = self.Character :: types.Character
-	local RootPart = character.RootPart
-	local Humanoid = character.Humanoid
+	const character = self.Character :: types.Character
+	const RootPart = character.RootPart
+	const Humanoid = character.Humanoid
 
-	local VFXService = Crane:GetService("VFXService")
-	local CombatService = Crane:GetService("CombatService")
-	local StandService = Crane:GetService("StandService")
+	const VFXService = Crane:GetService("VFXService")
+	const CombatService = Crane:GetService("CombatService")
+	const StandService = Crane:GetService("StandService")
 
-	local stand = StandService:GetStand(self.Character) :: types.Stand
-	local isStandActive = if stand then stand:IsActive() else false
+	const stand = StandService:GetStand(self.Character) :: types.Stand
+	const isStandActive = if stand then stand:IsActive() else false
 
 	-- if stand exists - it will use stand's Assets
 	self.Assets = if isStandActive then self.Spec.Data.Assets.Stand else self.Spec.Data.Assets
@@ -45,8 +45,8 @@ function Skill:onInit()
 			{
 				0,
 				function(seq)
-					local Anims = self.Assets.Animations
-					local Sounds = self.Assets.Sounds
+					const Anims = self.Assets.Animations
+					const Sounds = self.Assets.Sounds
 
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 8))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
@@ -88,9 +88,9 @@ function Skill:onInit()
 			{
 				14,
 				function(seq, Frame)
-					local Models = self.Assets.Models
+					const Models = self.Assets.Models
 
-					local Targets = CombatService:Hitbox({
+					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = {
@@ -148,10 +148,10 @@ function Skill:onInit()
 end
 
 function Skill:Activate()
-	local StandService = Crane:GetService("StandService")
+	const StandService = Crane:GetService("StandService")
 
-	local stand = StandService:GetStand(self.Character) :: types.Stand
-	local isStandActive = if stand then stand:IsActive() else false
+	const stand = StandService:GetStand(self.Character) :: types.Stand
+	const isStandActive = if stand then stand:IsActive() else false
 
 	self.Assets = isStandActive and self.Spec.Data.Assets.Stand or self.Spec.Data.Assets
 	self.Caster = isStandActive and stand.instance or self.Character.instance
@@ -172,7 +172,7 @@ function Skill:Activate()
 		self.PunchCount = 1
 		self:SetCooldown(self.Data.ComboCooldown)
 	elseif self.Data.ComboResetTime then
-		local oldCount = self.PunchCount
+		const oldCount = self.PunchCount
 
 		self.ResetPunches = task.delay(self.Data.ComboResetTime, function()
 			if oldCount == self.PunchCount then self.PunchCount = 1 end
@@ -181,13 +181,13 @@ function Skill:Activate()
 end
 
 function Skill:Interrupt()
-	local VFXService = Crane:GetService("VFXService")
+	const VFXService = Crane:GetService("VFXService")
 
-	local PunchCount = self.PunchCount
+	const PunchCount = self.PunchCount
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	local Anims = self.Assets.Animations
+	const Anims = self.Assets.Animations
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Caster, {
 		Animation = Anims["Punch" .. PunchCount],

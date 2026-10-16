@@ -1,8 +1,8 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-local Bodypart = require(script.Bodypart)
+const Bodypart = require(script.Bodypart)
 
 type BarrageProps = {
 	Offsets: {
@@ -44,18 +44,18 @@ return {
 		props: BarrageProps,
 		uuid: string
 	)
-		local originParts: { BasePart } = bodyPart == "Arm"
+		const originParts: { BasePart } = bodyPart == "Arm"
 				and { character:FindFirstChild("Left Arm"), character:FindFirstChild("Right Arm") }
 			or { character:FindFirstChild("Left Leg"), character:FindFirstChild("Right Leg") }
 
 		if #originParts < 2 then return end
 
-		local torso = character:FindFirstChild("HumanoidRootPart") :: BasePart
+		const torso = character:FindFirstChild("HumanoidRootPart") :: BasePart
 		if not torso then return end
 
-		local cleaner = Crane.Buttler.new()
+		const cleaner = Crane.Buttler.new()
 
-		local cacheL = cleaner:Construct(
+		const cacheL = cleaner:Construct(
 			Crane.CacheTab,
 			originParts[1],
 			5,
@@ -65,7 +65,7 @@ return {
 			end
 		)
 
-		local cacheR = cleaner:Construct(
+		const cacheR = cleaner:Construct(
 			Crane.CacheTab,
 			originParts[2],
 			5,
@@ -75,12 +75,12 @@ return {
 			end
 		)
 
-		local interval = 1 / props.Rate
+		const interval = 1 / props.Rate
 		local lastSpawn = os.clock()
 
 		local isLeft = true
 
-		local components = {}
+		const components = {}
 
 		cleaner:Set(
 			"Spawn",
@@ -89,12 +89,12 @@ return {
 
 				lastSpawn = os.clock()
 
-				local side = isLeft and -1 or 1
-				local part = isLeft and cacheL:Get() or cacheR:Get()
-				local component = Bodypart.new(part)
+				const side = isLeft and -1 or 1
+				const part = isLeft and cacheL:Get() or cacheR:Get()
+				const component = Bodypart.new(part)
 
-				local randomSide = math.random() > 0.5 and 1 or -1
-				local randomOffsets = {
+				const randomSide = math.random() > 0.5 and 1 or -1
+				const randomOffsets = {
 					A = CFrame.new(side * math.random(0.5, 1), math.random(-1, 1), 1)
 						+ Vector3.zAxis * -3,
 					B = CFrame.new(side * math.random(0, 4), math.random(-5.5, 5.5), -2)
@@ -117,14 +117,14 @@ return {
 			end)
 		)
 
-		local parts = {}
-		local cframes = {}
+		const parts = {}
+		const cframes = {}
 		cleaner:Connect(RunService.RenderStepped, function(delta)
 			table.clear(parts)
 			table.clear(cframes)
 
 			for i, component in components do
-				local alpha = (os.clock() - component.createTime) / (props.Lifetime or 1)
+				const alpha = (os.clock() - component.createTime) / (props.Lifetime or 1)
 
 				if alpha > 0.95 then
 					(component.isLeft and cacheL or cacheR):Add(component.instance)

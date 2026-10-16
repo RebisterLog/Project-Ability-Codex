@@ -1,11 +1,11 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local PlayerComponent = require(ServerScriptService.server.components.Player)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local Signal = require(ReplicatedStorage.shared.packages.Signal)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const PlayerComponent = require(ServerScriptService.server.components.Player)
+const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const Signal = require(ReplicatedStorage.shared.packages.Signal)
 
 export type PlayerModule = {
 	Name: string,
@@ -17,9 +17,9 @@ export type PlayerModule = {
 
 export type Bind = Enum.KeyCode | Enum.UserInputType
 
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
-local Parameters = require(ServerScriptService.server.components.Character.Parameters)
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
+const Parameters = require(ServerScriptService.server.components.Character.Parameters)
 
 export type CleanUp = () -> ()
 
@@ -255,10 +255,10 @@ export type ProjectileMoveContext = {
 	```lua
 	-- homing
 	MoveFunction = function(self, context)
-		local target = findNearestCharacter(context.Position, 100)
+		const target = findNearestCharacter(context.Position, 100)
 		if not target then return nil end
 
-		local desired = (target.RootPart.Position - context.Position).Unit
+		const desired = (target.RootPart.Position - context.Position).Unit
 			* context.Velocity.Magnitude
 
 		return context.Velocity:Lerp(desired, math.clamp(context.DeltaTime * 4, 0, 1))

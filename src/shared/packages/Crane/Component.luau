@@ -18,10 +18,10 @@ by RebisterLog
 --!strict
 --!optimize 2
 
-local COMPONENT_ID_ATTRIBUTE = "CraneComponentId"
+const COMPONENT_ID_ATTRIBUTE = "CraneComponentId"
 
-local Signal = require(script.Parent.packages.Signal)
-local Log = require(script.Parent.Utils).Log
+const Signal = require(script.Parent.packages.Signal)
+const Log = require(script.Parent.Utils).Log
 
 --[=[
 	The Component module provides the base class for all components in the Crane framework.
@@ -32,7 +32,7 @@ local Log = require(script.Parent.Utils).Log
 
 	@class Component
 ]=]
-local Component = {}
+const Component = {}
 Component.__index = Component
 Component.__tostring = "CraneComponent"
 
@@ -111,7 +111,7 @@ export type Component<T = Instance> = setmetatable<ComponentData<T>, typeof(Comp
 	Creates a new component definition. This is typically called by `Crane:CreateComponent`.
 
 	```lua
-	local component = Component.new({
+	const component = Component.new({
 		Name = "MyComponent",
 		Tag = "MyComponentTag",
 		BaseComponent = {},
@@ -124,7 +124,7 @@ export type Component<T = Instance> = setmetatable<ComponentData<T>, typeof(Comp
 	@within Component
 ]=]
 function Component.new<T>(options: ComponentDef<T>)
-	local self = (options.BaseComponent or {}) :: ComponentDef<T>
+	const self = (options.BaseComponent or {}) :: ComponentDef<T>
 	self.Name = options.Name
 	self.Tag = options.Tag
 
@@ -137,7 +137,7 @@ end
 	This method is typically called by `Crane:AddComponent` and should not be called directly in most cases.
 
 	```lua
-	local componentInstance = component:Instantiate(workspace.Part)
+	const componentInstance = component:Instantiate(workspace.Part)
 	```
 
 	@method Instantiate
@@ -146,7 +146,7 @@ end
 	@within Component
 ]=]
 function Component.Instantiate<T>(self: Component<T>, instance: T & Instance)
-	local prototype = setmetatable({
+	const prototype = setmetatable({
 		instance = instance,
 		Destroying = Signal(),
 	}, {
@@ -195,7 +195,7 @@ function Component.Start<T>(self: Component<T>)
 	if not self.onStart then return end
 
 	if _G["CRANE_DEBUGGING"] then
-		local success, err = pcall(self.onStart, self)
+		const success, err = pcall(self.onStart, self)
 
 		if not success then
 			Log(self.Name, err, "warn")

@@ -1,14 +1,14 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local TweenService = game:GetService("TweenService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const TweenService = game:GetService("TweenService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local types = require(ServerScriptService.server.types)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Dash",
 	Cooldown = 1.5,
 	SkillCharacters = {
@@ -23,10 +23,10 @@ local Skill: types.SkillData = {
 	},
 }
 
-local Dash_Style = TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+const Dash_Style = TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
-local function GetDashDirection(Normal)
-	local angle = math.ceil(math.deg(math.atan2(Normal.X, -Normal.Z)) - 0.5)
+const GetDashDirection = function(Normal)
+	const angle = math.ceil(math.deg(math.atan2(Normal.X, -Normal.Z)) - 0.5)
 
 	if angle > 55 and angle < 125 then
 		return "Right"
@@ -40,15 +40,15 @@ local function GetDashDirection(Normal)
 end
 
 function Skill:onInit()
-	local character = self.Character
-	local DashProperties = self.Data.DashProperties
-	local RootPart = character.RootPart
-	local Humanoid = character.Humanoid :: Humanoid
-	local VFXService = Crane:GetService("VFXService")
+	const character = self.Character
+	const DashProperties = self.Data.DashProperties
+	const RootPart = character.RootPart
+	const Humanoid = character.Humanoid :: Humanoid
+	const VFXService = Crane:GetService("VFXService")
 
-	local CombatService = Crane:GetService("CombatService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local Anims = self.Spec.Data.Assets.Animations
+	const Anims = self.Spec.Data.Assets.Animations
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -62,14 +62,14 @@ function Skill:onInit()
 					local Normal = RootPart.CFrame:VectorToObjectSpace(Humanoid.MoveDirection)
 					if Normal == Vector3.zero then Normal = Vector3.new(0, 0, -1) end
 
-					local direction = GetDashDirection(Normal)
+					const direction = GetDashDirection(Normal)
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
 						Animation = Anims["Dash" .. direction],
 						SpecId = self.Spec.Data.Id,
 					})
 
-					local velocity = Instance.new("BodyVelocity") :: BodyVelocity
+					const velocity = Instance.new("BodyVelocity") :: BodyVelocity
 					velocity.MaxForce = Vector3.new(18_000, 0, 18_000)
 					velocity.Velocity = RootPart.CFrame:VectorToWorldSpace(Normal) * 80
 					velocity.Parent = RootPart
@@ -99,7 +99,7 @@ function Skill:onInit()
 end
 
 function Skill:Activate()
-	local Sequence = self.Sequence
+	const Sequence = self.Sequence
 	if Sequence then
 		self.Sequence:Play()
 		self.Sequence:Await()

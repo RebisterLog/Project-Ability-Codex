@@ -1,4 +1,4 @@
-local Quests = {}
+const Quests = {}
 
 local function initQuests(container: Instance, group: { any })
 	for _, module in container:GetChildren() do

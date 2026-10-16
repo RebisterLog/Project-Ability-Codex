@@ -1,18 +1,18 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-local TerminalService = Crane:CreateService({
+const TerminalService = Crane:CreateService({
 	Name = "TerminalService",
 })
 
 function TerminalService:onStart()
-	local CmdrClient = ReplicatedStorage:WaitForChild("CmdrClient")
-	local Cmdr = require(CmdrClient)
+	const CmdrClient = ReplicatedStorage:WaitForChild("CmdrClient")
+	const Cmdr = require(CmdrClient)
 
 	-- `CmdrClient` регистрирует только то, что уже лежит в `CmdrClient/Commands`,
 	-- а папку наполняет сервер — команда, объявленная там, на клиенте не появится.
-	local SkillConstructorCommand =
+	const SkillConstructorCommand =
 		require(script.Parent.Parent.ui.components.SkillConstructor.Command)
 	Cmdr.Registry:RegisterCommandObject(SkillConstructorCommand.cmdr)
 end

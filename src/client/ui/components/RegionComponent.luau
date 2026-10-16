@@ -1,25 +1,25 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local StarterPlayer = game:GetService("StarterPlayer")
-local TweenService = game:GetService("TweenService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const StarterPlayer = game:GetService("StarterPlayer")
+const TweenService = game:GetService("TweenService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local GameData = require(ReplicatedStorage.shared.schemas.GameData)
-local OnEvent = require(ReplicatedStorage.shared.packages.Fusion.Instances.OnEvent)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local RegionView = require(StarterPlayer.StarterPlayerScripts.client.ui.view.RegionView)
-local peek = require(ReplicatedStorage.shared.packages.Fusion.State.peek)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const GameData = require(ReplicatedStorage.shared.schemas.GameData)
+const OnEvent = require(ReplicatedStorage.shared.packages.Fusion.Instances.OnEvent)
+const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const RegionView = require(StarterPlayer.StarterPlayerScripts.client.ui.view.RegionView)
+const peek = require(ReplicatedStorage.shared.packages.Fusion.State.peek)
 
-local Children = Fusion.Children
-local peek = Fusion.peek
-local OnEvent = Fusion.OnEvent
-local OnChange = Fusion.OnChange
+const Children = Fusion.Children
+const peek = Fusion.peek
+const OnEvent = Fusion.OnEvent
+const OnChange = Fusion.OnChange
 type UsedAs<T> = Fusion.UsedAs<T>
 
-local LocalPlayer = Players.LocalPlayer
+const LocalPlayer = Players.LocalPlayer
 
 --local RunService = game:GetService("RunService")
 --local TimeFunction = RunService:IsRunning() and time or os.clock
@@ -40,15 +40,15 @@ local LocalPlayer = Players.LocalPlayer
 
 --Start = TimeFunction()
 
-local function RegionComponent(
+const RegionComponent = function(
 	scope: Fusion.Scope,
 	playerProxy: Proxy.ProxyTab<PlayerData.PlayerData>,
 	gameProxy: Proxy.ProxyTab<GameData.GameData>
 )
-	local regionScope = scope:innerScope()
-	local ping = regionScope:Value(60)
-	local region = regionScope:Value(gameProxy().ServerRegion)
-	local isShown = regionScope:Value(true)
+	const regionScope = scope:innerScope()
+	const ping = regionScope:Value(60)
+	const region = regionScope:Value(gameProxy().ServerRegion)
+	const isShown = regionScope:Value(true)
 
 	table.insert(
 		regionScope,

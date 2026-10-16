@@ -1,4 +1,4 @@
-local SkillCharacters = {
+const SkillCharacters = {
 	Hit = "Hit",
 	Ragdoll = "Ragdoll",
 	Defense = "Defense",
@@ -28,7 +28,7 @@ local SkillCharacters = {
 	Projectile = "Projectile",
 }
 
-local SkillConditions = {
+const SkillConditions = {
 	TARGET_SHORT_RANGE = "TARGET_SHORT_RANGE",
 	TARGET_MIDDLE_RANGE = "TARGET_MIDDLE_RANGE",
 	TARGET_LARGE_RANGE = "TARGET_LARGE_RANGE",

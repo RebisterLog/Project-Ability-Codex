@@ -1,12 +1,12 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local types = require(ServerScriptService.server.types)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const types = require(ServerScriptService.server.types)
 
-local CharacterAdder = {} :: types.PlayerModule
+const CharacterAdder = {} :: types.PlayerModule
 
 function CharacterAdder.Spawn(self: typeof(CharacterAdder))
 	if not table.find(Players:GetPlayers(), self.player.instance) then return end

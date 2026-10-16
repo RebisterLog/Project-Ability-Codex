@@ -1,3 +1,3 @@
-local module = {}
+const module = {}
 
 return module

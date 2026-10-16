@@ -1,6 +1,6 @@
-local TweenService = game:GetService("TweenService")
+const TweenService = game:GetService("TweenService")
 
-local SwitchStyle = {
+const SwitchStyle = {
 	Visibility = "Visibility",
 	Transparency = "Transparency",
 	CardsUp = "CardsUp",
@@ -10,7 +10,7 @@ local SwitchStyle = {
 
 export type SwitchStyle = keyof<typeof(SwitchStyle)>
 
-local function CreateInfo(props): TweenInfo
+const CreateInfo = function(props): TweenInfo
 	return TweenInfo.new(
 		props.duration or 0.25,
 		props.easingStyle or Enum.EasingStyle.Linear,
@@ -30,7 +30,7 @@ return {
 				canvas.GroupTransparency = 1
 				canvas.Visible = true
 
-				local tween =
+				const tween =
 					TweenService:Create(canvas, CreateInfo(props), { GroupTransparency = 0 })
 
 				tween:Play()
@@ -39,7 +39,7 @@ return {
 			end,
 
 			Leave = function(canvas: CanvasGroup, props)
-				local tween =
+				const tween =
 					TweenService:Create(canvas, CreateInfo(props), { GroupTransparency = 1 })
 
 				tween.Completed:Once(function()
@@ -69,7 +69,7 @@ return {
 				canvas.GroupTransparency = 0
 				canvas.Visible = true
 
-				local tween = TweenService:Create(
+				const tween = TweenService:Create(
 					canvas,
 					CreateInfo(props),
 					{ Position = UDim2.fromScale(0.5, 0.5) }
@@ -82,7 +82,7 @@ return {
 			end,
 
 			Leave = function(canvas: CanvasGroup, props)
-				local tween = TweenService:Create(
+				const tween = TweenService:Create(
 					canvas,
 					CreateInfo(props),
 					{ Position = UDim2.fromScale(0.5, -1.5) }
@@ -108,7 +108,7 @@ return {
 				canvas.GroupTransparency = 0
 				canvas.Visible = true
 
-				local tween = TweenService:Create(
+				const tween = TweenService:Create(
 					canvas,
 					CreateInfo(props),
 					{ Position = UDim2.fromScale(0.5, 0.5) }
@@ -121,7 +121,7 @@ return {
 			end,
 
 			Leave = function(canvas: CanvasGroup, props)
-				local tween = TweenService:Create(
+				const tween = TweenService:Create(
 					canvas,
 					CreateInfo(props),
 					{ Position = UDim2.fromScale(0.5, 1.5) }
@@ -147,7 +147,7 @@ return {
 				canvas.GroupTransparency = 0
 				canvas.Visible = true
 
-				local tween = TweenService:Create(
+				const tween = TweenService:Create(
 					canvas,
 					CreateInfo(props),
 					{ Position = UDim2.fromScale(0.5, 0.5) }
@@ -160,7 +160,7 @@ return {
 			end,
 
 			Leave = function(canvas: CanvasGroup, props)
-				local tween = TweenService:Create(
+				const tween = TweenService:Create(
 					canvas,
 					CreateInfo(props),
 					{ Position = UDim2.fromScale(-1.5, 0.5) }

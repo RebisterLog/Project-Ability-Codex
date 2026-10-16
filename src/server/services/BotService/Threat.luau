@@ -1,7 +1,7 @@
 --!native
 --!optimize 2
 
-local types = require(game:GetService("ServerScriptService").server.types)
+const types = require(game:GetService("ServerScriptService").server.types)
 
 --- Reaction to incoming hitboxes of the current target.
 ---
@@ -17,14 +17,14 @@ local types = require(game:GetService("ServerScriptService").server.types)
 
 -- Margin added to the hitbox size, for melee and for projectiles: a projectile
 -- travels, so it has to be reacted to from further away.
-local MELEE_LEAD = 8
-local PROJECTILE_LEAD = 30
+const MELEE_LEAD = 8
+const PROJECTILE_LEAD = 30
 
 -- How long a detected threat stays "recent". Keeps the defend posture from
 -- flickering between two neighbouring frames.
-local MEMORY = 0.35
+const MEMORY = 0.35
 
-local function AverageSize(size: Vector3 | number): number
+const AverageSize = function(size: Vector3 | number): number
 	if typeof(size) == "number" then return size end
 
 	return (size.X + size.Y + size.Z) / 3
@@ -42,7 +42,7 @@ export type ThreatProperties = {
 
 export type Threat = ThreatProperties
 
-local Threat = {}
+const Threat = {}
 Threat.__index = Threat
 
 function Threat.new(character: types.Character): Threat
@@ -60,27 +60,27 @@ end
 
 --- Does this hitbox hit the bot? `true` means react now.
 function Threat.Track(self: Threat, data: types.HitboxData, target: types.Character): boolean
-	local skill = data.Skill
+	const skill = data.Skill
 	if not skill then return false end
 
-	local tags = skill.Data.SkillCharacters
+	const tags = skill.Data.SkillCharacters
 	if not table.find(tags, "Hit") then return false end
 
-	local info = data.Info
-	local offset = info.Offset or CFrame.identity
-	local origin = info.Origin or (target.RootPart.CFrame * offset)
+	const info = data.Info
+	const offset = info.Offset or CFrame.identity
+	const origin = info.Origin or (target.RootPart.CFrame * offset)
 
-	local distance = (self.Character.RootPart.Position - origin.Position).Magnitude
+	const distance = (self.Character.RootPart.Position - origin.Position).Magnitude
 
-	local threshold = AverageSize(info.Size)
+	const threshold = AverageSize(info.Size)
 		+ (if table.find(tags, "Projectile") then PROJECTILE_LEAD else MELEE_LEAD)
 
-	local id = skill.Data.Id
-	local track = self.Tracks[id]
+	const id = skill.Data.Id
+	const track = self.Tracks[id]
 
 	-- The first sighting only counts when the hitbox is already close; every
 	-- later one only counts while it keeps approaching.
-	local threat = distance <= threshold and (track == nil or distance < track.Distance)
+	const threat = distance <= threshold and (track == nil or distance < track.Distance)
 
 	self.Tracks[id] = { Distance = distance }
 

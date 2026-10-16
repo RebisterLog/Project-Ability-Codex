@@ -1,10 +1,10 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
-local Skins = require(ReplicatedStorage.shared.configs.Skins)
-local RNG = Random.new()
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const TweenService = game:GetService("TweenService")
+const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
+const Skins = require(ReplicatedStorage.shared.configs.Skins)
+const RNG = Random.new()
 
-local DamageIndicator = {
+const DamageIndicator = {
 	Cache = {},
 }
 for _, Gradient in script:WaitForChild("Gradients"):GetChildren() do
@@ -13,10 +13,10 @@ end
 
 function DamageIndicator:onStart(Character: Model, Amount: number, GradientName: string)
 	if not (Character and Character:IsDescendantOf(workspace)) then return end
-	local RootPart = Character:FindFirstChild("HumanoidRootPart")
+	const RootPart = Character:FindFirstChild("HumanoidRootPart")
 	if not RootPart then return end
 
-	local GradientName = GradientName or "Damage"
+	const GradientName = GradientName or "Damage"
 
 	local IsFirst = false
 	local IndicatorData = self.Cache[GradientName][Character]
@@ -24,13 +24,13 @@ function DamageIndicator:onStart(Character: Model, Amount: number, GradientName:
 	if not IndicatorData then
 		IsFirst = true
 
-		local Indicator = script.DamageIndicator:Clone()
+		const Indicator = script.DamageIndicator:Clone()
 		Indicator.Name = ("%*Indicator"):format(GradientName)
 		Indicator.Enabled = true
 		Indicator.Adornee = workspace.Terrain
 		Indicator.Archivable = false
 
-		local Gradient = script.Gradients:FindFirstChild(GradientName)
+		const Gradient = script.Gradients:FindFirstChild(GradientName)
 		if Gradient then Gradient:Clone().Parent = Indicator.Label end
 
 		Indicator.Parent = Character
@@ -47,7 +47,7 @@ function DamageIndicator:onStart(Character: Model, Amount: number, GradientName:
 			and string.format("%.2f", IndicatorData.Value)
 		or math.floor(IndicatorData.Value)
 
-	local Offset = RootPart.CFrame.Position
+	const Offset = RootPart.CFrame.Position
 		+ Vector3.new(RNG:NextNumber(-1, 1), RNG:NextNumber(-1, 1), RNG:NextNumber(-1, 1))
 
 	if IsFirst then
@@ -62,7 +62,7 @@ function DamageIndicator:onStart(Character: Model, Amount: number, GradientName:
 		):Play()
 	end
 
-	local oldValue = IndicatorData.Value
+	const oldValue = IndicatorData.Value
 	task.delay(1.5, function()
 		if IndicatorData.Value == oldValue then
 			IndicatorData.Indicator:Destroy()

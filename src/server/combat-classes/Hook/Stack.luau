@@ -1,7 +1,7 @@
 --!native
 --!strict
 
-local Stack = {}
+const Stack = {}
 Stack.__index = Stack
 
 type StackData<T> = {
@@ -12,7 +12,7 @@ type StackData<T> = {
 export type Stack<T> = setmetatable<StackData<T>, typeof(Stack)>
 
 function Stack.new<T>(): Stack<T>
-	local self = setmetatable({
+	const self = setmetatable({
 		Stack = {},
 		Cache = {},
 	}, Stack)

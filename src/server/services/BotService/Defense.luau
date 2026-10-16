@@ -1,9 +1,9 @@
 --!native
 --!optimize 2
 
-local BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
-local Conditions = require(script.Parent.Conditions)
-local SkillPriority = require(script.Parent.SkillPriority)
+const BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
+const Conditions = require(script.Parent.Conditions)
+const SkillPriority = require(script.Parent.SkillPriority)
 
 --- Rules of the bot defense.
 ---
@@ -19,18 +19,18 @@ local SkillPriority = require(script.Parent.SkillPriority)
 --- would not be pressed in time, and a guard pressed late gives no perfect block,
 --- because the window is stamped at activation time.
 
-local DEFENSE_TAG = "Defense"
-local ESCAPE_TAG = "Escape"
-local COUNTER_TAG = "Counter"
+const DEFENSE_TAG = "Defense"
+const ESCAPE_TAG = "Escape"
+const COUNTER_TAG = "Counter"
 
-local BLOCKABLE_TAG = "Blockable"
-local PERFECT_BLOCKABLE_TAG = "PerfectBlockable"
-local PERFECT_BLOCK_TAG = "PerfectBlock"
+const BLOCKABLE_TAG = "Blockable"
+const PERFECT_BLOCKABLE_TAG = "PerfectBlockable"
+const PERFECT_BLOCK_TAG = "PerfectBlock"
 
 --- Conditions that justify raising the guard. The list lives at module level
 --- because `Conditions.Mask` caches by table identity: a literal built per tick
 --- would miss the cache and allocate every frame.
-local BLOCKABLE_CONDITIONS = { "TARGET_BLOCKABLE", "TARGET_PERFECT_BLOCKABLE" }
+const BLOCKABLE_CONDITIONS = { "TARGET_BLOCKABLE", "TARGET_PERFECT_BLOCKABLE" }
 
 --- Skill description for role resolution: the id and the tags are enough.
 export type RoleSkill = {
@@ -46,20 +46,20 @@ export type Roles = {
 
 --- Skill tags are plain strings rather than vocabulary constants:
 --- `SkillCharacters` stores values like `"PerfectBlock"`, not keys.
-local function HasTag(tags: { string }?, tag: string): boolean
+const HasTag = function(tags: { string }?, tag: string): boolean
 	return tags ~= nil and table.find(tags, tag) ~= nil
 end
 
 --- Is the hit blockable? Both spellings of the tag are accepted, the vocabulary
 --- key and its value, otherwise a skill written with the value silently stops
 --- being blocked.
-local function IsBlockable(tags: { string }?): boolean
+const IsBlockable = function(tags: { string }?): boolean
 	return HasTag(tags, BLOCKABLE_TAG)
 		or HasTag(tags, PERFECT_BLOCKABLE_TAG)
 		or HasTag(tags, PERFECT_BLOCK_TAG)
 end
 
-local Defense = {}
+const Defense = {}
 
 --- Splits the skills of a spec into defense roles.
 ---
@@ -71,7 +71,7 @@ local Defense = {}
 --- Iteration order does not matter: a spec has exactly one guard, and if there
 --- were several the first one wins — choosing between two shields is meaningless.
 function Defense.ResolveRoles(skills: { RoleSkill }): Roles
-	local roles: Roles = {}
+	const roles: Roles = {}
 
 	for _, skill in skills do
 		if HasTag(skill.Tags, DEFENSE_TAG) and not HasTag(skill.Tags, COUNTER_TAG) then
@@ -126,7 +126,7 @@ export type Decision = "Press" | "Hold" | "Escape" | "Ignore"
 --- and the escape is the only defense left. This is only called for a real threat
 --- (`Threat:Track`), so it does not turn into dashing on every single hit.
 function Defense.React(incoming: Incoming, context: ReactionContext): Decision
-	local skill = incoming.Skill
+	const skill = incoming.Skill
 
 	if skill and IsBlockable(skill.Data.SkillCharacters) and context.GuardId then
 		if not context.GuardOnCooldown then return if context.GuardHeld then "Hold" else "Press" end

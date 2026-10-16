@@ -1,15 +1,15 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local BotCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const BotCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- Теги ботов, которые можно выдать скиллу. Список приходит из общего модуля, а не
 --- дублируется здесь: новый тег в `bot-characters` сразу появляется в UI.
-local TAGS = {}
+const TAGS = {}
 for tag in BotCharacters.SkillCharacters do
 	table.insert(TAGS, tag)
 end
@@ -23,18 +23,18 @@ table.sort(TAGS)
 --- оставляется в поле, но экспорт его не пропустит — так ошибка видна сразу, а не
 --- на `lune run` через полчаса.
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
 	--- Поле ввода привязано к blueprint, но не затирает набор пользователя: пока
 	--- фокус в поле, текст принадлежит ему, а модель обновляется по `FocusLost`.
 	--- Иначе `Import JSON` не смог бы показать загруженные значения.
-	local function textField(
+	const textField = function(
 		order: number,
 		caption: string,
 		field: string,
 		dirty: { [string]: boolean }
 	): Instance
-		local box = scope:New("TextBox")({
+		const box = scope:New("TextBox")({
 			LayoutOrder = order,
 			Size = UDim2.new(1, -4, 0, 24),
 			BackgroundColor3 = Theme.Colors.SurfaceAlt,
@@ -77,9 +77,9 @@ return function(scope: Fusion.Scope, props: any)
 			scope,
 			box.FocusLost:Connect(function()
 				dirty[field] = nil
-				local value = box.Text
+				const value = box.Text
 				if field == "Cooldown" then
-					local parsed = tonumber(value)
+					const parsed = tonumber(value)
 					statement.setField("Cooldown", if parsed ~= nil then math.max(0, parsed) else 0)
 				else
 					statement.setField(field, value)
@@ -92,13 +92,13 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Строка «подпись + поле». Подпись отдельной строкой, а не плейсхолдером:
 	--- плейсхолдер исчезает при вводе, и поле теряло бы имя.
-	local function labelledRow(
+	const labelledRow = function(
 		order: number,
 		label: string,
 		control: Instance,
 		hint: string?
 	): Instance
-		local children = {
+		const children = {
 			Label = scope:New("TextLabel")({
 				LayoutOrder = 0,
 				Size = UDim2.new(1, 0, 0, 18),
@@ -143,17 +143,17 @@ return function(scope: Fusion.Scope, props: any)
 		})
 	end
 
-	local blueprint = statement.Blueprint
+	const blueprint = statement.Blueprint
 
-	local dirty: { [string]: boolean } = {}
+	const dirty: { [string]: boolean } = {}
 
-	local idField = textField(1, "Id", "Id", dirty)
-	local displayNameField = textField(2, "Display name", "DisplayName", dirty)
-	local cooldownField = textField(3, "Cooldown", "Cooldown", dirty)
+	const idField = textField(1, "Id", "Id", dirty)
+	const displayNameField = textField(2, "Display name", "DisplayName", dirty)
+	const cooldownField = textField(3, "Cooldown", "Cooldown", dirty)
 
 	--- Источник ассетов — переключатель из двух значений, а не выпадающий список:
 	--- вариантов ровно два (`Spec` / `Stand`, §4), а список занял бы строку впустую.
-	local function assetButton(value: string, order: number): Instance
+	const assetButton = function(value: string, order: number): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
 			Size = UDim2.new(0.5, -2, 0, Theme.MinClick),
@@ -184,14 +184,14 @@ return function(scope: Fusion.Scope, props: any)
 		})
 	end
 
-	local tagButtons = {}
+	const tagButtons = {}
 	for index, tag in TAGS do
 		tagButtons[index] = scope:New("TextButton")({
 			Name = tag,
 			LayoutOrder = index,
 			Size = UDim2.new(0.5, -2, 0, Theme.MinClick - 4),
 			BackgroundColor3 = scope:Computed(function(use)
-				local list = use(blueprint).SkillCharacters or {}
+				const list = use(blueprint).SkillCharacters or {}
 				if table.find(list, tag) ~= nil then return Theme.Colors.Accent end
 				return Theme.Colors.Surface
 			end),
@@ -200,7 +200,7 @@ return function(scope: Fusion.Scope, props: any)
 			Selectable = true,
 			Text = tag,
 			TextColor3 = scope:Computed(function(use)
-				local list = use(blueprint).SkillCharacters or {}
+				const list = use(blueprint).SkillCharacters or {}
 				if table.find(list, tag) ~= nil then return Theme.Colors.Background end
 				return Theme.Colors.TextMuted
 			end),

@@ -18,7 +18,7 @@
 -- Order is fixed: it assigns the bit numbers. Condition lists coming from configs
 -- are converted once and cached, so the order only matters for keeping masks
 -- stable across server restarts.
-local ORDER = {
+const ORDER = {
 	"TARGET_SHORT_RANGE",
 	"TARGET_MIDDLE_RANGE",
 	"TARGET_LARGE_RANGE",
@@ -38,7 +38,7 @@ local ORDER = {
 	"TARGET_BLOCK_BREAKING",
 }
 
-local BITS: { [string]: number } = {}
+const BITS: { [string]: number } = {}
 
 for index, name in ORDER do
 	BITS[name] = bit32.lshift(1, index)
@@ -47,10 +47,10 @@ end
 -- Bitwise operations come from `bit32` instead of the `&`/`|` operators: the
 -- formatter version used here chokes on those operators, while `band`/`bor`
 -- compile to the same machine instructions.
-local band = bit32.band
-local bor = bit32.bor
+const band = bit32.band
+const bor = bit32.bor
 
-local Conditions = {}
+const Conditions = {}
 
 --- Every condition in the vocabulary. Tests compare it with `bot-characters`.
 Conditions.Names = table.clone(ORDER)
@@ -64,12 +64,12 @@ end
 --- Mask of a condition list. A list coming from a config is converted once and
 --- reused afterwards: configs are static, so a strong cache and the config table
 --- itself live exactly as long.
-local CACHE: { [any]: number } = {}
+const CACHE: { [any]: number } = {}
 
 function Conditions.Mask(list: { string }?): number
 	if not list then return 0 end
 
-	local cached = CACHE[list]
+	const cached = CACHE[list]
 	if cached ~= nil then return cached end
 
 	local mask = 0
@@ -84,7 +84,7 @@ end
 
 --- Is this condition met?
 function Conditions.Has(mask: number, name: string): boolean
-	local bit = BITS[name]
+	const bit = BITS[name]
 
 	return bit ~= nil and band(mask, bit) ~= 0
 end

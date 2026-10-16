@@ -1,14 +1,14 @@
-local Debris = game:GetService("Debris")
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local types = require(ServerScriptService.server.types)
+const Debris = game:GetService("Debris")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Shell Launch",
 	Cooldown = 2.5,
 
@@ -53,18 +53,18 @@ local Skill: types.SkillData = {
 	},
 }
 
-local function FindNearestCharacter(
+const FindNearestCharacter = function(
 	point: Vector3,
 	exclude: { types.Character }
 ): (types.Character?, number?)
-	local characters = Crane:GetAllComponents("Character")
+	const characters = Crane:GetAllComponents("Character")
 
 	local nearestCharacter, nearestDistance = nil, math.huge
 
 	for i, character in characters do
 		if table.find(exclude, character) then continue end
 
-		local distance = (character.RootPart.Position - point).Magnitude
+		const distance = (character.RootPart.Position - point).Magnitude
 		if distance < nearestDistance then
 			nearestCharacter = character
 			nearestDistance = distance
@@ -75,16 +75,16 @@ local function FindNearestCharacter(
 end
 
 function Skill.onInit(self)
-	local character = self.Character :: types.Character
-	local RootPart = character.RootPart
-	local Humanoid = character.Humanoid
-	local VFXService = Crane:GetService("VFXService")
-	local CombatService = Crane:GetService("CombatService")
+	const character = self.Character :: types.Character
+	const RootPart = character.RootPart
+	const Humanoid = character.Humanoid
+	const VFXService = Crane:GetService("VFXService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
-	local Models = self.Spec.Data.Assets.Models
-	local AttackInfo = self.Data.AttackInfo
+	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
+	const Models = self.Spec.Data.Assets.Models
+	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
 	self.Shell = nil
@@ -94,28 +94,28 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
-					local shell = seq.Cleaner:Clone(Models.Shell) :: Model
+					const shell = seq.Cleaner:Clone(Models.Shell) :: Model
 					self.Shell = shell
 
-					local velocity = seq.Cleaner:Construct(Instance, "BodyVelocity") :: BodyVelocity
+					const velocity = seq.Cleaner:Construct(Instance, "BodyVelocity") :: BodyVelocity
 					velocity.MaxForce = Vector3.new(10_000, 0, 10_000)
 					velocity.Velocity = RootPart.CFrame.LookVector * 100
 					velocity.P = math.huge
 					velocity.Parent = shell.PrimaryPart
 
-					local attachment = seq.Cleaner:Construct(Instance, "Attachment") :: Attachment
+					const attachment = seq.Cleaner:Construct(Instance, "Attachment") :: Attachment
 					attachment.Parent = shell.PrimaryPart
 
-					local gyro = seq.Cleaner:Construct(Instance, "BodyGyro")
+					const gyro = seq.Cleaner:Construct(Instance, "BodyGyro")
 					gyro.Parent = shell.PrimaryPart
 
-					local params = RaycastParams.new()
+					const params = RaycastParams.new()
 					params.RespectCanCollide = true
 					params.FilterType = Enum.RaycastFilterType.Exclude
 					params:AddToFilter(shell)
 
 					seq.Cleaner:Add(RunService.Heartbeat:Connect(function(touch)
-						local result = workspace:Raycast(
+						const result = workspace:Raycast(
 							shell.PrimaryPart.Position,
 							velocity.Velocity.Unit * 5,
 							params
@@ -129,12 +129,12 @@ function Skill.onInit(self)
 						end
 
 						if result and result.Normal then
-							local norm = result.Normal
-							local reflect = (
+							const norm = result.Normal
+							const reflect = (
 								velocity.Velocity - (2 * velocity.Velocity:Dot(norm) * norm)
 							)
 
-							local nearest, dist =
+							const nearest, dist =
 								FindNearestCharacter(attachment.WorldPosition, { character })
 
 							VFXService:StartEffect(
@@ -145,7 +145,7 @@ function Skill.onInit(self)
 							)
 
 							if nearest and dist < 100 then
-								local aimVector = (
+								const aimVector = (
 									nearest.RootPart.Position - attachment.WorldPosition
 								).Unit
 
@@ -165,7 +165,7 @@ function Skill.onInit(self)
 						end
 					end))
 
-					local slideSound = Sounds["ShellSlide"].Sound:Clone() :: Sound
+					const slideSound = Sounds["ShellSlide"].Sound:Clone() :: Sound
 					slideSound.Parent = shell.PrimaryPart
 					slideSound.Looped = true
 					slideSound:Play()
@@ -184,7 +184,7 @@ function Skill.onInit(self)
 				function(seq, frame)
 					if frame % 3 > 0 then return end
 
-					local targets = CombatService:Hitbox({
+					const targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = {
@@ -254,11 +254,11 @@ function Skill.Activate(self)
 end
 
 function Skill.Interrupt(self)
-	local character = self.Character
-	local RootPart = character.RootPart
-	local VFXService = Crane:GetService("VFXService")
+	const character = self.Character
+	const RootPart = character.RootPart
+	const VFXService = Crane:GetService("VFXService")
 
-	local Anims = self.Spec.Data.Assets.Animations
+	const Anims = self.Spec.Data.Assets.Animations
 
 	if self.Sequence then self.Sequence:Stop() end
 

@@ -1,12 +1,12 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
-local LocalPlayer = Players.LocalPlayer
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
-local Configuration = LocalPlayer.PlayerScripts.client.Configuration
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
+const LocalPlayer = Players.LocalPlayer
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
+const Configuration = LocalPlayer.PlayerScripts.client.Configuration
 
-local EffectsFolder = Configuration.EffectsFolder.Value
+const EffectsFolder = Configuration.EffectsFolder.Value
 
 type Effect = {
 	Validate: (self: Effect, ...any) -> boolean,
@@ -14,7 +14,7 @@ type Effect = {
 	onStop: (self: Effect, ...any) -> (),
 }
 
-local VFXService = Crane:CreateService({
+const VFXService = Crane:CreateService({
 	Name = "VFXService",
 })
 VFXService.Effects = {} :: { [string]: Effect }
@@ -26,8 +26,8 @@ function VFXService.onStart(self: typeof(VFXService))
 		self.Effects[module.Name] = require(module)
 	end
 
-	local StartVFXPacket = Crane:GetPacket("StartVFX")
-	local StopVFXPacket = Crane:GetPacket("StopVFX")
+	const StartVFXPacket = Crane:GetPacket("StartVFX")
+	const StopVFXPacket = Crane:GetPacket("StopVFX")
 
 	StartVFXPacket.listen(function(data: { name: string, args: { unknown } })
 		self:StartEffect(data.name, table.unpack(data.args))
@@ -44,7 +44,7 @@ function VFXService:StartEffect(name: string, ...)
 		return
 	end
 
-	local effect: Effect = self.Effects[name]
+	const effect: Effect = self.Effects[name]
 	if effect.Validate and not effect:Validate(...) then return end
 
 	effect:onStart(...)
@@ -56,7 +56,7 @@ function VFXService:StopEffect(name: string, ...)
 		return
 	end
 
-	local effect: Effect = self.Effects[name]
+	const effect: Effect = self.Effects[name]
 	if effect.onStart then effect:onStop(...) end
 end
 

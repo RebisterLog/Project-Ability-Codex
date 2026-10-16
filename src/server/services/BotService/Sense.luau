@@ -1,10 +1,10 @@
 --!native
 --!optimize 2
 
-local ServerScriptService = game:GetService("ServerScriptService")
-local Conditions = require(script.Parent.Conditions)
-local Enums = require(ServerScriptService.server.Enums)
-local types = require(ServerScriptService.server.types)
+const ServerScriptService = game:GetService("ServerScriptService")
+const Conditions = require(script.Parent.Conditions)
+const Enums = require(ServerScriptService.server.Enums)
+const types = require(ServerScriptService.server.types)
 
 --- Perception of the target: distance and a mask of conditions.
 ---
@@ -15,14 +15,14 @@ local types = require(ServerScriptService.server.types)
 --- operations.
 
 -- Boundaries of `TARGET_SHORT_RANGE` / `TARGET_MIDDLE_RANGE` / `TARGET_LARGE_RANGE`.
-local RANGE_SHORT = 10
-local RANGE_MIDDLE = 20
+const RANGE_SHORT = 10
+const RANGE_MIDDLE = 20
 
 -- Bitwise operations come from `bit32`: the formatter version used here chokes on
 -- the `&` and `|` operators, while `band`/`bor` compile to the same instructions.
-local bor = bit32.bor
+const bor = bit32.bor
 
-local BITS = {
+const BITS = {
 	SHORT_RANGE = Conditions.Bit("TARGET_SHORT_RANGE"),
 	MIDDLE_RANGE = Conditions.Bit("TARGET_MIDDLE_RANGE"),
 	LARGE_RANGE = Conditions.Bit("TARGET_LARGE_RANGE"),
@@ -50,7 +50,7 @@ export type SenseProperties = {
 
 export type Sense = SenseProperties
 
-local Sense = {}
+const Sense = {}
 Sense.__index = Sense
 
 function Sense.new(character: types.Character): Sense
@@ -78,7 +78,7 @@ end
 --- `PerfectBlockable` and `PerfectBlock` are the same condition: the vocabulary
 --- exports the key, while skills are written using the value. Both spellings are
 --- accepted so that a hand-written skill cannot silently disagree with the bot.
-local function TagMask(tags: { string }?): number
+const TagMask = function(tags: { string }?): number
 	if not tags then return 0 end
 
 	local mask = 0
@@ -104,7 +104,7 @@ function Sense.IsAttacking(self: Sense): boolean
 end
 
 function Sense.Refresh(self: Sense)
-	local target = self.Target
+	const target = self.Target
 
 	if not target or not target.Spec or not target.RootPart or not self.Character.RootPart then
 		self.Mask = 0
@@ -115,7 +115,7 @@ function Sense.Refresh(self: Sense)
 
 	local mask = 0
 
-	local distance = (target.RootPart.Position - self.Character.RootPart.Position).Magnitude
+	const distance = (target.RootPart.Position - self.Character.RootPart.Position).Magnitude
 	self.Distance = distance
 
 	if distance <= RANGE_SHORT then
@@ -129,12 +129,12 @@ function Sense.Refresh(self: Sense)
 	if target:GetParameter("Armor") == true then mask = bor(mask, BITS.ARMORED) end
 	if target:GetParameter("Ragdoll") == true then mask = bor(mask, BITS.RAGGEDOLLED) end
 
-	local stun = target:GetParameter("Stun")
+	const stun = target:GetParameter("Stun")
 	if stun and stun.Priority > Enums.Stun.None then mask = bor(mask, BITS.STUNNED) end
 
 	if target:GetParameter("IFrames") >= Enums.IFrames.Dodge then mask = bor(mask, BITS.DODGING) end
 
-	local block = target.Block
+	const block = target.Block
 
 	if block.Blocking then
 		mask = bor(mask, BITS.BLOCKING)
@@ -145,8 +145,8 @@ function Sense.Refresh(self: Sense)
 	end
 
 	-- Single pass over the active skills: `TARGET_ATTACKING` is set by the `Hit` tag.
-	local spec = target.Spec
-	local _, activeSkills = spec:CheckActiveSkills()
+	const spec = target.Spec
+	const _, activeSkills = spec:CheckActiveSkills()
 
 	for _, skill in activeSkills do
 		mask = bor(mask, TagMask(skill.Data.SkillCharacters))

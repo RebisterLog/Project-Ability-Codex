@@ -1,8 +1,8 @@
-local Debris = game:GetService("Debris")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+const Debris = game:GetService("Debris")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const TweenService = game:GetService("TweenService")
 
-local ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
+const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 
 type EmitData = {
 	UUID: number,
@@ -12,7 +12,7 @@ type EmitData = {
 	UseForge: boolean?,
 }
 
-local Particles = {}
+const Particles = {}
 
 @native
 local function prepareParticle(paricle: BasePart)
@@ -26,15 +26,15 @@ end
 
 return {
 	onStart = function(self, Data: EmitData)
-		local Particle = Data.Particle:Clone()
+		const Particle = Data.Particle:Clone()
 		local Origin = Data.Origin
-		local Offset = Data.Offset
-		local UseForge = Data.UseForge
+		const Offset = Data.Offset
+		const UseForge = Data.UseForge
 
 		prepareParticle(Particle)
 
 		if typeof(Origin) == "Instance" then
-			local weld = Instance.new("Weld")
+			const weld = Instance.new("Weld")
 			weld.Part0 = Origin
 			weld.Part1 = Particle
 			weld.Parent = Particle
@@ -65,9 +65,9 @@ return {
 		local MaxLifetime = 0
 
 		for _, ParticleEmitter in Particle:QueryDescendants("ParticleEmitter") do
-			local EmitCount = ParticleEmitter:GetAttribute("EmitCount") or 0
-			local EmitDelay = ParticleEmitter:GetAttribute("EmitDelay") or 0
-			local EmitEnable = ParticleEmitter:GetAttribute("EmitEnable") or false
+			const EmitCount = ParticleEmitter:GetAttribute("EmitCount") or 0
+			const EmitDelay = ParticleEmitter:GetAttribute("EmitDelay") or 0
+			const EmitEnable = ParticleEmitter:GetAttribute("EmitEnable") or false
 
 			if ParticleEmitter.Lifetime.Max > MaxLifetime then
 				MaxLifetime = ParticleEmitter.Lifetime.Max

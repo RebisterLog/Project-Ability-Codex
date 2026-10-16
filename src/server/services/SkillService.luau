@@ -1,14 +1,14 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local SkillClass = require(ServerScriptService.server["combat-classes"].Skill)
-local types = require(ServerScriptService.server.types)
-local Configuration = ServerScriptService.server.Configuration
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const SkillClass = require(ServerScriptService.server["combat-classes"].Skill)
+const types = require(ServerScriptService.server.types)
+const Configuration = ServerScriptService.server.Configuration
 
-local SkillsFolder = Configuration.SkillsFolder.Value
+const SkillsFolder = Configuration.SkillsFolder.Value
 
-local SkillService = Crane:CreateService({
+const SkillService = Crane:CreateService({
 	Name = "SkillService",
 })
 SkillService.CachedData = {}
@@ -18,26 +18,26 @@ function SkillService:onStart()
 	self.PathUtil = Crane:GetService("PathUtil")
 
 	Crane:GetPacket("StartSkill").listen(function(skillId: string, player)
-		local character = player.Character
+		const character = player.Character
 		if not character then return end
 
-		local component = Crane:GetComponent("Character", character)
+		const component = Crane:GetComponent("Character", character)
 		if not component then return end
 
-		local spec = component.Spec
+		const spec = component.Spec
 		if not spec then return end
 
 		spec:ActivateSkill(skillId)
 	end)
 
 	Crane:GetPacket("StopSkill").listen(function(skillId: string, player)
-		local character = player.Character
+		const character = player.Character
 		if not character then return end
 
-		local component = Crane:GetComponent("Character", character)
+		const component = Crane:GetComponent("Character", character)
 		if not component then return end
 
-		local spec = component.Spec
+		const spec = component.Spec
 		if not spec then return end
 
 		spec:DeactivateSkill(skillId)
@@ -53,7 +53,7 @@ function SkillService:GetSkillData(skillId: string): types.SkillData
 		if not module:IsA("ModuleScript") then continue end
 		if module.Name ~= skillId then continue end
 
-		local data = require(module)
+		const data = require(module)
 		data["Id"] = skillId
 		self.CachedData[skillId] = data
 
@@ -65,7 +65,7 @@ function SkillService:CreateSkill(
 	character: types.Character,
 	data: { Spec: types.SpecData, SkillId: string }
 )
-	local skillData: types.SkillData = self:GetSkillData(data.SkillId)
+	const skillData: types.SkillData = self:GetSkillData(data.SkillId)
 
 	return character.Cleaner:Add(SkillClass.new(character, data.Spec, skillData), "Destroy")
 end

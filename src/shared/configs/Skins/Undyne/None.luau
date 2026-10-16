@@ -1,11 +1,11 @@
-local Assets = game:GetService("ReplicatedStorage").assets
-local GlobalAssets = Assets.Default
+const Assets = game:GetService("ReplicatedStorage").assets
+const GlobalAssets = Assets.Default
 
-local Animations = Assets.Undyne.None.Animations
-local Sounds = Assets.Undyne.None.Sounds
-local Models = Assets.Undyne.None.Models
+const Animations = Assets.Undyne.None.Animations
+const Sounds = Assets.Undyne.None.Sounds
+const Models = Assets.Undyne.None.Models
 
-local None = {
+const None = {
 	Animations = {
 		-- Movement
 		Idle = {

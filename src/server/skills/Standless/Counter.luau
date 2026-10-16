@@ -30,15 +30,15 @@
          FinalFrame : Last frame of the counter throw
 ]=]
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Counter",
 	Cooldown = 6,
 
@@ -86,14 +86,14 @@ local Skill: types.SkillData = {
 }
 
 function Skill:onInit()
-	local character = self.Character :: types.Character
-	local RootPart = character.RootPart
-	local VFXService = Crane:GetService("VFXService")
-	local CombatService = Crane:GetService("CombatService")
+	const character = self.Character :: types.Character
+	const RootPart = character.RootPart
+	const VFXService = Crane:GetService("VFXService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
-	local CounterStats = (self.Spec.Data.Assets.Stats or {}).Counter or {}
+	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
+	const CounterStats = (self.Spec.Data.Assets.Stats or {}).Counter or {}
 
 	self.CounterData = {
 		Offset = CounterStats["AnimationOffset"]
@@ -108,7 +108,7 @@ function Skill:onInit()
 
 	self.CounterSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Validate = function()
-			local target = self.Target
+			const target = self.Target
 			if not target or not target.instance.Parent then return false end
 
 			return true
@@ -118,7 +118,7 @@ function Skill:onInit()
 			{
 				0,
 				function(seq: Sequencer.Sequencer)
-					local target = self.Target
+					const target = self.Target
 					if not target then return end
 
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
@@ -187,7 +187,7 @@ function Skill:onInit()
 			{
 				self.CounterData.StartHitFrame,
 				function(seq)
-					local target = self.Target
+					const target = self.Target
 					if not target then return end
 
 					seq.Cleaner:Remove("GrabObject")

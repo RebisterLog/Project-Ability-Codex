@@ -1,7 +1,7 @@
 --!native
 --!strict
 
-local Stack = require(script.Stack)
+const Stack = require(script.Stack)
 
 type CheckCallback<T> = (T) -> boolean
 
@@ -11,7 +11,7 @@ type HookData = {
 	StackOrder: { string },
 }
 
-local Hook = {}
+const Hook = {}
 Hook.__index = Hook
 
 export type Hook = setmetatable<HookData, typeof(Hook)>
@@ -25,7 +25,7 @@ function Hook.Hook(
 )
 	if not self.Stacks[stack] then return end
 
-	local stack = self.Stacks[stack]
+	const stack = self.Stacks[stack]
 	stack:Add(identifier, callback, priority)
 end
 
@@ -33,15 +33,15 @@ function Hook.Unhook(self: Hook, stack: string, identifier: string)
 	if not self.Stacks[stack] then return end
 	if not self.Stacks[stack]:Get(identifier) then return end
 
-	local stack = self.Stacks[stack]
+	const stack = self.Stacks[stack]
 	stack:Remove(identifier)
 end
 
 function Hook.Apply<T>(self: Hook, state: T): T
 	for _, stackName in self.StackOrder do
-		local stack = self.Stacks[stackName]
+		const stack = self.Stacks[stackName]
 		for i, entry in stack:GetAll() do
-			local result = entry.Value(state)
+			const result = entry.Value(state)
 
 			if not result then return state end
 		end
@@ -66,7 +66,7 @@ end
 
 return {
 	new = function(name: string?, stacks: { string }?): Hook
-		local self = setmetatable({
+		const self = setmetatable({
 			Name = name,
 			Stacks = {},
 			StackOrder = {},

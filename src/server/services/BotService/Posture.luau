@@ -1,8 +1,8 @@
 --!native
 --!optimize 2
 
-local BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
-local MovementStyles = require(script.Parent.NavigationController.MovementStyles)
+const BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
+const MovementStyles = require(script.Parent.NavigationController.MovementStyles)
 
 --- Posture of the bot: how it stands and how far it keeps from the target.
 ---
@@ -11,15 +11,15 @@ local MovementStyles = require(script.Parent.NavigationController.MovementStyles
 --- owns the action slot, and the posture is a consequence of that decision.
 export type Posture = "Idle" | "Attack" | "Defend"
 
-local DEFEND_DISTANCE = 15
+const DEFEND_DISTANCE = 15
 
-local STYLES: { [Posture]: { Style: string, HoldDistance: number? } } = {
+const STYLES: { [Posture]: { Style: string, HoldDistance: number? } } = {
 	Idle = { Style = MovementStyles.direct, HoldDistance = nil },
 	Attack = { Style = MovementStyles.puma, HoldDistance = nil },
 	Defend = { Style = MovementStyles.zigzag, HoldDistance = DEFEND_DISTANCE },
 }
 
-local Posture = {}
+const Posture = {}
 
 --- Movement style while attacking: `puma` goes straight in, `zigzag` jukes aside.
 ---
@@ -28,12 +28,12 @@ local Posture = {}
 --- (`0..1`), not a time multiplier: `Aggressive + rand(0, Chaotic)` may exceed
 --- one, and that is on purpose.
 function Posture.RollAttackStyle(config: BotsCharacters.BotCharacterConfig, random: Random): string
-	local chaotic = config.Chaotic
+	const chaotic = config.Chaotic
 
-	local isMelee = random:NextNumber() < config.Aggressive + random:NextNumber(0, chaotic)
+	const isMelee = random:NextNumber() < config.Aggressive + random:NextNumber(0, chaotic)
 	if not isMelee then return MovementStyles.puma end
 
-	local isBaiting = random:NextNumber() < config.Agility + random:NextNumber(0, chaotic)
+	const isBaiting = random:NextNumber() < config.Agility + random:NextNumber(0, chaotic)
 
 	return if isBaiting then MovementStyles.zigzag else MovementStyles.puma
 end

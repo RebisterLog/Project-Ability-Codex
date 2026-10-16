@@ -1,15 +1,15 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const UserInputService = game:GetService("UserInputService")
 
-local LocalPlayer = Players.LocalPlayer
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const LocalPlayer = Players.LocalPlayer
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
-local JoystickBinds = require(script.Parent.Parent.controls.JoystickBinds)
+const JoystickBinds = require(script.Parent.Parent.controls.JoystickBinds)
 
-local BindService = Crane:CreateService({
+const BindService = Crane:CreateService({
 	Name = "BindService",
 })
 BindService.Binds = {}
@@ -33,7 +33,7 @@ function BindService.onStart(self: typeof(BindService))
 
 		if JoystickBinds[input.KeyCode] then input = JoystickBinds[input.KeyCode] end
 
-		local skillName = self.Binds[input]
+		const skillName = self.Binds[input]
 			or self.Binds[input.KeyCode]
 			or self.Binds[input.UserInputType]
 		if not skillName then return end
@@ -44,7 +44,7 @@ function BindService.onStart(self: typeof(BindService))
 	UserInputService.InputEnded:Connect(function(input, gameProcessed)
 		if JoystickBinds[input.KeyCode] then input = JoystickBinds[input.KeyCode] end
 
-		local skillName = self.Binds[input]
+		const skillName = self.Binds[input]
 			or self.Binds[input.KeyCode]
 			or self.Binds[input.UserInputType]
 		if not skillName then return end

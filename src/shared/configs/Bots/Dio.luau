@@ -1,7 +1,7 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 
-local Dio: BotsCharacters.BotCharacterConfig = {
+const Dio: BotsCharacters.BotCharacterConfig = {
 	Spec = "TheWorld",
 	Chaotic = 0,
 	Aggressive = 0.5,

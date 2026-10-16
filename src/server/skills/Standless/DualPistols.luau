@@ -32,16 +32,16 @@
       PistolShotEffectPart : (BasePart) Muzzle flash emitted at the barrel
 ]=]
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Workspace = game:GetService("Workspace")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Projectile = require(ServerScriptService.server["combat-classes"].Projectile)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Workspace = game:GetService("Workspace")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Projectile = require(ServerScriptService.server["combat-classes"].Projectile)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Dual Pistols",
 	Cooldown = 4,
 
@@ -106,23 +106,23 @@ local Skill: types.SkillData = {
 }
 
 function Skill:onInit()
-	local character = self.Character :: types.Character
-	local RootPart = character.RootPart
+	const character = self.Character :: types.Character
+	const RootPart = character.RootPart
 
-	local VFXService = Crane:GetService("VFXService")
-	local CombatService = Crane:GetService("CombatService")
+	const VFXService = Crane:GetService("VFXService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
-	local Models = self.Spec.Data.Assets.Models
-	local AttackInfo = self.Data.AttackInfo
+	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
+	const Models = self.Spec.Data.Assets.Models
+	const AttackInfo = self.Data.AttackInfo
 
-	local ProjectileData = self.Data.ProjectileData
-	local Slowdown = self.Data.OwnerSlowdown
+	const ProjectileData = self.Data.ProjectileData
+	const Slowdown = self.Data.OwnerSlowdown
 
-	local DebrisLifeTime = self.Data.DebrisLifeTime
-	local ShotFrames = self.Data.ShotFrames
-	local TotalFrames = self.Data.TotalFrames
+	const DebrisLifeTime = self.Data.DebrisLifeTime
+	const ShotFrames = self.Data.ShotFrames
+	const TotalFrames = self.Data.TotalFrames
 
 	-- Weapons currently mounted on the arms, so cleanup can drop them as debris.
 	self.Equipped = {} :: { { Weapon: Model, Handle: BasePart } }
@@ -130,17 +130,17 @@ function Skill:onInit()
 	-- Mounts a handle on the arm through a Motor6D so the weapon follows the
 	-- animation, then welds the weapon onto that handle. Ported from the old
 	-- `makeHandlePart` / `weldPistolToHandle` pair.
-	local function EquipPistol(armName: string, weapon: Model?)
-		local arm = character.instance:FindFirstChild(armName)
+	const EquipPistol = function(armName: string, weapon: Model?)
+		const arm = character.instance:FindFirstChild(armName)
 		if not arm or not arm:IsA("BasePart") or not weapon then
 			return
 		end
 
-		local motor = Instance.new("Motor6D")
+		const motor = Instance.new("Motor6D")
 		motor.Part0 = arm
 		motor.C0 = CFrame.new(0, -1.2, 0) * CFrame.fromOrientation(math.rad(-90), 0, 0)
 
-		local handle = Instance.new("Part")
+		const handle = Instance.new("Part")
 		handle.Name = "Handle"
 		handle.Anchored = false
 		handle.CanCollide = false
@@ -153,7 +153,7 @@ function Skill:onInit()
 		motor.Part1 = handle
 		motor.Parent = handle
 
-		local weld = Instance.new("Weld")
+		const weld = Instance.new("Weld")
 		weld.Part0 = weapon.PrimaryPart
 		weld.Part1 = handle
 		weld.Parent = handle
@@ -169,8 +169,8 @@ function Skill:onInit()
 	-- The old skill dropped the pistols into the world as physical props when
 	-- the skill ended. The parts are captured up front because re-parenting
 	-- empties the model.
-	local function DropDebris(weapon: Model)
-		local parts = {}
+	const DropDebris = function(weapon: Model)
+		const parts = {}
 
 		for _, child in weapon:GetChildren() do
 			if not child:IsA("BasePart") then
@@ -186,7 +186,7 @@ function Skill:onInit()
 			return
 		end
 
-		local Debris = Crane.Buttler.new()
+		const Debris = Crane.Buttler.new()
 
 		Debris:Delay(DebrisLifeTime, function()
 			for _, part in parts do
@@ -199,10 +199,10 @@ function Skill:onInit()
 		end)
 	end
 
-	local function Shoot()
-		local muzzle = RootPart.CFrame * ProjectileData.Offset
+	const Shoot = function()
+		const muzzle = RootPart.CFrame * ProjectileData.Offset
 
-		local bullet = Projectile.new({
+		const bullet = Projectile.new({
 			Caster = character,
 			Skill = self,
 			Model = Models["Bullet"],
@@ -239,14 +239,14 @@ function Skill:onInit()
 
 	-- The last entry has to be the highest frame: the sequencer treats it as the
 	-- terminator, so the shot frames are inserted in ascending order before it.
-	local Frames: { any } = {
+	const Frames: { any } = {
 		{
 			0,
 			function(seq)
 				table.clear(self.Equipped)
 
-				local left = Models["LeftPistol"]
-				local right = Models["RightPistol"]
+				const left = Models["LeftPistol"]
+				const right = Models["RightPistol"]
 
 				EquipPistol("Left Arm", left and left:Clone())
 				EquipPistol("Right Arm", right and right:Clone())
@@ -273,7 +273,7 @@ function Skill:onInit()
 
 					table.clear(self.Equipped)
 
-					local anim = Anims["DualPistols"]
+					const anim = Anims["DualPistols"]
 					if not anim then
 						return
 					end
@@ -310,13 +310,13 @@ function Skill:Activate()
 end
 
 function Skill:Interrupt()
-	local VFXService = Crane:GetService("VFXService")
+	const VFXService = Crane:GetService("VFXService")
 
 	if self.Sequence then
 		self.Sequence:Stop()
 	end
 
-	local anim = self.Spec.Data.Assets.Animations["DualPistols"]
+	const anim = self.Spec.Data.Assets.Animations["DualPistols"]
 	if not anim then
 		return
 	end

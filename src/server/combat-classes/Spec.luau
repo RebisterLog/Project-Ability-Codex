@@ -1,10 +1,10 @@
 --!native
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const types = require(ServerScriptService.server.types)
 
 const MOVEMENT_ANIMATIONS = {
 	"Idle",
@@ -14,11 +14,11 @@ const MOVEMENT_ANIMATIONS = {
 	"FreeFall",
 }
 
-local Spec = {}
+const Spec = {}
 Spec.__index = Spec
 
 function Spec.new(character: types.Character, data: types.SpecData): types.Spec
-	local self = setmetatable({
+	const self = setmetatable({
 		Data = data,
 		Character = character,
 		Skills = {},
@@ -38,10 +38,10 @@ function Spec.Init(self: types.Spec)
 	if self.Initialized then return end
 	self.Initialized = true
 
-	local defaultMovements = Crane:GetService("ConfigService"):Get("DefaultAnimations").Movement
+	const defaultMovements = Crane:GetService("ConfigService"):Get("DefaultAnimations").Movement
 
 	for _, name in MOVEMENT_ANIMATIONS do
-		local animation = self.Data.Assets.Animations[name]
+		const animation = self.Data.Assets.Animations[name]
 		
 		if not animation then
 		    if not defaultMovements[name] then continue end
@@ -57,7 +57,7 @@ function Spec.Init(self: types.Spec)
 end
 
 function Spec.GetAvailableSkills(self: types.Spec): { types.Skill }
-	local availableSkills = {}
+	const availableSkills = {}
 
 	for _, skill in self.Skills do
 		if skill.Validate(skill) then table.insert(availableSkills, skill) end
@@ -67,7 +67,7 @@ function Spec.GetAvailableSkills(self: types.Spec): { types.Skill }
 end
 
 function Spec.CheckActiveSkills(self: types.Spec): boolean
-	local activeSkills = {}
+	const activeSkills = {}
 
 	for _, skill in self.Skills do
 		if skill.Active then table.insert(activeSkills, skill) end
@@ -122,9 +122,9 @@ function Spec.ActivateSkill(self: types.Spec, skillId: string)
 	if not self.Skills[skillId] then return end
 	if self:CheckActiveSkills() then return end
 
-	local skill = self.Skills[skillId]
+	const skill = self.Skills[skillId]
 
-	local success, err = skill:Validate()
+	const success, err = skill:Validate()
 	if not success then return success, err end
 
 	self.OnActivateSkill:Fire(skill)
@@ -135,7 +135,7 @@ end
 function Spec.InterruptSkill(self: types.Spec, skillId: string)
 	if not self.Skills[skillId] then return end
 
-	local skill = self.Skills[skillId]
+	const skill = self.Skills[skillId]
 	self.OnInterruptSkill:Fire(skill)
 
 	return skill:Interrupt()
@@ -144,7 +144,7 @@ end
 function Spec.DeactivateSkill(self: types.Spec, skillId: string)
 	if not self.Skills[skillId] then return end
 
-	local skill = self.Skills[skillId]
+	const skill = self.Skills[skillId]
 	self.OnDeactivateSkill:Fire(skill)
 
 	return skill:Deactivate()

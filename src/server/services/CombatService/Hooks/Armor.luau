@@ -1,19 +1,19 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local CombatService = Crane:GetService("CombatService")
+const CombatService = Crane:GetService("CombatService")
 
-local CleanCache = {}
+const CleanCache = {}
 
 return {
 	Name = "Armor",
 	Type = "Precast",
 	Priority = 88,
 	Function = function(Data: types.AttackData)
-		local State = Data.State
-		local Info = Data.Info
+		const State = Data.State
+		const Info = Data.Info
 
 		if State.Armored then
 			Info.Ragdoll = nil

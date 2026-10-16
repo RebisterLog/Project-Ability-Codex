@@ -1,9 +1,9 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local ServerScriptService = game:GetService("ServerScriptService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Bridge = require(ReplicatedStorage.shared.packages.Bridge)
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Bridge = require(ReplicatedStorage.shared.packages.Bridge)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
 --[[
 	Server half of the Crane Bridge.
@@ -19,7 +19,7 @@ local Crane = require(ReplicatedStorage.shared.packages.Crane)
 	the service, so there is no callable surface to reach for either.
 ]]
 
-local BridgeService = Crane:CreateService({
+const BridgeService = Crane:CreateService({
 	Name = "BridgeService",
 	LoadOrder = 1000,
 })

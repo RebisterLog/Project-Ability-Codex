@@ -1,20 +1,20 @@
 --!native
 --!optimize 2
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local ServerScriptService = game:GetService("ServerScriptService")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const ServerScriptService = game:GetService("ServerScriptService")
+const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const types = require(ServerScriptService.server.types)
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local NavigationController = require(script.Parent.NavigationController)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const NavigationController = require(script.Parent.NavigationController)
 
-local Attack = require(script.Parent.Attack)
-local Defense = require(script.Parent.Defense)
-local Posture = require(script.Parent.Posture)
-local Sense = require(script.Parent.Sense)
-local Threat = require(script.Parent.Threat)
+const Attack = require(script.Parent.Attack)
+const Defense = require(script.Parent.Defense)
+const Posture = require(script.Parent.Posture)
+const Sense = require(script.Parent.Sense)
+const Threat = require(script.Parent.Threat)
 
 --- The bot: target, navigation, spec.
 ---
@@ -31,7 +31,7 @@ local Threat = require(script.Parent.Threat)
 
 -- How often the bot thinks. The tick is not bound to a frame: the decision is made
 -- on accumulated time so the behaviour does not depend on FPS.
-local TICK_INTERVAL = 1 / 30
+const TICK_INTERVAL = 1 / 30
 
 --- Only `Casted` is needed from the service, so it is described here instead of
 --- dragging the types of the whole CombatService in, and `typeof` does not accept
@@ -82,13 +82,13 @@ type BotMethods = {
 
 export type Bot = BotProperities & BotMethods
 
-local Bot = {}
+const Bot = {}
 Bot.__index = Bot
 
 --- Defense roles come from the tags of the skills of the spec and not from the
 --- config: the skill itself decides what it is, the guard or the retreat.
-local function CollectRoles(spec: types.Spec): { Defense.RoleSkill }
-	local roles: { Defense.RoleSkill } = {}
+const CollectRoles = function(spec: types.Spec): { Defense.RoleSkill }
+	const roles: { Defense.RoleSkill } = {}
 
 	for id, skill in spec.Skills do
 		table.insert(roles, { Id = id, Tags = skill.Data.SkillCharacters })
@@ -98,27 +98,27 @@ local function CollectRoles(spec: types.Spec): { Defense.RoleSkill }
 end
 
 function Bot.IsGuardHeld(self: Bot): boolean
-	local guardId = self.Roles.Guard
+	const guardId = self.Roles.Guard
 	if not guardId then return false end
 
-	local guard = self.Character.Spec.Skills[guardId]
+	const guard = self.Character.Spec.Skills[guardId]
 
 	return guard ~= nil and guard.Active
 end
 
 --- No guard counts as "unavailable": the defense then falls back to the escape.
 function Bot.IsGuardOnCooldown(self: Bot): boolean
-	local guardId = self.Roles.Guard
+	const guardId = self.Roles.Guard
 	if not guardId then return true end
 
-	local guard = self.Character.Spec.Skills[guardId]
+	const guard = self.Character.Spec.Skills[guardId]
 	if not guard then return true end
 
 	return guard:IsOnCooldown()
 end
 
 function Bot.ReleaseGuard(self: Bot)
-	local guardId = self.Roles.Guard
+	const guardId = self.Roles.Guard
 	if not guardId then return end
 
 	self.Character.Spec:DeactivateSkill(guardId)
@@ -127,11 +127,11 @@ end
 function Bot.SetPosture(self: Bot, posture: Posture.Posture)
 	if self.Posture == posture then return end
 
-	local previous = self.Posture
+	const previous = self.Posture
 	self.Posture = posture
 
-	local style = Posture.Get(posture)
-	local movementStyle = if posture == "Attack"
+	const style = Posture.Get(posture)
+	const movementStyle = if posture == "Attack"
 		then Posture.RollAttackStyle(self.Config, self.Random)
 		else style.Style
 
@@ -147,21 +147,21 @@ end
 --- handler: `Casted` flies before `CombatService:Attack` computes the states of the
 --- victim, so the guard decision belongs here and not on the next tick.
 function Bot.OnIncoming(self: Bot, data: types.HitboxData)
-	local target = self.Target
+	const target = self.Target
 	if not target then return end
 
 	if not self.Threat:Track(data, target) then return end
 
 	self:SetPosture("Defend")
 
-	local decision = Defense.React(data, {
+	const decision = Defense.React(data, {
 		GuardId = self.Roles.Guard,
 		EscapeId = self.Roles.Escape,
 		GuardHeld = self:IsGuardHeld(),
 		GuardOnCooldown = self:IsGuardOnCooldown(),
 	})
 
-	local skillId = if decision == "Press"
+	const skillId = if decision == "Press"
 		then self.Roles.Guard
 		else if decision == "Escape" then self.Roles.Escape else nil
 
@@ -188,8 +188,8 @@ function Bot.Tick(self: Bot, dt: number)
 
 	self.Sense:Refresh()
 
-	local mask = self.Sense.Mask
-	local guardId = self.Roles.Guard
+	const mask = self.Sense.Mask
+	const guardId = self.Roles.Guard
 
 	if
 		guardId
@@ -267,10 +267,10 @@ return {
 	new = function(character: types.Character, config: BotsCharacters.BotCharacterConfig)
 		character:SetSpec(config.Spec)
 
-		local spec = character.Spec
-		local random = Random.new()
+		const spec = character.Spec
+		const random = Random.new()
 
-		local navigator = NavigationController.new(character.instance, {
+		const navigator = NavigationController.new(character.instance, {
 			ReachDistance = 5,
 			HoldDistance = config.Aggressive < 0.5 and 20 or nil,
 			ObstacleCheckDistance = 5,
@@ -283,10 +283,10 @@ return {
 			Debug = config.Debug or false,
 		})
 
-		local cleaner = character.Cleaner:Scope()
+		const cleaner = character.Cleaner:Scope()
 		cleaner:Set("Navigator", navigator)
 
-		local bot = setmetatable({
+		const bot = setmetatable({
 			Navigator = navigator,
 			Config = config,
 			Cleaner = cleaner,

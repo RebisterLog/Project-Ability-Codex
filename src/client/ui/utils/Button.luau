@@ -1,39 +1,39 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const TweenService = game:GetService("TweenService")
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
 
-local BTN_TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
-local BTN_ICON_TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
+const BTN_TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
+const BTN_ICON_TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Elastic, Enum.EasingDirection.InOut)
 
-local function getPrettySize(origin: UDim2)
+const getPrettySize = function(origin: UDim2)
 	return UDim2.new(origin.X.Scale * 1.1, 0, origin.Y.Scale * 1.1, 0)
 end
 
-local function cancelAllTweens(tweens: { Tween })
+const cancelAllTweens = function(tweens: { Tween })
 	for _, tween in tweens do
 		tween:Cancel()
 	end
 end
 
-local function playAllTweens(tweens: { Tween })
+const playAllTweens = function(tweens: { Tween })
 	for _, tween in tweens do
 		tween:Play()
 	end
 	return tweens
 end
 
-local function Button(scope: Fusion.Scope, button: GuiButton)
-	local originalSize = button.Size
-	local prettySize = getPrettySize(originalSize)
+const Button = function(scope: Fusion.Scope, button: GuiButton)
+	const originalSize = button.Size
+	const prettySize = getPrettySize(originalSize)
 
-	local icon = button:FindFirstChild("Icon") :: ImageLabel?
-	local originalIconRotation = icon and icon.Rotation
+	const icon = button:FindFirstChild("Icon") :: ImageLabel?
+	const originalIconRotation = icon and icon.Rotation
 
-	local tweensInProgress = {}
+	const tweensInProgress = {}
 
-	local function onHover()
-		local tweens = {
+	const onHover = function()
+		const tweens = {
 			TweenService:Create(button, BTN_TWEEN_INFO, { Size = prettySize }),
 		}
 
@@ -51,8 +51,8 @@ local function Button(scope: Fusion.Scope, button: GuiButton)
 		return tweens
 	end
 
-	local function onUnhover()
-		local tweens = {
+	const onUnhover = function()
+		const tweens = {
 			TweenService:Create(button, BTN_TWEEN_INFO, { Size = originalSize }),
 		}
 

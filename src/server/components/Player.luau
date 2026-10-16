@@ -1,14 +1,14 @@
-local CollectionService = game:GetService("CollectionService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const CollectionService = game:GetService("CollectionService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local DraftController = require(ReplicatedStorage.shared.packages.DraftController)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const DraftController = require(ReplicatedStorage.shared.packages.DraftController)
+const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
-local Configuration = ServerScriptService.server.Configuration
+const Configuration = ServerScriptService.server.Configuration
 
 type PlayerComponentData = {
 	Proxy: Proxy.ProxyTab<PlayerData.PlayerData>,
@@ -16,7 +16,7 @@ type PlayerComponentData = {
 	Janitor: typeof(Crane.Janitor.new()),
 }
 
-local Player: Crane.Component<Player> & PlayerComponentData =
+const Player: Crane.Component<Player> & PlayerComponentData =
 	Crane:CreateComponent({
 		Name = "Player",
 	} :: Crane.ComponentDef<Player>)
@@ -62,7 +62,7 @@ end
 
 function Player.InitModules(self: typeof(Player))
 	for i, module in Configuration.PlayerModulesFolder.Value:QueryDescendants("ModuleScript") do
-		local content = Crane.Utils.DeepClone(require(module)) :: PlayerModule
+		const content = Crane.Utils.DeepClone(require(module)) :: PlayerModule
 		content["Name"] = module.Name
 		content["player"] = self
 		content["playerProxy"] = self.Proxy

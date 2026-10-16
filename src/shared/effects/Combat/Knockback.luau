@@ -7,7 +7,7 @@ type KnockbackData = {
 
 return {
 	onStart = function(self, data: KnockbackData)
-		local BodyVelocity = Instance.new("BodyVelocity")
+		const BodyVelocity = Instance.new("BodyVelocity")
 		BodyVelocity.P = math.huge
 		BodyVelocity.Velocity = data.Velocity
 		BodyVelocity.MaxForce = data.MaxForce or Vector3.new(100_000, 100_000, 100_000)

@@ -1,8 +1,8 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
-local Skins = require(ReplicatedStorage.shared.configs.Skins)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
+const Skins = require(ReplicatedStorage.shared.configs.Skins)
 
-local Animation = {}
+const Animation = {}
 
 type Data = {
 	Animation: {
@@ -30,7 +30,7 @@ function Animation:Validate(character: Model)
 end
 
 function Animation:onStart(character: Model, Data: Data)
-	local Animation = Data.Animation
+	const Animation = Data.Animation
 
 	if not Animation then return end
 
@@ -43,7 +43,7 @@ function Animation:onStart(character: Model, Data: Data)
 end
 
 function Animation:onStop(character: Model, Data: StopData)
-	local Animation = Data.Animation
+	const Animation = Data.Animation
 
 	if not Animation then return end
 

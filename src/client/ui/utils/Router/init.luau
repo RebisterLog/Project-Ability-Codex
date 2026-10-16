@@ -1,19 +1,19 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+const LocalPlayer = Players.LocalPlayer
+const PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local Buttler = require(script.Buttler)
+const Buttler = require(script.Buttler)
 
-local SwitchStyles = require(script.SwitchStyles)
-local SwitchStyle = SwitchStyles.SwitchStyle
+const SwitchStyles = require(script.SwitchStyles)
+const SwitchStyle = SwitchStyles.SwitchStyle
 
 -- Fusion imports
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Children = Fusion.Children
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Children = Fusion.Children
 
 -- Types
 export type SwitchStyle = SwitchStyles.SwitchStyle
@@ -61,7 +61,7 @@ export type Router = {
 
 -- Utils
 
-local DefaultSwitchStyle: SwitchStyleProps = {
+const DefaultSwitchStyle: SwitchStyleProps = {
 	style = SwitchStyle.Visibility,
 	duration = 0,
 	easingStyle = Enum.EasingStyle.Linear,
@@ -71,7 +71,7 @@ local DefaultSwitchStyle: SwitchStyleProps = {
 
 -- Page class
 
-local Page = {}
+const Page = {}
 Page.__index = Page
 
 function Page.new(pageScope: Fusion.Scope, props: PageProps)
@@ -79,8 +79,8 @@ function Page.new(pageScope: Fusion.Scope, props: PageProps)
 	--- свойств он трактует как опечатку (`unrecognisedPropertyKey`). Страница может
 	--- вернуть как одиночный инстанс, так и список, поэтому список приводится к
 	--- словарю с именами-индексами, а одиночка заворачивается в `Fragment`.
-	local fragment = if typeof(props.Page) == "function" then props.Page(pageScope) else props.Page
-	local children: { [string]: any } = {}
+	const fragment = if typeof(props.Page) == "function" then props.Page(pageScope) else props.Page
+	const children: { [string]: any } = {}
 
 	if fragment == nil then
 		-- Пустая страница: `Children` без детей допустим.
@@ -92,7 +92,7 @@ function Page.new(pageScope: Fusion.Scope, props: PageProps)
 		end
 	end
 
-	local self = {
+	const self = {
 		Props = props,
 		Scope = pageScope,
 
@@ -119,7 +119,7 @@ function Page.Enter<T>(self: Page, style: SwitchStyleProps, data: T?)
 
 	if self.Props.OnEnter then self.Props.OnEnter(self.Scope, self.Fragment, data) end
 
-	local toClean = SwitchStyles.Animations[style.style].Enter(self.Fragment, style)
+	const toClean = SwitchStyles.Animations[style.style].Enter(self.Fragment, style)
 
 	if toClean then self.Cleaner:Add(toClean) end
 end
@@ -129,7 +129,7 @@ function Page.Leave(self: Page, style: SwitchStyleProps)
 
 	if self.Props.OnLeave then self.Props.OnLeave(self.Scope, self.Fragment) end
 
-	local toClean = SwitchStyles.Animations[style.style].Leave(self.Fragment, style)
+	const toClean = SwitchStyles.Animations[style.style].Leave(self.Fragment, style)
 
 	if toClean then self.Cleaner:Add(toClean) end
 end
@@ -141,7 +141,7 @@ end
 
 -- Router class
 
-local Router = {}
+const Router = {}
 Router.__index = Router
 
 function Router.SwitchPage<T>(self: Router, name: string?, enterData: T?, style: SwitchStyleProps?)
@@ -154,7 +154,7 @@ function Router.SwitchPage<T>(self: Router, name: string?, enterData: T?, style:
 	self.CurrentPage = nil
 
 	if name then
-		local page = self.Pages[name]
+		const page = self.Pages[name]
 		page:Enter(style or DefaultSwitchStyle, enterData)
 		self.CurrentPage = page
 	end
@@ -165,7 +165,7 @@ function Router.ProvidePage(self: Router, props: PageProps)
 		error("Page with name " .. props.Name .. " already exists in this router")
 	end
 
-	local pageScope = self.RootScope:innerScope()
+	const pageScope = self.RootScope:innerScope()
 
 	self.Pages[props.Name] = Page.new(pageScope, props)
 end
@@ -194,7 +194,7 @@ function Router.Render<T>(self: Router, startPage: string?, startPageData: T?)
 end
 
 function Router.new(scope: Fusion.Scope, name: string?)
-	local self = {
+	const self = {
 		RootScope = scope:innerScope(),
 		Pages = {},
 	}

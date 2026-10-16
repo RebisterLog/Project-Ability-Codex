@@ -1,18 +1,18 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const LocalPlayer = Players.LocalPlayer
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Configuration = LocalPlayer.PlayerScripts.client.Configuration
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Configuration = LocalPlayer.PlayerScripts.client.Configuration
 
-local UIStartPoint = Configuration.UIStartPoint.Value
+const UIStartPoint = Configuration.UIStartPoint.Value
 
-local UIService = Crane:CreateService({
+const UIService = Crane:CreateService({
 	Name = "UIService",
 })
 
 function UIService:onStart()
-	local PlayerService = Crane:GetService("PlayerService")
+	const PlayerService = Crane:GetService("PlayerService")
 
 	if UIStartPoint and UIStartPoint:IsA("ModuleScript") then
 		require(UIStartPoint)(PlayerService.Proxy, PlayerService.GameProxy)

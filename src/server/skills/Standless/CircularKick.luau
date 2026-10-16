@@ -19,14 +19,14 @@
       CircularKickHit : Sound on hit connect
 ]=]
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "CircularKick",
 	Cooldown = 4,
 
@@ -66,16 +66,16 @@ local Skill: types.SkillData = {
 }
 
 function Skill:onInit()
-	local character = self.Character :: types.Character
-	local RootPart = character.RootPart
-	local VFXService = Crane:GetService("VFXService")
+	const character = self.Character :: types.Character
+	const RootPart = character.RootPart
+	const VFXService = Crane:GetService("VFXService")
 
-	local CombatService = Crane:GetService("CombatService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
-	local Models = self.Spec.Data.Assets.Models
-	local AttackInfo = self.Data.AttackInfo
+	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
+	const Models = self.Spec.Data.Assets.Models
+	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
 
@@ -147,7 +147,7 @@ function Skill:onInit()
 			{
 				20,
 				function(seq)
-					local Targets = CombatService:Hitbox({
+					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = AttackInfo.Hitbox,
@@ -191,9 +191,9 @@ function Skill:Activate()
 end
 
 function Skill:Interrupt()
-	local VFXService = Crane:GetService("VFXService")
+	const VFXService = Crane:GetService("VFXService")
 
-	local Anims = self.Spec.Data.Assets.Animations
+	const Anims = self.Spec.Data.Assets.Animations
 
 	if self.Sequence then self.Sequence:Stop() end
 

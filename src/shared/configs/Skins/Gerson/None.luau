@@ -1,11 +1,11 @@
-local Assets = game:GetService("ReplicatedStorage").assets
-local GlobalAssets = Assets.Default
+const Assets = game:GetService("ReplicatedStorage").assets
+const GlobalAssets = Assets.Default
 
-local Animations = Assets.Gerson.None.Animations
-local Sounds = Assets.Gerson.None.Sounds
-local Models = Assets.Gerson.None.Models
+const Animations = Assets.Gerson.None.Animations
+const Sounds = Assets.Gerson.None.Sounds
+const Models = Assets.Gerson.None.Models
 
-local None = {
+const None = {
 	Animations = {
 		-- Movement
 		Idle = {

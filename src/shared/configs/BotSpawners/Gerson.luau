@@ -1,5 +1,5 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local NPCFolder = ReplicatedStorage.assets.NPC
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const NPCFolder = ReplicatedStorage.assets.NPC
 
 return {
 	RespawnTime = 10,

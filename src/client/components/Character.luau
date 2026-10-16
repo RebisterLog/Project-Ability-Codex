@@ -1,10 +1,10 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LocalPlayer = Players.LocalPlayer
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const LocalPlayer = Players.LocalPlayer
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-local Character = Crane:CreateComponent({
+const Character = Crane:CreateComponent({
 	Name = "Character",
 })
 

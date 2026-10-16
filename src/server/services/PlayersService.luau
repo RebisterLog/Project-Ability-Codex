@@ -1,13 +1,13 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Lapis = require(ReplicatedStorage.shared.packages.Lapis)
-local PlayerDynamicData = require(ReplicatedStorage.shared.schemas.PlayerDynamicData)
-local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Lapis = require(ReplicatedStorage.shared.packages.Lapis)
+const PlayerDynamicData = require(ReplicatedStorage.shared.schemas.PlayerDynamicData)
+const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+const types = require(ServerScriptService.server.types)
 
-local PlayersService = Crane:CreateService({
+const PlayersService = Crane:CreateService({
 	Name = "PlayersService",
 	LoadOrder = 200,
 })
@@ -22,7 +22,7 @@ end
 
 function PlayersService.onStart(self: typeof(PlayersService))
 	Players.PlayerAdded:Connect(function(player)
-		local playerComponent = Crane:AddComponent(player, "Player")
+		const playerComponent = Crane:AddComponent(player, "Player")
 		self.Players[player] = playerComponent
 
 		self.Collection
@@ -44,13 +44,13 @@ function PlayersService.onStart(self: typeof(PlayersService))
 	end)
 
 	Players.PlayerRemoving:Connect(function(player: Player, reason: Enum.PlayerExitReason)
-		local component: types.PlayerComponent = self.Players[player]
+		const component: types.PlayerComponent = self.Players[player]
 		self.Players[player] = nil
 
 		if not component then return end
 		if not component.Proxy then return end
 
-		local data = component.Proxy()
+		const data = component.Proxy()
 
 		for key, value in PlayerDynamicData do
 			data[key] = nil
@@ -58,7 +58,7 @@ function PlayersService.onStart(self: typeof(PlayersService))
 
 		Crane:RemoveComponent(player, "Player")
 
-		local document = self.Documents[player]
+		const document = self.Documents[player]
 		document:write(data)
 
 		if document ~= nil then
@@ -70,7 +70,7 @@ function PlayersService.onStart(self: typeof(PlayersService))
 	for i, player in Players:GetPlayers() do
 		if self.Players[player] then continue end
 
-		local playerComponent = Crane:AddComponent(player, "Player")
+		const playerComponent = Crane:AddComponent(player, "Player")
 		self.Players[player] = playerComponent
 
 		self.Collection
@@ -92,7 +92,7 @@ function PlayersService.onStart(self: typeof(PlayersService))
 	end
 
 	Crane:GetPacket("RequestProxy").listen(function(data: nil, player: Player)
-		local component = self.Players[player]
+		const component = self.Players[player]
 		if not component then return end
 
 		if not component.Proxy then return end

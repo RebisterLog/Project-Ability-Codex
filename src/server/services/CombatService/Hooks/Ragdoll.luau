@@ -1,20 +1,20 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local CombatService = Crane:GetService("CombatService")
+const CombatService = Crane:GetService("CombatService")
 
 return {
 	Name = "Ragdoll",
 	Type = "Cast",
 	Priority = 89,
 	Function = function(Data: types.AttackData)
-		local State = Data.State
-		local Info = Data.Info
+		const State = Data.State
+		const Info = Data.Info
 
 		if Info.Ragdoll and State.Success then
-			local ragdoll =
+			const ragdoll =
 				Data.Victim:AddParameter("Ragdoll", true) :: types.ParameterObject<"Ragdoll">
 
 			task.delay(Info.Ragdoll.Duration or 1, ragdoll.Destroy, ragdoll)

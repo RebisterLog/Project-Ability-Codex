@@ -1,9 +1,9 @@
 --!native
 --!optimize 2
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local Conditions = require(script.Parent.Conditions)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const Conditions = require(script.Parent.Conditions)
 
 --- Skill priority scoring for bots.
 ---
@@ -17,12 +17,12 @@ local Conditions = require(script.Parent.Conditions)
 --- slot and a defensive skill must not compete with an attack by weights. The
 --- "should we block" question belongs to `BotService/Defense`.
 
-local DEFAULT_CONDITION_WEIGHT = 1
-local DEFAULT_COMBO_WEIGHT = 1
+const DEFAULT_CONDITION_WEIGHT = 1
+const DEFAULT_COMBO_WEIGHT = 1
 
 -- Bitwise operations come from `bit32`: the formatter version used here chokes on
 -- the `&` and `|` operators.
-local band = bit32.band
+const band = bit32.band
 
 --- A candidate to use. Only the id is needed, everything else the scorer takes
 --- from the config. Structurally compatible with `types.Skill`, so
@@ -38,31 +38,31 @@ export type ScoredSkill = {
 	Score: number,
 }
 
-local SkillPriority = {}
+const SkillPriority = {}
 
 --- Weight of a single soft condition for this bot.
-local function GetConditionWeight(config: BotsCharacters.BotCharacterConfig)
+const GetConditionWeight = function(config: BotsCharacters.BotCharacterConfig)
 	return config.ConditionWeight or DEFAULT_CONDITION_WEIGHT
 end
 
 --- Hard groups: every `RequiredConditions` entry has to be met, and not a single
 --- `ForbiddenConditions` entry.
-local function IsEligible(options: BotsCharacters.SkillPreference, mask: number): boolean
-	local required = Conditions.Mask(options.RequiredConditions)
+const IsEligible = function(options: BotsCharacters.SkillPreference, mask: number): boolean
+	const required = Conditions.Mask(options.RequiredConditions)
 	if band(mask, required) ~= required then return false end
 
-	local forbidden = Conditions.Mask(options.ForbiddenConditions)
+	const forbidden = Conditions.Mask(options.ForbiddenConditions)
 	if band(mask, forbidden) ~= 0 then return false end
 
 	return true
 end
 
 --- Bonus for landing inside the soft distance band.
-local function IsPreferredDistance(preferred: { Min: number?, Max: number? }, distance: number)
-	local min = preferred.Min
+const IsPreferredDistance = function(preferred: { Min: number?, Max: number? }, distance: number)
+	const min = preferred.Min
 	if min and distance < min then return false end
 
-	local max = preferred.Max
+	const max = preferred.Max
 	if max and distance > max then return false end
 
 	return true
@@ -79,13 +79,13 @@ function SkillPriority.Score(
 	distance: number,
 	isCombo: boolean
 ): number
-	local conditionWeight = GetConditionWeight(config)
+	const conditionWeight = GetConditionWeight(config)
 	local score = options.Priority or 0
 
 	score += Conditions.Count(mask, options.PreferredConditions) * conditionWeight
 	score -= Conditions.Count(mask, options.PenaltyConditions) * conditionWeight
 
-	local preferred = options.PreferredDistance
+	const preferred = options.PreferredDistance
 	if preferred and IsPreferredDistance(preferred, distance) then
 		score += conditionWeight
 	end
@@ -110,18 +110,18 @@ function SkillPriority.Select(
 	comboSkillId: string?
 ): ScoredSkill?
 	local best: ScoredSkill? = nil
-	local ties: { string } = {}
+	const ties: { string } = {}
 
 	for _, candidate in candidates do
-		local id = candidate.Data.Id
-		local options = config.Skills[id]
+		const id = candidate.Data.Id
+		const options = config.Skills[id]
 		if not options then continue end
 		if not IsEligible(options, mask) then continue end
 
-		local maxDistance = options.Distance
+		const maxDistance = options.Distance
 		if maxDistance and distance > maxDistance then continue end
 
-		local isCombo = comboSkillId ~= nil and id == comboSkillId
+		const isCombo = comboSkillId ~= nil and id == comboSkillId
 		local score = SkillPriority.Score(config, options, mask, distance, isCombo)
 
 		if not best or score > best.Score then
@@ -166,12 +166,12 @@ function SkillPriority.ShouldRelease(
 	mask: number,
 	bestId: string?
 ): boolean
-	local options = config.Skills[skillId]
+	const options = config.Skills[skillId]
 	if not options then return true end
 
 	if Conditions.HasAny(mask, options.HoldUntil) then return true end
 
-	local holdWhile = options.HoldWhile
+	const holdWhile = options.HoldWhile
 	if holdWhile and #holdWhile > 0 then return not Conditions.HasAny(mask, holdWhile) end
 
 	if bestId == nil then return false end

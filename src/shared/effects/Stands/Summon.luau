@@ -1,11 +1,11 @@
-local Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+const Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
+const RunService = game:GetService("RunService")
+const TweenService = game:GetService("TweenService")
 
-local StandsTweens = {}
+const StandsTweens = {}
 
-local STYLE_IN = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-local STYLE_OUT = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+const STYLE_IN = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+const STYLE_OUT = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 
 return {
 	Validate = function()
@@ -17,13 +17,13 @@ return {
 
 		if not stand then return end
 
-		local parts = stand:QueryDescendants("BasePart") :: { BasePart }
-		local decals = stand:QueryDescendants("Decal") :: { Decal }
+		const parts = stand:QueryDescendants("BasePart") :: { BasePart }
+		const decals = stand:QueryDescendants("Decal") :: { Decal }
 
 		StandsTweens[stand] = {}
 
 		for i, part in parts do
-			local tween = TweenService:Create(part, state and STYLE_IN or STYLE_OUT, {
+			const tween = TweenService:Create(part, state and STYLE_IN or STYLE_OUT, {
 				Transparency = state and (part:GetAttribute("Transparency") or 0) or 1,
 			})
 
@@ -32,7 +32,7 @@ return {
 		end
 
 		for i, decal in decals do
-			local tween = TweenService:Create(decal, state and STYLE_IN or STYLE_OUT, {
+			const tween = TweenService:Create(decal, state and STYLE_IN or STYLE_OUT, {
 				Transparency = state and (decal:GetAttribute("Transparency") or 0) or 1,
 			})
 

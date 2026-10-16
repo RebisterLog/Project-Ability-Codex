@@ -1,11 +1,11 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
-local Skins = require(ReplicatedStorage.shared.configs.Skins)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
+const Skins = require(ReplicatedStorage.shared.configs.Skins)
 
-local Hitbox = {}
+const Hitbox = {}
 
 function Hitbox:onStart(Origin: CFrame, Size: Vector3 | number)
-	local Part = Instance.new("Part")
+	const Part = Instance.new("Part")
 	Part.CFrame = Origin
 	Part.Anchored = true
 	Part.CanCollide = false

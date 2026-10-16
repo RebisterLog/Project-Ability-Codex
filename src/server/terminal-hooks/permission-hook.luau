@@ -1,4 +1,4 @@
-local GroupService = game:GetService("GroupService")
+const GroupService = game:GetService("GroupService")
 
 type Role = {
 	Id: number,
@@ -6,10 +6,10 @@ type Role = {
 	Rank: number,
 }
 
-local function GetRank(UserId: number): number
+const GetRank = function(UserId: number): number
 	--? The GetRankInGroup method is deprecated and unstable now.
 	--? https://devforum.roblox.com/t/excessive-rate-limits-when-checking-gamepasses-group-ranks/3549665
-	local groups = GroupService:GetGroupsAsync(UserId)
+	const groups = GroupService:GetGroupsAsync(UserId)
 
 	for _, GroupInfo in groups do
 		if not UserId then break end
@@ -22,7 +22,7 @@ end
 
 return function(registry)
 	registry:RegisterHook("BeforeRun", function(context)
-		local player = context.Executor :: Player
+		const player = context.Executor :: Player
 
 		if context.Group == "Admin" and GetRank(player.UserId) < 200 then
 			return "You don't have permission to run this command"

@@ -1,12 +1,12 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Arc Spear Strike",
 	Cooldown = 2,
 
@@ -59,16 +59,16 @@ local Skill: types.SkillData = {
 }
 
 function Skill.onInit(self)
-	local character = self.Character
-	local RootPart = character.RootPart
-	local Humanoid = character.Humanoid
-	local VFXService = Crane:GetService("VFXService")
+	const character = self.Character
+	const RootPart = character.RootPart
+	const Humanoid = character.Humanoid
+	const VFXService = Crane:GetService("VFXService")
 
-	local CombatService = Crane:GetService("CombatService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
-	local AttackInfo = self.Data.AttackInfo
+	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
+	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
 
@@ -99,7 +99,7 @@ function Skill.onInit(self)
 			{
 				30,
 				function(seq, Frame)
-					local Targets = CombatService:Hitbox({
+					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = AttackInfo.Hitbox,
@@ -141,12 +141,12 @@ function Skill.Activate(self)
 end
 
 function Skill.Interrupt(self)
-	local character = self.Character
-	local RootPart = character.RootPart
-	local VFXService = Crane:GetService("VFXService")
+	const character = self.Character
+	const RootPart = character.RootPart
+	const VFXService = Crane:GetService("VFXService")
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Sounds = self.Spec.Data.Assets.Sounds
+	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
 
 	if self.Sequence then self.Sequence:Stop() end
 
