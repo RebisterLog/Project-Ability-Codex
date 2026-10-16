@@ -212,6 +212,7 @@ function CombatService.CreateGrab(
 
 	Cleaner:Add(attacker:AddParameter("IFrames", Enums.IFrames.Grab))
 	Cleaner:Add(victim:AddParameter("IFrames", Enums.IFrames.Grab))
+	Cleaner:Add(victim:AddParameter("NoSkillCast", true))
 
 	local victimPlayer = Players:GetPlayerFromCharacter(victim.instance)
 	local attackerPlayer = Players:GetPlayerFromCharacter(attacker.instance)
@@ -240,14 +241,6 @@ function CombatService.CreateGrab(
 
 		if data.Victim.Restrain ~= false then Cleaner:Add(victim:AddParameter("Restrain", true)) end
 
-		--- Связь строится `Weld`, а не `AlignPosition`/`AlignOrientation`: одна жёсткая
-		--- связь дешевле двух констрейнтов и не тащит за собой вложения, но `Weld` не
-		--- двигает части сам — он лишь удерживает уже достигнутое взаимное положение.
-		---
-		--- Положение задаём поэтому до сварки: `Part1.CFrame * C1` должен совпасть с
-		--- `Part0.CFrame * C0` — ровно то, что навязывали вложения. Если отдать эту
-		--- поправку солверу, на быстром броске жертва растянется к атакующему несколько
-		--- физических кадров, а сварка рождается уже в покое и ничего не исправляет.
 		if data.Victim.Bind then
 			local Bind = data.Victim.Bind
 			local C0 = Bind.Offset or CFrame.identity

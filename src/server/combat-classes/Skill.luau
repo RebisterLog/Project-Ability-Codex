@@ -98,6 +98,7 @@ function Skill.IsOnCooldown(self: types.Skill)
 end
 
 function Skill.Validate(self: types.Skill)
+    if self.Character:GetParameter("NoSkillCast") then return false end
 	if not self.Proxy().Parameters.Enabled then return false end
 	if self.Character:GetParameter("Stun").Duration > 0 then return false end
 	if self.Character:GetParameter("Ragdoll") then return false end

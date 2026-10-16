@@ -11,8 +11,6 @@ local Skill: types.SkillData = {
 	Cooldown = 1,
 
 	SkillCharacters = {
-		"Grab",
-		"ComboEnder",
 		"Hit",
 		"Ragdoll",
 		"IgnoreBlock",
@@ -111,20 +109,20 @@ function Skill.onInit(self)
 					local Anims = self.Assets.Animations
 					local Sounds = self.Assets.Sounds
 
-					CombatService:Attack({
-						Attacker = character,
-						Victim = self.Target,
-						Info = {
-							Block = {
-								PerfectBlockable = false,
-							},
-
-							Stun = {
-								Priority = Enums.Stun.Heavy,
-								Duration = 2,
-							},
-						},
-					})
+-- 					CombatService:Attack({
+-- 						Attacker = character,
+-- 						Victim = self.Target,
+-- 						Info = {
+-- 							Block = {
+-- 								PerfectBlockable = false,
+-- 							},
+-- 
+-- 							Stun = {
+-- 								Priority = Enums.Stun.Heavy,
+-- 								Duration = 2,
+-- 							},
+-- 						},
+-- 					})
 
 					seq.Cleaner:Set(
 						"GrabObject",
