@@ -19,6 +19,20 @@ Load the **create-spec** skill when creating or editing a spec module, skin conf
 skill load create-spec
 ```
 
+## Testing
+
+Combat skills run headlessly, without Studio and without a playtest. See `TESTING.md`.
+
+```bash
+lune run tools/run-tests.luau                        # gates + every suite
+lune run tests/skills/Contract.luau                  # every skill: contract, assets, runnable
+lune run tools/skills.luau inspect Standless/Uppercut  # one skill, frame by frame
+```
+
+Write a suite under `tests/skills/` when editing a skill: assert which frames check the
+hitbox, who gets hit and for how much damage, and that armor and parameters are released.
+`lune run tools/skills.luau list` shows which skills the harness can drive — all of them.
+
 ## Runtime Bridge
 
 During a Studio playtest, Crane services and components can be called directly over

@@ -1,0 +1,18 @@
+# Files that were already unformatted. Regenerate with:
+#     lune run tools/check.luau --update-baseline
+# A new file in this list means the gate will fail until it is formatted.
+src/client/ui/components/PreloadingComponent/Preload.luau
+src/client/ui/components/PreloadingComponent/init.luau
+src/client/ui/main.luau
+src/server/combat-classes/Skill.luau
+src/server/combat-classes/Spec.luau
+src/server/services/StandService.luau
+src/server/skills/Grab.luau
+src/server/skills/Standless/Counter.luau
+src/server/skills/Standless/DualPistols.luau
+src/shared/configs/Bots/BasicWarrior.luau
+src/shared/configs/DefaultAnimations.luau
+src/shared/configs/Skins/Standless/None.luau
+src/shared/configs/Skins/Undyne/None.luau
+src/shared/effects/Combat/Knockback.luau
+src/shared/packages/Signal.luau

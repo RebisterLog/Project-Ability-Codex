@@ -1,0 +1,7 @@
+[
+  "parameter frame=0 MaxJumpPower=0 add",
+  "parameter frame=0 MaxWalkSpeed=8 add",
+  "effect frame=0 Animation start",
+  "effect frame=0 Sound start",
+  "effect frame=0 Sound start"
+]

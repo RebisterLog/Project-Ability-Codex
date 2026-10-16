@@ -18,15 +18,108 @@ For more help, check out [the Rojo documentation](https://rojo.space/docs).
 
 ## Tests
 
-The SkillConstructor core has no Roblox dependencies, so its suites run under `lune`:
+Everything runs under [lune](https://github.com/lune-org/lune) — no Studio and no playtest:
 
 ```bash
-lune run src/shared/packages/SkillConstructor/tests/structural.luau
-lune run src/shared/packages/SkillConstructor/tests/emitter.luau
-lune run src/shared/packages/SkillConstructor/tests/codec.luau
-lune run src/shared/packages/SkillConstructor/tests/against-spec.luau
+lune run tools/run-tests.luau     # quality gates + every suite
+lune run tools/run-tests.luau --json   # same run, machine-readable report
 ```
 
-`against-spec` covers the `Spec` rules through pure fixtures in both Lune and Studio.
-In Studio it additionally exercises the `bot-characters`-backed wrapper, which cannot be
-covered by fixtures.
+The aggregate runner executes each suite as its own process, so one failing suite never
+hides the others. Suites live in `tests/` and are discovered automatically; the
+SkillConstructor suites are listed explicitly because they live next to their package.
+
+Individual suites can be run on their own:
+
+```bash
+lune run tests/json.luau
+lune run tests/skills/Uppercut.luau
+lune run src/shared/packages/SkillConstructor/tests/structural.luau
+```
+
+### Skill tests
+
+Combat skills are executed headlessly — no Studio, no playtest. The skill source, the
+skin config with its assets, the character parameter table and `Enums` are real; the
+Roblox environment, the Crane services and the `Skill` class are recorded instead of
+run. Suites live in `tests/skills/`:
+
+```luau
+local Harness = require("../../tools/SkillTest")
+
+local world = Harness.world({ spec = "Standless", skin = "None", targets = 2 })
+local skill = world:skill("Standless/Uppercut")
+
+skill:Activate()
+world:Step(40)
+
+for _, hit in world.trace:attacks() do
+	print(hit.frame, hit.damage)
+end
+```
+
+All seventeen real skills run under the harness; `tests/skills/Contract.luau` keeps it
+that way by loading every skill and failing on one that cannot run.
+
+```bash
+lune run tools/skills.luau list                  # which skills the harness can drive
+lune run tools/skills.luau inspect Punch         # one skill, frame by frame, as text
+```
+
+See `docs/TESTING.md` for the harness internals and for what to assert.
+
+### Quality gates
+
+Before the suites run, three gates check the code itself. They are ordered by cost, and
+each one only makes sense if the previous one is clean:
+
+| Gate | Tool | What it catches |
+|---|---|---|
+| `syntax` | `luau-compile --only-parse` | parse errors, ~100 ms for the whole repo |
+| `format` | `stylua --check` | formatting drift |
+| `analyze` | `luau-lsp analyze` | type and lint diagnostics |
+
+```bash
+lune run tools/check.luau                  # all gates
+lune run tools/check.luau --only=analyze   # one gate
+lune run tools/check.luau --strict         # a skipped gate counts as a failure (CI)
+lune run tools/check.luau --json           # machine-readable report
+```
+
+Findings that already exist in `src` are listed in `tests/baseline/` and do not fail the
+gate — only new ones do. `tools/` and `tests/` are held to zero findings. Regenerate the
+baselines deliberately, after reviewing the diff:
+
+```bash
+lune run tools/check.luau --update-baseline
+```
+
+Formatting is checked in two passes, one per line-ending style: the Windows checkout
+carries CRLF while `stylua.toml` asks for Unix, and a file that differs only in line
+endings is not unformatted. Auto-formatting preserves each file's current endings:
+
+```bash
+lune run tools/format.luau          # check tools/ and tests/
+lune run tools/format.luau --fix    # format them
+lune run tools/format.luau --fix --src  # also format first-party src
+```
+
+Vendored packages (`src/shared/packages/Roact`, `Fusion`, `Crane/packages`, and the rest
+of the list in `tools/Toolchain.luau`) are excluded from every gate.
+
+### Required tools
+
+| Tool | Used for | Install |
+|---|---|---|
+| `lune` 0.11+ | running suites and the gates | [releases](https://github.com/lune-org/lune/releases) |
+| `luau-compile` | syntax gate | `luau-windows.zip` from [luau releases](https://github.com/luau-lang/luau/releases) |
+| `luau-lsp` + `globalTypes.d.luau` | analyze gate | same archive |
+| `stylua` | format gate | [releases](https://github.com/JohnnyMorganz/StyLua/releases) |
+| `rojo` | sourcemap for the analyze gate | already required to build the place |
+
+Binaries are looked up in `PAC_TOOLS_DIR`, next to the running `lune`, in `<root>/.tools`
+and finally in `PATH`. A missing tool skips its gate with a warning instead of failing;
+`--strict` turns that into a failure. Run `lune setup` once so the editor and the analyzer
+can resolve `@lune/*` through the `.luaurc` alias.
+
+See `docs/TESTING.md` for the details.
