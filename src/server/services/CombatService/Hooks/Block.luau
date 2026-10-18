@@ -50,6 +50,7 @@ return {
 			Data.Info.Damage = nil
 			Data.Info.Ragdoll = nil
 			Data.Info.Stun = nil
+			Data.Info.Bleed = nil
 
 			Data.Info.Knockback = nil
 			Data.Info.Angular = nil

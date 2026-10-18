@@ -18,6 +18,12 @@ const StunParser = function(a, b)
 	if a.Priority < b.Priority then return b end
 	return a
 end
+-- A stronger wound must not be overwritten by a weaker one, and a weaker one
+-- must not vanish when the stronger one is removed: the strongest tick wins.
+const BleedingParser = function(a, b)
+	if a.Damage > b.Damage then return a end
+	return b
+end
 const ORParser = function(a, b)
 	return a or b
 end
@@ -41,6 +47,17 @@ return {
 		},
 
 		Parser = StunParser,
+	},
+
+	Bleeding = {
+		Default = {
+			Damage = 0,
+			Duration = 0,
+			Interval = 0,
+			Slow = 0,
+		},
+
+		Parser = BleedingParser,
 	},
 
 	Armor = { Default = false, Parser = ORParser },

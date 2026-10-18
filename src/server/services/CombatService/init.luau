@@ -200,6 +200,62 @@ function CombatService.AddArmor(self: typeof(CombatService), Character: types.Ch
 	return Cleaner
 end
 
+-- Equips a model (a weapon, a tool, any prop) onto a character through a
+-- Motor6D. The caller gets back the clone, already inside the character, so it
+-- can own the lifetime (`seq.Cleaner:Add(...)`); the motor is returned
+-- separately for callers that need to drive it.
+-- 
+-- Attributes for model:
+--   HandleName - name of handle part, if it's not "Handle"
+--
+-- The mount part is always a part named `Handle`: a model without one is a
+-- mistake in the asset, not a runtime state, so it raises instead of quietly
+-- equipping nothing and leaving a combat bug to be found in game. Attributes of
+-- that `Handle`:
+--
+--   MotorName — name of the created Motor6D (animations address motors by name)
+--   Bone      — character part to mount on (defaults to "HumanoidRootPart")
+--   Offset    — C0 of the motor, i.e. where the grip sits (defaults to identity)
+function CombatService:Equip(character: types.Character, model: Model): (Model, Motor6D)
+	const Handle = model:FindFirstChild("Handle") or model:FindFirstChild(model:GetAttribute("HandleName"))
+
+	if not Handle or not Handle:IsA("BasePart") then
+		error(`CombatService:Equip — {model.Name} has no Handle part`, 2)
+	end
+
+	const BoneName = Handle:GetAttribute("Bone") or "HumanoidRootPart"
+	const Bone = character.instance:FindFirstChild(BoneName)
+
+	if not Bone or not Bone:IsA("BasePart") then
+		error(`CombatService:Equip — {character.instance.Name} has no {BoneName} part`, 2)
+	end
+
+	const Weapon = model:Clone()
+	const WeaponHandle = Weapon:FindFirstChild(Handle.Name) :: BasePart
+
+	for _, part in Weapon:GetDescendants() do
+		if not part:IsA("BasePart") then continue end
+
+		part.Anchored = false
+		part.CanCollide = false
+		part.Massless = true
+	end
+
+	const Motor = Instance.new("Motor6D")
+	Motor.Name = Handle:GetAttribute("MotorName") or "Handle"
+	Motor.Part0 = Bone
+	Motor.C0 = Handle:GetAttribute("Offset") or CFrame.identity
+	Motor.Part1 = WeaponHandle
+
+	-- The motor lives inside the model, so destroying the model takes it away
+	-- with the prop. Parenting comes last: clients never see a half-assembled
+	-- weapon, and an unparented model neither replicates nor renders.
+	Motor.Parent = WeaponHandle
+	Weapon.Parent = character.instance
+
+	return Weapon, Motor
+end
+
 function CombatService.CreateGrab(
 	self: typeof(CombatService),
 	attacker: types.Character,

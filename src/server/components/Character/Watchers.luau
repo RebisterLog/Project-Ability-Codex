@@ -2,6 +2,7 @@
 
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
+const Players = game:GetService("Players")
 
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Enums = require(ServerScriptService.server.Enums)
@@ -42,6 +43,27 @@ return {
 			object.Cleaner:Add(self:AddParameter("MaxWalkSpeed", 0))
 		elseif Priority == Enums.Stun.Medium then
 			object.Cleaner:Add(self:AddParameter("MaxWalkSpeed", 3))
+		end
+	end,
+
+	["Bleeding"] = function(self: types.Character, value, object)
+		const Bleeding = value ~= nil and (value.Damage or 0) > 0
+		const VFXService = Crane:GetService("VFXService")
+
+		-- Blood and the slowdown are a state, not a one-shot effect: the watcher
+		-- fires on every change of the parameter and syncs both with it, so an
+		-- effect removed from the outside (a future cleanse, for example) stops
+		-- them without a separate branch anywhere.
+		if Bleeding then
+			VFXService:StartEffect(Players:GetPlayers(), "Bleeding", self.instance)
+		else
+			VFXService:StopEffect(Players:GetPlayers(), "Bleeding", self.instance)
+		end
+
+		if not Bleeding or not object then return end
+
+		if not object.Cleaner:Has("Slow") then
+			object.Cleaner:Set("Slow", self:AddParameter("MaxWalkSpeed", value.Slow or 8))
 		end
 	end,
 

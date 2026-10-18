@@ -48,7 +48,7 @@ return {
 				const Duration = Info.Knockback.Duration or 0.1
 				const Speed = Info.Knockback.Speed or 1
 
-				local Velocity = (Info.Knockback.Velocity or Vector3.zero)
+				const Velocity = (Info.Knockback.Velocity or Vector3.zero)
 					+ ((LookVector or Vector3.zero) * Speed)
 
 				local MaxForce = Info.Knockback.MaxForce
@@ -60,7 +60,7 @@ return {
 					end
 				end
 
-				local P = Info.Knockback.P
+				const P = Info.Knockback.P
 
 				if targetPlayer then
 					Crane:GetService("VFXService"):StartEffect({ targetPlayer }, "Knockback", {
@@ -83,21 +83,10 @@ return {
 								P = P,
 							})
 					else
-<<<<<<< HEAD
-						local BodyVelocity = Instance.new("BodyVelocity")
+						const BodyVelocity = Instance.new("BodyVelocity")
 						if P then BodyVelocity.P = P end
 						BodyVelocity.Velocity = Velocity
 						BodyVelocity.MaxForce = MaxForce
-=======
-						const BodyVelocity = Instance.new("BodyVelocity")
-						BodyVelocity.P = math.huge
-						BodyVelocity.Velocity = (
-							(Info.Knockback.Velocity or Vector3.zero)
-							+ ((LookVector or Vector3.zero) * Speed)
-						)
-						BodyVelocity.MaxForce = Info.Knockback.MaxForce
-							or Vector3.new(100_000, 100_000, 100_000)
->>>>>>> 1a23bf88d85bda9536305b61573a12ed54ca98a6
 
 						BodyVelocity.Name = "KnockbackVelocity"
 						BodyVelocity.Parent = TargetPart

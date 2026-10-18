@@ -24,6 +24,7 @@ const GOLDENS = {
 	"Standless/Footrest",
 	"Standless/CircularKick",
 	"Standless/DualPistols",
+	"Standless/KnifeStab",
 	"StandBarrage",
 	"Summon",
 }

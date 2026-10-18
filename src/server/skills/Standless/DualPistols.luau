@@ -32,6 +32,7 @@
       PistolShotEffectPart : (BasePart) Muzzle flash emitted at the barrel
 ]=]
 
+local Debris = game:GetService("Debris")
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -43,7 +44,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Dual Pistols",
-	Cooldown = 4,
+	Cooldown = 15,
 
 	SkillCharacters = {
 		"Projectile",
@@ -78,8 +79,8 @@ const Skill: types.SkillData = {
 	-- Handed straight to `Projectile.new`. See combat-classes/Projectile.
 	ProjectileData = {
 		-- Offset from the RootPart the round spawns and travels along.
-		Offset = CFrame.new(0, 0, -3),
-		Speed = 120,
+		Offset = CFrame.new(0, 0, -2),
+		Speed = 300,
 		LifeTime = 2,
 		Distance = 120,
 		HitboxSize = 2,
@@ -99,11 +100,24 @@ const Skill: types.SkillData = {
 	-- The old skill fired on an animation "Hit" marker, which the new engine
 	-- cannot read, so the shots are placed on explicit frames instead.
 	-- One round per frame.
-	ShotFrames = { 60, 90, 110, 111 },
+	ShotFrames = { 30, 60, 90, 91 },
 
 	-- Last frame of the animation.
 	TotalFrames = 120,
 }
+
+const function DropPistol(model: Model, throwVector: Vector3)
+    for _, child in model:QueryDescendants("BasePart") do
+        child.CollisionGroup = "NoCollision"
+		child.CanCollide = true
+	end
+
+	model.Parent = Workspace.Effects
+
+	if model.PrimaryPart then
+	    model.PrimaryPart:ApplyImpulse(throwVector)
+	end
+end
 
 function Skill:onInit()
 	const character = self.Character :: types.Character
@@ -120,84 +134,8 @@ function Skill:onInit()
 	const ProjectileData = self.Data.ProjectileData
 	const Slowdown = self.Data.OwnerSlowdown
 
-	const DebrisLifeTime = self.Data.DebrisLifeTime
 	const ShotFrames = self.Data.ShotFrames
 	const TotalFrames = self.Data.TotalFrames
-
-	-- Weapons currently mounted on the arms, so cleanup can drop them as debris.
-	self.Equipped = {} :: { { Weapon: Model, Handle: BasePart } }
-
-	-- Mounts a handle on the arm through a Motor6D so the weapon follows the
-	-- animation, then welds the weapon onto that handle. Ported from the old
-	-- `makeHandlePart` / `weldPistolToHandle` pair.
-	const EquipPistol = function(armName: string, weapon: Model?)
-		const arm = character.instance:FindFirstChild(armName)
-		if not arm or not arm:IsA("BasePart") or not weapon then
-			return
-		end
-
-		const motor = Instance.new("Motor6D")
-		motor.Part0 = arm
-		motor.C0 = CFrame.new(0, -1.2, 0) * CFrame.fromOrientation(math.rad(-90), 0, 0)
-
-		const handle = Instance.new("Part")
-		handle.Name = "Handle"
-		handle.Anchored = false
-		handle.CanCollide = false
-		handle.CanTouch = false
-		handle.CanQuery = false
-		handle.Transparency = 1
-		handle.Size = Vector3.new(0.5, 0.5, 0.5)
-		handle.Parent = arm
-
-		motor.Part1 = handle
-		motor.Parent = handle
-
-		const weld = Instance.new("Weld")
-		weld.Part0 = weapon.PrimaryPart
-		weld.Part1 = handle
-		weld.Parent = handle
-
-		-- Parent last. An unparented Model is not in the DataModel, so it neither
-		-- replicates nor renders. Parenting after the weld means clients never
-		-- receive a half-assembled weapon.
-		weapon.Parent = character.instance
-
-		table.insert(self.Equipped, { Weapon = weapon, Handle = handle })
-	end
-
-	-- The old skill dropped the pistols into the world as physical props when
-	-- the skill ended. The parts are captured up front because re-parenting
-	-- empties the model.
-	const DropDebris = function(weapon: Model)
-		const parts = {}
-
-		for _, child in weapon:GetChildren() do
-			if not child:IsA("BasePart") then
-				continue
-			end
-
-			table.insert(parts, child)
-			child.CanCollide = true
-			child.Parent = Workspace
-		end
-
-		if #parts == 0 then
-			return
-		end
-
-		const Debris = Crane.Buttler.new()
-
-		Debris:Delay(DebrisLifeTime, function()
-			for _, part in parts do
-				if part.Parent then
-					part:Destroy()
-				end
-			end
-
-			Debris:Clean()
-		end)
-	end
 
 	const Shoot = function()
 		const muzzle = RootPart.CFrame * ProjectileData.Offset
@@ -243,13 +181,13 @@ function Skill:onInit()
 		{
 			0,
 			function(seq)
-				table.clear(self.Equipped)
+				const left, motorL = CombatService:Equip(character, Models["LeftPistol"])
+				const right, motorR = CombatService:Equip(character, Models["RightPistol"])
 
-				const left = Models["LeftPistol"]
-				const right = Models["RightPistol"]
-
-				EquipPistol("Left Arm", left and left:Clone())
-				EquipPistol("Right Arm", right and right:Clone())
+				if character.Player then
+				    Crane.Utils.ChangeNetworkOwner(left, character.Player)
+					Crane.Utils.ChangeNetworkOwner(right, character.Player)
+				end
 
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Slowdown.WalkSpeed))
 				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", Slowdown.JumpPower))
@@ -266,13 +204,15 @@ function Skill:onInit()
 				-- Runs on both a clean finish and an interrupt, so the pistols end
 				-- up on the floor exactly like the old `onEnd`.
 				seq.Cleaner:Add(function()
-					for _, equipped in self.Equipped do
-						DropDebris(equipped.Weapon)
-						equipped.Handle:Destroy()
-					end
+    				Debris:AddItem(left, 3)
+                    Debris:AddItem(right, 3)
+        
+				    motorL:Destroy()
+					motorR:Destroy()
 
-					table.clear(self.Equipped)
-
+					DropPistol(left, -character.RootPart.CFrame.LookVector)
+					DropPistol(right, -character.RootPart.CFrame.LookVector)
+					
 					const anim = Anims["DualPistols"]
 					if not anim then
 						return

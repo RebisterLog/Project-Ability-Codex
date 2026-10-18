@@ -177,6 +177,7 @@ function Services.combat(trace: any, targets: { any }, state: { [string]: any })
 			ragdoll = info.Ragdoll,
 			knockback = info.Knockback,
 			block = info.Block,
+			bleed = info.Bleed,
 			blocked = blocked,
 		})
 
@@ -202,6 +203,16 @@ function Services.combat(trace: any, targets: { any }, state: { [string]: any })
 		trace:record("armor", { enabled = enabled, removed = false })
 
 		return cleaner
+	end
+
+	-- `Equip` mounts a tool (the knife) on the character through a Motor6D. The
+	-- geometry belongs to the engine; the trace only needs to know the skill
+	-- asked for it, and the result has to answer `Destroy` for the sequence
+	-- cleaner, which the asset node the skill passes in already does.
+	function self:Equip(_character: any, model: any)
+		trace:record("equip", { model = tostring(model) })
+
+		return model
 	end
 
 	function self:GetStates(character: any)

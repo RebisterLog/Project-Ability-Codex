@@ -19,6 +19,7 @@ const Spec = {
 		["CircularKick"] = "@Specs/Standless/CircularKick",
 		["Counter"] = "@Specs/Standless/Counter",
 		["DualPistols"] = "@Specs/Standless/DualPistols",
+		["KnifeStab"] = "@Specs/Standless/KnifeStab",
 	},
 
 	onInit = function(self: types.Spec)

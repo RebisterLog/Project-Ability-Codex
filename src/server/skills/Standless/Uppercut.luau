@@ -7,7 +7,7 @@ const Types = require(ServerScriptService.server.types)
 
 const Skill: Types.SkillData = {
 	DisplayName = "Uppercut",
-	Cooldown = 1,
+	Cooldown = 10,
 
 	SkillCharacters = {
 		"Ragdoll",

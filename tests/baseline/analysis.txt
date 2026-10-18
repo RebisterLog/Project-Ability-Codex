@@ -185,6 +185,7 @@ src/server/services/CollisionService.luau LocalUnused: Variable 'Configuration' 
 src/server/services/CombatService/Hooks/Angular.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
 src/server/services/CombatService/Hooks/Armor.luau LocalUnused: Variable 'CleanCache' is never used; prefix with '_' to silence
 src/server/services/CombatService/Hooks/Armor.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/Bleed.luau TypeError: Type *error-type* & number cannot be compared with <= because it has no metatable
 src/server/services/CombatService/Hooks/Block.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
 src/server/services/CombatService/Hooks/Damage.luau TypeError: Type *error-type* & number cannot be compared with > because it has no metatable
 src/server/services/CombatService/Hooks/IFrames.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
@@ -265,6 +266,7 @@ src/server/skills/Standless/CircularKick.luau TypeError: Table type 'Skill' not 
 src/server/skills/Standless/Counter.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
 src/server/skills/Standless/DualPistols.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
 src/server/skills/Standless/Footrest.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Standless/KnifeStab.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
 src/server/skills/Standless/Uppercut.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
 src/server/skills/Standless/Uppercut.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
 src/server/skills/Summon.luau ImportUnused: Import 'Enums' is never used; prefix with '_' to silence

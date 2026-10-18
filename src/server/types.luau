@@ -104,6 +104,13 @@ export type AttackInfo = {
 	Ragdoll: {
 		Duration: number,
 	}?,
+
+	Bleed: {
+		Damage: number,
+		Duration: number,
+		Interval: number?,
+		Slow: number?,
+	}?,
 }
 
 export type AttackData = {

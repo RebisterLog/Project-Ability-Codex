@@ -56,12 +56,10 @@ function Skill:onInit()
 
 	const Anims = self.Spec.Data.Assets.Animations
 
-	local DashTime = DashProperties.Time or 0.25
-	local DashDecay = math.min(DashProperties.Decay or 0.1, DashTime)
+	const DashTime = DashProperties.Time or 0.25
+	const DashDecay = math.min(DashProperties.Decay or 0.1, DashTime)
 
-	local HoldFrame = math.max(1, math.floor(DashTime * 60) - math.floor(DashDecay * 60))
-	local RemoveFrame = math.max(HoldFrame + 1, math.floor(DashTime * 60))
-	local EndFrame = RemoveFrame + 5
+	const HoldFrame = math.max(1, math.floor(DashTime * 60) - math.floor(DashDecay * 60))
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -84,7 +82,7 @@ function Skill:onInit()
 
 					ClearBodyMovers(RootPart)
 
-					local velocity = Instance.new("BodyVelocity") :: BodyVelocity
+					const velocity = Instance.new("BodyVelocity") :: BodyVelocity
 					velocity.Name = "DashVelocity"
 					velocity.MaxForce = DashProperties.MaxForce or Vector3.new(60_000, 0, 60_000)
 					if DashProperties.P then velocity.P = DashProperties.P end
@@ -101,7 +99,7 @@ function Skill:onInit()
 			{
 				HoldFrame,
 				function(seq)
-					local velocity = seq.Velocity
+					const velocity = seq.Velocity
 					if not velocity then return end
 
 					TweenService:Create(
@@ -111,19 +109,19 @@ function Skill:onInit()
 					):Play()
 
 					task.delay(0.25, function()
-					    seq.Cleaner:Remove("Velocity")
+						seq.Cleaner:Remove("Velocity")
 					end)
 				end,
 			},
---
--- 			{
--- 				RemoveFrame,
--- 				function(seq)
---
--- 				end,
--- 			},
---
--- 			{ EndFrame },
+			--
+			-- 			{
+			-- 				RemoveFrame,
+			-- 				function(seq)
+			--
+			-- 				end,
+			-- 			},
+			--
+			-- 			{ EndFrame },
 		},
 	}))
 end

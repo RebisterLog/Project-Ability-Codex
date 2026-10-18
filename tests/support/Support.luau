@@ -29,8 +29,9 @@ local function order(kind: string): number
 	if kind == "effect" then return 4 end
 	if kind == "hitbox" then return 5 end
 	if kind == "attack" then return 6 end
+	if kind == "equip" then return 7 end
 
-	return 7
+	return 8
 end
 
 --- One line per recorded effect. Only the fields a test cares about are kept:
@@ -52,12 +53,23 @@ function Support.canonical(world: any): { string }
 				name = (entry.victim :: any).instance.Name
 			end
 
+			-- The bleed config is printed only when the attack carries one: a
+			-- suffix that some skills have and others do not keeps every trace
+			-- recorded before bleed existed byte-identical.
+			local bleed = ""
+
+			if entry.bleed then
+				bleed = ` bleed={tostring(entry.bleed.Damage)}x{tostring(entry.bleed.Duration)}`
+			end
+
 			table.insert(
 				lines,
 				`attack frame={entry.frame} target={name} damage={tostring(entry.damage)} stun={tostring(
 					entry.stun and entry.stun.Duration
-				)} priority={tostring(entry.stun and entry.stun.Priority)}`
+				)} priority={tostring(entry.stun and entry.stun.Priority)}` .. bleed
 			)
+		elseif entry.kind == "equip" then
+			table.insert(lines, `equip frame={entry.frame}`)
 		elseif entry.kind == "parameter" then
 			table.insert(
 				lines,

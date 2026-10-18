@@ -137,6 +137,19 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
     			"TARGET_RAGDOLLED",
     		},
 		},
+
+		["KnifeStab"] = {
+		    Distance = 6,
+
+			PreferredConditions = {
+				"TARGET_BLOCKING",
+				"TARGET_STUNNED"
+			},
+						
+			ForbiddenConditions = {
+    			"TARGET_RAGDOLLED",
+    		},
+		},
 	},
 
 	Combos = {
@@ -149,12 +162,10 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 		},
 
 		{
+			"KnifeStab",
 			"Punch",
 			"Punch",
 			"Punch",
-			"Footrest",
-			"Punch",
-			"Dash",
 			"Uppercut",
 			"Dash",
 			"CircularKick",
@@ -164,7 +175,7 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Punch",
 			"Punch",
 			"Punch",
-			"Footrest",
+			"KnifeStab",
 			"Grab",
 			"CircularKick",
 		},
@@ -175,11 +186,6 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 			"Uppercut",
 			"Dash",
 			"CircularKick",
-		},
-
-		{
-			"Dash",
-			"Uppercut",
 		},
 	},
 }

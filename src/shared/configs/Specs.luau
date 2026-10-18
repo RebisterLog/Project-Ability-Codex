@@ -23,6 +23,7 @@ const Specs = {
 			["CircularKick"] = Enum.KeyCode.G,
 			["Counter"] = Enum.KeyCode.V,
 			["DualPistols"] = Enum.KeyCode.T,
+			["KnifeStab"] = Enum.KeyCode.Z,
 		},
 	},
 

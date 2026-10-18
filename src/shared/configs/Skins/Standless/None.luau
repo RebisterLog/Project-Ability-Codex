@@ -134,6 +134,12 @@ const None = {
 			Animation = Animations.User.DualPistols,
 			Priority = Enum.AnimationPriority.Action,
 		},
+
+		-- Knife Stab
+		KnifeStab = {
+			Animation = Animations.User.KnifeStab,
+			Priority = Enum.AnimationPriority.Action,
+		},
 	},
 	Sounds = {
 		Punch1 = {
@@ -226,6 +232,17 @@ const None = {
 			Sound = Sounds.DualPistolsShot,
 			Volume = 1,
 		},
+
+		-- Knife Stab
+		KnifeStab = {
+			Sound = Sounds.KnifeStab,
+			Volume = 1,
+		},
+
+		KnifeStabHit = {
+			Sound = Sounds.KnifeStabHit,
+			Volume = 1,
+		},
 	},
 	Models = {
 
@@ -256,6 +273,10 @@ const None = {
 		RightPistol = Assets.Standless.None.Models.RightPistol,
 		Bullet = Assets.Standless.None.Models.Bullet,
 		PistolShotEffectPart = Assets.Standless.None.Models.PistolShotEffectPart,
+
+		-- Knife Stab
+		Knife = Assets.Standless.None.Models.Knife,
+		KnifeStabHit = Assets.Standless.None.Models.KnifeStabHit,
 	},
 
 	Stats = {
