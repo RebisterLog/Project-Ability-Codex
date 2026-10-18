@@ -18,12 +18,12 @@ local Skill: types.SkillData = {
 	},
 
 	DashProperties = {
-		Speed = 50,
+		Speed = 80,
 		Time = 0.25,
+		Decay = 0.1,
+		MaxForce = Vector3.new(60_000, 0, 60_000),
 	},
 }
-
-local Dash_Style = TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 
 local function GetDashDirection(Normal)
 	local angle = math.ceil(math.deg(math.atan2(Normal.X, -Normal.Z)) - 0.5)
@@ -39,6 +39,12 @@ local function GetDashDirection(Normal)
 	return "Forward"
 end
 
+local function ClearBodyMovers(RootPart: BasePart)
+	for _, Mover in RootPart:GetChildren() do
+		if Mover:IsA("BodyMover") then Mover:Destroy() end
+	end
+end
+
 function Skill:onInit()
 	local character = self.Character
 	local DashProperties = self.Data.DashProperties
@@ -50,10 +56,17 @@ function Skill:onInit()
 
 	local Anims = self.Spec.Data.Assets.Animations
 
+	local DashTime = DashProperties.Time or 0.25
+	local DashDecay = math.min(DashProperties.Decay or 0.1, DashTime)
+
+	local HoldFrame = math.max(1, math.floor(DashTime * 60) - math.floor(DashDecay * 60))
+	local RemoveFrame = math.max(HoldFrame + 1, math.floor(DashTime * 60))
+	local EndFrame = RemoveFrame + 5
+
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
-				1,
+				0,
 				function(seq)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
@@ -69,12 +82,15 @@ function Skill:onInit()
 						SpecId = self.Spec.Data.Id,
 					})
 
-					local velocity = Instance.new("BodyVelocity") :: BodyVelocity
-					velocity.MaxForce = Vector3.new(18_000, 0, 18_000)
-					velocity.Velocity = RootPart.CFrame:VectorToWorldSpace(Normal) * 80
-					velocity.Parent = RootPart
+					ClearBodyMovers(RootPart)
 
-					TweenService:Create(velocity, Dash_Style, { Velocity = Vector3.zero }):Play()
+					local velocity = Instance.new("BodyVelocity") :: BodyVelocity
+					velocity.Name = "DashVelocity"
+					velocity.MaxForce = DashProperties.MaxForce or Vector3.new(60_000, 0, 60_000)
+					if DashProperties.P then velocity.P = DashProperties.P end
+					velocity.Velocity = RootPart.CFrame:VectorToWorldSpace(Normal)
+						* (DashProperties.Speed or 80)
+					velocity.Parent = RootPart
 
 					seq.Velocity = velocity
 
@@ -82,18 +98,32 @@ function Skill:onInit()
 				end,
 			},
 
-			--{10, function(seq)
-			--	seq.Velocity.MaxForce = Vector3.new(9_000,0,9_000)
-			--end,},
-
 			{
-				15,
+				HoldFrame,
 				function(seq)
-					seq.Cleaner:Remove("Velocity")
+					local velocity = seq.Velocity
+					if not velocity then return end
+
+					TweenService:Create(
+						velocity,
+						TweenInfo.new(DashDecay, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+						{ Velocity = Vector3.zero }
+					):Play()
+
+					task.delay(0.25, function()
+					    seq.Cleaner:Remove("Velocity")
+					end)
 				end,
 			},
-
-			{ 20 },
+--
+-- 			{
+-- 				RemoveFrame,
+-- 				function(seq)
+--
+-- 				end,
+-- 			},
+--
+-- 			{ EndFrame },
 		},
 	}))
 end

@@ -83,10 +83,12 @@ export type AttackInfo = {
 		RelativeTowards: "Attacker" | "Target",
 		Origin: CFrame,
 		ToFront: boolean,
+		LookVector: Vector3,
 		Speed: number,
 		Duration: number,
 		Velocity: Vector3,
 		MaxForce: Vector3,
+		P: number,
 
 		FindCrashObject: boolean,
 	}?,

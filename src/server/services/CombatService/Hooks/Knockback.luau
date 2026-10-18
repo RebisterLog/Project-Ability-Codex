@@ -48,16 +48,27 @@ return {
 				local Duration = Info.Knockback.Duration or 0.1
 				local Speed = Info.Knockback.Speed or 1
 
+				local Velocity = (Info.Knockback.Velocity or Vector3.zero)
+					+ ((LookVector or Vector3.zero) * Speed)
+
+				local MaxForce = Info.Knockback.MaxForce
+				if not MaxForce then
+					if math.abs(Velocity.Y) < 1e-3 then
+						MaxForce = Vector3.new(100_000, 0, 100_000)
+					else
+						MaxForce = Vector3.new(100_000, 100_000, 100_000)
+					end
+				end
+
+				local P = Info.Knockback.P
+
 				if targetPlayer then
 					Crane:GetService("VFXService"):StartEffect({ targetPlayer }, "Knockback", {
 						Part = TargetPart,
-						Velocity = (
-							(Info.Knockback.Velocity or Vector3.zero)
-							+ ((LookVector or Vector3.zero) * Speed)
-						),
-						MaxForce = Info.Knockback.MaxForce
-							or Vector3.new(100_000, 100_000, 100_000),
-						Duration = Duration or 0.2,
+						Velocity = Velocity,
+						MaxForce = MaxForce,
+						Duration = Duration,
+						P = P,
 					})
 				else
 					Crane.Utils.ChangeNetworkOwner(Data.Victim.instance, attackerPlayer)
@@ -66,28 +77,21 @@ return {
 						Crane:GetService("VFXService")
 							:StartEffect({ attackerPlayer }, "Knockback", {
 								Part = TargetPart,
-								Velocity = (
-									(Info.Knockback.Velocity or Vector3.zero)
-									+ ((LookVector or Vector3.zero) * Speed)
-								),
-								MaxForce = Info.Knockback.MaxForce
-									or Vector3.new(100_000, 100_000, 100_000),
-								Duration = Duration or 0.2,
+								Velocity = Velocity,
+								MaxForce = MaxForce,
+								Duration = Duration,
+								P = P,
 							})
 					else
 						local BodyVelocity = Instance.new("BodyVelocity")
-						BodyVelocity.P = math.huge
-						BodyVelocity.Velocity = (
-							(Info.Knockback.Velocity or Vector3.zero)
-							+ ((LookVector or Vector3.zero) * Speed)
-						)
-						BodyVelocity.MaxForce = Info.Knockback.MaxForce
-							or Vector3.new(100_000, 100_000, 100_000)
+						if P then BodyVelocity.P = P end
+						BodyVelocity.Velocity = Velocity
+						BodyVelocity.MaxForce = MaxForce
 
 						BodyVelocity.Name = "KnockbackVelocity"
 						BodyVelocity.Parent = TargetPart
 
-						game.Debris:AddItem(BodyVelocity, Duration or 0.2)
+						game.Debris:AddItem(BodyVelocity, Duration)
 					end
 				end
 			end

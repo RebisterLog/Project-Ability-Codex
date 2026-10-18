@@ -362,6 +362,14 @@ local BLOCKS = {
 				Group = "Knockback",
 			},
 			{
+				Name = "Knockback.P",
+				Type = "number",
+				Default = nil,
+				Min = 0,
+				Step = 50,
+				Group = "Knockback",
+			},
+			{
 				Name = "Angular.Velocity",
 				Type = "Vector3",
 				Default = V3(0, 0, 0),
