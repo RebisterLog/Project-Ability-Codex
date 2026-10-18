@@ -1,24 +1,24 @@
 --!native
 
-local ServerScriptService = game:GetService("ServerScriptService")
-local Enums = require(ServerScriptService.server.Enums)
+const ServerScriptService = game:GetService("ServerScriptService")
+const Enums = require(ServerScriptService.server.Enums)
 
-local function HighestParser(a, b)
+const HighestParser = function(a, b)
 	if a < b then return b end
 	return a
 end
-local function LowestParser(a, b)
+const LowestParser = function(a, b)
 	if a < b then return a end
 	return b
 end
-local function MultParser(a, b)
+const MultParser = function(a, b)
 	return a * b
 end
-local function StunParser(a, b)
+const StunParser = function(a, b)
 	if a.Priority < b.Priority then return b end
 	return a
 end
-local function ORParser(a, b)
+const ORParser = function(a, b)
 	return a or b
 end
 
@@ -47,4 +47,5 @@ return {
 	Ragdoll = { Default = false, Parser = ORParser },
 	NoCollision = { Default = false, Parser = ORParser },
 	Restrain = { Default = false, Parser = ORParser },
+	NoSkillCast = { Default = false, Parser = ORParser },
 }

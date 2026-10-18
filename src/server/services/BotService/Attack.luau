@@ -1,9 +1,9 @@
 --!native
 --!optimize 2
 
-local BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
-local SkillPriority = require(script.Parent.SkillPriority)
-local types = require(game:GetService("ServerScriptService").server.types)
+const BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
+const SkillPriority = require(script.Parent.SkillPriority)
+const types = require(game:GetService("ServerScriptService").server.types)
 
 --- Attack layer: skill selection by priority and combo progression.
 ---
@@ -27,9 +27,9 @@ type Host = {
 
 --- Candidates are reused between ticks: the scorer only reads them and never
 --- yields, so there is no reason to build a new table every frame.
-local CANDIDATES: { types.Skill } = {}
+const CANDIDATES: { types.Skill } = {}
 
-local function CollectCandidates(spec: types.Spec, guardId: string?): { types.Skill }
+const CollectCandidates = function(spec: types.Spec, guardId: string?): { types.Skill }
 	table.clear(CANDIDATES)
 
 	for id, skill in spec.Skills do
@@ -39,7 +39,7 @@ local function CollectCandidates(spec: types.Spec, guardId: string?): { types.Sk
 	return CANDIDATES
 end
 
-local Attack = {}
+const Attack = {}
 
 --- An empty combo is allowed: the plan then gives a bonus to nobody and the
 --- choice is fully driven by conditions.
@@ -47,7 +47,7 @@ function Attack.RollCombo(
 	config: BotsCharacters.BotCharacterConfig,
 	random: Random
 ): BotsCharacters.SkillCombo
-	local combos = config.Combos
+	const combos = config.Combos
 	if not combos or #combos == 0 then return {} end
 
 	return combos[random:NextInteger(1, #combos)]
@@ -56,18 +56,18 @@ end
 --- One step of the attack: slot busy, leave; no candidates, leave; otherwise
 --- activate the winner.
 function Attack.Step(host: Host, mask: number, distance: number, guardId: string?)
-	local spec = host.Character.Spec
+	const spec = host.Character.Spec
 	if not spec then return end
 
 	if spec:CheckActiveSkills() then return end
 
-	local combo = host.Combo
-	local comboSkillId = combo[host.ComboIndex]
+	const combo = host.Combo
+	const comboSkillId = combo[host.ComboIndex]
 
-	local candidates = CollectCandidates(spec, guardId)
+	const candidates = CollectCandidates(spec, guardId)
 	if #candidates == 0 then return end
 
-	local best = SkillPriority.Select(host.Config, candidates, mask, distance, comboSkillId)
+	const best = SkillPriority.Select(host.Config, candidates, mask, distance, comboSkillId)
 	if not best then return end
 
 	-- Deviating from the plan (a skill outside the combo was picked) does not

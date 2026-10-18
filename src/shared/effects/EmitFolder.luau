@@ -1,6 +1,6 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 
 return {
 	Characters = {},
@@ -14,16 +14,16 @@ return {
 			end)
 		end
 
-		local cache = self.Characters[character]
-		local cleaner = cache[uuid or effectsFolder.Name] or Crane.Buttler.new()
+		const cache = self.Characters[character]
+		const cleaner = cache[uuid or effectsFolder.Name] or Crane.Buttler.new()
 
-		local toEmit = {}
+		const toEmit = {}
 
 		for i, bodyPartFolder in effectsFolder:GetChildren() :: { Folder } do
-			local bodyPart = character:FindFirstChild(bodyPartFolder.Name)
+			const bodyPart = character:FindFirstChild(bodyPartFolder.Name)
 
 			if bodyPart then
-				local copy = bodyPartFolder:Clone()
+				const copy = bodyPartFolder:Clone()
 				table.insert(toEmit, copy)
 				copy.Parent = bodyPart
 			end

@@ -1,10 +1,10 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- Верхняя панель: создание, очистка, переход в превью и обмен JSON.
 ---
@@ -18,11 +18,11 @@ local OnEvent = Fusion.OnEvent
 --- выносились за 40px тулбара, наезжали на рабочую область, и клик перехватывал
 --- таймлайн — по кнопке нельзя было попасть.
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
 	--- Кнопка тулбара. `name` обязателен: без него все кнопки остаются `TextButton`
 	--- и в дереве, и в отладке, и в автотестах они неразличимы.
-	local function action(order: number, name: string, label: string, run: () -> ()): Instance
+	const action = function(order: number, name: string, label: string, run: () -> ()): Instance
 		return scope:New("TextButton")({
 			Name = name,
 			LayoutOrder = order,
@@ -55,7 +55,7 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Поле с JSON. `Active` и фокус в `Copy JSON` — требование §10: без активного
 	--- поля `Ctrl+A` не выделяет текст, и копирование не работает.
-	local function jsonBox(): TextBox
+	const jsonBox = function(): TextBox
 		return scope:New("TextBox")({
 			Size = UDim2.new(1, -8, 1, -8),
 			BackgroundTransparency = 1,
@@ -72,10 +72,10 @@ return function(scope: Fusion.Scope, props: any)
 		}) :: TextBox
 	end
 
-	local importBox = jsonBox()
-	local exportBox = jsonBox()
+	const importBox = jsonBox()
+	const exportBox = jsonBox()
 
-	local topButtons = {
+	const topButtons = {
 		New = action(1, "New", "New", function()
 			statement.reset()
 		end),
@@ -129,7 +129,7 @@ return function(scope: Fusion.Scope, props: any)
 		}),
 	}
 
-	local panelButtons = {
+	const panelButtons = {
 		ImportHint = action(
 			1,
 			"ImportHint",

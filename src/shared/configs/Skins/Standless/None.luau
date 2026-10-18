@@ -1,11 +1,11 @@
-local Assets = game:GetService("ReplicatedStorage").assets
-local GlobalAssets = Assets.Default
-local NonArmedSpecs = GlobalAssets.NonArmedSpecs
+const Assets = game:GetService("ReplicatedStorage").assets
+const GlobalAssets = Assets.Default
+const NonArmedSpecs = GlobalAssets.NonArmedSpecs
 
-local Animations = Assets.Standless.None.Animations
-local Sounds = Assets.Standless.None.Sounds
+const Animations = Assets.Standless.None.Animations
+const Sounds = Assets.Standless.None.Sounds
 
-local None = {
+const None = {
 	Animations = {
 		-- Movement
 		Idle = {

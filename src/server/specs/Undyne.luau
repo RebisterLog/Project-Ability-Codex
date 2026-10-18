@@ -1,12 +1,12 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Configuration = ServerScriptService.server.Configuration
-local Configs = Configuration.ConfigsFolder.Value
-local SpecsConfig = require(Configs.Specs)
-local types = require(ServerScriptService.server.types)
-local skills = ServerScriptService.server.skills
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Configuration = ServerScriptService.server.Configuration
+const Configs = Configuration.ConfigsFolder.Value
+const SpecsConfig = require(Configs.Specs)
+const types = require(ServerScriptService.server.types)
+const skills = ServerScriptService.server.skills
 
-local Spec = {
+const Spec = {
 	Skills = {
 		["Dash"] = "~/skills/Dash",
 		["Punch"] = "~/skills/Punch",
@@ -21,13 +21,13 @@ local Spec = {
 	},
 
 	onInit = function(self: types.Spec)
-		local spear = self.Data.Assets.Models["Spear"] :: Model
+		const spear = self.Data.Assets.Models["Spear"] :: Model
 
 		if spear then
-			local copy = self.Cleaner:Clone(spear)
+			const copy = self.Cleaner:Clone(spear)
 			copy:PivotTo(self.Character.instance:GetPivot())
 
-			local motor = Instance.new("Motor6D")
+			const motor = Instance.new("Motor6D")
 			motor.Name = "HandleMotor"
 			motor.Part0 = self.Character.instance:FindFirstChild("Right Arm")
 			motor.Part1 = copy:FindFirstChild("Handle")

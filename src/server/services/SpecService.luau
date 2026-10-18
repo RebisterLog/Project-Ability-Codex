@@ -1,14 +1,14 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local SpecClass = require(ServerScriptService.server["combat-classes"].Spec)
-local types = require(ServerScriptService.server.types)
-local Configuration = ServerScriptService.server.Configuration
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const SpecClass = require(ServerScriptService.server["combat-classes"].Spec)
+const types = require(ServerScriptService.server.types)
+const Configuration = ServerScriptService.server.Configuration
 
-local SpecsFolder = Configuration.SpecsFolder.Value
+const SpecsFolder = Configuration.SpecsFolder.Value
 
-local SpecService = Crane:CreateService({
+const SpecService = Crane:CreateService({
 	Name = "SpecService",
 })
 SpecService.CachedInfo = {}
@@ -23,25 +23,25 @@ function SpecService:GetSpecData(spec: types.SpecDef): types.SpecData
 		return self.CachedInfo[spec.Id]
 	end
 
-	local specInfo = self.ConfigService:Get("Specs")[spec.Id]
+	const specInfo = self.ConfigService:Get("Specs")[spec.Id]
 	if not specInfo then
 		Crane.Utils.Log("SpecService", `Config doesn't exists: {spec.Id}`, "error")
 		return
 	end
 
-	local skin = self.ConfigService:Get("Skins")[spec.Id][spec.Skin or "None"]
+	const skin = self.ConfigService:Get("Skins")[spec.Id][spec.Skin or "None"]
 	if not skin then
 		Crane.Utils.Log("SpecService", `Skin doesn't exists: {spec.Skin}`, "error")
 		return
 	end
 
-	local module = SpecsFolder:FindFirstChild(spec.Id)
+	const module = SpecsFolder:FindFirstChild(spec.Id)
 	if not module then
 		Crane.Utils.Log("SpecService", `Can't find spec module with Name: {spec.Id}`, "error")
 		return
 	end
 
-	local data = require(module)
+	const data = require(module)
 	for i, v in specInfo do
 		data[i] = v
 	end
@@ -55,12 +55,12 @@ function SpecService:GetSpecData(spec: types.SpecDef): types.SpecData
 end
 
 function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
-	local specData: types.SpecData = self:GetSpecData(data)
+	const specData: types.SpecData = self:GetSpecData(data)
 
-	local spec = SpecClass.new(character, specData)
+	const spec = SpecClass.new(character, specData)
 
 	for skillId, skillData in spec.Data.Skills do
-		local skill = self.SkillService:CreateSkill(character, {
+		const skill = self.SkillService:CreateSkill(character, {
 			Spec = spec,
 			SkillId = skillId,
 		})

@@ -1,10 +1,10 @@
-local RagdolledCharacters = {}
+const RagdolledCharacters = {}
 
-local Ragdoll = {
+const Ragdoll = {
 	onStart = function(self, character: Model)
 		if table.find(RagdolledCharacters, character) then return end
 
-		local humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
+		const humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
 		if not humanoid then return end
 
 		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
@@ -15,7 +15,7 @@ local Ragdoll = {
 		if not table.find(RagdolledCharacters, character) then return end
 		table.remove(RagdolledCharacters, table.find(RagdolledCharacters, character))
 
-		local humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
+		const humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
 		if not humanoid then return end
 
 		humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)

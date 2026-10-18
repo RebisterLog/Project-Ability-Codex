@@ -7,7 +7,7 @@
 -- команды. Поэтому команда регистрируется на клиенте явно, а роутер сюда
 -- отдаётся обработчиком из фабрики `main.luau`.
 
-local Command = {}
+const Command = {}
 
 export type CmdrCommand = {
 	Name: string,
@@ -37,7 +37,7 @@ end
 --- Определение команды для `Registry:RegisterCommandObject`: Cmdr не поставляет
 --- типы, а реестр отвергает неизвестные ключи уже в рантайме
 --- (`Unknown key/method in command`), поэтому контракт повторяем здесь.
-local cmdr: CmdrCommand = {
+const cmdr: CmdrCommand = {
 	Name = "skillconstructor",
 	Aliases = { "skc" },
 	Description = "Открыть конструктор скиллов",

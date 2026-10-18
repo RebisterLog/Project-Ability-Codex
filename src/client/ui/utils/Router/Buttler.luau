@@ -78,7 +78,7 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 --]]
 
-local TweenService = game:GetService("TweenService")
+const TweenService = game:GetService("TweenService")
 
 type TaskEntry = {
 	object: any,
@@ -97,7 +97,7 @@ export type DisposableHandle<T> = T & {
 
 -- ─── Module ──────────────────────────────────────────────────────────────────
 
-local Butler = {}
+const Butler = {}
 Butler.__index = Butler
 
 -- ─── Debug ───────────────────────────────────────────────────────────────────
@@ -112,11 +112,11 @@ function Butler.setDebug(enabled: boolean)
 	_debugEnabled = enabled
 end
 
-local function _log(...)
+const _log = function(...)
 	if _debugEnabled then print("[Butler]", ...) end
 end
 
-local function _warn(msg: string)
+const _warn = function(msg: string)
 	warn("[Butler] " .. msg)
 end
 
@@ -138,13 +138,13 @@ end
 
 	All errors are caught and warned. A bad task never aborts the clean chain.
 ]]
-local function _cleanItem(object: any, method: string?, label: string?): ()
-	local t0 = _debugEnabled and os.clock() or 0
+const _cleanItem = function(object: any, method: string?, label: string?): ()
+	const t0 = _debugEnabled and os.clock() or 0
 
-	local packed = table.pack(pcall(function()
+	const packed = table.pack(pcall(function()
 		-- 1. Custom cleanup method specified by caller
 		if method then
-			local fn = (object :: any)[method]
+			const fn = (object :: any)[method]
 			if type(fn) == "function" then
 				fn(object)
 			else
@@ -153,7 +153,7 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 			return
 		end
 
-		local t = typeof(object)
+		const t = typeof(object)
 
 		-- 2. Plain function (Defer, closures, etc.)
 		if t == "function" then
@@ -165,9 +165,9 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 
 			-- 4. Coroutine / thread — task.cancel() is Luau's Drop for threads
 		elseif t == "thread" then
-			local canceled = pcall(task.cancel, object)
+			const canceled = pcall(task.cancel, object)
 			if not canceled then
-				local statusOk, status = pcall(coroutine.status, object)
+				const statusOk, status = pcall(coroutine.status, object)
 				if statusOk and status == "suspended" then pcall(coroutine.close, object) end
 			end
 
@@ -177,26 +177,26 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 
 			-- 6. Table — detect type by duck-typing
 		elseif t == "table" then
-			local function safeMember(key: string): any
-				local readOk, value = pcall(function()
+			const safeMember = function(key: string): any
+				const readOk, value = pcall(function()
 					return (object :: any)[key]
 				end)
 				if readOk then return value end
 				return nil
 			end
 
-			local getStatus = safeMember("getStatus")
-			local cancel = safeMember("cancel")
-			local cancelUpper = safeMember("Cancel")
-			local play = safeMember("Play")
-			local destroyUpper = safeMember("Destroy")
-			local destroyLower = safeMember("destroy")
-			local disconnectUpper = safeMember("Disconnect")
-			local disconnectLower = safeMember("disconnect")
+			const getStatus = safeMember("getStatus")
+			const cancel = safeMember("cancel")
+			const cancelUpper = safeMember("Cancel")
+			const play = safeMember("Play")
+			const destroyUpper = safeMember("Destroy")
+			const destroyLower = safeMember("destroy")
+			const disconnectUpper = safeMember("Disconnect")
+			const disconnectLower = safeMember("disconnect")
 
 			-- 6a. Promise (evaera / roblox-ts: has getStatus + cancel)
 			if type(getStatus) == "function" and type(cancel) == "function" then
-				local status = object:getStatus()
+				const status = object:getStatus()
 				if status == "Started" or status == "Running" then object:cancel() end
 
 				-- 6b. Tween — cancel BEFORE destroy to stop the animation
@@ -222,11 +222,11 @@ local function _cleanItem(object: any, method: string?, label: string?): ()
 			_warn(("Unrecognized task type '%s'; skipping"):format(t))
 		end
 	end))
-	local ok = packed[1] == true
-	local err = packed[2]
+	const ok = packed[1] == true
+	const err = packed[2]
 
 	if _debugEnabled then
-		local elapsed = (os.clock() - t0) * 1000
+		const elapsed = (os.clock() - t0) * 1000
 		_log(
 			("  cleaned [%s] in %.3fms%s"):format(
 				label or (method and (":" .. method) or typeof(object)),
@@ -245,7 +245,7 @@ end
 	Create a new Butler instance.
 ]]
 function Butler.new()
-	local self = setmetatable({
+	const self = setmetatable({
 		_tasks = {} :: { TaskEntry },
 		_named = {} :: { [string]: TaskEntry },
 		_onClean = {} :: { () -> () },
@@ -257,11 +257,11 @@ end
 
 -- ─── Internal guards ─────────────────────────────────────────────────────────
 
-local function _alive<T>(self: T & { _destroyed: boolean }, op: string)
+const _alive = function<T>(self: T & { _destroyed: boolean }, op: string)
 	if self._destroyed then error(("[Butler] :%s() called on a destroyed Butler"):format(op), 3) end
 end
 
-local function _entry(object: any, method: string?, label: string?): TaskEntry
+const _entry = function(object: any, method: string?, label: string?): TaskEntry
 	return { object = object, method = method, label = label }
 end
 
@@ -317,7 +317,7 @@ function Butler:Set<T>(name: string, object: T, method: string?): T
 	assert(object ~= nil, "[Butler] Use :Remove(name) to clear a slot; :Set does not accept nil")
 
 	-- Replace existing
-	local old = self._named[name]
+	const old = self._named[name]
 	if old then
 		_log("Replacing slot:", name)
 		_cleanItem(old.object, old.method, old.label)
@@ -341,7 +341,7 @@ end
 ]]
 function Butler:Remove(nameOrObject: any)
 	if type(nameOrObject) == "string" then
-		local entry = self._named[nameOrObject]
+		const entry = self._named[nameOrObject]
 		if entry then
 			_cleanItem(entry.object, entry.method, entry.label)
 			self._named[nameOrObject] = nil
@@ -353,7 +353,7 @@ function Butler:Remove(nameOrObject: any)
 	-- Search anonymous tasks (reverse for stability while removing)
 	for i = #self._tasks, 1, -1 do
 		if self._tasks[i].object == nameOrObject then
-			local entry = table.remove(self._tasks, i)
+			const entry = table.remove(self._tasks, i)
 			if entry then
 				_cleanItem(entry.object, entry.method, entry.label)
 				_log("Removed anonymous task")
@@ -447,8 +447,8 @@ function Butler:Until(
 		if untilConn then self:Remove(untilConn) end
 	end)
 
-	local trackedListenConn = listenConn :: RBXScriptConnection
-	local trackedUntilConn = untilConn :: RBXScriptConnection
+	const trackedListenConn = listenConn :: RBXScriptConnection
+	const trackedUntilConn = untilConn :: RBXScriptConnection
 	self:Add(trackedListenConn)
 	self:Add(trackedUntilConn)
 	return trackedListenConn
@@ -467,9 +467,9 @@ end
 ]]
 function Butler:ConnectMany(pairs_: { SignalHandlerPair }): { RBXScriptConnection }
 	_alive(self, "ConnectMany")
-	local conns: { RBXScriptConnection } = {}
+	const conns: { RBXScriptConnection } = {}
 	for i, pair in ipairs(pairs_) do
-		local signal, fn = pair[1], pair[2]
+		const signal, fn = pair[1], pair[2]
 		assert(
 			typeof(signal) == "RBXScriptSignal" and type(fn) == "function",
 			("[Butler] ConnectMany entry %d must be {signal, fn}"):format(i)
@@ -560,7 +560,7 @@ end
 ]]
 function Butler:Every(interval: number, fn: () -> ()): thread
 	_alive(self, "Every")
-	local thread = task.spawn(function()
+	const thread = task.spawn(function()
 		while true do
 			task.wait(interval)
 			fn()
@@ -697,7 +697,7 @@ function Butler:Wrap<T>(object: T): DisposableHandle<T>
 	_alive(self, "Wrap")
 	self:Add(object)
 
-	local handle = {} :: any
+	const handle = {} :: any
 	setmetatable(handle, {
 		__index = function(_, key: string)
 			if key == "Dispose" then
@@ -705,7 +705,7 @@ function Butler:Wrap<T>(object: T): DisposableHandle<T>
 					self:Remove(object)
 				end
 			end
-			local v = (object :: any)[key]
+			const v = (object :: any)[key]
 			if type(v) == "function" then
 				-- Proxy: bind 'self' to the underlying object
 				return function(_, ...)
@@ -744,7 +744,7 @@ end
 ]]
 function Butler:Tween(instance: Instance, tweenInfo: TweenInfo, goals: { [string]: any }): Tween
 	_alive(self, "Tween")
-	local tween = TweenService:Create(instance, tweenInfo, goals)
+	const tween = TweenService:Create(instance, tweenInfo, goals)
 	tween:Play()
 	-- Wrap Cancel+Destroy in a closure rather than :Add(tween)
 	-- so cleanup always calls Cancel first
@@ -772,7 +772,7 @@ function Butler:WaitFor(inst: Instance, childName: string, timeout: number?): In
 	local result: Instance? = nil
 	local done = false
 
-	local thread = task.spawn(function()
+	const thread = task.spawn(function()
 		result = inst:WaitForChild(childName, timeout or math.huge)
 		done = true
 	end)
@@ -805,7 +805,7 @@ end
 ]]
 function Butler:Scope()
 	_alive(self, "Scope")
-	local child = Butler.new()
+	const child = Butler.new()
 	self:Add(child, nil, "Scope") -- child has Destroy(); auto-detected
 	return child
 end
@@ -823,13 +823,13 @@ end
 function Butler:LinkToInstance(instance: Instance, allowReAdd: boolean?): RBXScriptConnection
 	_alive(self, "LinkToInstance")
 
-	local linked = self._linked
+	const linked = self._linked
 	if linked then
 		linked:Disconnect()
 		self:Remove(linked)
 	end
 
-	local conn = instance.Destroying:Connect(function()
+	const conn = instance.Destroying:Connect(function()
 		if allowReAdd then
 			self:Clean()
 		else
@@ -852,7 +852,7 @@ end
 	    -- { [1] = "RBXScriptConnection", [2] = "thread", health = "table" }
 ]]
 function Butler:Snapshot(): { [any]: string }
-	local out: { [any]: string } = {}
+	const out: { [any]: string } = {}
 	for i, entry in ipairs(self._tasks) do
 		out[i] = entry.label or typeof(entry.object)
 	end
@@ -884,7 +884,7 @@ function Butler:Clean()
 
 	-- 2. Anonymous — LIFO
 	for i = #self._tasks, 1, -1 do
-		local entry = self._tasks[i]
+		const entry = self._tasks[i]
 		_cleanItem(entry.object, entry.method, entry.label)
 		self._tasks[i] = nil
 	end
@@ -893,7 +893,7 @@ function Butler:Clean()
 
 	-- 3. Teardown observers (RxJS finalize pattern)
 	for _, fn in ipairs(self._onClean) do
-		local ok, err = pcall(fn)
+		const ok, err = pcall(fn)
 		if not ok then _warn(("OnClean observer error: %s"):format(tostring(err))) end
 	end
 

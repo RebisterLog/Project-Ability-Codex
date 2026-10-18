@@ -1,14 +1,14 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Promise = require(ReplicatedStorage.shared.packages.Promise)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Promise = require(ReplicatedStorage.shared.packages.Promise)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const types = require(ServerScriptService.server.types)
 
-local Block: types.SkillData = {
+const Block: types.SkillData = {
 	DisplayName = "Block",
 	Cooldown = 0.25,
 	SkillCharacters = {
@@ -17,22 +17,22 @@ local Block: types.SkillData = {
 }
 
 function Block:Activate()
-	local character = self.Character
-	local RootPart = character.RootPart
-	local Humanoid = character.Humanoid
-	local VFXService = Crane:GetService("VFXService")
-	local CombatService = Crane:GetService("CombatService")
+	const character = self.Character
+	const RootPart = character.RootPart
+	const Humanoid = character.Humanoid
+	const VFXService = Crane:GetService("VFXService")
+	const CombatService = Crane:GetService("CombatService")
 
-	local BlockState = character.Block
+	const BlockState = character.Block
 
 	BlockState.Blocking = true
 	BlockState.PerfectBlockTime = os.clock()
 	BlockState.PerfectBlockWindow = 0.25
 
-	local Anims = self.Spec.Data.Assets.Animations
-	local Anim = self.Spec.Data.Assets.Animations["Block"]
+	const Anims = self.Spec.Data.Assets.Animations
+	const Anim = self.Spec.Data.Assets.Animations["Block"]
 
-	local Collector = Crane.Buttler.new()
+	const Collector = Crane.Buttler.new()
 
 	Promise.new(function(resolve)
 		Collector:Add(character:AddParameter("MaxWalkSpeed", 3))
@@ -51,7 +51,7 @@ function Block:Activate()
 			if not (Type == "Precast" and Data.Victim == character) then return end
 			if Data.State.BlockCanceled then return resolve() end
 			if Data.State.PerfectBlocked then
-				local stun = Data.Attacker:AddParameter("Stun", {
+				const stun = Data.Attacker:AddParameter("Stun", {
 					Duration = 1.5,
 					Priority = Enums.Stun.Heavy,
 				})
@@ -76,7 +76,7 @@ function Block:Activate()
 					Volume = 1,
 				})
 			elseif Data.State.BlockBroken then
-				local stun = Data.Victim:AddParameter("Stun", {
+				const stun = Data.Victim:AddParameter("Stun", {
 					Duration = 2,
 					Priority = Enums.Stun.Heavy,
 				})

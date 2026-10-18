@@ -1,29 +1,29 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local CombatService = Crane:GetService("CombatService")
+const CombatService = Crane:GetService("CombatService")
 
 return {
 	Name = "Angular",
 	Type = "Cast",
 	Priority = 91,
 	Function = function(Data: types.AttackData)
-		local State = Data.State
-		local Info = Data.Info
+		const State = Data.State
+		const Info = Data.Info
 
-		local targetPlayer = Players:GetPlayerFromCharacter(Data.Victim.instance)
-		local attackerPlayer = Players:GetPlayerFromCharacter(Data.Attacker.instance)
+		const targetPlayer = Players:GetPlayerFromCharacter(Data.Victim.instance)
+		const attackerPlayer = Players:GetPlayerFromCharacter(Data.Attacker.instance)
 
 		if State.Success then
 			if Info.Angular then
-				local TargetPart = Data.Victim.RootPart
-				local RootAttachment = TargetPart:FindFirstChildOfClass("Attachment")
+				const TargetPart = Data.Victim.RootPart
+				const RootAttachment = TargetPart:FindFirstChildOfClass("Attachment")
 
-				local Duration = Info.Angular.Duration or 0.1
-				local Speed = Info.Angular.Speed or 1
+				const Duration = Info.Angular.Duration or 0.1
+				const Speed = Info.Angular.Speed or 1
 
 				if targetPlayer then
 					Crane:GetService("VFXService"):StartEffect({ targetPlayer }, "Angular", {

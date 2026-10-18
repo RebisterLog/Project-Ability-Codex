@@ -1,19 +1,19 @@
 --!native
 --!optimize 2
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Promise = require(ReplicatedStorage.shared.packages.Promise)
-local Signal = Crane.Signal
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Promise = require(ReplicatedStorage.shared.packages.Promise)
+const Signal = Crane.Signal
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const types = require(ServerScriptService.server.types)
 
-local Skill = {}
+const Skill = {}
 Skill.__index = Skill
 
 function Skill.new(character: types.Character, spec: types.Spec, data: types.SkillData)
-	local self = setmetatable({
+	const self = setmetatable({
 		Character = character,
 		Data = data,
 		Spec = spec,
@@ -98,6 +98,7 @@ function Skill.IsOnCooldown(self: types.Skill)
 end
 
 function Skill.Validate(self: types.Skill)
+    if self.Character:GetParameter("NoSkillCast") then return false end
 	if not self.Proxy().Parameters.Enabled then return false end
 	if self.Character:GetParameter("Stun").Duration > 0 then return false end
 	if self.Character:GetParameter("Ragdoll") then return false end
@@ -113,7 +114,7 @@ function Skill.Init(self: types.Skill)
 
 	if self.Data.onInit then self.Data.onInit(self) end
 
-	local CombatService = Crane:GetService("CombatService")
+	const CombatService = Crane:GetService("CombatService")
 
 	if self.Data.Interrupt then
 		self.Cleaner:Add(CombatService.Interrupted:Connect(function(Target)

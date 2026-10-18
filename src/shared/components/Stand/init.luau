@@ -1,7 +1,7 @@
-local RunService = game:GetService("RunService")
-local Animate = require(script.Animate)
+const RunService = game:GetService("RunService")
+const Animate = require(script.Animate)
 
-local SharedStand = {}
+const SharedStand = {}
 
 function SharedStand:HandleMovement()
 	Animate(self.instance)

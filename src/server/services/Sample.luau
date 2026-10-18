@@ -1,9 +1,9 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-local SampleService = Crane:CreateService({
+const SampleService = Crane:CreateService({
 	Name = "SampleService",
 })
 

@@ -1,10 +1,10 @@
 --!native
 --!optimize 2
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
 
-local CoreAnimations = {
+const CoreAnimations = {
 	Idle = Enum.AnimationPriority.Idle,
 	Walk = Enum.AnimationPriority.Movement,
 	Run = Enum.AnimationPriority.Movement,
@@ -20,20 +20,20 @@ local CoreAnimations = {
 }
 
 return function(character: Model)
-	local animationController = character:WaitForChild("AnimationController") :: Humanoid
-	local animator = animationController:WaitForChild("Animator") :: Animator
-	local rootPart = character:WaitForChild("HumanoidRootPart") :: BasePart
+	const animationController = character:WaitForChild("AnimationController") :: Humanoid
+	const animator = animationController:WaitForChild("Animator") :: Animator
+	const rootPart = character:WaitForChild("HumanoidRootPart") :: BasePart
 
-	local MovementAnimations: { [keyof<typeof(CoreAnimations)>]: Animation } = {}
-	local MovementTracks: { [keyof<typeof(CoreAnimations)>]: AnimationTrack } = {}
-	local PlayingTracks: { [keyof<typeof(CoreAnimations)>]: AnimationTrack } = {}
+	const MovementAnimations: { [keyof<typeof(CoreAnimations)>]: Animation } = {}
+	const MovementTracks: { [keyof<typeof(CoreAnimations)>]: AnimationTrack } = {}
+	const PlayingTracks: { [keyof<typeof(CoreAnimations)>]: AnimationTrack } = {}
 
-	local function loadAnimation(name: string, id: string)
-		local animation = Instance.new("Animation")
+	const loadAnimation = function(name: string, id: string)
+		const animation = Instance.new("Animation")
 		animation.Name = name
 		animation.AnimationId = id
 
-		local track = animator:LoadAnimation(animation)
+		const track = animator:LoadAnimation(animation)
 		track.Priority = CoreAnimations[name]
 
 		animation:Destroy()
@@ -41,16 +41,16 @@ return function(character: Model)
 		MovementTracks[name] = track
 	end
 
-	local function transitToAnimation(
+	const transitToAnimation = function(
 		name: keyof<typeof(CoreAnimations)>,
 		fadeTime: number?,
 		weight: number?,
 		speed: number?
 	)
-		local track = MovementTracks[name]
+		const track = MovementTracks[name]
 		if not track then return end
 
-		local oldTrack = PlayingTracks[name]
+		const oldTrack = PlayingTracks[name]
 		if oldTrack == track and oldTrack.IsPlaying then
 			if speed then oldTrack:AdjustSpeed(speed) end
 			if weight then oldTrack:AdjustWeight(weight) end
@@ -68,32 +68,32 @@ return function(character: Model)
 		track:Play(fadeTime, weight, speed)
 	end
 
-	local function playAnimation(
+	const playAnimation = function(
 		name: keyof<typeof(CoreAnimations)>,
 		fadeTime: number?,
 		weight: number?,
 		speed: number?
 	)
-		local track = MovementTracks[name]
+		const track = MovementTracks[name]
 		if not track then return end
 
 		track:Play(fadeTime, weight, speed)
 	end
 
-	local function stopAnimation(name: keyof<typeof(CoreAnimations)>, fadeTime: number?)
-		local track = MovementTracks[name]
+	const stopAnimation = function(name: keyof<typeof(CoreAnimations)>, fadeTime: number?)
+		const track = MovementTracks[name]
 		if not track then return end
 
 		track:Stop(fadeTime)
 	end
 
-	local function stopAllAnimations()
+	const stopAllAnimations = function()
 		for i, track in PlayingTracks do
 			track:Stop()
 		end
 	end
 
-	local function getRigScale()
+	const getRigScale = function()
 		return rootPart.Size.Y / 2
 	end
 
@@ -111,7 +111,7 @@ return function(character: Model)
 		end
 	end)
 
-	local function connectAnimationByAttribute(attribute: string, id: string)
+	const connectAnimationByAttribute = function(attribute: string, id: string)
 		if not CoreAnimations[attribute] then return end
 		if MovementAnimations[attribute] then return end
 		if MovementTracks[attribute] then return end

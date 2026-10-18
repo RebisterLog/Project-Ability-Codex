@@ -1,10 +1,10 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local PlayerDynamicData = require(ReplicatedStorage.shared.schemas.PlayerDynamicData)
-local PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const PlayerDynamicData = require(ReplicatedStorage.shared.schemas.PlayerDynamicData)
+const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
 
 export type PlayerData = PlayerDynamicData.PlayerDynamicData & PlayerSaveData.PlayerSaveData
 
-local data: PlayerData = {}
+const data: PlayerData = {}
 
 for i, v in PlayerDynamicData do
 	data[i] = v

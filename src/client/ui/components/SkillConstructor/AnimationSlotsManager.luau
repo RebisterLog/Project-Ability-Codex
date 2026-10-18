@@ -1,10 +1,10 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- Менеджер слотов анимаций.
 ---
@@ -14,16 +14,16 @@ local OnEvent = Fusion.OnEvent
 --- у `onStart` входа такого параметра не существует, он применим только к
 --- `StopAnimation` (`effects/Animation.luau:45-53`).
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
-	local function field(
+	const field = function(
 		order: number,
 		caption: string,
 		value: any,
 		width: number,
 		commit: (string) -> ()
 	): Instance
-		local box = scope:New("TextBox")({
+		const box = scope:New("TextBox")({
 			LayoutOrder = order,
 			Size = UDim2.new(width, -4, 0, 22),
 			BackgroundColor3 = Theme.Colors.SurfaceAlt,
@@ -60,9 +60,9 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Список слотов пересобирается на каждую мутацию blueprint: имена и `Id`
 	--- меняются только из UI, поэтому пересоздание дешевле ручной синхронизации.
-	local slots = scope:Computed(function(use)
-		local current = use(statement.revision)
-		local result = {}
+	const slots = scope:Computed(function(use)
+		const current = use(statement.revision)
+		const result = {}
 
 		for index, slot in use(statement.Blueprint).AnimationSlots do
 			table.insert(result, { Slot = slot, Order = index, Revision = current })
@@ -127,7 +127,7 @@ return function(scope: Fusion.Scope, props: any)
 			}),
 
 			Slots = scope:ForValues(slots, function(use, rowScope, entry)
-				local slot = entry.Slot
+				const slot = entry.Slot
 
 				return rowScope:New("Frame")({
 					Name = slot.Id,
@@ -168,12 +168,12 @@ return function(scope: Fusion.Scope, props: any)
 						),
 
 						Speed = field(3, "Speed", slot.Speed, 0.5, function(value)
-							local parsed = tonumber(value)
+							const parsed = tonumber(value)
 							statement.setSlot(slot.Id, "Speed", if parsed ~= nil then parsed else 1)
 						end),
 
 						FadeTime = field(4, "FadeTime", slot.FadeTime, 0.5, function(value)
-							local parsed = tonumber(value)
+							const parsed = tonumber(value)
 							statement.setSlot(
 								slot.Id,
 								"FadeTime",

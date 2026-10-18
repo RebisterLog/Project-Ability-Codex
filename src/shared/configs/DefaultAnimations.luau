@@ -1,5 +1,5 @@
-local Assets = game:GetService("ReplicatedStorage").assets
-local GlobalAssets = Assets.Default
+const Assets = game:GetService("ReplicatedStorage").assets
+const GlobalAssets = Assets.Default
 
 return {
     Movement = {

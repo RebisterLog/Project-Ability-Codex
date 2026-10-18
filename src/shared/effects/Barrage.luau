@@ -1,6 +1,6 @@
-local BarragingCharacters = {}
+const BarragingCharacters = {}
 
-local Barrage = {
+const Barrage = {
 	onStart = function(character: Model)
 		BarragingCharacters[character] = {}
 	end,

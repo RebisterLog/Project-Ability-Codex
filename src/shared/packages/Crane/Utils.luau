@@ -28,13 +28,13 @@ by RebisterLog
 	@class Utils
 ]=]
 
-local HttpService = game:GetService("HttpService")
+const HttpService = game:GetService("HttpService")
 
 type LogLevel = "info" | "warn" | "error"
-local function Log(owner: string, reason: string, level: LogLevel?)
+const Log = function(owner: string, reason: string, level: LogLevel?)
 	level = level or "info"
 
-	local logMsg = `[{owner}] {reason}`
+	const logMsg = `[{owner}] {reason}`
 
 	if level ~= "info" then warn(debug.traceback(logMsg, 5)) end
 
@@ -50,7 +50,7 @@ end
 local function DeepClone<T>(t: T & {}): T
 	if typeof(t) ~= "table" then return t end
 
-	local new = table.clone(t) :: T & {}
+	const new = table.clone(t) :: T & {}
 
 	for k, v in pairs(t) do
 		if type(v) == "table" then new[k] = DeepClone(v) end
@@ -73,10 +73,10 @@ local function Reconcile<S, T>(src: S, template: T): S & T
 	assert(type(src) == "table", "First argument must be a table")
 	assert(type(template) == "table", "Second argument must be a table")
 
-	local tbl = table.clone(src)
+	const tbl = table.clone(src)
 
 	for k, v in template do
-		local sv = src[k]
+		const sv = src[k]
 		if sv == nil then
 			if type(v) == "table" then
 				tbl[k] = Copy(v, true)
@@ -95,19 +95,19 @@ local function Reconcile<S, T>(src: S, template: T): S & T
 	return (tbl :: any) :: S & T
 end
 
-local function Extend<T, E>(target: { T }, extension: { E }): { T } & { E }
-	local tbl = table.clone(target) :: { any }
+const Extend = function<T, E>(target: { T }, extension: { E }): { T } & { E }
+	const tbl = table.clone(target) :: { any }
 	for _, v in extension do
 		table.insert(tbl, v)
 	end
 	return tbl
 end
 
-local function BezierCurve(t: number, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3): Vector3
+const BezierCurve = function(t: number, p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3): Vector3
 	return Vector3.zero
 end
 
-local function SafeChangeNetworkOwner(object: BasePart | Model, owner: Player?)
+const SafeChangeNetworkOwner = function(object: BasePart | Model, owner: Player?)
 	if object:IsA("Model") then
 		for _, v in object:QueryDescendants("BasePart") :: { BasePart } do
 			if v:CanSetNetworkOwnership() then v:SetNetworkOwner(owner) end
@@ -119,8 +119,8 @@ local function SafeChangeNetworkOwner(object: BasePart | Model, owner: Player?)
 	end
 end
 
-local function PointPart(cframe: CFrame)
-	local part = Instance.new("Part")
+const PointPart = function(cframe: CFrame)
+	const part = Instance.new("Part")
 	part.Size = Vector3.one
 	part.Anchored = true
 	part.Transparency = 0.6
@@ -131,7 +131,7 @@ local function PointPart(cframe: CFrame)
 	return part
 end
 
-local function GenerateUUID(): string
+const GenerateUUID = function(): string
 	return HttpService:GenerateGUID(false)
 end
 

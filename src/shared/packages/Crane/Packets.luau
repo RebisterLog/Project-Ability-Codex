@@ -24,7 +24,7 @@ by RebisterLog
 	Just return the packets table, and use it in your middleware or services!
 ]]
 
-local ByteNet = require(script.Parent.packages.ByteNet)
+const ByteNet = require(script.Parent.packages.ByteNet)
 
 return ByteNet.defineNamespace("CranePackets", function()
 	return {

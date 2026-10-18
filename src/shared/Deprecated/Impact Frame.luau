@@ -1,7 +1,7 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CacheTab = require(ReplicatedStorage.shared.packages.CacheTab)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const CacheTab = require(ReplicatedStorage.shared.packages.CacheTab)
 
-local ImpactFrame = {
+const ImpactFrame = {
 	CachedHighlights = CacheTab.new(script.Highlight, 10, function(highlight: Highlight)
 		highlight.Adornee = nil
 		highlight.Parent = nil
@@ -20,7 +20,7 @@ function ImpactFrame.onStart(self: typeof(ImpactFrame), models: { Model }, time:
 	time = time or 0.1
 
 	task.spawn(function()
-		local colorCor = self.CachedColorCorrection:Get()
+		const colorCor = self.CachedColorCorrection:Get()
 		colorCor.Parent = game.Lighting
 		task.wait(time / 2)
 		colorCor.Brightness = -1
@@ -30,7 +30,7 @@ function ImpactFrame.onStart(self: typeof(ImpactFrame), models: { Model }, time:
 
 	for _, model in models do
 		task.spawn(function()
-			local highlight = self.CachedHighlights:Get()
+			const highlight = self.CachedHighlights:Get()
 			highlight.FillColor = Color3.fromRGB(0, 0, 0)
 			highlight.FillTransparency = 0
 			highlight.OutlineTransparency = 1

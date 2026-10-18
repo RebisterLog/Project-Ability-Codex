@@ -1,15 +1,15 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Configuration = ServerScriptService.server.Configuration
-local Configs = Configuration.ConfigsFolder.Value
-local SpecsConfig = require(Configs.Specs)
-local skills = ServerScriptService.server.skills
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Configuration = ServerScriptService.server.Configuration
+const Configs = Configuration.ConfigsFolder.Value
+const SpecsConfig = require(Configs.Specs)
+const skills = ServerScriptService.server.skills
+const types = require(ServerScriptService.server.types)
 
-local Players = game:GetService("Players")
+const Players = game:GetService("Players")
 
-local Spec = {
+const Spec = {
 	Skills = {
 		["Dash"] = "~/skills/Dash",
 		["Punch"] = "~/skills/Punch",
@@ -22,8 +22,8 @@ local Spec = {
 	},
 
 	onInit = function(self: types.Spec)
-		local standModel = self.Cleaner:Clone(self.Data.Assets.Models.Stand)
-		local stand =
+		const standModel = self.Cleaner:Clone(self.Data.Assets.Models.Stand)
+		const stand =
 			Crane:GetService("StandService"):AddStandFor(self.Character, standModel) :: types.Stand
 
 		standModel:SetAttribute(

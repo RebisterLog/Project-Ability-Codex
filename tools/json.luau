@@ -1,22 +1,23 @@
 --!strict
---- JSON без зависимости от версии рантайма.
+--- JSON without a dependency on the runtime version.
 ---
---- Нужен `tools/generate-skill.luau` и приложению-конструктору скиллов, которое живёт
---- в отдельном репозитории и получает этот файл через `sync-core.ps1`.
+--- Needed by `tools/generate-skill.luau` and by the skill constructor app, which
+--- lives in a separate repository and receives this file through `sync-core.ps1`.
 ---
---- Парсер написан здесь намеренно: `@lune/json` удалён из Lune начиная с 0.9,
---- а `@lune/serde` знает только свой формат, поэтому CLI не должен зависеть от
---- версии рантайма. Кодировщик дописан по той же причине — эмитится он там же,
---- где и разбирается, а не приходит извне.
+--- The parser is written here on purpose: `@lune/json` was removed from Lune in
+--- 0.9, and `@lune/serde` only knows its own format, so the CLI must not depend
+--- on the runtime version. The encoder is hand-written for the same reason — it is
+--- emitted wherever it is also parsed, not brought in from outside.
 ---
---- `decode` разворачивает `null` в отсутствующий ключ объекта — ровно так же, как
---- `codec.encode` выбрасывает `nil`-поля, поэтому `{"FadeTime": null}` и
---- `{"FadeTime": <nil>}` дают одинаковый blueprint. В массивах `null` сохраняется
---- на своём месте, чтобы не сдвинуть индексы `Blocks`.
+--- `decode` folds `null` into an absent object key — exactly like `codec.encode`
+--- drops `nil` fields, so `{"FadeTime": null}` and `{"FadeTime": <nil>}` yield the
+--- same blueprint. Inside arrays `null` is kept in place, so that `Blocks` indices
+--- never shift.
 ---
---- Ключи объектов на выходе `encode` сортируются: порядок вставки в Luau-таблице
---- не определён, а детерминированный вывод нужен и для сравнения снимков, и для
---- читаемого манифеста ассетов. Порядок массивов сохраняется — он значим.
+--- Object keys are sorted on the way out of `encode`: insertion order in a Luau
+--- table is undefined, and deterministic output is needed both for snapshot
+--- comparison and for a readable asset manifest. Array order is preserved — it
+--- carries meaning.
 
 local NULL = setmetatable({}, {
 	__tostring = function()
@@ -62,8 +63,8 @@ local ESCAPES = {
 	t = "\t",
 }
 
---- `\uXXXX` → UTF-8. Суррогатные пары не склеиваются: в blueprint их нет, а молча
---- испорченный символ хуже явной ошибки.
+--- `\uXXXX` → UTF-8. Surrogate pairs are not joined: blueprints never contain
+--- them, and a silently mangled character is worse than an explicit error.
 local function utf8(code: number): string
 	if code < 0x80 then return string.char(code) end
 	if code < 0x800 then return string.char(0xC0 + math.floor(code / 64), 0x80 + code % 64) end
@@ -103,7 +104,11 @@ local function parseString(parser: Parser): string
 
 				if code == nil or #hex < 4 then fail(parser, "bad unicode escape") end
 
-				buffer ..= utf8(code)
+				-- The Luau analyzer does not narrow `number?` after a call to a
+				-- function declared as never returning, so here and for the rest
+				-- of the code the check is duplicated as a type assertion:
+				-- `fail` really does throw.
+				buffer ..= utf8(code :: number)
 				parser.pos += 6
 			else
 				fail(parser, "unknown escape")
@@ -120,7 +125,7 @@ local function parseNumber(parser: Parser): number
 	if head == nil then fail(parser, "expected a number") end
 
 	local start = parser.pos
-	parser.pos += #head
+	parser.pos += #(head :: string)
 
 	local fraction = string.match(parser.text, "^%.%d+", parser.pos)
 	if fraction ~= nil then
@@ -134,7 +139,7 @@ local function parseNumber(parser: Parser): number
 
 	local value = tonumber(string.sub(parser.text, start, parser.pos - 1))
 	if value == nil then fail(parser, "malformed number") end
-	return value
+	return value :: number
 end
 
 local function parseArray(parser: Parser): { any }
@@ -228,11 +233,13 @@ parseValue = function(parser: Parser): any
 		return parseNumber(parser)
 	end
 
-	fail(parser, "unexpected character")
+	-- Returning `fail`'s value instead of a bare call: the path is unreachable,
+	-- but this way the function looks complete to the analyzer.
+	return fail(parser, "unexpected character")
 end
 
---- Разбирает JSON-текст в Luau-значение. Возвращает `NULL`-сентинел на месте
---- `null` внутри массива; в объекте `null` исчезает как отсутствующий ключ.
+--- Parses JSON text into a Luau value. Returns the `NULL` sentinel where `null`
+--- stood inside an array; inside an object `null` disappears as an absent key.
 local function decode(text: string): any
 	local parser: Parser = { text = text, pos = 1 }
 	local value = parseValue(parser)
@@ -245,7 +252,7 @@ local function decode(text: string): any
 	return value
 end
 
--- КОДИРОВАНИЕ ---------------------------------------------------------------
+-- ENCODING ------------------------------------------------------------------
 
 local CONTROL_ESCAPES = {
 	["\b"] = "\\b",
@@ -276,9 +283,9 @@ local function quote(value: string): string
 	return buffer .. '"'
 end
 
---- `%.15g` короче и читается лучше, но не для всех double'ов round-trip-ится в
---- те же биты, поэтому на несовпадении повторяем с `%.17g`. Целые печатаются
---- целыми, иначе кадры таймлайна выходили бы как `15.0`.
+--- `%.15g` is shorter and reads better, but does not round-trip to the same bits
+--- for every double, so on a mismatch we retry with `%.17g`. Integers print as
+--- integers, otherwise timeline frames would come out as `15.0`.
 local function number(value: number): string
 	if value ~= value or value == math.huge or value == -math.huge then return "null" end
 
@@ -289,8 +296,9 @@ local function number(value: number): string
 	return string.format("%.17g", value)
 end
 
---- Таблица считается массивом, только если её ключи — ровно `1..n`. Иначе в
---- JSON попадёт объект, а `ipairs`-семантика источника потеряется.
+--- A table counts as an array only when its keys are exactly `1..n`. Otherwise
+--- an object would land in the JSON and the `ipairs` semantics of the source
+--- would be lost.
 local function arrayLength(value: { [any]: any }): number?
 	local count = 0
 
@@ -308,8 +316,8 @@ end
 
 local encodeValue: (any, number, { [any]: true }, number?, number?) -> string
 
---- Цикл в данных blueprint невозможен, но обход без защиты на нём зависнет
---- молча — сентинел обрывает рекурсию явной ошибкой.
+--- A cycle in blueprint data is impossible, but walking without a guard would
+--- hang on it silently — the sentinel ends the recursion with an explicit error.
 local function encodeTable(
 	value: { [any]: any },
 	depth: number,
@@ -321,7 +329,7 @@ local function encodeTable(
 	seen[value] = true
 
 	local pretty = indent ~= nil
-	local step: number = if pretty then indent else 0
+	local step: number = indent or 0
 	local current: number = level or 0
 
 	local newline = if pretty then "\n" else ""
@@ -414,9 +422,9 @@ encodeValue = function(
 	error(`Cannot encode a value of type {valueType}`, 0)
 end
 
---- Печатает Luau-значение как JSON. Опция `pretty` даёт отступ в `indent`
---- пробелов и переносы строк — для манифеста ассетов и файлов, которые читает
---- человек; без неё вывод однострочный и годится для транспорта.
+--- Prints a Luau value as JSON. The `pretty` option gives `indent` spaces of
+--- indentation and real line breaks — for the asset manifest and for files a
+--- human reads; without it the output is one line and good for transport.
 local function encode(value: any, options: { pretty: boolean?, indent: number? }?): string
 	return encodeValue(
 		value,

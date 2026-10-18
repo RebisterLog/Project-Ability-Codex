@@ -18,7 +18,7 @@ by RebisterLog
 --!strict
 --!optimize 2
 
-local Log = require(script.Parent.Utils).Log
+const Log = require(script.Parent.Utils).Log
 
 --[=[
 	The Service module provides the base class for all services in the Crane framework.
@@ -29,7 +29,7 @@ local Log = require(script.Parent.Utils).Log
 
 	@class Service
 ]=]
-local Service = {}
+const Service = {}
 Service.__index = Service
 Service.__tostring = "CraneService"
 
@@ -89,7 +89,7 @@ export type Service<A, T> = setmetatable<ServiceData<A, T>, typeof(Service)>
 	Creates a new service definition. This is typically called by `Crane:CreateService`.
 
 	```lua
-	local service = Service.new({
+	const service = Service.new({
 		Name = "MyService",
 		LoadOrder = 1,
 	})
@@ -101,7 +101,7 @@ export type Service<A, T> = setmetatable<ServiceData<A, T>, typeof(Service)>
 	@within Service
 ]=]
 function Service.new<A, T>(options: ServiceDef<A, T>)
-	local self = {}
+	const self = {}
 	self.Name = options.Name
 	self.LoadOrder = options.LoadOrder or 0
 
@@ -129,7 +129,7 @@ function Service.Init<A, T>(self: Service<A, T>)
 	if not self.onInit then return end
 
 	if _G["CRANE_DEBUGGING"] then
-		local success, err = pcall(self.onInit, self)
+		const success, err = pcall(self.onInit, self)
 
 		if not success then
 			Log(self.Name, err, "warn")
@@ -162,7 +162,7 @@ function Service.Start<A, T>(self: Service<A, T>)
 	if not self.onStart then return end
 
 	if _G["CRANE_DEBUGGING"] then
-		local success, err = pcall(self.onStart, self)
+		const success, err = pcall(self.onStart, self)
 
 		if not success then
 			Log(self.Name, err, "warn")

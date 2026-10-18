@@ -1,40 +1,40 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local StarterPlayer = game:GetService("StarterPlayer")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const StarterPlayer = game:GetService("StarterPlayer")
 
-local LocalPlayer = Players.LocalPlayer
+const LocalPlayer = Players.LocalPlayer
 
-local GameData = require(ReplicatedStorage.shared.schemas.GameData)
-local LoadingScreen = require(StarterPlayer.StarterPlayerScripts.client.ui.views.LoadingScreen)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+const GameData = require(ReplicatedStorage.shared.schemas.GameData)
+const LoadingScreen = require(StarterPlayer.StarterPlayerScripts.client.ui.views.LoadingScreen)
+const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local Router = require(script.Parent.utils.Router)
+const Router = require(script.Parent.utils.Router)
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
 
-local Children = Fusion.Children
-local scoped = Fusion.scoped
-local peek = Fusion.peek
+const Children = Fusion.Children
+const scoped = Fusion.scoped
+const peek = Fusion.peek
 type UsedAs<T> = Fusion.UsedAs<T>
 
 -- Components
-local Button = require(script.Parent.utils.Button)
-local Helix = require(script.Parent.utils.Helix)
-local PlayerHUD = require(script.Parent.components.PlayerHUD)
-local PreloadingComponent = require(script.Parent.components.PreloadingComponent)
-local Settings = require(script.Parent.components.Settings)
-local Shadow = require(script.Parent.utils.Shadow)
+const Button = require(script.Parent.utils.Button)
+const Helix = require(script.Parent.utils.Helix)
+const PlayerHUD = require(script.Parent.components.PlayerHUD)
+const PreloadingComponent = require(script.Parent.components.PreloadingComponent)
+const Settings = require(script.Parent.components.Settings)
+const Shadow = require(script.Parent.utils.Shadow)
 
-local scope = scoped(Fusion, {
+const scope = scoped(Fusion, {
 	Button = Button,
 	Helix = Helix,
 	Shadow = Shadow,
 })
 
-local Statements = {
+const Statements = {
 	Loading = scope:Value(false),
 }
 
@@ -44,12 +44,12 @@ return function(
 	playerProxy: Proxy.ProxyTab<PlayerData.PlayerData>,
 	gameProxy: Proxy.ProxyTab<GameData.GameData>
 )
-	local proxies = {
+	const proxies = {
 		PlayerProxy = playerProxy,
 		GameProxy = gameProxy,
 	}
 
-	local router = Router.new(scope)
+	const router = Router.new(scope)
 
 	router:ProvidePages({
 		{

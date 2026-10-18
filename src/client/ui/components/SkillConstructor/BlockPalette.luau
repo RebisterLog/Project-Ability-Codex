@@ -1,35 +1,35 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Registry = require(ReplicatedStorage.shared.packages.SkillConstructor.registry)
-local SearchTextMatch = require(script.Parent.Parent.Parent.utils.SearchTextMatch)
-local Theme = require(script.Parent.Theme)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Registry = require(ReplicatedStorage.shared.packages.SkillConstructor.registry)
+const SearchTextMatch = require(script.Parent.Parent.Parent.utils.SearchTextMatch)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- `SearchTextMatch` зовёт `string.match(строки, запрос)`, то есть запрос трактуется
 --- как паттерн: скобка или плюс в поиске уронили бы палитру. Символы экранируются, а
 --- уже экранированный `%` схлопывается обратно, иначе `gsub` снял бы экранирование
 --- дважды и `%%` превратился бы в пустую строку.
-local function escapePattern(text: string): string
-	local escaped = text:gsub("[%^%$%.%+%-%*%(%)%%]", "%%%1")
+const escapePattern = function(text: string): string
+	const escaped = text:gsub("[%^%$%.%+%-%*%(%)%%]", "%%%1")
 	return (escaped:gsub("%%%%", "%%"))
 end
 
-local function matches(query: string, text: string): boolean
+const matches = function(query: string, text: string): boolean
 	if query == "" then return true end
 	return SearchTextMatch(text, escapePattern(query))
 end
 
-local function paletteEntry(
+const paletteEntry = function(
 	scope: Fusion.Scope,
 	store: any,
 	blockId: string,
 	order: number
 ): Instance
-	local definition = Registry.get(blockId)
-	local color =
+	const definition = Registry.get(blockId)
+	const color =
 		Theme.hexToColor3(definition.Color or Registry.CATEGORY_COLORS[definition.Category])
 
 	return scope:New("TextButton")({
@@ -66,14 +66,14 @@ end
 --- где что-то нашлось; `ForValues` сам пересобирает список, поэтому фильтр не
 --- требует ручного обновления GUI-инстансов.
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
-	local categories = scope:Computed(function(use)
-		local query = use(statement.SearchQuery)
-		local result = {}
+	const categories = scope:Computed(function(use)
+		const query = use(statement.SearchQuery)
+		const result = {}
 
 		for order, category in Registry.CATEGORY_ORDER do
-			local entries = {}
+			const entries = {}
 
 			for index, definition in Registry.getByCategory(category) do
 				if matches(query, definition.DisplayName) or matches(query, definition.Id) then
@@ -110,8 +110,8 @@ return function(scope: Fusion.Scope, props: any)
 			}),
 
 			Categories = scope:ForValues(categories, function(use, childScope, category)
-				local entries = category.Entries
-				local hasEntries = #entries > 0
+				const entries = category.Entries
+				const hasEntries = #entries > 0
 
 				return childScope:New("Frame")({
 					Name = category.Category,

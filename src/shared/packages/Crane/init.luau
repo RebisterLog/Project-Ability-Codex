@@ -19,24 +19,24 @@ by RebisterLog
 --!optimize 2
 
 -- Requirements
-local CollectionService = game:GetService("CollectionService")
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
+const CollectionService = game:GetService("CollectionService")
+const HttpService = game:GetService("HttpService")
+const RunService = game:GetService("RunService")
 
-local Component = require(script.Component)
-local Packets = require(script.Packets)
-local Service = require(script.Service)
-local Utils = require(script.Utils)
+const Component = require(script.Component)
+const Packets = require(script.Packets)
+const Service = require(script.Service)
+const Utils = require(script.Utils)
 
-local Buttler = require(script.packages.Buttler)
-local CacheTab = require(script.packages.CacheTab)
-local Janitor = require(script.packages.Janitor)
-local Signal = require(script.packages.Signal)
+const Buttler = require(script.packages.Buttler)
+const CacheTab = require(script.packages.CacheTab)
+const Janitor = require(script.packages.Janitor)
+const Signal = require(script.packages.Signal)
 
 _G["CRANE_DEBUGGING"] = false
 _G["CRANE_TRACK_TAGS"] = true
 
-local COMPONENT_ID_ATTRIBUTE = "CraneComponentId"
+const COMPONENT_ID_ATTRIBUTE = "CraneComponentId"
 	.. (RunService:IsServer() and "SERVER" or "CLIENT")
 
 -- Types
@@ -112,7 +112,7 @@ type QueryName = keyof<QueriesType>
 	@within Crane
 ]=]
 
-local Crane = {
+const Crane = {
 	-- Properties of framework
 	IsStarted = false,
 	Services = {},
@@ -153,7 +153,7 @@ export type Crane = setmetatable<CraneData, typeof(Crane)>
 	**Important:** Services and components must be created before starting the framework!
 
 	```lua
-		local Crane = require(PATH_TO_FRAMEWORK)
+		const Crane = require(PATH_TO_FRAMEWORK)
 
 		Crane:AddServices({FOLDER, FOLDER...})
 		Crane:AddComponents({FOLDER, FOLDER...})
@@ -189,13 +189,13 @@ function Crane.Start(self: Crane)
 	if _G["CRANE_TRACK_TAGS"] then
 		for tag, componentName in self.TrackedTags do
 			CollectionService:GetInstanceAddedSignal(tag):Connect(function(instance)
-				local componentName = self.TrackedTags[tag]
+				const componentName = self.TrackedTags[tag]
 				if componentName and not self:GetComponent(componentName, instance) then
 					self:AddComponent(instance, componentName)
 				end
 			end)
 
-			local tagged = CollectionService:GetTagged(tag)
+			const tagged = CollectionService:GetTagged(tag)
 
 			for i, instance in tagged do
 				if not self:GetComponent(componentName, instance) then
@@ -238,14 +238,14 @@ function Crane.AddServices(
 	assert(typeof(parents) == "table", `Parents must be a table, got {type(parents)}`)
 	assert(#parents > 0, `Parents must be a non-empty table`)
 
-	local addedServices = {}
+	const addedServices = {}
 
 	for i, parent in parents do
 		for i, module in
 			(descendants and parent:GetDescendants() or parent:GetChildren()) :: { Instance }
 		do
 			if module:IsA("ModuleScript") then
-				local service = require(module) :: Service.Service<string, number>
+				const service = require(module) :: Service.Service<string, number>
 				table.insert(addedServices, service)
 			end
 		end
@@ -286,14 +286,14 @@ function Crane.AddComponents(
 	assert(typeof(parents) == "table", `Parents must be a table, got {type(parents)}`)
 	assert(#parents > 0, `Parents must be a non-empty table`)
 
-	local addedComponents = {}
+	const addedComponents = {}
 
 	for i, parent in parents do
 		for i, instance in
 			(descendants and parent:GetDescendants() or parent:GetChildren()) :: { Instance }
 		do
 			if instance:IsA("ModuleScript") then
-				local component = require(instance) :: Component.Component
+				const component = require(instance) :: Component.Component
 				table.insert(addedComponents, component)
 			end
 		end
@@ -306,7 +306,7 @@ end
 	Creates and registers a new service in the framework.
 
 	```lua
-	local MyService = Crane:CreateService({
+	const MyService = Crane:CreateService({
 		Name = "MyService",
 		LoadOrder = 1,
 	})
@@ -340,7 +340,7 @@ function Crane.CreateService<A, T>(self: Crane, options: ServiceDef<A, T>)
 	assert(not self.Services[options.Name], `Service "{options.Name}" already exists`)
 	assert(not self.IsStarted, `Services cannot be created after calling "Crane:Start()"`)
 
-	local service = Service.new(options)
+	const service = Service.new(options)
 	self.Services[options.Name] = service
 	return service :: Service.Service<A, T>
 end
@@ -349,7 +349,7 @@ end
 	Retrieves a registered service by name.
 
 	```lua
-	local MyService = Crane:GetService("MyService")
+	const MyService = Crane:GetService("MyService")
 	```
 
 	@method GetService
@@ -374,7 +374,7 @@ end
 	Retrieves a registered packet by name.
 
 	```lua
-	local MyPacket = Crane:GetPacket("MyPacket")
+	const MyPacket = Crane:GetPacket("MyPacket")
 	```
 
 	@method GetPacket
@@ -404,7 +404,7 @@ function Crane.GetComponent<T>(
 	assert(self.Components[name], `Component {name} doesn't exists`)
 	assert(instance, `Instance is required`)
 
-	local componentId = instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string?
+	const componentId = instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string?
 	if not componentId then return nil end
 
 	return self.InstantiatedComponents[componentId][name]
@@ -416,7 +416,7 @@ end
 function Crane.GetAllComponents<T>(self: Crane, name: string): { Component.Component }
 	assert(self.Components[name], `Component {name} doesn't exists`)
 
-	local components = {}
+	const components = {}
 
 	for id, instanceComponents in self.InstantiatedComponents do
 		for componentName, component in instanceComponents do
@@ -431,7 +431,7 @@ end
 	Creates and registers a new component in the framework.
 
 	```lua
-	local MyComponent = Crane:CreateComponent({
+	const MyComponent = Crane:CreateComponent({
 		Name = "MyComponent",
 		Tag = "MyComponentTag", -- Optional: enables automatic instantiation via CollectionService
 		BaseComponent = {}, -- Optional: base table to extend
@@ -464,7 +464,7 @@ function Crane.CreateComponent<T>(self: Crane, options: ComponentDef<T>)
 	assert(not self.Components[options.Name], `Component "{options.Name}" already exists`)
 	assert(not self.IsStarted, `Components cannot be created after calling "Crane:Start()"`)
 
-	local component = Component.new(options) :: Component.Component & T
+	const component = Component.new(options) :: Component.Component & T
 	self.Components[options.Name] = component
 
 	if _G["CRANE_TRACK_TAGS"] and options.Tag then
@@ -489,8 +489,8 @@ end
 	This method creates a new instance of the component and attaches it to the provided instance. If the instance already has components, they will share the same component ID.
 
 	```lua
-	local part = workspace:FindFirstChild("MyPart")
-	local component = Crane:AddComponent(part, "MyComponent")
+	const part = workspace:FindFirstChild("MyPart")
+	const component = Crane:AddComponent(part, "MyComponent")
 	```
 
 	@method AddComponent
@@ -510,7 +510,7 @@ function Crane.AddComponent<T>(self: Crane, instance: T & Instance, name: string
 	assert(#name > 0, "Component name must be a non-empty string")
 	assert(self.Components[name], `Component "{name}" does not exist`)
 
-	local componentId = instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string?
+	const componentId = instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string?
 		or HttpService:GenerateGUID(false)
 
 	self.InstantiatedComponents[componentId] = self.InstantiatedComponents[componentId] or {}
@@ -521,7 +521,7 @@ function Crane.AddComponent<T>(self: Crane, instance: T & Instance, name: string
 
 	instance:SetAttribute(COMPONENT_ID_ATTRIBUTE, componentId)
 
-	local component: Component.Component<T> = self.Components[name]:Instantiate(instance)
+	const component: Component.Component<T> = self.Components[name]:Instantiate(instance)
 	self.InstantiatedComponents[componentId][name] = component
 
 	component.Destroying:Connect(function()
@@ -539,7 +539,7 @@ end
 	This method destroys the component and cleans up all associated data.
 
 	```lua
-	local part = workspace:FindFirstChild("MyPart")
+	const part = workspace:FindFirstChild("MyPart")
 	Crane:RemoveComponent(part, "MyComponent")
 	```
 
@@ -559,7 +559,7 @@ function Crane.RemoveComponent(self: Crane, instance: Instance, name: string)
 	assert(#name > 0, "Component name must be a non-empty string")
 	assert(self.Components[name], `Component "{name}" does not exist`)
 
-	local component =
+	const component =
 		self.InstantiatedComponents[instance:GetAttribute(COMPONENT_ID_ATTRIBUTE) :: string][name]
 	assert(component, `Component "{name}" does not exist on instance "{instance:GetFullName()}"`)
 

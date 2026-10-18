@@ -1,15 +1,15 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const UserInputService = game:GetService("UserInputService")
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- Счётчик ошибок и предупреждений блока: рамка W1–W4 рисуется по нему, а подпись
 --- `⚠ n` показывает, сколько именно претензий у блока (§10).
-local function issueCount(issues: { any }, blockId: string): (number, number)
+const issueCount = function(issues: { any }, blockId: string): (number, number)
 	local errors = 0
 	local warnings = 0
 
@@ -32,7 +32,7 @@ end
 --- кнопки: страница остаётся смонтированной при уходе в `PlayerHUD`, и живой drag
 --- продолжал бы двигать блоки на скрытой странице. Страховка через `cleanup`
 --- снимает его, если страницу разобрали раньше.
-local function dragHandler(
+const dragHandler = function(
 	scope: Fusion.Scope,
 	statement: any,
 	blockId: string,
@@ -40,7 +40,7 @@ local function dragHandler(
 )
 	local connection: RBXScriptConnection? = nil
 
-	local function stop()
+	const stop = function()
 		if connection ~= nil then
 			connection:Disconnect()
 			connection = nil
@@ -63,13 +63,13 @@ local function dragHandler(
 			return
 		end
 
-		local blueprint = statement.peekBlueprint()
-		local block = statement.findBlock(blueprint, blockId)
+		const blueprint = statement.peekBlueprint()
+		const block = statement.findBlock(blueprint, blockId)
 		if block == nil then return end
 
-		local zoom = statement.peekZoom()
-		local originX = input.Position.X
-		local originFrame = if mode == "resize"
+		const zoom = statement.peekZoom()
+		const originX = input.Position.X
+		const originFrame = if mode == "resize"
 			then (block.EndFrame or block.StartFrame or 0)
 			else (block.StartFrame or 0)
 
@@ -83,7 +83,7 @@ local function dragHandler(
 
 			--- Дельта идёт в пикселях и делится на зум: иначе при зуме 8 блок
 			--- уезжал бы в 8 раз дальше курсора.
-			local deltaFrames = math.floor((changed.Position.X - originX) / zoom)
+			const deltaFrames = math.floor((changed.Position.X - originX) / zoom)
 
 			if mode == "resize" then
 				statement.setEndFrame(blockId, originFrame + deltaFrames)
@@ -95,27 +95,27 @@ local function dragHandler(
 end
 
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
-	local registry = statement.registry
+	const statement = props.Store
+	const registry = statement.registry
 
 	--- Вложенные блоки рисует тот же модуль. `require(script)` вызывается во время
 	--- отрисовки, а не при загрузке: на момент загрузки модуль ещё не лежит в кэше
 	--- `require`, и самостоятельный `require` увёл бы его в цикл.
-	local function renderChild(childProps: any)
+	const renderChild = function(childProps: any)
 		return require(script)(scope, childProps)
 	end
 
-	local block = props.Block
-	local blockId = block.Id
-	local blockType = block.Type
-	local definition = registry.get(blockType)
-	local categoryColor = Theme.hexToColor3(definition and definition.Color or "#78909C")
-	local zoom = props.Zoom
-	local depth = props.Depth or 0
-	local slots = registry.getSlots(blockType)
+	const block = props.Block
+	const blockId = block.Id
+	const blockType = block.Type
+	const definition = registry.get(blockType)
+	const categoryColor = Theme.hexToColor3(definition and definition.Color or "#78909C")
+	const zoom = props.Zoom
+	const depth = props.Depth or 0
+	const slots = registry.getSlots(blockType)
 
-	local errors, warnings = issueCount(props.Issues, blockId)
-	local hasIssue = errors > 0 or warnings > 0
+	const errors, warnings = issueCount(props.Issues, blockId)
+	const hasIssue = errors > 0 or warnings > 0
 
 	--- Ширина: обычный блок занимает один кадр, `Repeat` — весь диапазон. `Wait`
 	--- свойств не имеет и только двигает maxFrame, но рисуется как обычный блок.
@@ -126,15 +126,15 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Потомки группируются по слотам в порядке реестра: пустые слоты не рисуются
 	--- вовсе (§5, §7), иначе `ProcessAttack` всегда занимал бы семь строк.
-	local slotFrames = {}
+	const slotFrames = {}
 	local childCount = 0
 
 	for _, slot in slots do
-		local list = if type(block.Children) == "table" then block.Children[slot] else nil
+		const list = if type(block.Children) == "table" then block.Children[slot] else nil
 		if type(list) == "table" and #list > 0 then
 			childCount += #list
 
-			local slotChildren = {
+			const slotChildren = {
 				SlotTitle = scope:New("TextLabel")({
 					Size = UDim2.new(1, 0, 0, Theme.Metrics.SlotHeight),
 					BackgroundTransparency = 1,
@@ -179,7 +179,7 @@ return function(scope: Fusion.Scope, props: any)
 		end
 	end
 
-	local isCollapsed = props.Collapsed[blockId] == true and childCount > 0
+	const isCollapsed = props.Collapsed[blockId] == true and childCount > 0
 	local caption = if definition ~= nil then definition.DisplayName else blockType
 
 	if isCollapsed then
@@ -190,7 +190,7 @@ return function(scope: Fusion.Scope, props: any)
 		caption = `{caption}  @{block.StartFrame}`
 	end
 
-	local bodyChildren = {
+	const bodyChildren = {
 		Layout = scope:New("UIListLayout")({
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			Padding = UDim.new(0, Theme.Spacing.Tiny),
@@ -225,7 +225,7 @@ return function(scope: Fusion.Scope, props: any)
 		})
 	end
 
-	local chipChildren = {
+	const chipChildren = {
 		Stroke = scope:New("UIStroke")({
 			ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 			Color = if hasIssue

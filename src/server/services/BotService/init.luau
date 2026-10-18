@@ -1,17 +1,17 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const types = require(ServerScriptService.server.types)
 
-local Bot = require(script.Bot)
-local NavigationController = require(script.NavigationController)
-local StateMachine = NavigationController.StateMachine
+const Bot = require(script.Bot)
+const NavigationController = require(script.NavigationController)
+const StateMachine = NavigationController.StateMachine
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-local rand = Random.new(tick())
+const rand = Random.new(tick())
 
-local BotsService = Crane:CreateService({
+const BotsService = Crane:CreateService({
 	Name = "BotsService",
 })
 
@@ -22,9 +22,9 @@ function BotsService:onStart()
 end
 
 function BotsService:Instance(botName: string, character: types.Character)
-	local config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
+	const config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
 
-	local bot = Bot.new(character, config)
+	const bot = Bot.new(character, config)
 
 	return bot
 end
@@ -36,8 +36,8 @@ function BotsService:Remove(character: types.Character)
 end
 
 function BotsService:Create(botName: string, model: Model)
-	local character = Crane:AddComponent(model, "Character")
-	local bot = self:Instance(botName, character)
+	const character = Crane:AddComponent(model, "Character")
+	const bot = self:Instance(botName, character)
 
 	return bot, character
 end

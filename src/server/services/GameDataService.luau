@@ -1,23 +1,23 @@
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const HttpService = game:GetService("HttpService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local GameDataSchema = require(ReplicatedStorage.shared.schemas.GameData)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const GameDataSchema = require(ReplicatedStorage.shared.schemas.GameData)
 
-local GameDataService = Crane:CreateService({
+const GameDataService = Crane:CreateService({
 	Name = "GameDataService",
 	LoadOrder = -100,
 })
 
-local url = "https://ipconfig.io/json"
-local function GetRegionName(): string
-	local response = HttpService:GetAsync(url, false) -- get the data from the API
+const url = "https://ipconfig.io/json"
+const GetRegionName = function(): string
+	const response = HttpService:GetAsync(url, false) -- get the data from the API
 
 	if response then -- if the data from API is successfully retrieved and is not nil
-		local locationData = HttpService:JSONDecode(response)
+		const locationData = HttpService:JSONDecode(response)
 		return `{locationData["country"]} | {locationData["city"]}`
 	else
 		return "Failed to fetch data from API."

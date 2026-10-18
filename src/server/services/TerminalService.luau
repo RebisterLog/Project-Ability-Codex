@@ -1,12 +1,12 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Cmdr = require(ReplicatedStorage.shared.packages.Cmdr)
+const Cmdr = require(ReplicatedStorage.shared.packages.Cmdr)
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Configuration = ServerScriptService.server.Configuration
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Configuration = ServerScriptService.server.Configuration
 
-local TerminalService = Crane:CreateService({
+const TerminalService = Crane:CreateService({
 	Name = "TerminalService",
 })
 

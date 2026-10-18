@@ -1,9 +1,9 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local CombatService = Crane:GetService("CombatService")
+const CombatService = Crane:GetService("CombatService")
 
 return {
 	Name = "Stun",
@@ -13,7 +13,7 @@ return {
 		if Data.State.Success and Data.Info.Stun then
 			--Data.Info.Stun *= Data.Attacker:GetParameter("StunMultiplier")
 
-			local stun = Data.Victim:AddParameter("Stun", Data.Info.Stun)
+			const stun = Data.Victim:AddParameter("Stun", Data.Info.Stun)
 			task.delay(Data.Info.Stun.Duration or 0, stun.Destroy, stun)
 			CombatService.Interrupted:Fire(Data.Victim)
 		end

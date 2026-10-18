@@ -17,9 +17,9 @@
 	Connect `Hit` and call `CombatService:Attack` from the skill.
 
 	```lua
-	local Projectile = require(ServerScriptService.server["combat-classes"].Projectile)
+	const Projectile = require(ServerScriptService.server["combat-classes"].Projectile)
 
-	local bullet = Projectile.new({
+	const bullet = Projectile.new({
 		Caster = character,
 		Skill = self,
 		Model = Models["Bullet"],
@@ -46,31 +46,31 @@
 	@class Projectile
 ]=]
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Workspace = game:GetService("Workspace")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Signal = Crane.Signal
-local types = require(ServerScriptService.server.types)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Workspace = game:GetService("Workspace")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Signal = Crane.Signal
+const types = require(ServerScriptService.server.types)
 
-local Projectile = {}
+const Projectile = {}
 Projectile.__index = Projectile
 
-local DEFAULT_LIFETIME = 5
-local DEFAULT_SURFACE_OFFSET = 0.05
+const DEFAULT_LIFETIME = 5
+const DEFAULT_SURFACE_OFFSET = 0.05
 
 -- Characters are resolved by the hitbox query, not the surface sweep. Unless a
 -- skill explicitly asks for character bounces, the sweep passes straight through
 -- them instead of deflecting off a ragdolling torso.
-local function IsCharacterPart(instance: Instance): boolean
-	local model = instance:FindFirstAncestorOfClass("Model")
+const IsCharacterPart = function(instance: Instance): boolean
+	const model = instance:FindFirstAncestorOfClass("Model")
 	return model ~= nil and model:FindFirstChildOfClass("Humanoid") ~= nil
 end
 
 -- Orients a visual so its -Z axis points along travel. Falls back to a plain
 -- position when there is no meaningful direction yet.
-local function Orient(position: Vector3, direction: Vector3): CFrame
+const Orient = function(position: Vector3, direction: Vector3): CFrame
 	if direction.Magnitude < 0.001 then return CFrame.new(position) end
 	return CFrame.lookAt(position, position + direction)
 end
@@ -79,11 +79,11 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 	local Direction = Config.Direction
 	if Direction.Magnitude < 0.001 then Direction = Vector3.zAxis end
 
-	local Cleaner = Crane.Buttler.new()
+	const Cleaner = Crane.Buttler.new()
 
 	-- Reflection is opt-in. Without it a projectile flies straight and ends with
 	-- reason "Wall" on the first surface it touches.
-	local Reflection = {
+	const Reflection = {
 		Enabled = Config.Reflection ~= nil and Config.Reflection.Enabled == true,
 		Restitution = (Config.Reflection and Config.Reflection.Restitution) or 1,
 		MaxBounces = (Config.Reflection and Config.Reflection.MaxBounces) or -1,
@@ -92,7 +92,7 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 			or DEFAULT_SURFACE_OFFSET,
 	} :: types.ProjectileReflection
 
-	local self = setmetatable({
+	const self = setmetatable({
 		Config = Config,
 
 		Position = Config.Position,
@@ -130,7 +130,7 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 
 	-- Surface sweep params are the inverse of the hitbox params: geometry lives
 	-- outside `workspace.Live`, so exclude the characters and keep the world.
-	local RayParams = RaycastParams.new()
+	const RayParams = RaycastParams.new()
 	RayParams.FilterType = Enum.RaycastFilterType.Exclude
 	RayParams.RespectCanCollide = true
 	RayParams:AddToFilter(Workspace.Live)
@@ -224,7 +224,7 @@ end
 	Used by the swept surface test, and callable directly from a skill.
 ]=]
 function Projectile.Reflect(self: types.Projectile, normal: Vector3)
-	local reflected = self.Direction - (2 * self.Direction:Dot(normal) * normal)
+	const reflected = self.Direction - (2 * self.Direction:Dot(normal) * normal)
 	if reflected.Magnitude < 0.001 then return end
 
 	self.Bounces += 1
@@ -266,8 +266,8 @@ end
 	5. checks the self-imposed lifetime / distance limits
 ]=]
 function Projectile.Step(self: types.Projectile, deltaTime: number)
-	local Config = self.Config
-	local Reflection = self.Reflection
+	const Config = self.Config
+	const Reflection = self.Reflection
 
 	self.Elapsed += deltaTime
 
@@ -275,7 +275,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 	local velocity = self.Velocity + (Config.Gravity or Vector3.zero) * deltaTime
 
 	if Config.MoveFunction then
-		local override = Config.MoveFunction(self, {
+		const override = Config.MoveFunction(self, {
 			Velocity = velocity,
 			Direction = self.Direction,
 			Position = self.Position,
@@ -289,7 +289,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 
 	self:SetVelocity(velocity)
 
-	local origin = self.Position
+	const origin = self.Position
 	local destination = origin + self.Velocity * deltaTime
 
 	-- 2. Swept raycast across the entire step.
@@ -313,7 +313,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 			return
 		end
 
-		local reflected = self.Direction - (2 * self.Direction:Dot(result.Normal) * result.Normal)
+		const reflected = self.Direction - (2 * self.Direction:Dot(result.Normal) * result.Normal)
 
 		if reflected.Magnitude < 0.001 then
 			-- Degenerate bounce (perfectly head-on), just stop at the surface.
@@ -344,7 +344,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 	self.Instance:PivotTo(Orient(destination, self.Direction))
 
 	-- 5. Hitbox query at the new position.
-	local Info = {
+	const Info = {
 		Size = Config.HitboxSize,
 		Origin = CFrame.new(destination),
 		-- Defaults to ignoring the caster, matching how skills query hitboxes.
@@ -356,7 +356,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 
 	if not self.CombatService then self.CombatService = Crane:GetService("CombatService") end
 
-	local targets = self.CombatService:Hitbox({
+	const targets = self.CombatService:Hitbox({
 		Caster = Config.Caster,
 		Skill = Config.Skill,
 		Info = Info,
@@ -371,8 +371,8 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 	end
 
 	-- 6. Self-imposed limits.
-	local Lifetime = Config.Lifetime or DEFAULT_LIFETIME
-	local MaxDistance = Config.MaxDistance
+	const Lifetime = Config.Lifetime or DEFAULT_LIFETIME
+	const MaxDistance = Config.MaxDistance
 
 	if self.Elapsed >= Lifetime then
 		Projectile.Finish(self, "Lifetime")

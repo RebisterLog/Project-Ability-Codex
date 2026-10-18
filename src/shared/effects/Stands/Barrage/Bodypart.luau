@@ -1,13 +1,13 @@
-local RunService = game:GetService("RunService")
+const RunService = game:GetService("RunService")
 
-local function QuadBezier(p0, p1, p2, t)
-	local x = (1 - t) * (1 - t) * p0.X + 2 * (1 - t) * t * p1.X + t * t * p2.X
-	local y = (1 - t) * (1 - t) * p0.Y + 2 * (1 - t) * t * p1.Y + t * t * p2.Y
-	local z = (1 - t) * (1 - t) * p0.Z + 2 * (1 - t) * t * p1.Z + t * t * p2.Z
+const QuadBezier = function(p0, p1, p2, t)
+	const x = (1 - t) * (1 - t) * p0.X + 2 * (1 - t) * t * p1.X + t * t * p2.X
+	const y = (1 - t) * (1 - t) * p0.Y + 2 * (1 - t) * t * p1.Y + t * t * p2.Y
+	const z = (1 - t) * (1 - t) * p0.Z + 2 * (1 - t) * t * p1.Z + t * t * p2.Z
 	return Vector3.new(x, y, z)
 end
 
-local Bodypart = {}
+const Bodypart = {}
 Bodypart.__index = Bodypart
 
 function Bodypart.new(instance: BasePart)
@@ -23,7 +23,7 @@ function Bodypart.new(instance: BasePart)
 	instance.CastShadow = false
 	instance.Parent = workspace.Effects
 
-	local trails = instance:QueryDescendants("#BarrageTrail")
+	const trails = instance:QueryDescendants("#BarrageTrail")
 	for i, trail in trails do
 		trail.Enabled = true
 	end
@@ -40,16 +40,16 @@ function Bodypart:GetNextPos(
 	alpha: number,
 	delta: number
 )
-	local pointA = originPart.CFrame:ToWorldSpace(offsets.A or CFrame.identity).Position
-	local pointB = originPart.CFrame:ToWorldSpace(offsets.B or CFrame.identity).Position
-	local pointC = originPart.CFrame:ToWorldSpace(offsets.C or CFrame.identity).Position
+	const pointA = originPart.CFrame:ToWorldSpace(offsets.A or CFrame.identity).Position
+	const pointB = originPart.CFrame:ToWorldSpace(offsets.B or CFrame.identity).Position
+	const pointC = originPart.CFrame:ToWorldSpace(offsets.C or CFrame.identity).Position
 
-	local point = QuadBezier(pointA, pointB, pointC, alpha)
-	local nextPoint = QuadBezier(pointA, pointB, pointC, alpha + delta)
+	const point = QuadBezier(pointA, pointB, pointC, alpha)
+	const nextPoint = QuadBezier(pointA, pointB, pointC, alpha + delta)
 
-	local current = self.instance.CFrame
-	local look = CFrame.new(point, nextPoint)
-	local rotate = CFrame.Angles(math.pi / 2, 0, 0)
+	const current = self.instance.CFrame
+	const look = CFrame.new(point, nextPoint)
+	const rotate = CFrame.Angles(math.pi / 2, 0, 0)
 
 	return current:Lerp(look * rotate, 0.5)
 end
@@ -60,7 +60,7 @@ function Bodypart:Fly(
 	lifetime: number,
 	offsets: { A: CFrame, B: CFrame, C: CFrame }
 )
-	local startTime = os.clock()
+	const startTime = os.clock()
 
 	self.runConnection = RunService.RenderStepped:Connect(function(delta)
 		if os.clock() - startTime >= lifetime then
@@ -68,7 +68,7 @@ function Bodypart:Fly(
 			return
 		end
 
-		local alpha = (os.clock() - startTime) / lifetime
+		const alpha = (os.clock() - startTime) / lifetime
 		if alpha > 0.95 then
 			self:Stop()
 			return

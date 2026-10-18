@@ -1,10 +1,10 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- Контекстное меню блока: дублировать, свернуть, перенести в слот, удалить.
 ---
@@ -12,14 +12,14 @@ local OnEvent = Fusion.OnEvent
 --- означал бы десятки скрытых панелей и конфликт за `ZIndex`. Позиция и видимость
 --- хранятся в состоянии, поэтому закрытие — это одна запись, а не обход дерева.
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
-	local target = scope:Computed(function(use)
-		local id = use(statement.contextBlockId)
+	const target = scope:Computed(function(use)
+		const id = use(statement.contextBlockId)
 		if id == nil then return nil end
 
-		local blueprint = use(statement.Blueprint)
-		local block = statement.findBlock(blueprint, id)
+		const blueprint = use(statement.Blueprint)
+		const block = statement.findBlock(blueprint, id)
 		if block == nil then return nil end
 
 		return {
@@ -30,7 +30,7 @@ return function(scope: Fusion.Scope, props: any)
 		}
 	end)
 
-	local function item(order: number, label: string, run: () -> ()): Instance
+	const item = function(order: number, label: string, run: () -> ()): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
 			Size = UDim2.new(1, -8, 0, Theme.MinClick),
@@ -60,11 +60,11 @@ return function(scope: Fusion.Scope, props: any)
 		})
 	end
 
-	local slots = scope:Computed(function(use)
-		local current = use(target)
+	const slots = scope:Computed(function(use)
+		const current = use(target)
 		if current == nil then return {} end
 
-		local result = {}
+		const result = {}
 		for index, slot in current.Slots do
 			table.insert(result, { Slot = slot, Order = index })
 		end
@@ -106,7 +106,7 @@ return function(scope: Fusion.Scope, props: any)
 				Size = UDim2.new(1, -8, 0, 20),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use)
-					local current = use(target)
+					const current = use(target)
 					if current == nil then return "" end
 					return current.Type
 				end),
@@ -133,7 +133,7 @@ return function(scope: Fusion.Scope, props: any)
 					Font = Theme.Font,
 
 					[OnEvent("Activated")] = function()
-						local current = use(target)
+						const current = use(target)
 						if current == nil then return end
 						statement.moveBlockToSlot(current.Id, entry.Slot)
 						statement.setContextBlockId(nil)
@@ -142,19 +142,19 @@ return function(scope: Fusion.Scope, props: any)
 			end),
 
 			Duplicate = item(50, "Дублировать", function()
-				local current = Fusion.peek(target)
+				const current = Fusion.peek(target)
 				if current == nil then return end
 				statement.duplicateBlock(current.Id)
 			end),
 
 			Collapse = item(51, "Свернуть / развернуть", function()
-				local current = Fusion.peek(target)
+				const current = Fusion.peek(target)
 				if current == nil then return end
 				statement.toggleCollapsed(current.Id)
 			end),
 
 			Remove = item(52, "Удалить", function()
-				local current = Fusion.peek(target)
+				const current = Fusion.peek(target)
 				if current == nil then return end
 				statement.removeBlock(current.Id)
 			end),

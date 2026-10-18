@@ -1,15 +1,15 @@
 --!native
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Animate = require(script.Animate)
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local Parameters = require(script.Parameters)
-local ParametersWatchers = require(script.Watchers)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Animate = require(script.Animate)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const Parameters = require(script.Parameters)
+const ParametersWatchers = require(script.Watchers)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const types = require(ServerScriptService.server.types)
 
 type CleanUp = types.CleanUp
 
@@ -21,7 +21,7 @@ type ParameterObject<T> = types.ParameterObject<T>
 
 type Bind = Enum.KeyCode | Enum.UserInputType
 
-local attachmentCFrames = {
+const attachmentCFrames = {
 	["Neck"] = {
 		CFrame.new(0, 1, 0, 0, -1, 0, 1, 0, -0, 0, 0, 1),
 		CFrame.new(0, -0.5, 0, 0, -1, 0, 1, 0, -0, 0, 0, 1),
@@ -44,9 +44,9 @@ local attachmentCFrames = {
 	},
 }
 
-local function createColliderPart(part: BasePart)
+const createColliderPart = function(part: BasePart)
 	if not part then return end
-	local rp = Instance.new("Part")
+	const rp = Instance.new("Part")
 	rp.Name = "ColliderPart"
 	rp.Size = part.Size / 1.2
 	rp.Massless = true
@@ -57,7 +57,7 @@ local function createColliderPart(part: BasePart)
 	rp.CanCollide = false
 	rp.CollisionGroup = "Ragdoll"
 
-	local wc = Instance.new("WeldConstraint")
+	const wc = Instance.new("WeldConstraint")
 	wc.Part0 = rp
 	wc.Part1 = part
 
@@ -67,11 +67,11 @@ local function createColliderPart(part: BasePart)
 	return rp
 end
 
-local function SafeChangeNetworkOwnership(obj: BasePart, player: Player?)
+const SafeChangeNetworkOwnership = function(obj: BasePart, player: Player?)
 	if obj:CanSetNetworkOwnership() then obj:SetNetworkOwner(player) end
 end
 
-local Character: types.Character = Crane:CreateComponent({
+const Character: types.Character = Crane:CreateComponent({
 	Name = "Character",
 })
 
@@ -142,7 +142,7 @@ function Character.SetSpec(
 )
 	if self.Spec then self.Cleaner:Remove("Spec") end
 
-	local spec = self.Cleaner:Set(
+	const spec = self.Cleaner:Set(
 		"Spec",
 		self.SpecService:CreateSpec(self, {
 			Id = id,
@@ -163,7 +163,7 @@ function Character.AddParameter<T>(
 	param: ParameterName,
 	value: ParameterValue<T>
 ): ParameterObject<T>
-	local newParamObject = {
+	const newParamObject = {
 		Value = value,
 		Cleaner = self.Cleaner:Scope(),
 
@@ -175,7 +175,7 @@ function Character.AddParameter<T>(
 					table.find(self.Parameters[param].Objects, currentParam)
 				)
 
-				local newValue, object = self:GetParameter(param)
+				const newValue, object = self:GetParameter(param)
 				for i, watcher in self.Parameters[param].Watchers do
 					watcher(newValue, object)
 				end
@@ -185,7 +185,7 @@ function Character.AddParameter<T>(
 
 	table.insert(self.Parameters[param].Objects, newParamObject)
 
-	local newValue, object = self:GetParameter(param)
+	const newValue, object = self:GetParameter(param)
 	for i, watcher in self.Parameters[param].Watchers do
 		watcher(newValue, object)
 	end
@@ -195,7 +195,7 @@ end
 
 function Character.GetParameter<T>(self: typeof(Character), param: ParameterName): ParameterValue<T>
 	local value = Parameters[param].Default
-	local parser = Parameters[param].Parser
+	const parser = Parameters[param].Parser
 	local object
 
 	for i, obj in self.Parameters[param].Objects do
@@ -236,13 +236,13 @@ function Character:SetCollisionToPlayers(collide: boolean)
 end
 
 function Character.Ragdoll(self: types.Character, state: boolean)
-	local humanoid = self.Humanoid
+	const humanoid = self.Humanoid
 	if not humanoid or not self.instance then return end
 
-	local StandService = Crane:GetService("StandService")
+	const StandService = Crane:GetService("StandService")
 
-	local stand = StandService:GetStand(self) :: types.Stand
-	local isStandVisible = stand and stand:IsVisible() or false
+	const stand = StandService:GetStand(self) :: types.Stand
+	const isStandVisible = stand and stand:IsVisible() or false
 
 	if stand and state == isStandVisible then
 		if state then
@@ -299,10 +299,10 @@ function Character.Ragdoll(self: types.Character, state: boolean)
 end
 
 function Character.prepareRagdoll(self: types.Character)
-	local instance = self.instance
-	local humanoid = self.Humanoid
+	const instance = self.instance
+	const humanoid = self.Humanoid
 
-	local isPlayer = Players:GetPlayerFromCharacter(self.instance)
+	const isPlayer = Players:GetPlayerFromCharacter(self.instance)
 
 	task.wait(0.5)
 	self:replaceJoints()
@@ -314,7 +314,7 @@ function Character.prepareRagdoll(self: types.Character)
 		then
 			continue
 		end
-		local collider: BasePart = createColliderPart(part)
+		const collider: BasePart = createColliderPart(part)
 		table.insert(self.RagdollColliders, collider)
 	end
 
@@ -332,14 +332,14 @@ function Character.replaceJoints(self: types.Character)
 		if not motor:IsA("Motor6D") then continue end
 		if not attachmentCFrames[motor.Name] then continue end
 
-		local a0, a1 = Instance.new("Attachment"), Instance.new("Attachment")
+		const a0, a1 = Instance.new("Attachment"), Instance.new("Attachment")
 		a0.CFrame = attachmentCFrames[motor.Name][1]
 		a1.CFrame = attachmentCFrames[motor.Name][2]
 
 		a0.Name = "RagdollAttachment"
 		a1.Name = "RagdollAttachment"
 
-		local ballSocket = Instance.new("BallSocketConstraint")
+		const ballSocket = Instance.new("BallSocketConstraint")
 		ballSocket.Attachment0 = a0
 		ballSocket.Attachment1 = a1
 		ballSocket.Name = "RagdollConstraint"

@@ -1,13 +1,13 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
 
-local LocalPlayer = Players.LocalPlayer
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const LocalPlayer = Players.LocalPlayer
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
-local PlayerService = Crane:CreateService({
+const PlayerService = Crane:CreateService({
 	Name = "PlayerService",
 	LoadOrder = -10,
 })

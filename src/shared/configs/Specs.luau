@@ -6,7 +6,7 @@ export type SpecInfo = {
 	},
 }
 
-local Specs = {
+const Specs = {
 	["Standless"] = {
 		DisplayName = "Standless",
 		IsPublic = true,

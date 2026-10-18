@@ -1,10 +1,10 @@
-local Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+const Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
+const RunService = game:GetService("RunService")
+const TweenService = game:GetService("TweenService")
 
 const STYLE_OUT = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 
-local BusyObjects = {}
+const BusyObjects = {}
 
 return {
 	onStart = function(self, object: Model, projectile: Model)
@@ -13,11 +13,11 @@ return {
 		table.insert(BusyObjects, object)
 		object.Parent = nil
 
-		local cleaner = Crane.Buttler.new()
+		const cleaner = Crane.Buttler.new()
 
-		local copy = cleaner:Clone(object)
+		const copy = cleaner:Clone(object)
 
-		local parts = copy:QueryDescendants("BasePart") :: { BasePart }
+		const parts = copy:QueryDescendants("BasePart") :: { BasePart }
 
 		for i, part in parts do
 			part.Anchored = false

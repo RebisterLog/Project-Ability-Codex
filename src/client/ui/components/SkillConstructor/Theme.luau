@@ -2,10 +2,10 @@
 --- а объект `Font.new` Fusion 0.3 отклоняет проверкой типов (`expected a 'EnumItem'
 --- type, but got a 'Font' type`). Поэтому берётся ближайший элемент перечисления:
 --- Gotham — тот же шрифт в Regular-начертании. Расхождение зафиксировано в §10.
-local FONT_FAMILY = Enum.Font.Gotham
+const FONT_FAMILY = Enum.Font.Gotham
 
 --- Отступы кратны 4px, вложенность — 16px на уровень (§10).
-local SPACING = {
+const SPACING = {
 	Tiny = 4,
 	Small = 8,
 	Medium = 16,
@@ -18,7 +18,7 @@ local SPACING = {
 --- не помещалась. Теперь у плашки есть минимальная ширина — она держит
 --- читаемую подпись, а кадровая шкала влияет на блоки с диапазоном (`Repeat`)
 --- и на расстояние между плашками.
-local METRICS = {
+const METRICS = {
 	RowHeight = 34,
 	SlotHeight = 16,
 	HandleWidth = 10,
@@ -29,18 +29,18 @@ local METRICS = {
 }
 
 --- 6px блокам, 4px кнопкам (§10).
-local RADIUS = {
+const RADIUS = {
 	Block = 6,
 	Button = 4,
 }
 
 --- 0.15s, `Enum.EasingStyle.Quad` (§10).
-local TWEEN = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+const TWEEN = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 --- Зоны клика не меньше 28px (§10, доступность).
-local MIN_CLICK = 28
+const MIN_CLICK = 28
 
-local COLORS = {
+const COLORS = {
 	Background = Color3.fromRGB(18, 18, 20),
 	Surface = Color3.fromRGB(28, 28, 32),
 	SurfaceAlt = Color3.fromRGB(36, 36, 42),
@@ -60,11 +60,11 @@ local COLORS = {
 --- Реестр хранит цвета категорий строками (§3, §10), потому что сам остаётся
 --- независимым от Roblox-типов; в UI они уже настоящие цвета. Разбор ручной, без
 --- `Color3.fromHex`, чтобы не зависеть от версии Roblox-движка.
-local function hexToColor3(hex: string): Color3
-	local cleaned = string.gsub(hex, "^#", "")
-	local r = tonumber(string.sub(cleaned, 1, 2), 16) or 255
-	local g = tonumber(string.sub(cleaned, 3, 4), 16) or 255
-	local b = tonumber(string.sub(cleaned, 5, 6), 16) or 255
+const hexToColor3 = function(hex: string): Color3
+	const cleaned = string.gsub(hex, "^#", "")
+	const r = tonumber(string.sub(cleaned, 1, 2), 16) or 255
+	const g = tonumber(string.sub(cleaned, 3, 4), 16) or 255
+	const b = tonumber(string.sub(cleaned, 5, 6), 16) or 255
 	return Color3.fromRGB(r, g, b)
 end
 

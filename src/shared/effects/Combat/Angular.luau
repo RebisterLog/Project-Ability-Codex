@@ -8,10 +8,10 @@ type AngularData = {
 
 return {
 	onStart = function(self, data: AngularData)
-		local Attachment = Instance.new("Attachment")
+		const Attachment = Instance.new("Attachment")
 		Attachment.Parent = data.Part
 
-		local AngularVelocity = Instance.new("AngularVelocity")
+		const AngularVelocity = Instance.new("AngularVelocity")
 		AngularVelocity.Attachment0 = Attachment
 		AngularVelocity.RelativeTo = Enum.ActuatorRelativeTo.Attachment0
 		AngularVelocity.AngularVelocity = data.Velocity * (data.Speed or 1)

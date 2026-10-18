@@ -1,13 +1,13 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
-local Skins = require(ReplicatedStorage.shared.configs.Skins)
-local Camera = workspace.CurrentCamera
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
+const Skins = require(ReplicatedStorage.shared.configs.Skins)
+const Camera = workspace.CurrentCamera
 
-local Dash = {}
+const Dash = {}
 
 @native
 local function GetDashDirection(Normal)
-	local angle = math.ceil(math.deg(math.atan2(Normal.X, -Normal.Z)) - 0.5)
+	const angle = math.ceil(math.deg(math.atan2(Normal.X, -Normal.Z)) - 0.5)
 
 	if angle > 55 and angle < 125 then
 		return "Right"
@@ -27,7 +27,7 @@ type SpecData = {
 type Directions = "Forward" | "Back" | "Left" | "Right"
 
 function Dash:Validate(character: Model)
-	local primaryPart = character.PrimaryPart
+	const primaryPart = character.PrimaryPart
 	if not primaryPart then return false end
 
 	if not workspace.CurrentCamera then return false end
@@ -40,13 +40,13 @@ function Dash:Validate(character: Model)
 end
 
 function Dash.PlayAnimation(Character: Model, SpecData: SpecData, Direction: Directions)
-	local SpecId = SpecData.SpecId
-	local SkinId = SpecData.SkinId or "None"
+	const SpecId = SpecData.SpecId
+	const SkinId = SpecData.SkinId or "None"
 
 	if not Skins[SpecId] then return end
 	if not Skins[SpecId][SkinId] then return end
 
-	local AnimData = (Skins[SpecId][SkinId].Animations or {})["Dash" .. Direction]
+	const AnimData = (Skins[SpecId][SkinId].Animations or {})["Dash" .. Direction]
 
 	AnimationActor:SendMessage("Play", Character, AnimData.Animation, {
 		Priority = AnimData.Priority,
@@ -55,7 +55,7 @@ function Dash.PlayAnimation(Character: Model, SpecData: SpecData, Direction: Dir
 end
 
 function Dash.onStart(self: typeof(Dash), Character: Model, SpecData: SpecData, Normal: Vector3)
-	local direction = GetDashDirection(Normal)
+	const direction = GetDashDirection(Normal)
 	self.PlayAnimation(Character, SpecData, direction)
 end
 

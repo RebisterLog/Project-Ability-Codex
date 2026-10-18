@@ -1,15 +1,15 @@
-local PhysicsService = game:GetService("PhysicsService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const PhysicsService = game:GetService("PhysicsService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Configuration = ServerScriptService.server.Configuration
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Configuration = ServerScriptService.server.Configuration
 
-local CollisionService = Crane:CreateService({
+const CollisionService = Crane:CreateService({
 	Name = "CollisionService",
 })
 
-local Groups = {
+const Groups = {
 	"Player",
 	"Ragdoll",
 	"NPC",

@@ -1,6 +1,6 @@
 --!native
 
-local Skins = {}
+const Skins = {}
 
 for i, specFolder in script:GetChildren() do
 	if not specFolder:IsA("Folder") then continue end

@@ -1,14 +1,13 @@
 --!strict
---- Тесты `tools/json.luau`: парсер перенесён из `generate-skill.luau` без правок,
---- кодировщик дописан для транспорта между приложением и Luau-ядром.
+--- Tests for the `tools/json.luau` codec.
 ---
----   lune run tools/tests/json.luau
+---   lune run tests/json.luau
 ---
---- Проверяется то, что эмитит приложение и читает CLI: массив против объекта,
---- сортировка ключей, целые числа без дробной части, обратный проход
---- `decode(encode(x))` и отказ кодировать циклическую таблицу.
+--- What is covered is what the app emits and the CLI reads: array versus object,
+--- key sorting, integers with no fractional part, the `decode(encode(x))` round
+--- trip, and a refusal to encode a cyclic table.
 
-local json = require("../json")
+local json = require("../tools/json")
 
 local passed = 0
 local failures: { string } = {}
@@ -26,7 +25,7 @@ local function equal(name: string, actual: any, expected: any)
 	check(name, actual == expected, `expected {tostring(expected)}, got {tostring(actual)}`)
 end
 
--- РАЗБОР --------------------------------------------------------------------
+-- DECODE --------------------------------------------------------------------
 
 do
 	local value = json.decode('{"a":1,"b":[true,null,2.5],"c":{"d":"e"}}')
@@ -69,7 +68,7 @@ do
 	check("decode: rejects unquoted key", not ok)
 end
 
--- КОДИРОВАНИЕ ---------------------------------------------------------------
+-- ENCODE --------------------------------------------------------------------
 
 equal("encode: nil", json.encode(nil), "null")
 equal("encode: true", json.encode(true), "true")
@@ -99,9 +98,10 @@ do
 	equal("encode: nested", json.encode({ a = { b = { 1, 2 } } }), '{"a":{"b":[1,2]}}')
 end
 
---- Пустой массив и пустой объект неразличимы в Luau, поэтому решает контекст:
---- `Children` и `Properties` читаются как таблицы, и пустой объект там корректен,
---- но `{}` нельзя отличить от `[]`. Проверяем, что выбор в пользу массива.
+--- An empty array and an empty object are indistinguishable in Luau, so context
+--- decides: `Children` and `Properties` are read as tables, where an empty object
+--- is correct, but `{}` cannot be told apart from `[]`. Check that the choice
+--- falls to the array.
 equal("encode: empty table becomes array", json.encode({}), "[]")
 
 do
@@ -111,7 +111,9 @@ do
 end
 
 do
-	local nulled = { 1, json.NULL, 3 }
+	-- The table type is declared explicitly: without it the array infers as
+	-- `{number}`, and the `NULL` sentinel does not fit inside it.
+	local nulled: { any } = { 1, json.NULL, 3 }
 	equal("encode: NULL sentinel", json.encode(nulled), "[1,null,3]")
 end
 
@@ -130,18 +132,18 @@ do
 end
 
 do
-	local deep = {}
+	local deep: { [string]: any } = {}
 	local cursor = deep
 	for _ = 1, 300 do
-		local next = {}
-		cursor.next = next
-		cursor = next
+		local node: { [string]: any } = {}
+		cursor.next = node
+		cursor = node
 	end
 	local ok = pcall(json.encode, deep)
 	check("encode: rejects excessive nesting", not ok)
 end
 
--- КРУГ JSON -----------------------------------------------------------------
+-- JSON ROUNDTRIP ------------------------------------------------------------
 
 do
 	local original = {
@@ -171,10 +173,10 @@ do
 	equal("roundtrip: nested array length", #back.AnimationSlots, 1)
 	equal("roundtrip: Vector3 x", back.Blocks[1].Properties.Size.x, 7)
 	equal("roundtrip: CFrame pz", back.Blocks[1].Properties.Origin.pz, -3)
-	--- `EndFrame` намеренно отсутствует: `null` внутри объекта не переживает
-	--- разбор — это тот же контракт, по которому `codec.encode` выбрасывает
-	--- `nil`-поля. Незаполненное поле и отсутствующее значение неразличимы
-	--- намеренно, иначе `null`-свойства попадали бы в эмитится-код.
+	--- `EndFrame` is absent on purpose: a `null` inside an object does not
+	--- survive decoding — the very contract by which `codec.encode` drops
+	--- `nil` fields. An unfilled field and a missing value are indistinguishable
+	--- deliberately, otherwise `null` properties would leak into emitted code.
 	check("roundtrip: absent optional field stays absent", back.Blocks[1].EndFrame == nil)
 
 	local again = json.encode(back, { pretty = true })
@@ -187,7 +189,7 @@ do
 	)
 end
 
-print(`[tools.tests.json] passed: {passed}, failed: {#failures}`)
+print(`[tests.json] passed: {passed}, failed: {#failures}`)
 
 if #failures > 0 then error(table.concat(failures, "\n"), 0) end
 

@@ -1,21 +1,21 @@
 --!native
 --!optimize 2
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local SharedStand = require(ReplicatedStorage.shared.components.Stand)
+const SharedStand = require(ReplicatedStorage.shared.components.Stand)
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local Stand: types.Stand = Crane:CreateComponent({
+const Stand: types.Stand = Crane:CreateComponent({
 	Name = "Stand",
 	BaseComponent = SharedStand,
 })
 
-local function prepareStandModel(model: Model)
+const prepareStandModel = function(model: Model)
 	for i, part in model:QueryDescendants("BasePart") :: { BasePart } do
 		part.Anchored = false
 		part.Massless = true
@@ -44,8 +44,8 @@ function Stand.onStart(self: types.Stand)
 
 	prepareStandModel(self.instance)
 
-	local parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
-	local decals = self.instance:QueryDescendants("Decal") :: { Decal }
+	const parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
+	const decals = self.instance:QueryDescendants("Decal") :: { Decal }
 
 	for i, part in parts do
 		part:SetAttribute("Transparency", part.Transparency)
@@ -59,8 +59,8 @@ function Stand.onStart(self: types.Stand)
 		self.instance:AddTag("Stand")
 	end)
 
-	local parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
-	local decals = self.instance:QueryDescendants("Decal") :: { Decal }
+	const parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
+	const decals = self.instance:QueryDescendants("Decal") :: { Decal }
 
 	for i, part in parts do
 		part.Transparency = 1
@@ -74,7 +74,7 @@ end
 function Stand.Init(self: types.Stand, owner: types.Character)
 	self.Owner = owner
 
-	local weld = self.Cleaner:Construct(Instance, "Weld") :: Weld
+	const weld = self.Cleaner:Construct(Instance, "Weld") :: Weld
 	weld.Parent = owner.RootPart
 
 	weld.Part0 = owner.RootPart
@@ -97,7 +97,7 @@ function Stand.SetVisible(self: types.Stand, state: boolean)
 
 	self.Visible = state
 
-	local summon = state and "Summon" or "Unsummon"
+	const summon = state and "Summon" or "Unsummon"
 
 	Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "Summon", self.instance, state)
 
@@ -127,8 +127,8 @@ function Stand.SetVisible(self: types.Stand, state: boolean)
 	end
 
 	self.VisibleDelay = task.delay(1, function()
-		local parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
-		local decals = self.instance:QueryDescendants("Decal") :: { Decal }
+		const parts = self.instance:QueryDescendants("BasePart") :: { BasePart }
+		const decals = self.instance:QueryDescendants("Decal") :: { Decal }
 
 		for i, part in parts do
 			part.Transparency = state and (part:GetAttribute("Transparency") or 0) or 1

@@ -1,40 +1,40 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const UserInputService = game:GetService("UserInputService")
 
-local BotCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Registry = require(ReplicatedStorage.shared.packages.SkillConstructor.registry)
-local Theme = require(script.Parent.Theme)
-local Validator = require(ReplicatedStorage.shared.packages.SkillConstructor.validator)
+const BotCharacters = require(ReplicatedStorage.shared["bot-characters"])
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Registry = require(ReplicatedStorage.shared.packages.SkillConstructor.registry)
+const Theme = require(script.Parent.Theme)
+const Validator = require(ReplicatedStorage.shared.packages.SkillConstructor.validator)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
-local peek = Fusion.peek
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
+const peek = Fusion.peek
 
 --- Скины и спеки лежат в `ReplicatedStorage.shared.configs`, то есть доступны с
 --- клиента: blueprint никуда не отправляется, а проверки 21–23, 25–27 и W7 всё
 --- равно выполняются (§9.2). Список собирается один раз при загрузке модуля:
 --- конфигов мало, они статичны, а перечитывать их на каждый выбор не нужно.
-local SPECS = {}
+const SPECS = {}
 for _, specName in { "Gerson", "Standless", "TheWorld", "Undyne" } do
-	local ok, module = pcall(require, ReplicatedStorage.shared.configs.Skins[specName].None)
+	const ok, module = pcall(require, ReplicatedStorage.shared.configs.Skins[specName].None)
 	if ok and type(module) == "table" then
 		table.insert(SPECS, { Name = specName, Assets = module })
 	end
 end
 
-local TABS = { "Frames", "Scrubber", "Code", "Checks" }
+const TABS = { "Frames", "Scrubber", "Code", "Checks" }
 
 --- Блок на указанном кадре для «Scrubber». Симуляция без боя: показывается ровно
 --- то, что сгенерирует эмиттер, но без исполнения в `Sequencer` (§1, §10).
-local function blocksAtFrame(entries: { any }, frame: number): { any }
-	local result = {}
+const blocksAtFrame = function(entries: { any }, frame: number): { any }
+	const result = {}
 
 	for _, entry in entries do
-		local last = entry.EndFrame or entry.Frame
+		const last = entry.EndFrame or entry.Frame
 		if frame >= entry.Frame and frame <= last then
 			for _, block in entry.Blocks do
-				local definition = Registry.get(block.Type)
+				const definition = Registry.get(block.Type)
 				table.insert(result, {
 					Id = block.Id,
 					Label = if definition ~= nil then definition.DisplayName else block.Type,
@@ -49,10 +49,10 @@ end
 
 --- Проверки против живой спеки: контекст собирается из скина, выбранного в
 --- селекторе, и списка тегов ботов — ровно то, что ждёт `checkAgainstSpec`.
-local function checkAgainstSkins(blueprint: any, specName: string): { [string]: any }
+const checkAgainstSkins = function(blueprint: any, specName: string): { [string]: any }
 	for _, entry in SPECS do
 		if entry.Name == specName then
-			local ok, issues = pcall(function()
+			const ok, issues = pcall(function()
 				return Validator.checkAgainstSpec(blueprint, {
 					specData = { Assets = entry.Assets },
 					validTags = BotCharacters.SkillCharacters,
@@ -71,22 +71,22 @@ local function checkAgainstSkins(blueprint: any, specName: string): { [string]: 
 end
 
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
-	local frameBlocks = scope:Computed(function(use)
+	const frameBlocks = scope:Computed(function(use)
 		return blocksAtFrame(use(statement.Preview), use(statement.Playhead))
 	end)
 
-	local checks = scope:Computed(function(use)
+	const checks = scope:Computed(function(use)
 		return checkAgainstSkins(use(statement.Blueprint), use(statement.SpecName))
 	end)
 
 	--- Проблемы приходят данными, а инстансы строит `ForValues`: Fusion запрещает
 	--- создавать инстансы внутри `Computed` — он считается лениво и чистит свой
 	--- scope, поэтому разрушенные элементы остались бы в дереве.
-	local issueRows = scope:Computed(function(use)
-		local result = use(checks)
-		local rows = {}
+	const issueRows = scope:Computed(function(use)
+		const result = use(checks)
+		const rows = {}
 
 		for _, issue in result.errors do
 			table.insert(rows, { Text = `{issue.Code}: {issue.Message}`, Error = true })
@@ -108,7 +108,7 @@ return function(scope: Fusion.Scope, props: any)
 		return rows
 	end)
 
-	local function codeBlock(content: any, height: number, order: number): Instance
+	const codeBlock = function(content: any, height: number, order: number): Instance
 		return scope:New("Frame")({
 			LayoutOrder = order,
 			Size = UDim2.new(1, 0, 0, height),
@@ -129,7 +129,7 @@ return function(scope: Fusion.Scope, props: any)
 		})
 	end
 
-	local function subTab(name: string, order: number): Instance
+	const subTab = function(name: string, order: number): Instance
 		return scope:New("TextButton")({
 			Name = name,
 			LayoutOrder = order,
@@ -155,7 +155,7 @@ return function(scope: Fusion.Scope, props: any)
 		})
 	end
 
-	local function tabVisibility(name: string)
+	const tabVisibility = function(name: string)
 		return scope:Computed(function(use)
 			return use(statement.PreviewTab) == name
 		end)
@@ -174,19 +174,19 @@ return function(scope: Fusion.Scope, props: any)
 	--- `MaxFrame` берётся из эмиттера, а не из списка блоков: последний кадр
 	--- blueprint может быть меньше максимума, и ползунок не должен упираться в
 	--- него раньше времени.
-	local function lastFrame(): number
+	const lastFrame = function(): number
 		return math.max(1, peek(statement.MaxFrame))
 	end
 
-	local function applyFrameFromX(positionX: number)
-		local left, width = scrubTrack.AbsolutePosition.X, scrubTrack.AbsoluteSize.X
+	const applyFrameFromX = function(positionX: number)
+		const left, width = scrubTrack.AbsolutePosition.X, scrubTrack.AbsoluteSize.X
 		if width <= 0 then return end
 
-		local fraction = math.clamp((positionX - left) / width, 0, 1)
+		const fraction = math.clamp((positionX - left) / width, 0, 1)
 		statement.setPlayhead(math.floor(fraction * lastFrame() + 0.5))
 	end
 
-	local function stopScrub()
+	const stopScrub = function()
 		if scrubConnection ~= nil then
 			scrubConnection:Disconnect()
 			scrubConnection = nil
@@ -195,7 +195,7 @@ return function(scope: Fusion.Scope, props: any)
 
 	table.insert(scope, stopScrub)
 
-	local function beginScrub(input: InputObject)
+	const beginScrub = function(input: InputObject)
 		if
 			input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch
@@ -217,7 +217,7 @@ return function(scope: Fusion.Scope, props: any)
 		end)
 	end
 
-	local function stepButton(glyph: string, order: number, delta: number): Instance
+	const stepButton = function(glyph: string, order: number, delta: number): Instance
 		return scope:New("TextButton")({
 			Name = delta < 0 and "StepBack" or "StepForward",
 			LayoutOrder = order,
@@ -279,7 +279,7 @@ return function(scope: Fusion.Scope, props: any)
 				Size = UDim2.fromOffset(12, 22),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = scope:Computed(function(use)
-					local fraction = math.clamp(use(statement.Playhead) / lastFrame(), 0, 1)
+					const fraction = math.clamp(use(statement.Playhead) / lastFrame(), 0, 1)
 					return UDim2.new(fraction, 0, 0.5, 0)
 				end),
 				BackgroundColor3 = Theme.Colors.Accent,
@@ -297,7 +297,7 @@ return function(scope: Fusion.Scope, props: any)
 		[OnEvent("InputBegan")] = beginScrub,
 	})
 
-	local scrubber = scope:New("Frame")({
+	const scrubber = scope:New("Frame")({
 		Name = "ScrubSlider",
 		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, 26),
@@ -329,12 +329,12 @@ return function(scope: Fusion.Scope, props: any)
 		},
 	})
 
-	local tabButtons = {}
+	const tabButtons = {}
 	for index, name in TABS do
 		tabButtons[index] = subTab(name, index)
 	end
 
-	local specButtons = {}
+	const specButtons = {}
 	for index, entry in SPECS do
 		specButtons[index] = scope:New("TextButton")({
 			Name = entry.Name,

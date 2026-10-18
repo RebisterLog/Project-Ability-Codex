@@ -1,0 +1,23 @@
+[
+  "parameter frame=1 Armor=true add",
+  "parameter frame=1 MaxJumpPower=0 add",
+  "parameter frame=1 MaxWalkSpeed=3 add",
+  "armor frame=1 on",
+  "effect frame=1 Animation start",
+  "effect frame=1 EmitFolder start",
+  "effect frame=1 Sound start",
+  "effect frame=20 EmitFolder start",
+  "effect frame=20 Sound start",
+  "effect frame=20 Sound start",
+  "hitbox frame=20 targets=2",
+  "attack frame=20 target=Target1 damage=15 stun=0.7 priority=20",
+  "attack frame=20 target=Target2 damage=15 stun=0.7 priority=20",
+  "hitbox frame=21 targets=2",
+  "hitbox frame=22 targets=2",
+  "hitbox frame=23 targets=2",
+  "hitbox frame=24 targets=2",
+  "parameter frame=30 Armor=true remove",
+  "armor frame=30 off",
+  "parameter frame=35 MaxJumpPower=0 remove",
+  "parameter frame=35 MaxWalkSpeed=3 remove"
+]

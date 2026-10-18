@@ -1,13 +1,13 @@
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const HttpService = game:GetService("HttpService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Codec = require(ReplicatedStorage.shared.packages.SkillConstructor.codec)
-local Emitter = require(ReplicatedStorage.shared.packages.SkillConstructor.emitter)
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Registry = require(ReplicatedStorage.shared.packages.SkillConstructor.registry)
-local Validator = require(ReplicatedStorage.shared.packages.SkillConstructor.validator)
+const Codec = require(ReplicatedStorage.shared.packages.SkillConstructor.codec)
+const Emitter = require(ReplicatedStorage.shared.packages.SkillConstructor.emitter)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Registry = require(ReplicatedStorage.shared.packages.SkillConstructor.registry)
+const Validator = require(ReplicatedStorage.shared.packages.SkillConstructor.validator)
 
-local peek = Fusion.peek
+const peek = Fusion.peek
 
 --- Разворачивает `Children` в плоский список: все блоки blueprint'а в одном массиве,
 --- где `ParentId` позволяет таймлайну построить дерево, а футеру — посчитать
@@ -29,8 +29,8 @@ local function flattenChildren(children: any, parentId: string?, out: { any })
 	return out
 end
 
-local function collectBlocks(blueprint: any): { any }
-	local result = {}
+const collectBlocks = function(blueprint: any): { any }
+	const result = {}
 
 	if type(blueprint.Blocks) == "table" then
 		for _, block in blueprint.Blocks do
@@ -46,7 +46,7 @@ end
 --- блок-родителя. Вложенные дети лежат в слотах (`Children = { OnSuccess = { ... } }`),
 --- поэтому «родительский список» и `bp.Blocks` — разные вещи, а без него удаление,
 --- дублирование и перенос в другой слот искали бы блок не там.
-local function findBlock(blueprint: any, id: string): (any?, { any }?, number?, any?)
+const findBlock = function(blueprint: any, id: string): (any?, { any }?, number?, any?)
 	if type(blueprint.Blocks) ~= "table" then return nil, nil, nil, nil end
 
 	local function search(list: { any }, parent: any?): (any?, { any }?, number?, any?)
@@ -57,7 +57,7 @@ local function findBlock(blueprint: any, id: string): (any?, { any }?, number?, 
 				if block.Id == id then return block, list, index, parent end
 				if type(block.Children) == "table" then
 					for _, children in block.Children do
-						local found, foundList, foundIndex, foundParent = search(children, block)
+						const found, foundList, foundIndex, foundParent = search(children, block)
 						if found ~= nil then return found, foundList, foundIndex, foundParent end
 					end
 				end
@@ -73,11 +73,11 @@ end
 --- Локальный GUID блока или слота. `HttpService:GenerateGUID` содержит дефисы, но
 --- не символы, запрещённые в имени файла Windows, поэтому префикс фиксирован, а
 --- тело обрезано: в `PlacedBlock.Id` длиннее 14 символов смысла не нести.
-local function newLocalId(prefix: string): string
+const newLocalId = function(prefix: string): string
 	return prefix .. string.gsub(HttpService:GenerateGUID(false), "-", ""):sub(1, 12)
 end
 
-local function clampFrame(value: number): number
+const clampFrame = function(value: number): number
 	return math.clamp(math.floor(value), 0, 100000)
 end
 
@@ -85,7 +85,7 @@ return function(scope: Fusion.Scope)
 	--- Стартовый blueprint берётся из `codec`: `SkillCharacters` с `Hit` и текущая
 	--- версия проставлены там по умолчанию (§4), поэтому собственный «пустой» скилл
 	--- в UI означал бы второй источник правды о том, что считается новым скиллом.
-	local blueprintValue = scope:Value(Codec.newBlueprint("NewSkill", "New Skill"))
+	const blueprintValue = scope:Value(Codec.newBlueprint("NewSkill", "New Skill"))
 
 	--- Счётчик мутаций.
 	---
@@ -94,50 +94,50 @@ return function(scope: Fusion.Scope)
 	--- зависимые не пересчитывались — правка поля не отражалась бы ни в таймлайне,
 	--- ни в панели свойств. Ревизия попадает в производные таблицы, и они
 	--- гарантированно отличаются от предыдущих.
-	local revision = scope:Value(0)
+	const revision = scope:Value(0)
 
-	local function bump()
+	const bump = function()
 		revision:set(peek(revision) + 1)
 	end
 
-	local selectedId = scope:Value(nil :: string?)
-	local zoom = scope:Value(6)
-	local playhead = scope:Value(0)
-	local rightTab = scope:Value("Block")
-	local previewTab = scope:Value("Frames")
-	local modified = scope:Value(false)
-	local searchQuery = scope:Value("")
-	local collapsed = scope:Value({} :: { [string]: boolean })
-	local specName = scope:Value("Standless")
-	local skinName = scope:Value("None")
-	local importError = scope:Value(nil :: string?)
+	const selectedId = scope:Value(nil :: string?)
+	const zoom = scope:Value(6)
+	const playhead = scope:Value(0)
+	const rightTab = scope:Value("Block")
+	const previewTab = scope:Value("Frames")
+	const modified = scope:Value(false)
+	const searchQuery = scope:Value("")
+	const collapsed = scope:Value({} :: { [string]: boolean })
+	const specName = scope:Value("Standless")
+	const skinName = scope:Value("None")
+	const importError = scope:Value(nil :: string?)
 
 	--- Открыта ли панель обмена JSON. Живёт в состоянии, потому что от неё зависят
 	--- высота тулбара и верх рабочей области: одно поле решает обе задачи и не даёт
 	--- им разойтись.
-	local panelVisible = scope:Value(false)
+	const panelVisible = scope:Value(false)
 
 	--- Блок, для которого открыто контекстное меню, и позиция меню. Меню одно на
 	--- страницу, поэтому и цель, и координаты — состояние.
-	local contextBlockId = scope:Value(nil :: string?)
-	local contextPosition = scope:Value(UDim2.fromOffset(0, 0))
+	const contextBlockId = scope:Value(nil :: string?)
+	const contextPosition = scope:Value(UDim2.fromOffset(0, 0))
 
 	--- Любая мутация проходит через неё: blueprint перезаписывается целиком, и все
 	--- производные ниже пересчитываются сами. `recompute()` вручную не нужен и не
 	--- мог бы не забыться — забытый вызов дал бы футер, противоречащий таймлайну.
-	local function touch(blueprint: any)
+	const touch = function(blueprint: any)
 		blueprintValue:set(blueprint)
 		modified:set(true)
 		bump()
 	end
 
-	local structural = scope:Computed(function(use)
+	const structural = scope:Computed(function(use)
 		return Validator.validateStructural(use(blueprintValue))
 	end)
 
-	local blocks = scope:Computed(function(use)
-		local current = use(revision)
-		local result = collectBlocks(use(blueprintValue))
+	const blocks = scope:Computed(function(use)
+		const current = use(revision)
+		const result = collectBlocks(use(blueprintValue))
 
 		for _, item in result do
 			item.Revision = current
@@ -146,27 +146,27 @@ return function(scope: Fusion.Scope)
 		return result
 	end)
 
-	local json = scope:Computed(function(use)
+	const json = scope:Computed(function(use)
 		return Codec.encode(use(blueprintValue))
 	end)
 
-	local preview = scope:Computed(function(use)
+	const preview = scope:Computed(function(use)
 		return Emitter.preview(use(json))
 	end)
 
-	local maxFrame = scope:Computed(function(use)
+	const maxFrame = scope:Computed(function(use)
 		return Emitter.maxFrame(use(json))
 	end)
 
-	local framesSource = scope:Computed(function(use)
+	const framesSource = scope:Computed(function(use)
 		return Emitter.framesSource(use(json))
 	end)
 
-	local source = scope:Computed(function(use)
+	const source = scope:Computed(function(use)
 		return Emitter.emit(use(json)).Source
 	end)
 
-	local emitterErrors = scope:Computed(function(use)
+	const emitterErrors = scope:Computed(function(use)
 		return Emitter.emit(use(json)).Errors
 	end)
 
@@ -234,15 +234,15 @@ return function(scope: Fusion.Scope)
 		end,
 
 		setField = function(field: string, value: any)
-			local blueprint = peek(blueprintValue)
+			const blueprint = peek(blueprintValue)
 			blueprint[field] = value
 			touch(blueprint)
 		end,
 
 		toggleSkillCharacter = function(tag: string)
-			local blueprint = peek(blueprintValue)
-			local list = blueprint.SkillCharacters or {}
-			local index = table.find(list, tag)
+			const blueprint = peek(blueprintValue)
+			const list = blueprint.SkillCharacters or {}
+			const index = table.find(list, tag)
 
 			if index ~= nil then
 				table.remove(list, index)
@@ -257,9 +257,9 @@ return function(scope: Fusion.Scope)
 		--- Блок появляется там, где стоит playhead: палитра не должна уводить
 		--- пользователя в начало таймлайна каждый раз.
 		addBlock = function(blockType: string)
-			local blueprint = peek(blueprintValue)
-			local startFrame = clampFrame(peek(playhead))
-			local block = {
+			const blueprint = peek(blueprintValue)
+			const startFrame = clampFrame(peek(playhead))
+			const block = {
 				Id = newLocalId("b"),
 				Type = blockType,
 				StartFrame = startFrame,
@@ -279,8 +279,8 @@ return function(scope: Fusion.Scope)
 		end,
 
 		removeBlock = function(id: string)
-			local blueprint = peek(blueprintValue)
-			local _, list, index = findBlock(blueprint, id)
+			const blueprint = peek(blueprintValue)
+			const _, list, index = findBlock(blueprint, id)
 			if list == nil or index == nil then return end
 
 			table.remove(list, index)
@@ -289,11 +289,11 @@ return function(scope: Fusion.Scope)
 		end,
 
 		duplicateBlock = function(id: string)
-			local blueprint = peek(blueprintValue)
-			local block, list, index = findBlock(blueprint, id)
+			const blueprint = peek(blueprintValue)
+			const block, list, index = findBlock(blueprint, id)
 			if block == nil or list == nil or index == nil then return end
 
-			local clone = table.clone(block)
+			const clone = table.clone(block)
 			clone.Id = newLocalId("b")
 
 			if type(clone.Children) == "table" then clone.Children = table.clone(clone.Children) end
@@ -306,8 +306,8 @@ return function(scope: Fusion.Scope)
 		end,
 
 		setStartFrame = function(id: string, frame: number)
-			local blueprint = peek(blueprintValue)
-			local block = findBlock(blueprint, id)
+			const blueprint = peek(blueprintValue)
+			const block = findBlock(blueprint, id)
 			if block == nil then return end
 
 			block.StartFrame = clampFrame(frame)
@@ -317,8 +317,8 @@ return function(scope: Fusion.Scope)
 		--- `EndFrame` обязан быть строго больше `StartFrame`: иначе эмиттер и
 		--- валидатор жаловались бы на один и тот же блок двумя разными кодами.
 		setEndFrame = function(id: string, frame: number)
-			local blueprint = peek(blueprintValue)
-			local block = findBlock(blueprint, id)
+			const blueprint = peek(blueprintValue)
+			const block = findBlock(blueprint, id)
 			if block == nil then return end
 
 			block.EndFrame = math.max(clampFrame(frame), (block.StartFrame or 0) + 1)
@@ -328,8 +328,8 @@ return function(scope: Fusion.Scope)
 		--- `nil` убирает поле: панель снова покажет серый дефолт вместо значения,
 		--- а эмиттер перестанет печатать это поле вовсе.
 		setProperty = function(id: string, name: string, value: any)
-			local blueprint = peek(blueprintValue)
-			local block = findBlock(blueprint, id)
+			const blueprint = peek(blueprintValue)
+			const block = findBlock(blueprint, id)
 			if block == nil then return end
 
 			block.Properties = block.Properties or {}
@@ -345,11 +345,11 @@ return function(scope: Fusion.Scope)
 		--- Перенос блока в другой слот того же родителя: слоты контейнера заданы
 		--- реестром, а блок, оставшийся в чужом слоте, эмиттер бы не увидел.
 		moveBlockToSlot = function(id: string, slot: string)
-			local blueprint = peek(blueprintValue)
-			local block, list, index, parent = findBlock(blueprint, id)
+			const blueprint = peek(blueprintValue)
+			const block, list, index, parent = findBlock(blueprint, id)
 			if block == nil or list == nil or index == nil or parent == nil then return end
 
-			local allowed = Registry.getSlots(parent.Type)
+			const allowed = Registry.getSlots(parent.Type)
 			if table.find(allowed, slot) == nil then return end
 
 			table.remove(list, index)
@@ -359,8 +359,8 @@ return function(scope: Fusion.Scope)
 		end,
 
 		addSlot = function()
-			local blueprint = peek(blueprintValue)
-			local slot = {
+			const blueprint = peek(blueprintValue)
+			const slot = {
 				Id = newLocalId("s"),
 				Name = "NewSlot",
 				AnimationId = "",
@@ -374,7 +374,7 @@ return function(scope: Fusion.Scope)
 		end,
 
 		removeSlot = function(slotId: string)
-			local blueprint = peek(blueprintValue)
+			const blueprint = peek(blueprintValue)
 			for index, slot in blueprint.AnimationSlots do
 				if slot.Id == slotId then
 					table.remove(blueprint.AnimationSlots, index)
@@ -386,7 +386,7 @@ return function(scope: Fusion.Scope)
 		end,
 
 		setSlot = function(slotId: string, field: string, value: any)
-			local blueprint = peek(blueprintValue)
+			const blueprint = peek(blueprintValue)
 			for _, slot in blueprint.AnimationSlots do
 				if slot.Id == slotId then
 					slot[field] = value
@@ -402,8 +402,8 @@ return function(scope: Fusion.Scope)
 		end,
 
 		toggleCollapsed = function(id: string)
-			local map = peek(collapsed)
-			local copy = {}
+			const map = peek(collapsed)
+			const copy = {}
 			for key, value in map do
 				copy[key] = value
 			end
@@ -460,7 +460,7 @@ return function(scope: Fusion.Scope)
 		--- структурная проверка — контракт, поэтому сломанный файл в редактор не
 		--- попадает, а пользователь видит первую ошибку, а не список из двадцати.
 		importJson = function(text: string)
-			local ok, result = pcall(function()
+			const ok, result = pcall(function()
 				return Codec.decode(HttpService:JSONDecode(text))
 			end)
 
@@ -469,7 +469,7 @@ return function(scope: Fusion.Scope)
 				return false
 			end
 
-			local result2 = Validator.validateStructural(result)
+			const result2 = Validator.validateStructural(result)
 			if #result2.errors > 0 then
 				importError:set(
 					`Структурных ошибок: {#result2.errors} — {result2.errors[1].Message}`

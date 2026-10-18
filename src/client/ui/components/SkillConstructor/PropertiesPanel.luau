@@ -1,37 +1,37 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Codec = require(ReplicatedStorage.shared.packages.SkillConstructor.codec)
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const Codec = require(ReplicatedStorage.shared.packages.SkillConstructor.codec)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
 
 --- Значение для показа. Внутри редактора свойства лежат в нативных Roblox-типах,
 --- а дефолты реестра — в type-tag форме (§8), поэтому показ всегда приводится к
 --- нативному виду через `codec.fromTagged`.
-local function displayValue(value: any): any
+const displayValue = function(value: any): any
 	return Codec.fromTagged(value)
 end
 
 --- Компоненты значения по осям. `CFrame` разбирается в порядке `px, py, pz,
 --- rx, ry, rz` — ровно как их кладёт `codec.toTagged`, иначе сборка обратно
 --- переставила бы оси.
-local AXES = {
+const AXES = {
 	Vector3 = { "X", "Y", "Z" },
 	Color3 = { "R", "G", "B" },
 	CFrame = { "X", "Y", "Z", "RX", "RY", "RZ" },
 }
 
-local function components(value: any, primary: string): { number }
-	local source = displayValue(value)
+const components = function(value: any, primary: string): { number }
+	const source = displayValue(value)
 	if source == nil then return { 0, 0, 0 } end
 
 	--- Компоненты читаются по именам, а не по индексу: у Roblox-типов числовой
 	--- индекс не работает, `__index` ждёт имя свойства. Углы `CFrame` приходят
 	--- отдельным вызовом, потому что у самого `CFrame` нет полей `RX/RY/RZ`.
 	if primary == "CFrame" then
-		local rx, ry, rz = source:ToOrientation()
+		const rx, ry, rz = source:ToOrientation()
 		return { source.X, source.Y, source.Z, rx, ry, rz }
 	elseif primary == "Color3" then
 		return { source.R, source.G, source.B }
@@ -43,7 +43,7 @@ end
 --- Собирает Roblox-значение обратно. `CFrame` — умножением на
 --- `fromEulerAnglesYXZ`, как в `codec.fromTagged`: конструктора с шестью числами
 --- в Roblox нет, а порядок углов обязан быть YXZ.
-local function buildValue(primary: string, parts: { number }): any
+const buildValue = function(primary: string, parts: { number }): any
 	if primary == "Vector3" then
 		return Vector3.new(parts[1] or 0, parts[2] or 0, parts[3] or 0)
 	elseif primary == "Color3" then
@@ -60,7 +60,7 @@ local function buildValue(primary: string, parts: { number }): any
 	return parts[1] or 0
 end
 
-local function formatNumber(value: number): string
+const formatNumber = function(value: number): string
 	--- `-0` Roblox отдаёт из `ToOrientation` для нулевого угла; в поле он выглядел бы
 	--- как опечатка и мешал сравнению текста.
 	if value == 0 then return "0" end
@@ -74,21 +74,21 @@ local function formatNumber(value: number): string
 end
 
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
-	local registry = statement.registry
+	const statement = props.Store
+	const registry = statement.registry
 
 	--- Выбранный блок. Пустота — не ошибка, а обычное состояние панели, поэтому
 	--- возвращается `nil` и рисуется подсказка.
-	local selected = scope:Computed(function(use)
-		local id = use(statement.SelectedId)
-		local blueprint = use(statement.Blueprint)
+	const selected = scope:Computed(function(use)
+		const id = use(statement.SelectedId)
+		const blueprint = use(statement.Blueprint)
 		--- Ревизия обязательна: правка свойства меняет блок на месте, и без неё
 		--- Fusion счёл бы форму неизменившейся — поля остались бы со старыми
 		--- значениями до перевыбора блока.
-		local current = use(statement.revision)
+		const current = use(statement.revision)
 		if id == nil then return nil end
 
-		local block = statement.findBlock(blueprint, id)
+		const block = statement.findBlock(blueprint, id)
 		if block == nil then return nil end
 		return { Block = block, Id = id, Revision = current }
 	end)
@@ -100,13 +100,13 @@ return function(scope: Fusion.Scope, props: any)
 	--- первым аргументом приходит булев флаг, а не сам инстанс, и поле пришлось бы
 	--- доставать из аргументов события. Соединение кладётся в scope — так его
 	--- снимет `doCleanup` при разборе страницы.
-	local function numberField(
+	const numberField = function(
 		order: number,
 		caption: string,
 		value: number,
 		commit: (number) -> ()
 	): Instance
-		local box = scope:New("TextBox")({
+		const box = scope:New("TextBox")({
 			LayoutOrder = order,
 			Size = UDim2.new(0.5, -2, 0, 22),
 			BackgroundColor3 = Theme.Colors.SurfaceAlt,
@@ -134,7 +134,7 @@ return function(scope: Fusion.Scope, props: any)
 		table.insert(
 			scope,
 			box.FocusLost:Connect(function()
-				local parsed = tonumber(box.Text)
+				const parsed = tonumber(box.Text)
 				if parsed == nil then
 					box.Text = formatNumber(value)
 					return
@@ -150,15 +150,15 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Одна строка формы: подпись, ineffective-подсказка и виджет по типу.
 	--- Возвращает словарь детей — их раскладывает вызывающий по `LayoutOrder`.
-	local function propertyRow(
+	const propertyRow = function(
 		scope: Fusion.Scope,
 		entry: any,
 		property: any,
 		order: number
 	): { [string]: any }
-		local raw = entry.Block.Properties[property.Name]
-		local isSet = raw ~= nil
-		local types = if type(property.Type) == "table" then property.Type else { property.Type }
+		const raw = entry.Block.Properties[property.Name]
+		const isSet = raw ~= nil
+		const types = if type(property.Type) == "table" then property.Type else { property.Type }
 
 		-- `Hitbox.Size` объявлен как `Vector3 | number`, и первый элемент всегда давал
 		-- `Vector3` — то есть сфера была недостижима, хотя `CombatService:Hitbox:95-98`
@@ -181,7 +181,7 @@ return function(scope: Fusion.Scope, props: any)
 			end
 		end
 
-		local children = {
+		const children = {
 			Label = scope:New("TextLabel")({
 				LayoutOrder = order * 10,
 				Size = UDim2.new(1, 0, 0, 18),
@@ -195,7 +195,7 @@ return function(scope: Fusion.Scope, props: any)
 		}
 
 		if primary == "boolean" then
-			local isOn = if isSet then raw == true else property.Default == true
+			const isOn = if isSet then raw == true else property.Default == true
 			children.Control = scope:New("TextButton")({
 				LayoutOrder = order * 10 + 1,
 				Size = UDim2.fromOffset(28, 22),
@@ -223,11 +223,11 @@ return function(scope: Fusion.Scope, props: any)
 			--- кнопками в ряд: выпадающий список внутри скролл-фрейма панели
 			--- перехватывал бы прокрутку. Повторный клик по активному варианту
 			--- снимает значение — так поле снова становится «не задано».
-			local current = if isSet then tostring(raw) else nil
-			local options = property.Options or {}
+			const current = if isSet then tostring(raw) else nil
+			const options = property.Options or {}
 
 			for index, option in options do
-				local isActive = option == current
+				const isActive = option == current
 				children[`Option{index}`] = scope:New("TextButton")({
 					LayoutOrder = order * 10 + index,
 					Size = UDim2.new(0.5, -2, 0, 22),
@@ -260,7 +260,7 @@ return function(scope: Fusion.Scope, props: any)
 				})
 			end
 		elseif primary == "string" then
-			local box = scope:New("TextBox")({
+			const box = scope:New("TextBox")({
 				LayoutOrder = order * 10 + 1,
 				Size = UDim2.new(1, -4, 0, 22),
 				BackgroundColor3 = Theme.Colors.SurfaceAlt,
@@ -302,9 +302,9 @@ return function(scope: Fusion.Scope, props: any)
 			--- Многокомпонентный тип раскладывается в ряд полей. Правка любого поля
 			--- собирает значение заново из всех компонентов: иначе запись числа в
 			--- `Size` превратила бы `Vector3` в число, и валидатор отверг бы блок.
-			local axes = AXES[primary]
+			const axes = AXES[primary]
 			local current = components(if isSet then raw else property.Default, primary)
-			local fieldChildren = {
+			const fieldChildren = {
 				Layout = scope:New("UIListLayout")({
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					Padding = UDim.new(0, Theme.Spacing.Tiny),
@@ -313,7 +313,7 @@ return function(scope: Fusion.Scope, props: any)
 
 			for index, axis in axes do
 				fieldChildren[axis] = numberField(index, axis, current[index], function(newValue)
-					local parts = table.clone(current)
+					const parts = table.clone(current)
 					parts[index] = newValue
 					current = parts
 					statement.setProperty(entry.BlockId, property.Name, buildValue(primary, parts))
@@ -328,13 +328,13 @@ return function(scope: Fusion.Scope, props: any)
 				[Children] = fieldChildren,
 			})
 		else
-			local value = if isSet then tonumber(raw) or 0 else (tonumber(property.Default) or 0)
+			const value = if isSet then tonumber(raw) or 0 else (tonumber(property.Default) or 0)
 			children.Control = numberField(order * 10 + 1, property.Name, value, function(newValue)
 				local clamped = newValue
 				if property.Min ~= nil then clamped = math.max(property.Min, clamped) end
 				if property.Max ~= nil then clamped = math.min(property.Max, clamped) end
 				if property.Step ~= nil and property.Step > 0 then
-					local base = property.Min or 0
+					const base = property.Min or 0
 					clamped = base + math.floor((clamped - base) / property.Step) * property.Step
 				end
 
@@ -355,20 +355,20 @@ return function(scope: Fusion.Scope, props: any)
 	---
 	--- Секция `Block` идёт последней и всегда: её поля — скрытые дефолты
 	--- `CombatService/Hooks/Block.luau:24-29`, которые иначе не видно (§2.7).
-	local form = scope:Computed(function(use)
-		local current = use(selected)
+	const form = scope:Computed(function(use)
+		const current = use(selected)
 		if current == nil then return { { Kind = "Empty" } } end
 
-		local block = current.Block
-		local definition = registry.get(block.Type)
+		const block = current.Block
+		const definition = registry.get(block.Type)
 		if definition == nil then return { { Kind = "Empty" } } end
 
-		local sections = {}
-		local grouped = {}
-		local groupOrder = {}
+		const sections = {}
+		const grouped = {}
+		const groupOrder = {}
 
 		for _, property in definition.Properties do
-			local group = property.Group
+			const group = property.Group
 			if group == nil then
 				table.insert(
 					sections,
@@ -387,7 +387,7 @@ return function(scope: Fusion.Scope, props: any)
 			table.insert(sections, { Title = group, Properties = grouped[group], Block = block })
 		end
 
-		local blockGroup = registry.getGroup(block.Type, "Block")
+		const blockGroup = registry.getGroup(block.Type, "Block")
 		if #blockGroup > 0 then
 			table.insert(
 				sections,
@@ -398,8 +398,8 @@ return function(scope: Fusion.Scope, props: any)
 		return sections
 	end)
 
-	local header = scope:Computed(function(use)
-		local current = use(selected)
+	const header = scope:Computed(function(use)
+		const current = use(selected)
 		if current == nil then return "" end
 		return `{current.Block.Type}  ·  {current.Block.Id}`
 	end)
@@ -448,7 +448,7 @@ return function(scope: Fusion.Scope, props: any)
 					})
 				end
 
-				local sectionChildren = {
+				const sectionChildren = {
 					Title = sectionScope:New("TextLabel")({
 						LayoutOrder = 0,
 						Size = UDim2.new(1, 0, 0, 18),
@@ -469,7 +469,7 @@ return function(scope: Fusion.Scope, props: any)
 				}
 
 				for rowIndex, property in section.Properties do
-					local row = propertyRow(
+					const row = propertyRow(
 						sectionScope,
 						{ BlockId = section.Block.Id, Block = section.Block },
 						property,

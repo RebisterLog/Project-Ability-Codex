@@ -1,32 +1,32 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Mouse = Players.LocalPlayer:GetMouse()
-local Camera = workspace.CurrentCamera
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
+const UserInputService = game:GetService("UserInputService")
+const Mouse = Players.LocalPlayer:GetMouse()
+const Camera = workspace.CurrentCamera
 
-local LocalPlayer = Players.LocalPlayer
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const LocalPlayer = Players.LocalPlayer
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
-local TargetLockService = Crane:CreateService({
+const TargetLockService = Crane:CreateService({
 	Name = "TargetLockService",
 })
 
 function TargetLockService:Lock()
-	local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid") :: Humanoid
-	local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart") :: BasePart
+	const humanoid = LocalPlayer.Character:FindFirstChild("Humanoid") :: Humanoid
+	const root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart") :: BasePart
 
-	local target = Mouse.Target
+	const target = Mouse.Target
 	if not target then return end
 
 	if (target.Position - root.Position).Magnitude > 50 then return end
 
-	local targetHumanoid = target.Parent:FindFirstChild("Humanoid")
+	const targetHumanoid = target.Parent:FindFirstChild("Humanoid")
 	if not targetHumanoid then return end
 
-	local targetRoot = target.Parent:FindFirstChild("HumanoidRootPart") :: BasePart
+	const targetRoot = target.Parent:FindFirstChild("HumanoidRootPart") :: BasePart
 	if not targetRoot then return end
 
 	--hum.CameraOffset = Vector3.new(1.75,0,0) -- I assume this is about the right camera offset.
@@ -72,7 +72,7 @@ function TargetLockService:Lock()
 				return
 			end
 
-			local targetVector = (root.Position - targetRoot.Position).Unit
+			const targetVector = (root.Position - targetRoot.Position).Unit
 			Camera.CFrame = CFrame.new(root.Position, targetRoot.Position)
 				:ToWorldSpace(CFrame.new(humanoid.CameraOffset + Vector3.new(3, 4, 14)))
 		end
@@ -82,8 +82,8 @@ function TargetLockService:Lock()
 end
 
 function TargetLockService:Unlock()
-	local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-	local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	const humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+	const root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
 	humanoid.AutoRotate = true --Let the humanoid handle the camera rotations again.
 

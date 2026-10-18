@@ -1,14 +1,14 @@
-local ServerScriptService = game:GetService("ServerScriptService")
-local types = require(ServerScriptService.server.types)
+const ServerScriptService = game:GetService("ServerScriptService")
+const types = require(ServerScriptService.server.types)
 
-local Skill: types.SkillData = {
+const Skill: types.SkillData = {
 	DisplayName = "Run",
 }
 
 function Skill:onInit() end
 
 function Skill.Activate(self)
-	local Character = self.Character
+	const Character = self.Character
 
 	if self.Cleaner:Has("SpeedUp") then
 		self.Cleaner:Remove("SpeedUp")

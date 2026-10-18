@@ -1,5 +1,5 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const TweenService = game:GetService("TweenService")
 
 type HighlightData = {
 	FillColor: Color3?,
@@ -12,7 +12,7 @@ type HighlightData = {
 	UUID: string?,
 }
 
-local Cache = {}
+const Cache = {}
 
 return {
 	Validate = function(self, character: Model)
@@ -26,9 +26,9 @@ return {
 	end,
 
 	onStart = function(self, Character: Model, Data: HighlightData)
-		local Lifetime = Data.Lifetime
+		const Lifetime = Data.Lifetime
 
-		local Highlight = Instance.new("Highlight")
+		const Highlight = Instance.new("Highlight")
 		Highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 		Highlight.FillColor = Data.FillColor or Color3.fromRGB(255, 0, 0)
 		Highlight.OutlineColor = Data.OutlineColor or Color3.fromRGB(255, 255, 255)
@@ -58,7 +58,7 @@ return {
 		end
 	end,
 	onStop = function(self, UUID: number)
-		local Highlight = Cache[UUID]
+		const Highlight = Cache[UUID]
 		if Highlight then Highlight:Destroy() end
 	end,
 }

@@ -1,10 +1,10 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local types = require(ServerScriptService.server.types)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
 
-local StandService = Crane:CreateService({
+const StandService = Crane:CreateService({
 	Name = "StandService",
 	LoadOrder = 150,
 })
@@ -22,7 +22,7 @@ function StandService:AddStandFor(character: types.Character, model: Model)
         error("User already have stand")
     end
     
-	local stand = Crane:AddComponent(model, "Stand") :: types.Stand
+	const stand = Crane:AddComponent(model, "Stand") :: types.Stand
 	stand:Init(character)
 
 	self.Stands[character] = stand
@@ -39,7 +39,7 @@ function StandService:AddStandFor(character: types.Character, model: Model)
 end
 
 function StandService:RemoveStandFor(character: types.Character)
-    local stand = self.Stands[character]
+    const stand = self.Stands[character]
     
     if stand then
         self.Stands[character] = nil

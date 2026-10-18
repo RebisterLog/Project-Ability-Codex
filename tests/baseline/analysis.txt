@@ -1,0 +1,400 @@
+# Diagnostics that were already present. Regenerate with:
+#     lune run tools/check.luau --update-baseline
+# A new entry means the gate fails until it is fixed or accepted.
+src/client/Animations/AnimationsHandler.client.luau TypeError: Value of type 'AnimationsPlayProps?' could be nil
+src/client/Animations/AnimationsHandler.client.luau TypeError: Value of type 'AnimationsStopProps?' could be nil
+src/client/components/Character.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
+src/client/components/Stand.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
+src/client/services/BindService.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
+src/client/services/PlayerService.luau ImportUnused: Import 'PlayerComponent' is never used; prefix with '_' to silence
+src/client/services/PlayerService.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/client/services/TargetLockService.luau ImportUnused: Import 'PlayerData' is never used; prefix with '_' to silence
+src/client/services/TargetLockService.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/client/services/TargetLockService.luau LocalUnused: Variable 'root' is never used; prefix with '_' to silence
+src/client/services/TargetLockService.luau LocalUnused: Variable 'targetVector' is never used; prefix with '_' to silence
+src/client/services/TerminalService.luau TypeError: Unknown require: game/ReplicatedStorage/CmdrClient
+src/client/services/UIService.luau TypeError: Unknown require: game/StarterPlayer/StarterPlayerScripts/client/Configuration/UIStartPoint/Value
+src/client/services/VFXService.luau ImportUnused: Import 'PlayerComponent' is never used; prefix with '_' to silence
+src/client/ui/components/PlayerHUD.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
+src/client/ui/components/PlayerHUD.luau TypeError: Expected this to be
+src/client/ui/components/PreloadingComponent/Preload.luau ImportUnused: Import 'Crane' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau ImportUnused: Import 'GameData' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau ImportUnused: Import 'PlayerData' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau LocalShadow: Variable 'peek' shadows previous declaration at line 10
+src/client/ui/components/PreloadingComponent/Preload.luau LocalUnused: Variable 'Children' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/Preload.luau TypeError: Argument count mismatch. Function 'onComplete' expects 0 arguments, but 1 is specified
+src/client/ui/components/PreloadingComponent/init.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/init.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/PreloadingComponent/init.luau TypeError: Argument count mismatch. Function 'router.SwitchPage' expects 3 to 4 arguments, but only 2 are specified
+src/client/ui/components/PreloadingComponent/init.luau TypeError: Expected this to be
+src/client/ui/components/RegionComponent.luau ImportUnused: Import 'Crane' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau LocalUnused: Variable 'Children' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
+src/client/ui/components/RegionComponent.luau TypeError: Unknown require: game/StarterPlayer/StarterPlayerScripts/client/ui/view/RegionView
+src/client/ui/components/Sample.luau ImportUnused: Import 'Crane' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau LocalUnused: Variable 'Children' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau LocalUnused: Variable 'StarterPlayer' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/client/ui/components/Sample.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
+src/client/ui/components/Settings.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
+src/client/ui/components/Settings.luau TypeError: Expected this to be
+src/client/ui/components/SkillConstructor/BlockInstance.luau TypeError: Cyclic module dependency: c:\Users\RebisterLog\Desktop\Project-Ability-Codex\src\client\ui\components\SkillConstructor\BlockInstance.luau [game/StarterPlayer/StarterPlayerScripts/client/ui/components/SkillConstructor/BlockInstance]
+src/client/ui/components/SkillConstructor/BlockPalette.luau FormatString: Invalid match replacement: invalid capture index, must refer to pattern capture
+src/client/ui/components/SkillConstructor/PreviewTab.luau TypeError: Expected this to be 'Frame', but got 'Instance'
+src/client/ui/components/SkillConstructor/Store.luau TypeError: Unknown global 'importJson'; consider assigning to it first
+src/client/ui/components/SkillConstructor/Timeline.luau TypeError: Argument count mismatch. Function 'UDim2.fromScale' expects 2 arguments, but 4 are specified
+src/client/ui/components/SkillConstructor/Timeline.luau TypeError: Expected this to be 'Frame', but got 'Instance'
+src/client/ui/components/SkillConstructor/Timeline.luau TypeError: Expected this to be 'ScrollingFrame', but got 'Instance'
+src/client/ui/main.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/client/ui/main.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
+src/client/ui/utils/Helix.luau TypeError: Expected this to be 'Frame', but got 'Instance'
+src/client/ui/utils/MixedText.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/utils/MixedText.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/client/ui/utils/MixedText.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/utils/MixedText.luau LocalShadow: Variable 'peek' shadows previous declaration at line 8
+src/client/ui/utils/MixedText.luau LocalUnused: Variable 'Children' is never used; prefix with '_' to silence
+src/client/ui/utils/MixedText.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/utils/MixedText.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/utils/MixedText.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/client/ui/utils/Router/SwitchStyles.luau TypeError: Unknown type 'keyof'
+src/client/ui/utils/Router/init.luau LocalUnused: Variable 'PlayerGui' is never used; prefix with '_' to silence
+src/client/ui/utils/Router/init.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/client/ui/utils/Router/init.luau TypeError: Argument count mismatch. Function 'props.Page' expects 0 arguments, but 1 is specified
+src/client/ui/utils/Router/init.luau TypeError: Cannot cast 'Router' into 'Router' because the types are unrelated
+src/client/ui/utils/Router/init.luau TypeError: Expected this to be 'self & { _destroyed: boolean }', but got 'self'
+src/client/ui/utils/Router/init.luau TypeError: Expected this to be 'string', but got 'string?'
+src/client/ui/utils/SearchTextMatch.luau TypeError: Expected this to be 'boolean', but got 'string'
+src/client/ui/utils/Shadow.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/utils/Shadow.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/utils/Shadow.luau LocalShadow: Variable 'peek' shadows previous declaration at line 7
+src/client/ui/utils/Shadow.luau LocalUnused: Variable 'Children' is never used; prefix with '_' to silence
+src/client/ui/utils/Shadow.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/utils/Shadow.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau LocalUnused: Variable 'StarterPlayer' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
+src/client/ui/views/LoadingScreen.luau TypeError: Type 'Fusion & {t1} where t1 = (() -> ()) | Instance | RBXScriptConnection | { Destroy: (unknown) -> () } | { destroy: (unknown) -> () } | {t1}' does not have key 'Helix'
+src/client/ui/views/RegionView.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau LocalUnused: Variable 'LocalizationService' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
+src/client/ui/views/RegionView.luau TypeError: Type 'Fusion & {t1} where t1 = (() -> ()) | Instance | RBXScriptConnection | { Destroy: (unknown) -> () } | { destroy: (unknown) -> () } | {t1}' does not have key 'Shadow'
+src/client/ui/views/Sample.luau ImportUnused: Import 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/Sample.luau ImportUnused: Import 'peek' is never used; prefix with '_' to silence
+src/client/ui/views/Sample.luau LocalUnused: Variable 'Children' is never used; prefix with '_' to silence
+src/client/ui/views/Sample.luau LocalUnused: Variable 'OnChange' is never used; prefix with '_' to silence
+src/client/ui/views/Sample.luau LocalUnused: Variable 'OnEvent' is never used; prefix with '_' to silence
+src/client/ui/views/Sample.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/client/ui/views/Sample.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
+src/server/combat-classes/Hook/Stack.luau TypeError: Unknown type 'setmetatable'
+src/server/combat-classes/Hook/init.luau LocalShadow: Variable 'stack' shadows previous declaration at line 21
+src/server/combat-classes/Hook/init.luau LocalShadow: Variable 'stack' shadows previous declaration at line 32
+src/server/combat-classes/Hook/init.luau TypeError: Unknown type 'setmetatable'
+src/server/combat-classes/Projectile.luau TypeError: Cannot cast '{ @metatable Projectile, {| AlreadyHit: {|  |}, Bounces: any, Cleaner: any, Config: ProjectileConfig, Direction: any, Elapsed: any, End: any, Finished: any, Hit: any, HitCount: any, Position: any, Reflect: any, Reflection: any, Running: any, Speed: any, Stepped: any, Traveled: any, Velocity: any |} }' into 'ProjectileMethods & ProjectileProperities' because the types are unrelated
+src/server/combat-classes/Projectile.luau TypeError: Expected this to be 'number', but got 'number?'
+src/server/combat-classes/Projectile.luau TypeError: Value of type 'any?' could be nil
+src/server/combat-classes/Skill.luau ImportUnused: Import 'Promise' is never used; prefix with '_' to silence
+src/server/combat-classes/Skill.luau TypeError: Cannot cast '{ @metatable Skill, {| Active: any, Character: any, Cleaner: any, Data: SkillData, Deactivated: any, Holding: any, Proxy: any, Spec: any |} }' into 'SkillMethods & SkillProperties' because the types are unrelated
+src/server/combat-classes/Skill.luau TypeError: Key 'Unknown' not found in external type 'Enum.KeyCode'
+src/server/combat-classes/Skill.luau TypeError: Type *error-type* & number cannot be compared with <= because it has no metatable
+src/server/combat-classes/Spec.luau TypeError: Cannot cast '{ @metatable Spec, {| Character: any, Cleaner: any, Data: SpecData, OnActivateSkill: any, OnDeactivateSkill: any, OnInterruptSkill: any, Proxy: any, Skills: {|  |} |} }' into 'SpecMethods & SpecProperities' because the types are unrelated
+src/server/combat-classes/Spec.luau TypeError: Expected this to be
+src/server/components/BotSpawner.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/components/BotSpawner.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/components/Character/Animate.luau LocalShadow: Variable 'track' shadows previous declaration at line 50
+src/server/components/Character/Animate.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/server/components/Character/Animate.luau TypeError: Expected this to be 'Animation', but got 'string'
+src/server/components/Character/Animate.luau TypeError: Unknown type 'keyof'
+src/server/components/Character/Watchers.luau ImportUnused: Import 'Crane' is never used; prefix with '_' to silence
+src/server/components/Character/init.luau ImportUnused: Import 'Enums' is never used; prefix with '_' to silence
+src/server/components/Character/init.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/components/Character/init.luau LocalUnused: Variable 'humanoid' is never used; prefix with '_' to silence
+src/server/components/Character/init.luau LocalUnused: Variable 'instance' is never used; prefix with '_' to silence
+src/server/components/Character/init.luau TypeError: Cannot call a value of type *error-type* & {BallSocketConstraint}
+src/server/components/Character/init.luau TypeError: Cannot call a value of type *error-type* & {BasePart}
+src/server/components/Character/init.luau TypeError: Cannot call a value of type *error-type* & {Motor6D}
+src/server/components/Character/init.luau TypeError: Expected this to be
+src/server/components/Character/init.luau TypeError: Expected type table, got '*error-type* & { [*error-type*]: { Objects: {ParameterObject<any>}, Watchers: {(any) -> ()} } }' instead
+src/server/components/Character/init.luau TypeError: Unknown type 'index'
+src/server/components/Character/init.luau TypeError: Unknown type 'keyof'
+src/server/components/Player.luau LocalUnused: Variable 'CollectionService' is never used; prefix with '_' to silence
+src/server/components/Player.luau TypeError: Cannot call a value of type *error-type* & { [string]: *error-type* }
+src/server/components/Player.luau TypeError: Expected type table, got '*error-type* & { [string]: *error-type* }' instead
+src/server/components/Sample.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/components/Sample.luau ImportUnused: Import 'types' is never used; prefix with '_' to silence
+src/server/components/Sample.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/components/Stand.luau LocalShadow: Variable 'decals' shadows previous declaration at line 48
+src/server/components/Stand.luau LocalShadow: Variable 'parts' shadows previous declaration at line 47
+src/server/components/Stand.luau TypeError: Expected type table, got '*error-type* & *error-type*' instead
+src/server/components/Stand.luau TypeError: Type *error-type* & boolean cannot be compared with boolean
+src/server/player-modules/CharacterAdder.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/player-modules/Sample.luau ImportUnused: Import 'Crane' is never used; prefix with '_' to silence
+src/server/player-modules/Sample.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/player-modules/SpecModule.luau ImplicitReturn: Function 'GetSpecIdByName' can implicitly return no values even though there's an explicit return at line 34; add explicit return to silence
+src/server/player-modules/SpecModule.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/player-modules/SpecModule.luau TypeError: Not all codepaths in this function return 'string'.
+src/server/services/BotService/Bot.luau TypeError: Key 'Clear' not found in table 'Threat'
+src/server/services/BotService/Bot.luau TypeError: Key 'ClearTarget' not found in table 'Sense'
+src/server/services/BotService/Bot.luau TypeError: Key 'IsRecent' not found in table 'Threat'
+src/server/services/BotService/Bot.luau TypeError: Key 'Refresh' not found in table 'Sense'
+src/server/services/BotService/Bot.luau TypeError: Key 'SetTarget' not found in table 'Sense'
+src/server/services/BotService/Bot.luau TypeError: Key 'Track' not found in table 'Threat'
+src/server/services/BotService/Bot.luau TypeError: Type *error-type* & CharacterMethods & CharacterProperities cannot be compared with *error-type* & CharacterMethods & CharacterProperities
+src/server/services/BotService/NavigationController/MovementStyles.luau TypeError: Unknown type 'keyof'
+src/server/services/BotService/NavigationController/StateMachine.luau TypeError: Expected type table, got 'T' instead
+src/server/services/BotService/NavigationController/StateMachine.luau TypeError: Type string cannot be compared with State
+src/server/services/BotService/NavigationController/StateMachine.luau TypeError: Unknown type 'keyof'
+src/server/services/BotService/NavigationController/StateMachine.luau TypeError: Value of type 'StateMachineConfig?' could be nil
+src/server/services/BotService/NavigationController/StateMachine.luau TypeError: Value of type '{ [string]: State }?' could be nil
+src/server/services/BotService/NavigationController/init.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/server/services/BotService/NavigationController/init.luau LocalUnused: Variable 'dist' is never used; prefix with '_' to silence
+src/server/services/BotService/NavigationController/init.luau LocalUnused: Variable 'result' is never used; prefix with '_' to silence
+src/server/services/BotService/NavigationController/init.luau LocalUnused: Variable 'right' is never used; prefix with '_' to silence
+src/server/services/BotService/NavigationController/init.luau TypeError: Cannot cast '{| agentParams: {| AgentCanClimb: any, AgentCanJump: any, AgentHeight: any, AgentRadius: any, WaypointSpacing: any |}, alignOrient: any, config: any, humanoid: any, isComputingPath: any, lastCalcPathTime: any, lastTargetPos: any, rayParams: any, rig: any, rootPart: any, rotateAttach: any, stateMachine: StateMachine<'a>, waypoint: any, waypoints: {|  |} |}' into 'NavigationControllerMethods & NavigationControllerProperties' because the types are unrelated
+src/server/services/BotService/NavigationController/init.luau TypeError: Expected this to be
+src/server/services/BotService/NavigationController/init.luau TypeError: Expected this to be 'number', but got 'number?'
+src/server/services/BotService/NavigationController/init.luau TypeError: Value of type 'NavigationConfig?' could be nil
+src/server/services/BotService/Sense.luau TypeError: Expected this to be 'Sense', but got '{ @metatable Sense, {| Character: any, Distance: any, Mask: any, Target: any |} }'
+src/server/services/BotService/Threat.luau TypeError: Expected this to be 'Threat', but got '{ @metatable Threat, {| Character: any, LastHit: any, Tracks: {|  |} |} }'
+src/server/services/BotService/init.luau LocalUnused: Variable 'StateMachine' is never used; prefix with '_' to silence
+src/server/services/BotService/init.luau LocalUnused: Variable 'rand' is never used; prefix with '_' to silence
+src/server/services/BotService/init.luau TypeError: Argument count mismatch. Function 'Bot.new' expects 2 arguments, but none are specified
+src/server/services/BotSpawnService.luau LocalUnused: Variable 'ServerScriptService' is never used; prefix with '_' to silence
+src/server/services/CollisionService.luau LocalUnused: Variable 'Configuration' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/Angular.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/Armor.luau LocalUnused: Variable 'CleanCache' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/Armor.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/Block.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/Damage.luau TypeError: Type *error-type* & number cannot be compared with > because it has no metatable
+src/server/services/CombatService/Hooks/IFrames.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
+src/server/services/CombatService/Hooks/IFrames.luau TypeError: Expected this to be 'number', but got 'nil'
+src/server/services/CombatService/Hooks/Knockback.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
+src/server/services/CombatService/init.luau TypeError: Cannot add property 'OriginalInfo' to table 'AttackData'
+src/server/services/CombatService/init.luau TypeError: Value of type 'Instance?' could be nil
+src/server/services/ConfigsService.luau ImportUnused: Import 'SpecClass' is never used; prefix with '_' to silence
+src/server/services/ConfigsService.luau ImportUnused: Import 'Specs' is never used; prefix with '_' to silence
+src/server/services/ConfigsService.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/services/GameDataService.luau LocalUnused: Variable 'ServerScriptService' is never used; prefix with '_' to silence
+src/server/services/PathUtil.luau LocalUnused: Variable 'Configuration' is never used; prefix with '_' to silence
+src/server/services/PathUtil.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/server/services/QuestService.luau LocalUnused: Variable 'ServerScriptService' is never used; prefix with '_' to silence
+src/server/services/Sample.luau LocalUnused: Variable 'ServerScriptService' is never used; prefix with '_' to silence
+src/server/services/SkillService.luau ImplicitReturn: Function 'GetSkillData' can implicitly return no values even though there's an explicit return at line 49; add explicit return to silence
+src/server/services/SkillService.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/services/SkillService.luau TypeError: Expected this to be 'SpecMethods & SpecProperities', but got 'SpecData'
+src/server/services/SkillService.luau TypeError: Not all codepaths in this function return 'SkillData'.
+src/server/services/SpecService.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/services/SpecService.luau TypeError: Expected to return 1 value, but 0 are returned here
+src/server/services/TestService.luau LocalUnused: Variable 'ATTACKING_DUMMY' is never used; prefix with '_' to silence
+src/server/services/TestService.luau LocalUnused: Variable 'BLOCKIMG_DUMMY' is never used; prefix with '_' to silence
+src/server/services/TestService.luau LocalUnused: Variable 'Configuration' is never used; prefix with '_' to silence
+src/server/services/TestService.luau LocalUnused: Variable 'DEFAULT_DUMMY1' is never used; prefix with '_' to silence
+src/server/services/TestService.luau LocalUnused: Variable 'DEFAULT_DUMMY2' is never used; prefix with '_' to silence
+src/server/services/TestService.luau LocalUnused: Variable 'PB_DUMMY' is never used; prefix with '_' to silence
+src/server/services/VFXService.luau ImportUnused: Import 'SpecClass' is never used; prefix with '_' to silence
+src/server/services/VFXService.luau ImportUnused: Import 'Specs' is never used; prefix with '_' to silence
+src/server/services/VFXService.luau ImportUnused: Import 'types' is never used; prefix with '_' to silence
+src/server/skills/Barrage.luau LocalUnused: Variable 'Anims' is never used; prefix with '_' to silence
+src/server/skills/Barrage.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/Barrage.luau LocalUnused: Variable 'Sounds' is never used; prefix with '_' to silence
+src/server/skills/Barrage.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
+src/server/skills/Barrage.luau TypeError: Cannot cast '{| Block: {| BlockBreaker: any, Blockable: any, PerfectBlockable: any |}, Damage: number?, Hitbox: {| Debug: any, Offset: any, Size: any |}, Knockback: {| [number]: any, Duration: any, RelativePart: any, Speed: any, ToFront: any |}, Stun: { Duration: number, Priority: number }? |}' into 'AttackInfo' because the types are unrelated
+src/server/skills/Barrage.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Barrage.luau TypeError: Type 'SkillMethods & SkillProperties' does not have key 'Sequence'
+src/server/skills/Block.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 52; add explicit return to silence
+src/server/skills/Block.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/skills/Block.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/Block.luau LocalUnused: Variable 'Anims' is never used; prefix with '_' to silence
+src/server/skills/Block.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Block.luau TypeError: Table type 'Block' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Dash.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/Dash.luau LocalUnused: Variable 'DashProperties' is never used; prefix with '_' to silence
+src/server/skills/Dash.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Gerson/Bonk.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/Gerson/Bonk.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Gerson/Bonk.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/Gerson/Bonk.luau LocalUnused: Variable 'Sounds' is never used; prefix with '_' to silence
+src/server/skills/Gerson/Bonk.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Gerson/ShellLaunch.luau LocalUnused: Variable 'Anims' is never used; prefix with '_' to silence
+src/server/skills/Gerson/ShellLaunch.luau LocalUnused: Variable 'Debris' is never used; prefix with '_' to silence
+src/server/skills/Gerson/ShellLaunch.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Gerson/ShellLaunch.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/Gerson/ShellLaunch.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
+src/server/skills/Gerson/ShellLaunch.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Grab.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Grab.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/Grab.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Punch.luau ImportUnused: Import 'Proxy' is never used; prefix with '_' to silence
+src/server/skills/Punch.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/Punch.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Punch.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Cooldown', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Run.luau LocalUnused: Variable 'Character' is never used; prefix with '_' to silence
+src/server/skills/Run.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Cooldown', 'Id', 'Interrupt', 'SkillCharacters', 'onDestroy', and 'onInit'
+src/server/skills/StandBarrage.luau LocalUnused: Variable 'Anims' is never used; prefix with '_' to silence
+src/server/skills/StandBarrage.luau LocalUnused: Variable 'Models' is never used; prefix with '_' to silence
+src/server/skills/StandBarrage.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/StandBarrage.luau LocalUnused: Variable 'Sounds' is never used; prefix with '_' to silence
+src/server/skills/StandBarrage.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
+src/server/skills/StandBarrage.luau LocalUnused: Variable 'isStandActive' is never used; prefix with '_' to silence
+src/server/skills/StandBarrage.luau TypeError: Cannot add property 'Caster' to table 'SkillMethods & SkillProperties'
+src/server/skills/StandBarrage.luau TypeError: Cannot cast '{| Block: {| BlockBreaker: any, Blockable: any, PerfectBlockable: any |}, Damage: number?, Hitbox: {| Debug: any, MovementCorrection: any, Offset: any, Size: any |}, Knockback: {| Duration: any, RelativePart: any, Speed: any, ToFront: any, Velocity: any |}, Stun: { Duration: number, Priority: number }? |}' into 'AttackInfo' because the types are unrelated
+src/server/skills/StandBarrage.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/StandBarrage.luau TypeError: Type 'SkillMethods & SkillProperties' does not have key 'Sequence'
+src/server/skills/Standless/CircularKick.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Standless/Counter.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Standless/DualPistols.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Standless/Footrest.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Standless/Uppercut.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Standless/Uppercut.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Summon.luau ImportUnused: Import 'Enums' is never used; prefix with '_' to silence
+src/server/skills/Summon.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/Summon.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/skills/Summon.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
+src/server/skills/Summon.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/TEMPLATE.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'Anims' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'AttackInfo' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'Models' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'Sounds' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
+src/server/skills/TEMPLATE.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'SkillCharacters', 'onDestroy', and 'onInit'
+src/server/skills/Undyne/ArcSpearStrike.luau ImportUnused: Import 'Sequencer' is never used; prefix with '_' to silence
+src/server/skills/Undyne/ArcSpearStrike.luau LocalUnused: Variable 'Humanoid' is never used; prefix with '_' to silence
+src/server/skills/Undyne/ArcSpearStrike.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
+src/server/skills/Undyne/ArcSpearStrike.luau LocalUnused: Variable 'Sounds' is never used; prefix with '_' to silence
+src/server/skills/Undyne/ArcSpearStrike.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/skills/Undyne/WaitALittleBit.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
+src/server/specs/Gerson.luau ImportUnused: Import 'SpecsConfig' is never used; prefix with '_' to silence
+src/server/specs/Gerson.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/server/specs/Gerson.luau LocalUnused: Variable 'skills' is never used; prefix with '_' to silence
+src/server/specs/Gerson.luau TypeError: Unknown require: game/ServerScriptService/server/Configuration/ConfigsFolder/Value/Specs
+src/server/specs/Standless.luau ImportUnused: Import 'SpecsConfig' is never used; prefix with '_' to silence
+src/server/specs/Standless.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/server/specs/Standless.luau LocalUnused: Variable 'skills' is never used; prefix with '_' to silence
+src/server/specs/Standless.luau TypeError: Unknown require: game/ServerScriptService/server/Configuration/ConfigsFolder/Value/Specs
+src/server/specs/StarPlatinum.luau ImportUnused: Import 'SpecsConfig' is never used; prefix with '_' to silence
+src/server/specs/StarPlatinum.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/specs/StarPlatinum.luau LocalUnused: Variable 'skills' is never used; prefix with '_' to silence
+src/server/specs/StarPlatinum.luau TypeError: Key 'Stand' not found in table '{ Animations: { [string]: { Animation: Animation, Priority: Enum.AnimationPriority } }, Models: { [string]: BasePart | Model }, Sounds: { [string]: { PlaybackSpeed: number?, Sound: Sound, Volume: number? } } }'
+src/server/specs/StarPlatinum.luau TypeError: Unknown require: game/ServerScriptService/server/Configuration/ConfigsFolder/Value/Specs
+src/server/specs/TheWorld.luau ImportUnused: Import 'SpecsConfig' is never used; prefix with '_' to silence
+src/server/specs/TheWorld.luau LocalUnused: Variable 'Players' is never used; prefix with '_' to silence
+src/server/specs/TheWorld.luau LocalUnused: Variable 'skills' is never used; prefix with '_' to silence
+src/server/specs/TheWorld.luau TypeError: Key 'Stand' not found in table '{ Animations: { [string]: { Animation: Animation, Priority: Enum.AnimationPriority } }, Models: { [string]: BasePart | Model }, Sounds: { [string]: { PlaybackSpeed: number?, Sound: Sound, Volume: number? } } }'
+src/server/specs/TheWorld.luau TypeError: Unknown require: game/ServerScriptService/server/Configuration/ConfigsFolder/Value/Specs
+src/server/specs/Undyne.luau ImportUnused: Import 'SpecsConfig' is never used; prefix with '_' to silence
+src/server/specs/Undyne.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/server/specs/Undyne.luau LocalUnused: Variable 'skills' is never used; prefix with '_' to silence
+src/server/specs/Undyne.luau TypeError: Unknown require: game/ServerScriptService/server/Configuration/ConfigsFolder/Value/Specs
+src/server/terminal-commands/changeAbilityServer.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 15; add explicit return to silence
+src/server/terminal-commands/changeAbilityServer.luau LocalUnused: Variable 'ServerScriptService' is never used; prefix with '_' to silence
+src/server/terminal-hooks/permission-hook.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 28; add explicit return to silence
+src/server/types.luau LocalShadow: Variable 'ServerScriptService' shadows previous declaration at line 2
+src/server/types.luau TypeError: Unknown type 'index'
+src/server/types.luau TypeError: Unknown type 'keyof'
+src/shared/Deprecated/Impact Frame.luau TypeError: Expected this to be 'number', but got 'number?'
+src/shared/bot-characters.luau TypeError: Unknown type 'keyof'
+src/shared/components/Stand/Animate.luau LocalShadow: Variable 'track' shadows previous declaration at line 50
+src/shared/components/Stand/Animate.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/shared/components/Stand/Animate.luau LocalUnused: Variable 'playAnimation' is never used; prefix with '_' to silence
+src/shared/components/Stand/Animate.luau LocalUnused: Variable 'stopAllAnimations' is never used; prefix with '_' to silence
+src/shared/components/Stand/Animate.luau LocalUnused: Variable 'stopAnimation' is never used; prefix with '_' to silence
+src/shared/components/Stand/Animate.luau TypeError: Expected this to be 'Animation', but got 'string'
+src/shared/components/Stand/Animate.luau TypeError: Unknown type 'keyof'
+src/shared/components/Stand/init.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/shared/configs/Skins/StarPlatinum/None.luau LocalUnused: Variable 'NonArmedSpecs' is never used; prefix with '_' to silence
+src/shared/effects/Animation.luau ImportUnused: Import 'Skins' is never used; prefix with '_' to silence
+src/shared/effects/Crash.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/shared/effects/DamageIndicator/init.luau ImportUnused: Import 'Skins' is never used; prefix with '_' to silence
+src/shared/effects/DamageIndicator/init.luau LocalShadow: Variable 'GradientName' shadows previous declaration at line 14
+src/shared/effects/DamageIndicator/init.luau LocalUnused: Variable 'AnimationActor' is never used; prefix with '_' to silence
+src/shared/effects/Dash.luau LocalUnused: Variable 'Camera' is never used; prefix with '_' to silence
+src/shared/effects/EmitFolder.luau TypeError: Cannot cast '{Instance}' into '{Folder}' because the types are unrelated
+src/shared/effects/EmitParticle.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/shared/effects/Highlight.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/shared/effects/Hitbox.luau ImportUnused: Import 'Skins' is never used; prefix with '_' to silence
+src/shared/effects/Hitbox.luau LocalUnused: Variable 'AnimationActor' is never used; prefix with '_' to silence
+src/shared/effects/Ragdoll.luau TypeError: Expected this to be 'Humanoid', but got 'Humanoid?'
+src/shared/effects/Sound.luau LocalUnused: Variable 'ReplicatedStorage' is never used; prefix with '_' to silence
+src/shared/effects/Sound.luau LocalUnused: Variable 'TweenService' is never used; prefix with '_' to silence
+src/shared/effects/Sound.luau TypeError: Key 'Position' is missing from 'Instance' in the type 'CFrame | Instance'
+src/shared/effects/Sound.luau TypeError: Type 'unknown' does not have key 'Destroy'
+src/shared/effects/Stands/Barrage/init.luau TypeError: Expected this to be 'BasePart', but got 'Instance?'
+src/shared/effects/Stands/Summon.luau ImportUnused: Import 'Crane' is never used; prefix with '_' to silence
+src/shared/effects/Stands/Summon.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
+src/shared/packages/Bezier.luau ImplicitReturn: Function 'UpdateLength' can implicitly return no values even though there's an explicit return at line 201; add explicit return to silence
+src/shared/packages/Bezier.luau LocalShadow: Variable 'points' shadows previous declaration at line 225
+src/shared/packages/Bezier.luau LocalShadow: Variable 'points' shadows previous declaration at line 266
+src/shared/packages/Bezier.luau LocalShadow: Variable 'points' shadows previous declaration at line 332
+src/shared/packages/Bezier.luau LocalUnused: Variable 'iterations' is never used; prefix with '_' to silence
+src/shared/packages/Bezier.luau LocalUnused: Variable 'm' is never used; prefix with '_' to silence
+src/shared/packages/Bezier.luau LocalUnused: Variable 'points' is never used; prefix with '_' to silence
+src/shared/packages/Bridge/Codec.luau TypeError: Expected this to be 'integer', but got 'number'
+src/shared/packages/Bridge/Codec.luau TypeError: Key 'fromComponents' not found in table '{ Angles: (number, number, number) -> CFrame, fromAxisAngle: (Vector3, number) -> CFrame, fromEulerAngles: (number, number, number, Enum.RotationOrder?) -> CFrame, fromEulerAnglesXYZ: (number, number, number) -> CFrame, fromEulerAnglesYXZ: (number, number, number) -> CFrame, fromMatrix: (Vector3, Vector3, Vector3, Vector3?) -> CFrame, fromOrientation: (number, number, number) -> CFrame, fromRotationBetweenVectors: (Vector3, Vector3) -> CFrame, identity: CFrame, lookAlong: (Vector3, Vector3, Vector3... *TRUNCATED*'
+src/shared/packages/Bridge/Codec.luau TypeError: Value of type 'string?' could be nil
+src/shared/packages/Bridge/Ops.luau TypeError: Cannot call a value of type {string} in union:
+src/shared/packages/Bridge/Ops.luau TypeError: Expected this to be exactly '{any}', but got '{ [integer]: any }'
+src/shared/packages/Bridge/Ops.luau TypeError: Function only returns 1 value, but 2 are required here
+src/shared/packages/Bridge/Ops.luau TypeError: Function only returns 2 values, but 3 are required here
+src/shared/packages/Bridge/Ops.luau TypeError: Key 'Names' not found in table 'Ops'
+src/shared/packages/CacheTab.luau TypeError: Expected this to be 'T', but got 'nil'
+src/shared/packages/CacheTab.luau TypeError: Unknown type 'setmetatable'
+src/shared/packages/Crane/Component.luau TypeError: Unknown type 'setmetatable'
+src/shared/packages/Crane/Service.luau TypeError: Unknown type 'setmetatable'
+src/shared/packages/Crane/Utils.luau LocalUnused: Variable 'BezierCurve' is never used; prefix with '_' to silence
+src/shared/packages/Crane/Utils.luau TypeError: Expected this to be 'T', but got '{-  -}'
+src/shared/packages/Crane/Utils.luau TypeError: Expected type table, got 'T & {  }' instead
+src/shared/packages/Crane/Utils.luau TypeError: Unknown global 'Copy'; consider assigning to it first
+src/shared/packages/Crane/init.luau TypeError: Expected this to be 'number', but got 'string'
+src/shared/packages/Crane/init.luau TypeError: Unknown type 'index'
+src/shared/packages/Crane/init.luau TypeError: Unknown type 'keyof'
+src/shared/packages/Crane/init.luau TypeError: Unknown type 'setmetatable'
+src/shared/packages/DraftController.luau TypeError: Expected this to be 'A & B', but got '{| [any]: any |}'
+src/shared/packages/DraftController.luau TypeError: Expected this to be '{ [any]: any }', but got 'A'
+src/shared/packages/DraftController.luau TypeError: Expected this to be '{ [any]: any }', but got 'B'
+src/shared/packages/DraftController.luau TypeError: Expected type table, got 'T & {  }' instead
+src/shared/packages/DraftController.luau TypeError: Expected type table, got 'V & {  }' instead
+src/shared/packages/Promise.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 1734; add explicit return to silence
+src/shared/packages/Promise.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 2006; add explicit return to silence
+src/shared/packages/Promise.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 882; add explicit return to silence
+src/shared/packages/Promise.luau TypeError: Expected this to be '{ [any]: any }', but got 'any?'
+src/shared/packages/Promise.luau TypeError: Key 'TEST' not found in table 'Promise'
+src/shared/packages/Proxy.luau TypeError: Cannot cast 'T' into '{any}' because the types are unrelated
+src/shared/packages/Proxy.luau TypeError: Cannot cast '{any}' into 'T' because the types are unrelated
+src/shared/packages/Proxy.luau TypeError: Expected this to be 'number', but got 'string'
+src/shared/packages/Proxy.luau TypeError: Expected this to be '{string}', but got 'true | {string} | {string}'
+src/shared/packages/Proxy.luau TypeError: Expected type table, got 'true | {string} | {string}' instead
+src/shared/packages/Proxy.luau TypeError: Type '() -> (any, a...)' does not have key '__listeners'
+src/shared/packages/Proxy.luau TypeError: Type '() -> (any, a...)' does not have key '__patchHandler'
+src/shared/packages/Proxy.luau TypeError: Unknown type 'keyof'
+src/shared/packages/Proxy.luau TypeError: Unknown type 'setmetatable'
+src/shared/packages/Signal.luau TypeError: Not all codepaths in this function return 'Connection'.
+src/shared/packages/Signal.luau TypeError: Not all codepaths in this function return 'Signal<>'.
+src/shared/packages/Signal.luau TypeError: Recursive type being used with different parameters.
+src/shared/packages/Signal.luau TypeError: Type parameter list is required
+src/shared/schemas/PlayerData.luau TypeError: Expected this to be 'PlayerDynamicData & PlayerSaveData', but got 'data'
+src/shared/schemas/PlayerSaveData.luau TypeError: Cannot cast '{| Expirience: number, Inventory: {string}, Level: number, Money: number, Skins: { [string]: SkinData }, Spec: string, Specs: { [string]: SpecData } |}' into 'PlayerSaveData' because the types are unrelated

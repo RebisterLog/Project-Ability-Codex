@@ -2,9 +2,9 @@
 --!native
 --!optimize 2
 
-local Actor = script:GetActor()
+const Actor = script:GetActor()
 
-local Tracks: { [Animator]: { [Animation]: AnimationTrack } } = {}
+const Tracks: { [Animator]: { [Animation]: AnimationTrack } } = {}
 
 type AnimationsPlayProps = {
 	Priority: Enum.AnimationPriority?,
@@ -15,7 +15,7 @@ type AnimationsPlayProps = {
 Actor:BindToMessage(
 	"Play",
 	function(character: Model, animation: Animation, props: AnimationsPlayProps?)
-		local animator = character:FindFirstChildWhichIsA("Animator", true)
+		const animator = character:FindFirstChildWhichIsA("Animator", true)
 		if not animator then return end
 
 		props = props
@@ -49,7 +49,7 @@ type AnimationsStopProps = {
 Actor:BindToMessage(
 	"Stop",
 	function(character: Model, animation: Animation, props: AnimationsStopProps?)
-		local animator = character:FindFirstChildWhichIsA("Animator", true)
+		const animator = character:FindFirstChildWhichIsA("Animator", true)
 		if not animator then return end
 
 		if not Tracks[animator] or not Tracks[animator][animation] then return end

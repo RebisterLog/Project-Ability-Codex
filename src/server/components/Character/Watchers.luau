@@ -1,19 +1,19 @@
 --!native
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
 
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Enums = require(ServerScriptService.server.Enums)
-local types = require(ServerScriptService.server.types)
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Enums = require(ServerScriptService.server.Enums)
+const types = require(ServerScriptService.server.types)
 
-local function WalkSpeedWatcher(self: types.Character)
-	local MaxWalkSpeed = self:GetParameter("MaxWalkSpeed")
+const WalkSpeedWatcher = function(self: types.Character)
+	const MaxWalkSpeed = self:GetParameter("MaxWalkSpeed")
 	local MinWalkSpeed = self:GetParameter("MinWalkSpeed")
 
 	if MaxWalkSpeed < MinWalkSpeed then MinWalkSpeed = MaxWalkSpeed end
 
-	local WalkSpeed = math.clamp(16, MinWalkSpeed, MaxWalkSpeed)
+	const WalkSpeed = math.clamp(16, MinWalkSpeed, MaxWalkSpeed)
 	self.Humanoid.WalkSpeed = WalkSpeed
 end
 
@@ -22,7 +22,7 @@ return {
 	["MinWalkSpeed"] = WalkSpeedWatcher,
 
 	["MaxJumpPower"] = function(self: types.Character, value)
-		local JumpPower = math.min(50, value)
+		const JumpPower = math.min(50, value)
 
 		self.Humanoid.JumpPower = JumpPower
 	end,
@@ -34,7 +34,7 @@ return {
 	)
 		if not value or not object then return end
 
-		local Priority = value.Priority
+		const Priority = value.Priority
 
 		object.Cleaner:Add(self:AddParameter("MaxJumpPower", 0))
 
@@ -50,7 +50,7 @@ return {
 		self:Ragdoll(value)
 
 		if value then
-			local iframe = self:AddParameter("IFrames", Enums.IFrames.Ragdoll)
+			const iframe = self:AddParameter("IFrames", Enums.IFrames.Ragdoll)
 
 			object.Cleaner:OnClean(function()
 				task.delay(0.4, function()

@@ -1,38 +1,38 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const UserInputService = game:GetService("UserInputService")
 
-local BlockInstance = require(script.Parent.BlockInstance)
-local Fusion = require(ReplicatedStorage.shared.packages.Fusion)
-local Theme = require(script.Parent.Theme)
+const BlockInstance = require(script.Parent.BlockInstance)
+const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
+const Theme = require(script.Parent.Theme)
 
-local Children = Fusion.Children
-local OnEvent = Fusion.OnEvent
-local peek = Fusion.peek
+const Children = Fusion.Children
+const OnEvent = Fusion.OnEvent
+const peek = Fusion.peek
 
-local MIN_ZOOM = 1
-local MAX_ZOOM = 8
+const MIN_ZOOM = 1
+const MAX_ZOOM = 8
 
 --- Ширина подписей перед ползунком зума. Раньше трек начинался с нуля, то есть
 --- лежал поверх подписей, а его ширина считалась от общей — получался
 --- крошечный кусок в несколько пикселей, который невозможно было ухватить.
-local ZOOM_TRACK_LEFT = 540
+const ZOOM_TRACK_LEFT = 540
 
 --- Шаг линейки в кадрах. Подписи не должны налезать: при крупном зуме шаг мельче,
 --- у края экрана шаг растёт.
-local function rulerStep(zoom: number): number
+const rulerStep = function(zoom: number): number
 	if zoom >= 6 then return 15 end
 	if zoom >= 3 then return 30 end
 	return 60
 end
 
 return function(scope: Fusion.Scope, props: any)
-	local statement = props.Store
+	const statement = props.Store
 
 	--- Ширина дорожки: `maxFrame` берётся из эмиттера, а не считается здесь
 	--- второй раз — иначе линейка и футер могли бы разойтись (§7). К ширине
 	--- добавляется запас справа, иначе блок на последнем кадре обрезался краем окна.
-	local function trackWidthFor(maxFrame: number, zoom: number): number
-		local minWidth = Theme.Metrics.ChipMinWidth + Theme.Spacing.Large
+	const trackWidthFor = function(maxFrame: number, zoom: number): number
+		const minWidth = Theme.Metrics.ChipMinWidth + Theme.Spacing.Large
 		return math.max(640, maxFrame * zoom + minWidth)
 	end
 
@@ -40,22 +40,22 @@ return function(scope: Fusion.Scope, props: any)
 	--- целиком: состояние, вложенное внутрь `UDim2`, не применяется, поэтому
 	--- `UDim2.fromOffset(trackWidth, 0)` молча давал нулевую ширину — линейка
 	--- схлопывалась в ноль, дорожка не прокручивалась, а блоки уезжали в угол.
-	local canvasSize = scope:Computed(function(use)
+	const canvasSize = scope:Computed(function(use)
 		return UDim2.fromOffset(trackWidthFor(use(statement.MaxFrame), use(statement.Zoom)), 0)
 	end)
 
-	local rulerSize = scope:Computed(function(use)
+	const rulerSize = scope:Computed(function(use)
 		return UDim2.fromOffset(
 			trackWidthFor(use(statement.MaxFrame), use(statement.Zoom)),
 			Theme.Metrics.RulerHeight
 		)
 	end)
 
-	local ticks = scope:Computed(function(use)
-		local zoom = use(statement.Zoom)
-		local step = rulerStep(zoom)
-		local count = math.ceil(use(statement.MaxFrame) / step) + 1
-		local result = {}
+	const ticks = scope:Computed(function(use)
+		const zoom = use(statement.Zoom)
+		const step = rulerStep(zoom)
+		const count = math.ceil(use(statement.MaxFrame) / step) + 1
+		const result = {}
 
 		for index = 0, count do
 			table.insert(result, { Frame = index * step, Order = index })
@@ -66,8 +66,8 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Корневые блоки: вложенные рисуются внутри родителя (§10), поэтому на
 	--- дорожку попадает только верхний уровень, а `Row` задаёт вертикаль.
-	local roots = scope:Computed(function(use)
-		local result = {}
+	const roots = scope:Computed(function(use)
+		const result = {}
 
 		for _, item in use(statement.Blocks) do
 			if item.ParentId == nil then
@@ -84,9 +84,9 @@ return function(scope: Fusion.Scope, props: any)
 
 	--- Ошибки и предупреждения одним списком: `BlockInstance` считает рамку по
 	--- `BlockId` и не обязан знать, откуда пришла претензия.
-	local issues = scope:Computed(function(use)
-		local result = {}
-		local structural = use(statement.Structural)
+	const issues = scope:Computed(function(use)
+		const result = {}
+		const structural = use(statement.Structural)
 
 		for _, issue in structural.errors do
 			table.insert(result, issue)
@@ -108,15 +108,15 @@ return function(scope: Fusion.Scope, props: any)
 	local trackFrame: Frame
 	local connection: RBXScriptConnection? = nil
 
-	local function applyZoomFromX(positionX: number)
-		local left, width = trackFrame.AbsolutePosition.X, trackFrame.AbsoluteSize.X
+	const applyZoomFromX = function(positionX: number)
+		const left, width = trackFrame.AbsolutePosition.X, trackFrame.AbsoluteSize.X
 		if width <= 0 then return end
 
-		local fraction = math.clamp((positionX - left) / width, 0, 1)
+		const fraction = math.clamp((positionX - left) / width, 0, 1)
 		statement.setZoom(MIN_ZOOM + math.floor(fraction * (MAX_ZOOM - MIN_ZOOM + 0.999)))
 	end
 
-	local function stopDrag()
+	const stopDrag = function()
 		if connection ~= nil then
 			connection:Disconnect()
 			connection = nil
@@ -125,7 +125,7 @@ return function(scope: Fusion.Scope, props: any)
 
 	table.insert(scope, stopDrag)
 
-	local function beginDrag(input: InputObject)
+	const beginDrag = function(input: InputObject)
 		if
 			input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch
@@ -157,14 +157,14 @@ return function(scope: Fusion.Scope, props: any)
 	local track: ScrollingFrame
 	local playheadConnection: RBXScriptConnection? = nil
 
-	local function seekFromX(positionX: number)
-		local canvasX = positionX - track.AbsolutePosition.X + track.CanvasPosition.X
-		local zoom = math.max(1, peek(statement.Zoom))
+	const seekFromX = function(positionX: number)
+		const canvasX = positionX - track.AbsolutePosition.X + track.CanvasPosition.X
+		const zoom = math.max(1, peek(statement.Zoom))
 
 		statement.setPlayhead(math.floor(canvasX / zoom + 0.5))
 	end
 
-	local function stopPlayheadDrag()
+	const stopPlayheadDrag = function()
 		if playheadConnection ~= nil then
 			playheadConnection:Disconnect()
 			playheadConnection = nil
@@ -173,7 +173,7 @@ return function(scope: Fusion.Scope, props: any)
 
 	table.insert(scope, stopPlayheadDrag)
 
-	local function beginPlayheadDrag(input: InputObject)
+	const beginPlayheadDrag = function(input: InputObject)
 		if
 			input.UserInputType ~= Enum.UserInputType.MouseButton1
 			and input.UserInputType ~= Enum.UserInputType.Touch
@@ -214,8 +214,8 @@ return function(scope: Fusion.Scope, props: any)
 			Fill = scope:New("Frame")({
 				Name = "ZoomFill",
 				Size = scope:Computed(function(use)
-					local zoom = use(statement.Zoom)
-					local span = MAX_ZOOM - MIN_ZOOM + 1
+					const zoom = use(statement.Zoom)
+					const span = MAX_ZOOM - MIN_ZOOM + 1
 					return UDim2.fromScale((zoom - MIN_ZOOM + 1) / span, 1)
 				end),
 				BackgroundColor3 = Theme.Colors.Accent,
@@ -233,9 +233,9 @@ return function(scope: Fusion.Scope, props: any)
 				Size = UDim2.fromOffset(14, 18),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = scope:Computed(function(use)
-					local zoom = use(statement.Zoom)
-					local span = MAX_ZOOM - MIN_ZOOM + 1
-					local fraction = (zoom - MIN_ZOOM + 0.5) / span
+					const zoom = use(statement.Zoom)
+					const span = MAX_ZOOM - MIN_ZOOM + 1
+					const fraction = (zoom - MIN_ZOOM + 0.5) / span
 					return UDim2.new(math.clamp(fraction, 0, 1), 0, 0.5, 0.5)
 				end),
 				BackgroundColor3 = Theme.Colors.Accent,
@@ -252,7 +252,7 @@ return function(scope: Fusion.Scope, props: any)
 
 		[OnEvent("InputBegan")] = beginDrag,
 	})
-	local slider = scope:New("Frame")({
+	const slider = scope:New("Frame")({
 		Name = "ZoomSlider",
 		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, 34),

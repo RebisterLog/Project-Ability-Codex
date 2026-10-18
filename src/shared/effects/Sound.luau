@@ -1,5 +1,5 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const TweenService = game:GetService("TweenService")
 
 type SoundData = {
 	Sound: Sound,
@@ -10,7 +10,7 @@ type SoundData = {
 
 return {
 	Validate = function(self, Origin: CFrame | Instance, SoundData: SoundData)
-		local pos = typeof(Origin) == "CFrame" and Origin.Position or Origin.Position
+		const pos = typeof(Origin) == "CFrame" and Origin.Position or Origin.Position
 		if
 			(pos - workspace.CurrentCamera.CFrame.Position).Magnitude
 			> (SoundData.MaxDistance and SoundData.MaxDistance or 100)
@@ -34,7 +34,7 @@ return {
 		Sound.Volume = SoundData.Volume or 1
 
 		if typeof(Origin) == "CFrame" then
-			local Attachment = Instance.new("Attachment")
+			const Attachment = Instance.new("Attachment")
 			Attachment.WorldCFrame = Origin
 			Attachment.Parent = workspace.Terrain
 			Sound.Parent = Attachment

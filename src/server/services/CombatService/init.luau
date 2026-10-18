@@ -1,18 +1,18 @@
 --!native
 --!optimize 2
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Hook = require(ServerScriptService.server["combat-classes"].Hook)
-local Promise = require(ReplicatedStorage.shared.packages.Promise)
-local Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
-local Signal = Crane.Signal
-local Enums = require(ServerScriptService.server.Enums)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Hook = require(ServerScriptService.server["combat-classes"].Hook)
+const Promise = require(ReplicatedStorage.shared.packages.Promise)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+const Signal = Crane.Signal
+const Enums = require(ServerScriptService.server.Enums)
+const types = require(ServerScriptService.server.types)
 
-local CombatService = Crane:CreateService({
+const CombatService = Crane:CreateService({
 	Name = "CombatService",
 })
 
@@ -26,7 +26,7 @@ function CombatService:onStart()
 
 	for i, v in pairs(script.Hooks:GetChildren()) do
 		if not v:IsA("ModuleScript") then continue end
-		local module = require(v)
+		const module = require(v)
 		self.AttackHook:Hook(module.Type, module.Name, module.Priority, module.Function)
 	end
 
@@ -47,14 +47,14 @@ function CombatService:onStart()
 end
 
 function CombatService:Hitbox(Data: types.HitboxData)
-	local Caster = Data.Caster
-	local Info = Data.Info
-	local Skill = Data.Skill
-	local RootPart = Caster.RootPart
+	const Caster = Data.Caster
+	const Info = Data.Info
+	const Skill = Data.Skill
+	const RootPart = Caster.RootPart
 	local Origin = Info.Origin or Caster.RootPart.CFrame
-	local Size = Info.Size
+	const Size = Info.Size
 	local Offset = Info.Offset or CFrame.identity
-	local MovementCorrection = Info.MovementCorrection
+	const MovementCorrection = Info.MovementCorrection
 
 	if Skill then task.spawn(function()
 		self.Casted:Fire(Data)
@@ -75,9 +75,9 @@ function CombatService:Hitbox(Data: types.HitboxData)
 	--end
 
 	if MovementCorrection then
-		local humanoid = Caster.Humanoid
-		local move = humanoid.MoveDirection
-		local correction = Vector3.zAxis
+		const humanoid = Caster.Humanoid
+		const move = humanoid.MoveDirection
+		const correction = Vector3.zAxis
 			* math.min(
 				0,
 				(-Origin.LookVector:Dot(move) * RootPart.AssemblyLinearVelocity.Magnitude / 4)
@@ -98,11 +98,11 @@ function CombatService:Hitbox(Data: types.HitboxData)
 		Query = workspace:GetPartBoundsInBox(Origin, Size, Params)
 	end
 
-	local Hit: { types.Character } = {}
+	const Hit: { types.Character } = {}
 
 	for _, Part: Instance in Query do
 		if Part.Parent:FindFirstChildOfClass("Humanoid") then
-			local TargetComponent = Crane:GetComponent("Character", Part.Parent) :: types.Character
+			const TargetComponent = Crane:GetComponent("Character", Part.Parent) :: types.Character
 
 			if TargetComponent and not TargetComponent.Player and not Caster.Player then
 				continue
@@ -130,7 +130,7 @@ function CombatService:Attack(data: types.AttackData)
 	data.State.Success = true
 	data.State.Continue = true
 
-	local OriginalInfo = data.Info or {}
+	const OriginalInfo = data.Info or {}
 
 	if not table.isfrozen(OriginalInfo) then Crane.Utils.DeepFreeze(OriginalInfo) end
 
@@ -138,13 +138,13 @@ function CombatService:Attack(data: types.AttackData)
 	data.Info = table.clone(OriginalInfo)
 
 	return Promise.new(function(resolve)
-		local result = self.AttackHook:Apply(data)
+		const result = self.AttackHook:Apply(data)
 		if result then resolve(result) end
 	end)
 end
 
 function CombatService.CreateSequence(Character: types.Character, data)
-	local Sequence = Sequencer.new(data)
+	const Sequence = Sequencer.new(data)
 
 	Sequence:AdjustSpeed(Character:GetParameter("Timescale"))
 
@@ -152,13 +152,13 @@ function CombatService.CreateSequence(Character: types.Character, data)
 end
 
 function CombatService.GetStates(self: typeof(CombatService), Character: types.Character)
-	local States = {}
+	const States = {}
 
 	if Character.Block and Character.Block.Blocking then
 		States.Blocking = true
 
-		local PerfectBlockWindow = Character.Block.PerfectBlockWindow
-		local PerfectBlockTime = Character.Block.PerfectBlockTime
+		const PerfectBlockWindow = Character.Block.PerfectBlockWindow
+		const PerfectBlockTime = Character.Block.PerfectBlockTime
 
 		if (os.clock() - PerfectBlockTime) <= PerfectBlockWindow then
 			States.PerfectBlocking = true
@@ -174,18 +174,18 @@ function CombatService.GetStates(self: typeof(CombatService), Character: types.C
 
 	if Character:GetParameter("Ragdoll") == true then States.Ragdolled = true end
 
-	local IFrames = Character:GetParameter("IFrames")
+	const IFrames = Character:GetParameter("IFrames")
 	if IFrames > 0 then States.IFrames = IFrames end
 
 	return States
 end
 
 function CombatService.AddArmor(self: typeof(CombatService), Character: types.Character)
-	local Cleaner = Crane.Buttler.new()
+	const Cleaner = Crane.Buttler.new()
 
 	Cleaner:Add(Character:AddParameter("Armor", true))
 
-	local UUID = os.clock()
+	const UUID = os.clock()
 	self.VFXService:StartEffect(Players:GetPlayers(), "Highlight", Character.instance, {
 		UUID = UUID,
 		FillColor = Color3.fromRGB(255, 136, 0),
@@ -206,15 +206,16 @@ function CombatService.CreateGrab(
 	victim: types.Character,
 	grabData: types.GrabData?
 )
-	local data = grabData or {} :: types.GrabData
+	const data = grabData or {} :: types.GrabData
 
-	local Cleaner = Crane.Buttler.new()
+	const Cleaner = Crane.Buttler.new()
 
 	Cleaner:Add(attacker:AddParameter("IFrames", Enums.IFrames.Grab))
 	Cleaner:Add(victim:AddParameter("IFrames", Enums.IFrames.Grab))
+	Cleaner:Add(victim:AddParameter("NoSkillCast", true))
 
-	local victimPlayer = Players:GetPlayerFromCharacter(victim.instance)
-	local attackerPlayer = Players:GetPlayerFromCharacter(attacker.instance)
+	const victimPlayer = Players:GetPlayerFromCharacter(victim.instance)
+	const attackerPlayer = Players:GetPlayerFromCharacter(attacker.instance)
 
 	if attackerPlayer then
 		Crane.Utils.ChangeNetworkOwner(
@@ -241,27 +242,19 @@ function CombatService.CreateGrab(
 		if data.Victim.Restrain ~= false then Cleaner:Add(victim:AddParameter("Restrain", true)) end
 
 		if data.Victim.Bind then
-			local Part0Attachment = Cleaner:Construct(Instance, "Attachment")
-			local Part1Attachment = Cleaner:Construct(Instance, "Attachment")
+			const Bind = data.Victim.Bind
+			const C0 = Bind.Offset or CFrame.identity
+			const C1 = Bind.Offset1 or CFrame.identity
 
-			local AlignPosition = Cleaner:Construct(Instance, "AlignPosition")
-			local AlignOrientation = Cleaner:Construct(Instance, "AlignOrientation")
+			Bind.Part1.CFrame = Bind.Part0.CFrame * C0 * C1:Inverse()
 
-			Part0Attachment.CFrame = data.Victim.Bind.Offset
-			Part1Attachment.CFrame = data.Victim.Bind.Offset1 or CFrame.identity
+			const Weld = Cleaner:Construct(Instance, "Weld") :: Weld
 
-			Part0Attachment.Parent = data.Victim.Bind.Part0
-			Part1Attachment.Parent = data.Victim.Bind.Part1
-
-			AlignPosition.RigidityEnabled = true
-			AlignPosition.Attachment0 = Part1Attachment
-			AlignPosition.Attachment1 = Part0Attachment
-			AlignPosition.Parent = data.Victim.Bind.Part1
-
-			AlignOrientation.RigidityEnabled = true
-			AlignOrientation.Attachment0 = Part1Attachment
-			AlignOrientation.Attachment1 = Part0Attachment
-			AlignOrientation.Parent = data.Victim.Bind.Part1
+			Weld.C0 = C0
+			Weld.C1 = C1
+			Weld.Part0 = Bind.Part0
+			Weld.Part1 = Bind.Part1
+			Weld.Parent = Bind.Part1
 		end
 	end
 

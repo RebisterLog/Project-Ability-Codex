@@ -1,16 +1,16 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-local Cleaners = {}
+const Cleaners = {}
 
 return {
 	onStart = function(self, character: Model, shell: Model)
 		if Cleaners[character] then return end
 
-		local cleaner = Crane.Buttler.new()
+		const cleaner = Crane.Buttler.new()
 
-		local copy = cleaner:Clone(shell) :: Model
-		local weld = cleaner:Construct(Instance, "Weld") :: Weld
+		const copy = cleaner:Clone(shell) :: Model
+		const weld = cleaner:Construct(Instance, "Weld") :: Weld
 		weld.Part0 = character:FindFirstChild("Left Arm")
 		weld.Part1 = copy.PrimaryPart
 		weld.C0 = CFrame.new(0, -2, -0.5) * CFrame.Angles(-90, 0, 0)

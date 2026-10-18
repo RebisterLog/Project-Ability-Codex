@@ -1,21 +1,21 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local SpecClass = require(ServerScriptService.server["combat-classes"].Spec)
-local Specs = require(ReplicatedStorage.shared.configs.Specs)
-local Configuration = ServerScriptService.server.Configuration
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const SpecClass = require(ServerScriptService.server["combat-classes"].Spec)
+const Specs = require(ReplicatedStorage.shared.configs.Specs)
+const Configuration = ServerScriptService.server.Configuration
 
-local ConfigsFolder = Configuration.ConfigsFolder.Value
+const ConfigsFolder = Configuration.ConfigsFolder.Value
 
-local ConfigService = Crane:CreateService({
+const ConfigService = Crane:CreateService({
 	Name = "ConfigService",
 })
 ConfigService.Configs = {}
 
 function ConfigService:onStart()
 	for i, module in ConfigsFolder:QueryDescendants("ModuleScript") do
-		local config = require(module)
+		const config = require(module)
 		self.Configs[module.Name] = table.freeze(config)
 	end
 end

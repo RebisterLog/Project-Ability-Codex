@@ -1,9 +1,9 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ServerScriptService = game:GetService("ServerScriptService")
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local Proxy = require(ReplicatedStorage.shared.packages.Proxy)
-local types = require(ServerScriptService.server.types)
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const types = require(ServerScriptService.server.types)
 
 type SpawnerBotConfig = {
 	Model: Model,
@@ -21,13 +21,13 @@ type SpawnerConfig = {
 	Bots: { SpawnerBotConfig },
 }
 
-local BotSpawner: Crane.Component<Part> = Crane:CreateComponent({
+const BotSpawner: Crane.Component<Part> = Crane:CreateComponent({
 	Name = "BotSpawner",
 	Tag = "BotSpawner",
 })
 
 function BotSpawner.onStart(self: typeof(BotSpawner))
-	local configName = self.instance:GetAttribute("Config")
+	const configName = self.instance:GetAttribute("Config")
 
 	self.Random = Random.new(tick())
 	self.Bots = {}
@@ -47,17 +47,17 @@ function BotSpawner.onStart(self: typeof(BotSpawner))
 end
 
 function BotSpawner:GetRandomBotConfig(config: SpawnerConfig)
-	local bots = config.Bots
+	const bots = config.Bots
 	local summ = 0
 
-	local sorted = {}
+	const sorted = {}
 
 	for i, bot in bots do
 		summ += bot.Weight or 0
 		sorted[bot.Weight] = bot
 	end
 
-	local random = self.Random:NextInteger(0, summ)
+	const random = self.Random:NextInteger(0, summ)
 
 	local current = 0
 	for weight, bot in sorted do
@@ -70,23 +70,23 @@ function BotSpawner:GetRandomBotConfig(config: SpawnerConfig)
 end
 
 function BotSpawner:Spawn()
-	local botsCount =
+	const botsCount =
 		self.Random:NextInteger(self.Config.MinBots, self.Config.MaxBots or self.Config.MinBots)
 
 	for i = 1, botsCount do
-		local botConfig = self:GetRandomBotConfig(self.Config)
-		local model = botConfig.Model:Clone() :: Model
+		const botConfig = self:GetRandomBotConfig(self.Config)
+		const model = botConfig.Model:Clone() :: Model
 		model:PivotTo(
 			self.instance.CFrame
 				+ Vector3.new(self.Random:NextNumber(0, 15), 5, self.Random:NextNumber(0, 15))
 		)
 		model.Parent = workspace.Live
 
-		local bot, character: types.Character = Crane:GetService("BotsService")
+		const bot, character: types.Character = Crane:GetService("BotsService")
 			:Create(botConfig.BotCharacter, model)
 
 		if self.Config.FightTogether then
-			local Cleaner = Crane.Buttler.new()
+			const Cleaner = Crane.Buttler.new()
 
 			Cleaner:Add(character.OnTakeDamage:Once(function(attacker, data)
 				for i, bot in self.Bots do
