@@ -23,6 +23,7 @@ function CharacterAdder.onCharacterAdded(self: typeof(CharacterAdder), character
 	Crane:GetService("CollisionService"):SetCollisionGroup("Player", character)
 	self.player.Modules["SpecModule"]:SetSpec(self.player.Modules["SpecModule"]:GetSpec())
 	self.player.Modules["GodModeModule"]:OnCharacter(self.Character)
+	self.player.Modules["NoCooldownModule"]:OnCharacter(self.Character)
 end
 
 function CharacterAdder.onStart(self: typeof(CharacterAdder))

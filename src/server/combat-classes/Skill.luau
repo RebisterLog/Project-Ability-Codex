@@ -64,6 +64,10 @@ function Skill.Interrupt(self: types.Skill)
 end
 
 function Skill.SetCooldown(self: types.Skill, Time: number)
+	-- A multiplier of 0 (admin no-cooldown) collapses the cooldown here rather than
+	-- in IsOnCooldown, so ReleaseTime itself stops being in the future and anything
+	-- reading it sees a skill that is ready.
+	Time *= self.Character:GetParameter("CooldownMultiplier")
 	Time = math.max(Time, 0)
 
 	self.Proxy:Patch({
