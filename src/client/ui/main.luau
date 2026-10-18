@@ -23,7 +23,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 -- Components
 const Button = require(script.Parent.utils.Button)
 const Helix = require(script.Parent.utils.Helix)
-const PlayerHUD = require(script.Parent.components.PlayerHUD)
+const PlayerHUDComponent = require(script.Parent.components.PlayerHUDComponent)
 const PreloadingComponent = require(script.Parent.components.PreloadingComponent)
 const Settings = require(script.Parent.components.Settings)
 const Shadow = require(script.Parent.utils.Shadow)
@@ -65,11 +65,15 @@ return function(
 				})
 			end,
 
-			OnEnter = function(pageScope, instance, data: { Text: UsedAs<string>?, Progress: UsedAs<number>? }?)
-			    scope.Statements.Loading:set(true)
+			OnEnter = function(
+				pageScope,
+				instance,
+				data: { Text: UsedAs<string>?, Progress: UsedAs<number>? }?
+			)
+				scope.Statements.Loading:set(true)
 
 				if data and data.Text then
-				    --pageScope:Observer()
+					--pageScope:Observer()
 				end
 
 				-- pageScope.Text:set(data.Text)
@@ -82,7 +86,7 @@ return function(
 		},
 		{
 			Name = "PlayerHUD",
-			Page = PlayerHUD(scope, proxies, router),
+			Page = PlayerHUDComponent(scope, proxies, router),
 
 			OnEnter = function(scope)
 				print("PlayerHUD entered")

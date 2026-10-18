@@ -29,7 +29,7 @@ export type PlayerSaveData = {
 }
 
 return {
-	Expirience = 0,
+	Experience = 0,
 	Level = 0,
 	Money = 0,
 	Inventory = {},
