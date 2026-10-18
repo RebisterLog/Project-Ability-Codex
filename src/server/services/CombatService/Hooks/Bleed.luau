@@ -41,7 +41,11 @@ return {
 			Damage *= Data.Attacker:GetParameter("DamageMultiplier")
 			Damage *= Data.Victim:GetParameter("DamageReceivalMultiplier")
 
-			Data.Victim.Humanoid:TakeDamage(Damage)
+			-- Same gate as Hooks/Damage, and for the same reason: what god mode
+			-- removes is the damage, not the tick.
+			if not Data.Victim:GetParameter("GodMode") then
+				Data.Victim.Humanoid:TakeDamage(Damage)
+			end
 
 			-- Same shape as Hooks/Damage: a tick is damage like any other, so it
 			-- shows an indicator and lets the target's allies react to it.

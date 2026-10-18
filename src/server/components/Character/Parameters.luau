@@ -62,6 +62,7 @@ return {
 
 	Armor = { Default = false, Parser = ORParser },
 	Ragdoll = { Default = false, Parser = ORParser },
+	GodMode = { Default = false, Parser = ORParser },
 	NoCollision = { Default = false, Parser = ORParser },
 	Restrain = { Default = false, Parser = ORParser },
 	NoSkillCast = { Default = false, Parser = ORParser },
