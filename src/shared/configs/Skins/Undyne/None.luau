@@ -24,7 +24,7 @@ const None = {
 		},
 
 		Jump = {
-		    Animation = GlobalAssets.Movement.Jump,
+			Animation = GlobalAssets.Movement.Jump,
 			Priority = Enum.AnimationPriority.Movement,
 		},
 
@@ -109,6 +109,12 @@ const None = {
 		},
 	},
 	Sounds = {
+		-- Dash
+		Dash = {
+			Sound = GlobalAssets.Dash.DashSound,
+			Volume = 1,
+		},
+
 		Punch1 = {
 			Sound = Sounds.Punches.Punch1,
 			Volume = 1,

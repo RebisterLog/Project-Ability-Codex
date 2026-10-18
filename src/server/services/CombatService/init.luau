@@ -204,7 +204,7 @@ end
 -- Motor6D. The caller gets back the clone, already inside the character, so it
 -- can own the lifetime (`seq.Cleaner:Add(...)`); the motor is returned
 -- separately for callers that need to drive it.
--- 
+--
 -- Attributes for model:
 --   HandleName - name of handle part, if it's not "Handle"
 --
@@ -217,7 +217,8 @@ end
 --   Bone      — character part to mount on (defaults to "HumanoidRootPart")
 --   Offset    — C0 of the motor, i.e. where the grip sits (defaults to identity)
 function CombatService:Equip(character: types.Character, model: Model): (Model, Motor6D)
-	const Handle = model:FindFirstChild("Handle") or model:FindFirstChild(model:GetAttribute("HandleName"))
+	const Handle = model:FindFirstChild("Handle")
+		or model:FindFirstChild(model:GetAttribute("HandleName"))
 
 	if not Handle or not Handle:IsA("BasePart") then
 		error(`CombatService:Equip — {model.Name} has no Handle part`, 2)

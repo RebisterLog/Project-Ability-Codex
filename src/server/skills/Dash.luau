@@ -19,8 +19,6 @@ const Skill: types.SkillData = {
 
 	DashProperties = {
 		Speed = 80,
-		Time = 0.25,
-		Decay = 0.1,
 		MaxForce = Vector3.new(60_000, 0, 60_000),
 	},
 }
@@ -55,11 +53,9 @@ function Skill:onInit()
 	const CombatService = Crane:GetService("CombatService")
 
 	const Anims = self.Spec.Data.Assets.Animations
+	const Sounds = self.Spec.Data.Assets.Sounds
 
-	const DashTime = DashProperties.Time or 0.25
-	const DashDecay = math.min(DashProperties.Decay or 0.1, DashTime)
-
-	const HoldFrame = math.max(1, math.floor(DashTime * 60) - math.floor(DashDecay * 60))
+	const style = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -80,6 +76,10 @@ function Skill:onInit()
 						SpecId = self.Spec.Data.Id,
 					})
 
+					if Sounds.Dash then
+						VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds.Dash)
+					end
+
 					ClearBodyMovers(RootPart)
 
 					const velocity = Instance.new("BodyVelocity") :: BodyVelocity
@@ -97,31 +97,18 @@ function Skill:onInit()
 			},
 
 			{
-				HoldFrame,
+				10,
 				function(seq)
 					const velocity = seq.Velocity
 					if not velocity then return end
 
-					TweenService:Create(
-						velocity,
-						TweenInfo.new(DashDecay, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-						{ Velocity = Vector3.zero }
-					):Play()
+					TweenService:Create(velocity, style, { Velocity = Vector3.zero }):Play()
 
 					task.delay(0.25, function()
 						seq.Cleaner:Remove("Velocity")
 					end)
 				end,
 			},
-			--
-			-- 			{
-			-- 				RemoveFrame,
-			-- 				function(seq)
-			--
-			-- 				end,
-			-- 			},
-			--
-			-- 			{ EndFrame },
 		},
 	}))
 end

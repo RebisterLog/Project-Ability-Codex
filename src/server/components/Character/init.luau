@@ -124,6 +124,7 @@ function Character.onStart(self: typeof(Character))
 	end)
 
 	self.Cleaner:Add(self.Humanoid.HealthChanged:Connect(function(health)
+		-- TODO: add ragdoll
 		if health <= 0 then
 			task.wait(2)
 			self.instance:Destroy()
@@ -131,6 +132,9 @@ function Character.onStart(self: typeof(Character))
 	end))
 
 	self:prepareRagdoll()
+
+	self.Humanoid.NameDisplayDistance = 0
+	self.Humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 
 	if not self.Player then
 		Animate(self.instance)

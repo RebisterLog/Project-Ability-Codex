@@ -21,8 +21,8 @@
 --- repository: rename `EmitFolder.luau` and this fails on every skill using it,
 --- which is the other half of the guarantee.
 
-local fs = require("@lune/fs")
 local Source = require("../support/Source")
+local fs = require("@lune/fs")
 
 local ROOT = require("../../tools/SkillHarness/Root").find()
 local METHODS = { "StartEffect", "StopEffect", "StartEffectExcept" }
@@ -66,7 +66,11 @@ end
 
 local valid = effectNames()
 
-check("the effects folder has modules", next(valid) ~= nil, "src/shared/effects is empty or missing")
+check(
+	"the effects folder has modules",
+	next(valid) ~= nil,
+	"src/shared/effects is empty or missing"
+)
 
 --- The server signature is `StartEffect(players, name, ...)`, so the name is the
 --- second argument. The client takes the name first, but it only ever forwards a
@@ -89,6 +93,4 @@ end
 
 print(`[tests.skills.Effects] passed: {passed}, failed: {#failures}`)
 
-if #failures > 0 then
-	error(table.concat(failures, "\n"), 0)
-end
+if #failures > 0 then error(table.concat(failures, "\n"), 0) end

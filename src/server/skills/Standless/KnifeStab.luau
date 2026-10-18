@@ -68,9 +68,9 @@ const Skill: types.SkillData = {
 		},
 
 		Stun = {
-		    Duration = 0.5,
+			Duration = 0.5,
 			Priority = Enums.Stun.Medium,
-		}
+		},
 	},
 }
 
