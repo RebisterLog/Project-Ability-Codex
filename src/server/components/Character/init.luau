@@ -119,6 +119,10 @@ function Character.onStart(self: typeof(Character))
 
 	self.instance.Parent = workspace.Live
 
+	task.defer(function()
+		self.instance:AddTag("HeadInfo")
+	end)
+
 	self.Cleaner:Add(self.Humanoid.HealthChanged:Connect(function(health)
 		if health <= 0 then
 			task.wait(2)

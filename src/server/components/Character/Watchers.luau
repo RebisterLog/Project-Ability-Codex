@@ -33,7 +33,18 @@ return {
 		value: { Priority: number, Duration: number }?,
 		object
 	)
-		if not value or not object then return end
+		if not value then return end
+
+		const VFXService = Crane:GetService("VFXService")
+		const Stunned = value.Priority ~= Enums.Stun.None
+
+		if Stunned then
+			VFXService:StartEffect(Players:GetPlayers(), "Stunned", self.instance)
+		else
+			VFXService:StopEffect(Players:GetPlayers(), "Stunned", self.instance)
+		end
+
+		if not object then return end
 
 		const Priority = value.Priority
 
