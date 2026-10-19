@@ -1,0 +1,51 @@
+std = "roblox"
+
+# Vendored packages. They arrived from outside: a finding in them is not
+# actionable, and a fix would be overwritten by the next upstream sync. The list
+# is the same as `Toolchain.VENDORED`, which is what the syntax, format and
+# analyze gates skip.
+exclude = [
+    "src/shared/packages/Roact/**",
+    "src/shared/packages/Fusion/**",
+    "src/shared/packages/Cmdr/**",
+    "src/shared/packages/ForgeVFX/**",
+    "src/shared/packages/Lapis/**",
+    "src/shared/packages/Janitor/**",
+    "src/shared/packages/roact-spring/**",
+    "src/shared/packages/Sequencer/**",
+    "src/shared/packages/SkillConstructor/**",
+    "src/shared/packages/Signal.luau",
+    "src/shared/packages/Crane/packages/**",
+]
+
+[lints]
+# `stylua.toml` sets `collapse_simple_statement = "ConditionalOnly"`, so the
+# formatter rewrites `if x then return end` onto one line on purpose. Selene's
+# `multiple_statements` calls exactly that an error, which would make the two
+# tools argue over the same 278 lines forever. The style is ours, so the lint
+# stands down.
+multiple_statements = "allow"
+
+[config]
+# `function self:Method()` declares an implicit `self`, which shadows an outer
+# `local self`. That is how a method is written in Lua, and the SkillHarness
+# builds its fake services exactly that way — 39 declarations across two files.
+# Relaxing the name rather than the lint keeps shadowing reported for everything
+# else, including a genuine `local self = self` inside a method.
+shadowing = { ignore_pattern = "^_|^self$" }
+
+# Note on `parse_error`: selene 0.32.0 fails to parse an if-expression that is
+# not the last statement of its block,
+#
+#     if cond then
+#         local x = if a then b else c
+#         doSomething()
+#     end
+#
+# and the error cascades into the `elseif` below. `luau-compile --only-parse`
+# accepts the same file, so these are false positives, and `[lints]` cannot
+# silence them: a parse error is not a lint. Today the only file affected is
+# `tests/support/Source.luau`, and its findings sit in `tests/baseline/lint.txt`.
+# Prune them once the parser is fixed:
+#
+#     lune run tools/check.luau --only=lint --update-baseline

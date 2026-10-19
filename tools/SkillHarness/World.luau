@@ -306,7 +306,7 @@ function World.new(options: { [string]: any }): any
 		CombatService = Services.combat(self.trace, self.targets, self.state),
 		VFXService = Services.vfx(self.trace),
 		StandService = Services.stand(self.trace, self.stands),
-		Character = function(_self: any, instance: any)
+		Character = function(_self: any, _instance: any)
 			return self.caster
 		end,
 	}

@@ -14,8 +14,8 @@
 --- Everything here works on stripped text with string literals left intact, so
 --- what the checks see is what the interpreter would see.
 
-local fs = require("@lune/fs")
 local Root = require("../../tools/SkillHarness/Root")
+local fs = require("@lune/fs")
 
 local Source = {}
 
@@ -45,7 +45,12 @@ function Source.strip(source: string): string
 				local stopAt = if stop then (stop + #close - 1) else length
 
 				for at = index, stopAt do
-					out[at] = if source:sub(at, at) == "\n" then "\n" else " " end
+					out[at] = source:sub(at, at)
+
+					-- Spelled out rather than as an if-expression: selene 0.32
+					-- mis-parses a comparison condition in one and reports a
+					-- phantom parse error that swallows the rest of the file.
+					if out[at] ~= "\n" then out[at] = " " end
 				end
 
 				index = stopAt + 1
@@ -76,7 +81,9 @@ function Source.strip(source: string): string
 			repeat
 				out[stop] = source:sub(stop, stop)
 				stop += 1
-			until stop > length or source:sub(stop, stop) == quote or source:sub(stop - 1, stop - 1) == "\\"
+			until stop > length
+				or source:sub(stop, stop) == quote
+				or source:sub(stop - 1, stop - 1) == "\\"
 
 			index = stop
 		else
@@ -138,7 +145,10 @@ end
 --- Only method calls are matched: `VFXService:StartEffect(...)` is a call,
 --- `function VFXService:StartEffect(...)` is a declaration, and only the first can
 --- send a name that has to exist.
-function Source.calls(source: string, methods: { string }): { { arguments: { string }, index: number } }
+function Source.calls(
+	source: string,
+	methods: { string }
+): { { arguments: { string }, index: number } }
 	const stripped = Source.strip(source)
 	const found: { { arguments: { string }, index: number } } = {}
 
@@ -224,7 +234,11 @@ end
 --- `self[` is reported separately: a computed field cannot be resolved by reading
 --- the text, and pretending otherwise would make the check wrong rather than
 --- merely quiet.
-function Source.selfFields(source: string): { read: { [string]: boolean }, written: { [string]: boolean }, computed: boolean }
+function Source.selfFields(source: string): {
+	read: { [string]: boolean },
+	written: { [string]: boolean },
+	computed: boolean,
+}
 	const stripped = Source.strip(source)
 	const read: { [string]: boolean } = {}
 	const written: { [string]: boolean } = {}
@@ -301,7 +315,9 @@ function Source.lineAt(source: string, index: number): number
 	local line = 1
 
 	for at = 1, math.min(index, #source) do
-		if source:sub(at, at) == "\n" then line += 1 end
+		if source:sub(at, at) == "\n" then
+			line += 1
+		end
 	end
 
 	return line

@@ -55,8 +55,9 @@ local function parseOptions(args: { string }): (Quality.Options, boolean)
 end
 
 --- Report for machines: the keys are fixed so CI checks can be built on top of it
---- without parsing human output.
-local function toJson(results: { Quality.GateResult }, duration: number): string
+--- without parsing human output. The total duration is summed out of the gates
+--- themselves — they each time themselves — so no wall clock is passed in.
+local function toJson(results: { Quality.GateResult }): string
 	const gates: { any } = {}
 	local ok = true
 	local durationMs = 0
@@ -91,11 +92,10 @@ end
 local options, wantsJson = parseOptions(process.args)
 
 local root = Toolchain.findRoot()
-local started = os.clock()
 local results = Quality.run(root, options)
 
 if wantsJson then
-	print(toJson(results, math.floor((os.clock() - started) * 1000)))
+	print(toJson(results))
 else
 	print(Quality.report(results))
 

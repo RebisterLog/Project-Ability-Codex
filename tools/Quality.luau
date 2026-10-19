@@ -1,7 +1,7 @@
 --!strict
---- Quality gates: syntax, formatting, types and lint.
+--- Quality gates: syntax, formatting, lint and types.
 ---
---- The three gates run in increasing cost order, and each next one is only worth
+--- The gates run in increasing cost order, and each next one is only worth
 --- running if the previous one is clean:
 ---
 ---   syntax   — `luau-compile --only-parse`, ~10 ms for the whole repository. It
@@ -11,6 +11,10 @@
 ---               style: a Windows working copy arrives with CRLF while `stylua.toml`
 ---               asks for Unix, and a file that differs only in line endings must
 ---               not count as unformatted.
+---   lint     — `selene`, configured by `selene.toml` with the Roblox standard
+---               library. It answers what the type checker does not: unused
+---               variables, shadowing, `global_usage`. Style stays in stylua's
+---               hands, so `multiple_statements` is turned off over there.
 ---   analyze  — `luau-lsp analyze` with the Roblox global definitions and a
 ---               sourcemap: without them the analyzer treats `game`, `Vector3` and
 ---               `CFrame` as unknown and floods every line of game code with false
@@ -140,8 +144,10 @@ local function skipped(name: string, reason: string, checked: number, started: n
 end
 
 --- The syntax gate. A parse error is always a regression, with no baseline: code
---- that does not compile cannot work in the game either.
-function Quality.syntax(root: string, files: { string }, options: Options): GateResult
+--- that does not compile cannot work in the game either. That also leaves nothing
+--- for `options` to decide here, but the gate keeps the shared signature so that
+--- `Quality.run` can hold all four in one table.
+function Quality.syntax(root: string, files: { string }, _options: Options): GateResult
 	const started = os.clock()
 	const binary = Toolchain.find(root, "luau-compile")
 
@@ -339,6 +345,113 @@ local function parseDiagnostic(line: string): (string?, string?, string?)
 	return Toolchain.toUnix(raw), code, message
 end
 
+--- The lint gate. `selene -q -n` prints one line per finding and nothing else:
+---
+---   path/file.luau:12:7: warning[unused_variable]: message
+---
+--- which is parsable without a JSON reader. `-n` drops the summary block, whose
+--- "0 errors / 3 warnings" lines would otherwise be mistaken for findings.
+---
+--- The directories are handed over instead of the file list: selene walks them
+--- itself, which is one process instead of the twenty a Windows command line full
+--- of 800 paths would need. The vendored packages are dropped by `exclude` in
+--- `selene.toml`, which is the same list as `Toolchain.VENDORED`.
+---
+--- selene exits with 1 as soon as it has a finding, so `result.ok` means nothing
+--- here and only a failed spawn counts as a broken run.
+function Quality.lint(root: string, files: { string }, options: Options): GateResult
+	local started = os.clock()
+	local binary = Toolchain.find(root, "selene")
+
+	if not binary then return skipped("lint", "selene not found", #files, started) end
+
+	local args: { string } = { "-q", "-n" }
+
+	for _, dir in Toolchain.SOURCE_ROOTS do
+		table.insert(args, dir)
+	end
+
+	local current: { [string]: string } = {}
+	local failures: { string } = {}
+	local broken = 0
+
+	local ok, result = pcall(process.exec, binary, args, { cwd = root })
+
+	if not ok then
+		broken += 1
+	else
+		-- Anything on stderr is selene failing to start or to read the config;
+		-- its findings all go to stdout.
+		for _, line in Toolchain.lines(result.stderr) do
+			table.insert(failures, `selene failed: {line}`)
+		end
+
+		for _, line in Toolchain.lines(result.stdout) do
+			local raw, severity, code, message =
+				line:match("^(.-%.luau):%d+:%d+:%s*(%a+)%[(.-)%]:%s*(.*)$")
+
+			if raw and severity and code and message then
+				-- `gsub` returns the string and the replacement count; the extra
+				-- result is discarded with parentheses.
+				local path = Toolchain.relative(root, (Toolchain.toUnix(raw):gsub("^%./", "")))
+
+				current[findingKey(root, path, `{severity}[{code}]`, message)] = path
+			end
+		end
+	end
+
+	table.sort(failures)
+
+	local known = Baseline.load(root, "lint")
+	local stale: { string } = {}
+
+	-- The baseline comparison is skipped when selene itself broke: otherwise
+	-- empty output would look like "no findings".
+	if #failures == 0 then
+		local gateList
+		gateList, stale = gateFailures(current, known)
+
+		for _, finding in gateList do
+			table.insert(failures, finding)
+		end
+	end
+
+	if options.update then
+		local keys: { string } = {}
+
+		-- The `current` key is the finding itself, the value is the file: the order
+		-- is exactly like that, otherwise only paths would end up in the baseline.
+		for finding, path in current do
+			if not ownFile(path) then table.insert(keys, finding) end
+		end
+
+		Baseline.save(root, "lint", keys, {
+			"Lint findings that were already present. Regenerate with:",
+			"    lune run tools/check.luau --update-baseline",
+			"A new entry means the gate fails until it is fixed or accepted.",
+		})
+	end
+
+	local knownCount = 0
+
+	for finding in current do
+		if known[finding] then
+			knownCount += 1
+		end
+	end
+
+	return {
+		name = "lint",
+		status = if #failures > 0 or broken > 0 then "fail" else "pass",
+		checked = #files,
+		known = knownCount,
+		added = #failures,
+		removed = #stale,
+		durationMs = math.floor((os.clock() - started) * 1000),
+		failures = failures,
+	}
+end
+
 --- The analyze gate. `luau-lsp analyze` always exits with code 0, even with type
 --- errors, so the decision is made on the parsed output.
 function Quality.analyze(root: string, files: { string }, options: Options): GateResult
@@ -471,6 +584,7 @@ function Quality.run(root: string, options: Options): { GateResult }
 	local gates: { { name: string, run: (string, { string }, Options) -> GateResult } } = {
 		{ name = "syntax", run = Quality.syntax },
 		{ name = "format", run = Quality.format },
+		{ name = "lint", run = Quality.lint },
 		{ name = "analyze", run = Quality.analyze },
 	}
 

@@ -1,0 +1,85 @@
+{
+  // Zed project settings. Committed on purpose: every gate in tools/ is a
+  // team-wide rule, and the editor is where most of them are felt first.
+
+  // Format on save. `stylua` reads the buffer from stdin and writes the result
+  // back to stdout, which is the only shape Zed's external formatter supports.
+  //
+  // `--stdin-filepath` is not optional. Without it StyLua looks for
+  // `stylua.toml` in the working directory Zed happens to spawn it in, and a
+  // miss means the default 120-column, spaces, no sorted requires. With it,
+  // StyLua resolves the config from the buffer's own path every time.
+  "languages": {
+    "Luau": {
+      "formatter": {
+        "external": {
+          "command": "stylua",
+          "arguments": ["--stdin-filepath", "{buffer_path}", "-"]
+        }
+      },
+      "format_on_save": "on",
+
+      // Left at "detect" on purpose, which is also the default. Do not force
+      // LF here: the index stores every file as LF, but `core.autocrlf` is on
+      // and no .gitattributes exists, so git hands 208 of the 820 files back
+      // with CRLF. Measured on this repository, rewriting one of those to LF
+      // leaves `git status` reporting " M" while `git diff` stays empty — the
+      // file never settles. "detect" keeps each file's own ending, which is
+      // exactly what git expects per file.
+      "line_ending": "detect",
+
+      // These three mirror stylua.toml. If they drift apart, the editor's own
+      // auto-indent fights the formatter and the cursor jumps on save.
+      "hard_tabs": true,
+      "tab_size": 4,
+      "preferred_line_length": 100
+    }
+  },
+
+  // Vendored packages are read-only. StyLua cannot be told to skip a path when
+  // it formats from stdin — .styluaignore, --respect-ignores and --glob '!…'
+  // are all ignored in that mode, which was checked, not assumed — so the only
+  // way to keep an accidental save from reformatting hundreds of upstream files
+  // is to make them uneditable.
+  //
+  // The trade-off is real: Zed has no action to toggle this, so editing Roact or
+  // Fusion here means removing the glob. The list is `Toolchain.VENDORED`.
+  "read_only_files": [
+    "src/shared/packages/Roact/**",
+    "src/shared/packages/Fusion/**",
+    "src/shared/packages/Cmdr/**",
+    "src/shared/packages/ForgeVFX/**",
+    "src/shared/packages/Lapis/**",
+    "src/shared/packages/Janitor/**",
+    "src/shared/packages/roact-spring/**",
+    "src/shared/packages/Sequencer/**",
+    "src/shared/packages/SkillConstructor/**",
+    "src/shared/packages/Signal.luau",
+    "src/shared/packages/Crane/packages/**"
+  ],
+
+  "lsp": {
+    "luau-lsp": {
+      "settings": {
+        "luau-lsp": {
+          // Diagnostics are not reported for anything matching these unless the
+          // file is open. Same vendored list as read_only_files above, so what
+          // the editor underlines matches what the gates check.
+          "ignoreGlobs": [
+            "**/src/shared/packages/Roact/**",
+            "**/src/shared/packages/Fusion/**",
+            "**/src/shared/packages/Cmdr/**",
+            "**/src/shared/packages/ForgeVFX/**",
+            "**/src/shared/packages/Lapis/**",
+            "**/src/shared/packages/Janitor/**",
+            "**/src/shared/packages/roact-spring/**",
+            "**/src/shared/packages/Sequencer/**",
+            "**/src/shared/packages/SkillConstructor/**",
+            "**/src/shared/packages/Signal.luau",
+            "**/src/shared/packages/Crane/packages/**"
+          ]
+        }
+      }
+    }
+  }
+}

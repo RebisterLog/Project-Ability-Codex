@@ -6,3 +6,6 @@
 /*.rbxl.lock
 
 sourcemap.json
+
+# Local cache for downloaded checking tools; `Toolchain.searchDirs` looks here
+.tools/

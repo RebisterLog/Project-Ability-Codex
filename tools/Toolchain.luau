@@ -48,8 +48,10 @@ const VENDORED = {
 	"src/shared/packages/Crane/packages",
 }
 
---- Directories holding the sources every gate checks.
-const SOURCE_ROOTS = { "src", "tools", "tests" }
+--- Directories holding the sources every gate checks. Exported rather than kept
+--- local: the lint gate hands selene the directories instead of the file list,
+--- and a second copy of these three strings would drift.
+Toolchain.SOURCE_ROOTS = { "src", "tools", "tests" }
 
 --- Windows paths arrive with backslashes, while the baseline and the report need
 --- paths that are identical on any machine.
@@ -261,7 +263,7 @@ function Toolchain.sources(root: string): { string }
 	const vendored = Toolchain.vendoredSet(root)
 	const files: { string } = {}
 
-	for _, dir in SOURCE_ROOTS do
+	for _, dir in Toolchain.SOURCE_ROOTS do
 		for _, path in Toolchain.scripts(`{root}/{dir}`, vendored) do
 			table.insert(files, path)
 		end
