@@ -1,22 +1,28 @@
 --!strict
+local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local net = require("@lune/net")
 local process = require("@lune/process")
 local serde = require("@lune/serde")
 local task = require("@lune/task")
-local Toolchain = require("./Toolchain")
 
 local root = Toolchain.findRoot()
 local refRoot = `{root}/docs/ref`
 
 local clean = false
-for _, a in process.args do if a == "--clean" then clean = true end end
+for _, a in process.args do
+	if a == "--clean" then clean = true end
+end
 
 if clean and fs.isDir(refRoot) then
 	for _, entry in fs.readDir(refRoot) do
 		local path = `{refRoot}/{entry}`
 		if fs.isDir(path) then
-			pcall(process.exec, "powershell", { "-Command", `Remove-Item -Recurse -Force '{path}'` })
+			pcall(
+				process.exec,
+				"powershell",
+				{ "-Command", `Remove-Item -Recurse -Force '{path}'` }
+			)
 		else
 			pcall(fs.removeFile, path)
 		end
@@ -51,18 +57,56 @@ local function apiList(source: any, path: string): { any }?
 		headers = { ["User-Agent"] = "lune-sync-docs", ["Accept"] = "application/vnd.github+json" },
 	})
 	if res.statusCode ~= 200 then return nil end
-	local ok, data = pcall(function() return serde.decode("json", res.body) end)
+	local ok, data = pcall(function()
+		return serde.decode("json", res.body)
+	end)
 	if not ok or type(data) ~= "table" then return nil end
 	return data
 end
 
 local sources = {
-	{ owner = "luau-lang", repo = "site", branch = "master", remoteRoot = "src/content/docs", localBase = "luau" },
-	{ owner = "Roblox", repo = "creator-docs", branch = "master", remoteRoot = "content/en-us/luau", localBase = "roblox/luau" },
-	{ owner = "Roblox", repo = "creator-docs", branch = "master", remoteRoot = "content/en-us/scripting", localBase = "roblox/scripting" },
-	{ owner = "Roblox", repo = "creator-docs", branch = "master", remoteRoot = "content/en-us/reference/engine/classes", localBase = "roblox/api-classes" },
-	{ owner = "Roblox", repo = "creator-docs", branch = "master", remoteRoot = "content/en-us/reference/engine/datatypes", localBase = "roblox/api-datatypes" },
-	{ owner = "Roblox", repo = "creator-docs", branch = "master", remoteRoot = "content/en-us/reference/engine/globals", localBase = "roblox/api-globals" },
+	{
+		owner = "luau-lang",
+		repo = "site",
+		branch = "master",
+		remoteRoot = "src/content/docs",
+		localBase = "luau",
+	},
+	{
+		owner = "Roblox",
+		repo = "creator-docs",
+		branch = "master",
+		remoteRoot = "content/en-us/luau",
+		localBase = "roblox/luau",
+	},
+	{
+		owner = "Roblox",
+		repo = "creator-docs",
+		branch = "master",
+		remoteRoot = "content/en-us/scripting",
+		localBase = "roblox/scripting",
+	},
+	{
+		owner = "Roblox",
+		repo = "creator-docs",
+		branch = "master",
+		remoteRoot = "content/en-us/reference/engine/classes",
+		localBase = "roblox/api-classes",
+	},
+	{
+		owner = "Roblox",
+		repo = "creator-docs",
+		branch = "master",
+		remoteRoot = "content/en-us/reference/engine/datatypes",
+		localBase = "roblox/api-datatypes",
+	},
+	{
+		owner = "Roblox",
+		repo = "creator-docs",
+		branch = "master",
+		remoteRoot = "content/en-us/reference/engine/globals",
+		localBase = "roblox/api-globals",
+	},
 }
 
 type Job = { source: any, remote: string, localPath: string }
@@ -70,13 +114,19 @@ local jobs: { Job } = {}
 
 local function collect(source: any, remotePath: string, localPath: string)
 	local entries = apiList(source, remotePath)
-	if not entries then print(`WARN list {source.repo}/{remotePath}`); return end
+	if not entries then
+		print(`WARN list {source.repo}/{remotePath}`)
+		return
+	end
 	for _, entry in entries do
 		local name = tostring(entry.name)
 		if entry.type == "dir" then
 			collect(source, `{remotePath}/{name}`, `{localPath}/{name}`)
 		elseif entry.type == "file" and shouldInclude(name) then
-			table.insert(jobs, { source = source, remote = tostring(entry.path), localPath = `{localPath}/{name}` })
+			table.insert(
+				jobs,
+				{ source = source, remote = tostring(entry.path), localPath = `{localPath}/{name}` }
+			)
 		end
 	end
 end
@@ -100,7 +150,9 @@ while i <= #jobs do
 		local job = jobs[i + k - 1]
 		task.spawn(function()
 			ensureDir(job.localPath:match("^(.*)/[^/]+$") :: string)
-			local ok, r = pcall(function() return net.request(rawUrl(job.source, job.remote)) end)
+			local ok, r = pcall(function()
+				return net.request(rawUrl(job.source, job.remote))
+			end)
 			if not ok or r == nil then
 				print(`WARN net {job.remote}: {tostring(r)}`)
 				errors += 1
@@ -114,9 +166,11 @@ while i <= #jobs do
 			done += 1
 		end)
 	end
-	while done < batch do task.wait() end
+	while done < batch do
+		task.wait()
+	end
 	i += batch
-	if i % 100 == 1 then print(`progress {i-1}/{#jobs}`) end
+	if i % 100 == 1 then print(`progress {i - 1}/{#jobs}`) end
 end
 
 print(`sync-docs done: files={files} errors={errors}`)

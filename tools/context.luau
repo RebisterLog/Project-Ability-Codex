@@ -4,9 +4,9 @@
 ---   lune run tools/context.luau
 ---   lune run tools/context.luau --json
 
+local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
-local Toolchain = require("./Toolchain")
 
 local function hasBin(root: string, name: string): boolean
 	return Toolchain.find(root, name) ~= nil
@@ -40,7 +40,11 @@ local function countLuau(dir: string): number
 		if not fs.isDir(p) then return end
 		for _, e in fs.readDir(p) do
 			local path = `{p}/{e}`
-			if fs.isDir(path) then walk(path) elseif e:sub(-5) == ".luau" then c += 1 end
+			if fs.isDir(path) then
+				walk(path)
+			elseif e:sub(-5) == ".luau" then
+				c += 1
+			end
 		end
 	end
 	walk(dir)
@@ -74,7 +78,9 @@ else
 	print(`  root:    {root}`)
 	print(`  git:     {branch} @ {head}`)
 	print(`  modified files: {#modified}`)
-	for _, m in modified do print(`    {m}`) end
+	for _, m in modified do
+		print(`    {m}`)
+	end
 	print(`  sources: src={srcCount} luau, tools={toolsCount}, tests={testsCount}`)
 	print(`  content: skills={skillCount}, specs={specCount}`)
 	print("  tools:")
@@ -82,7 +88,9 @@ else
 		local status = if hasBin(root, name) then "ok" else "MISSING"
 		print(`    {name}: {status}`)
 	end
-	print("  note: run 'lune run tools/check.luau' for gates; 'lune run tools/run-tests.luau' for tests")
+	print(
+		"  note: run 'lune run tools/check.luau' for gates; 'lune run tools/run-tests.luau' for tests"
+	)
 end
 
 process.exit(0)

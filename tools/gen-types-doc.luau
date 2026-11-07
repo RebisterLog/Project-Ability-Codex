@@ -4,9 +4,9 @@
 ---   lune run tools/gen-types-doc.luau
 --- writes docs/API_TYPES.md
 
+local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
-local Toolchain = require("./Toolchain")
 
 local root = Toolchain.findRoot()
 
@@ -16,9 +16,7 @@ local function exportsFromFile(path: string): { string }
 	local out: { string } = {}
 	for line in (text:gsub("\r\n", "\n")):gmatch("[^\n]+") do
 		local trimmed = line:match("^%s*(.+)%s*$")
-		if trimmed and trimmed:sub(1, 11) == "export type" then
-			table.insert(out, trimmed)
-		end
+		if trimmed and trimmed:sub(1, 11) == "export type" then table.insert(out, trimmed) end
 	end
 	return out
 end
@@ -26,7 +24,10 @@ end
 local lines: { string } = {}
 table.insert(lines, "# PAC API Types (generated)")
 table.insert(lines, "")
-table.insert(lines, "Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune run tools/gen-types-doc.luau`.")
+table.insert(
+	lines,
+	"Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune run tools/gen-types-doc.luau`."
+)
 table.insert(lines, "")
 table.insert(lines, "## src/server/types.luau")
 for _, e in exportsFromFile(`{root}/src/server/types.luau`) do
@@ -43,7 +44,9 @@ if fs.isDir(schemaDir) then
 			local exps = exportsFromFile(path)
 			if #exps > 0 then
 				table.insert(lines, `### {entry}`)
-				for _, e in exps do table.insert(lines, "- " .. e) end
+				for _, e in exps do
+					table.insert(lines, "- " .. e)
+				end
 				table.insert(lines, "")
 			end
 		end

@@ -285,6 +285,10 @@ return {
 
 		const cleaner = character.Cleaner:Scope()
 		cleaner:Set("Navigator", navigator)
+		character.Navigator = navigator
+		cleaner:Add(function()
+			if character.Navigator == navigator then character.Navigator = nil end
+		end)
 
 		const bot = setmetatable({
 			Navigator = navigator,

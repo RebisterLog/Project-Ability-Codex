@@ -3,9 +3,9 @@
 ---   lune run tools/gen-code-map.luau
 --- writes docs/CODE_MAP.md
 
+local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
-local Toolchain = require("./Toolchain")
 
 local root = Toolchain.findRoot()
 
@@ -27,7 +27,9 @@ local function section(title: string, dir: string): { string }
 		table.insert(out, "")
 		return out
 	end
-	for _, f in files do table.insert(out, `- {f}`) end
+	for _, f in files do
+		table.insert(out, `- {f}`)
+	end
 	table.insert(out, "")
 	return out
 end
@@ -40,7 +42,9 @@ local lines: { string } = {
 }
 
 local function addDir(title: string, rel: string)
-	for _, l in section(title, `{root}/{rel}`) do table.insert(lines, l) end
+	for _, l in section(title, `{root}/{rel}`) do
+		table.insert(lines, l)
+	end
 end
 
 addDir("Server services", "src/server/services")

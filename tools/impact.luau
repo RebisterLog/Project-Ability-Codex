@@ -7,9 +7,9 @@
 --- Scans src/, tools/, tests/ (minus vendored) for references to the given
 --- path/identifier and lists dependent files with hit counts.
 
+local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
-local Toolchain = require("./Toolchain")
 
 local function norm(p: string): string
 	return (p:gsub("\\", "/"))
@@ -24,7 +24,9 @@ end
 
 local target = norm(args[1]):gsub("/+$", "")
 local wantJson = false
-for _, a in args do if a == "--json" then wantJson = true end end
+for _, a in args do
+	if a == "--json" then wantJson = true end
+end
 local base = target:match("([^/]+)$") or target
 local baseNoExt = base:gsub("%.luau$", "")
 -- possible require-ish variants
@@ -33,7 +35,10 @@ local variants = { target, base, baseNoExt }
 local uniq: { [string]: boolean } = {}
 local vList: { string } = {}
 for _, v in variants do
-	if not uniq[v] and v ~= "" then uniq[v] = true; table.insert(vList, v) end
+	if not uniq[v] and v ~= "" then
+		uniq[v] = true
+		table.insert(vList, v)
+	end
 end
 
 local vendored = Toolchain.vendoredSet(root)
@@ -60,7 +65,9 @@ for _, f in files do
 end
 
 -- sort by hits desc
-table.sort(results, function(a, b) return a.hits > b.hits end)
+table.sort(results, function(a, b)
+	return a.hits > b.hits
+end)
 
 if wantJson then
 	print("[")

@@ -139,6 +139,8 @@ export type NavigationConfig = {
 }
 
 type NavigationControllerMethods = {
+	DisableRotation: (self: NavigationController) -> (),
+	EnableRotation: (self: NavigationController) -> (),
 	SetTarget: (self: NavigationController, target: BasePart) -> (),
 	SetReachDistance: (self: NavigationController, distance: number) -> (),
 	SetHoldDistance: (self: NavigationController, distance: number?) -> (),
@@ -158,6 +160,7 @@ const States = {
 		Enter = function(self: NavigatorState)
 			self.navigator.humanoid:Move(Vector3.zero)
 			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
+				and not self.navigator.RotationSuppressed
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -175,6 +178,7 @@ const States = {
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
 
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
+				and not self.navigator.RotationSuppressed
 
 			const hasLOS: boolean, result: RaycastResult =
 				self.navigator:HasLineOfSight(pos, targetPos)
@@ -210,6 +214,7 @@ const States = {
 	Direct = {
 		Enter = function(self: NavigatorState)
 			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
+				and not self.navigator.RotationSuppressed
 
 			if self.navigator.path then
 				self.navigator.path = nil
@@ -225,6 +230,7 @@ const States = {
 			const dist = (pos - targetPos).Magnitude
 
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
+				and not self.navigator.RotationSuppressed
 
 			self.navigator.alignOrient.CFrame =
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
@@ -277,6 +283,7 @@ const States = {
 	HoldingDistance = {
 		Enter = function(self: NavigatorState)
 			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
+				and not self.navigator.RotationSuppressed
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -289,6 +296,7 @@ const States = {
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
 
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
+				and not self.navigator.RotationSuppressed
 
 			if not self.navigator.config.HoldDistance then
 				self.navigator.stateMachine:ChangeState("Idle")
@@ -331,6 +339,7 @@ const States = {
 	Pathfinding = {
 		Enter = function(self: NavigatorState)
 			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
+				and not self.navigator.RotationSuppressed
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -343,6 +352,7 @@ const States = {
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
 
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
+				and not self.navigator.RotationSuppressed
 
 			const hasValidPath = self.navigator.path
 				and self.navigator.waypoint
@@ -441,6 +451,7 @@ type NavigationControllerProperties = {
 
 	isComputingPath: boolean?,
 
+	RotationSuppressed: boolean,
 	alignOrient: AlignOrientation,
 	rotateAttach: Attachment,
 }
@@ -580,6 +591,15 @@ function NavigationController.Destroy(self: NavigationController)
 	if self.config.Debug then print("Navigator controller destroyed") end
 end
 
+function NavigationController.DisableRotation(self: NavigationController)
+	self.RotationSuppressed = true
+	self.alignOrient.Enabled = false
+end
+
+function NavigationController.EnableRotation(self: NavigationController)
+	self.RotationSuppressed = false
+end
+
 function NavigationController.SetReachDistance(self: NavigationController, distance: number)
 	self.config.ReachDistance = math.max(0, distance)
 end
@@ -657,6 +677,7 @@ return {
 				rootPart = root,
 				humanoid = humanoid,
 
+				RotationSuppressed = false,
 				alignOrient = alignOrientation,
 				rotateAttach = rotateAttachment,
 
