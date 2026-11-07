@@ -181,8 +181,10 @@ type SequencerProperties = InputData & {
 type SequencerMethods = {
 	Play: (self: Sequencer) -> (),
 	Stop: (self: Sequencer) -> (),
+	Pause: (self: Sequencer) -> (),
 	AdjustSpeed: (self: Sequencer, speed: number) -> (),
 	IsPlaying: (self: Sequencer) -> boolean,
+	IsPaused: (self: Sequencer) -> boolean,
 	Await: (self: Sequencer, state: States?) -> (),
 	Destroy: (self: Sequencer) -> (),
 }
@@ -299,6 +301,13 @@ end
 -- Just public method to get sequence playing state
 function Sequencer.IsPlaying(self: Sequencer)
 	return self.State == States.Playing
+end
+
+-- Paused is distinct from Stopped: `Play` resumes from `CurrentFrame` only
+-- while the state is Paused, and restarts the queue from the beginning after
+-- a Stop. Callers that hand a sequence back must check this, not `IsPlaying`.
+function Sequencer.IsPaused(self: Sequencer)
+	return self.State == States.Paused
 end
 
 -- I hate Promise :)

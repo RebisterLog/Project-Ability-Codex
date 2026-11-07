@@ -16,14 +16,14 @@ type SoundStopData = {
 
 return {
 	Validate = function(self, data: SoundData)
--- 		const Origin = data.Origin
--- 		if Origin == nil then return false end
--- 
--- 		const pos = typeof(Origin) == "CFrame" and Origin.Position or Origin.Position
--- 		const maxDistance = data.MaxDistance or 100
--- 		if (pos - workspace.CurrentCamera.CFrame.Position).Magnitude > maxDistance then
--- 			return false
--- 		end
+		-- 		const Origin = data.Origin
+		-- 		if Origin == nil then return false end
+		--
+		-- 		const pos = typeof(Origin) == "CFrame" and Origin.Position or Origin.Position
+		-- 		const maxDistance = data.MaxDistance or 100
+		-- 		if (pos - workspace.CurrentCamera.CFrame.Position).Magnitude > maxDistance then
+		-- 			return false
+		-- 		end
 		return true
 	end,
 

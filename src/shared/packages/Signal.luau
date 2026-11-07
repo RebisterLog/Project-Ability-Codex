@@ -65,40 +65,32 @@ SOFTWARE.
 
 -- Types.
 export type Signal<Parameters...> = {
-	Connect: typeof(	-- Connects a function.
-function(
+	Connect: typeof( -- Connects a function.function(
 		signal: Signal<Parameters...>,
 		callback: (Parameters...) -> ()
 	): Connection
 	end),
-	Once: typeof(	-- Connects a function, then auto-disconnects after the first call.
-function(
+	Once: typeof( -- Connects a function, then auto-disconnects after the first call.function(
 		signal: Signal<Parameters...>,
 		callback: (Parameters...) -> ()
 	): Connection
 	end),
-	Wait: typeof(	-- Yields the calling thread until the next fire.
-function(signal: Signal<Parameters...>): Parameters... end),
+	Wait: typeof( -- Yields the calling thread until the next fire.function(signal: Signal<Parameters...>): Parameters... end),
 
-	Fire: typeof(	-- Runs all connected functions and resumes all waiting threads.
-function(signal: Signal<Parameters...>, ...: Parameters...) end),
+	Fire: typeof( -- Runs all connected functions and resumes all waiting threads.function(signal: Signal<Parameters...>, ...: Parameters...) end),
 
-	DisconnectAll: typeof(	-- Erases all connections.
-	-- <strong>Much faster than calling <code>Disconnect</code> on each.</strong>
+	DisconnectAll: typeof( -- Erases all connections.	-- <strong>Much faster than calling <code>Disconnect</code> on each.</strong>
 function(signal: Signal<Parameters...>) end),
-	Destroy: typeof(	-- Erases all connections and methods.
-	-- <strong>To fully erase, also remove all references to the signal.</strong>
+	Destroy: typeof( -- Erases all connections and methods.	-- <strong>To fully erase, also remove all references to the signal.</strong>
 function(signal: Signal<Parameters...>) end),
 }
 export type Connection = {
 	Signal: Signal,
 	Connected: boolean,
-	Disconnect: typeof(	-- Removes the connection from the signal.
-	-- <strong>The connection's data remains.</strong>
+	Disconnect: typeof( -- Removes the connection from the signal.	-- <strong>The connection's data remains.</strong>
 function(connection: Connection) end),
 }
-type CreateSignal = typeof(-- Creates a new signal.
-function(): Signal end)
+type CreateSignal = typeof( -- Creates a new signal.function(): Signal end)
 
 -- Spawn function.
 local spawnThread = if script:GetAttribute("Deferred") then task.defer else task.spawn
