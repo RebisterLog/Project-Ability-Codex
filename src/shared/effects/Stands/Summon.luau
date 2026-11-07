@@ -4,8 +4,8 @@ const TweenService = game:GetService("TweenService")
 
 const StandsTweens = {}
 
-const STYLE_IN = TweenInfo.new(1, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-const STYLE_OUT = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+const STYLE_IN = TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+const STYLE_OUT = TweenInfo.new(0.25, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
 
 type SummonData = {
 	Stand: Model?,

@@ -1,9 +1,9 @@
 --!native
 --!optimize 2
 
-const BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
-const Conditions = require(script.Parent.Conditions)
-const SkillPriority = require(script.Parent.SkillPriority)
+local BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
+local Conditions = require(script.Parent.Conditions)
+local SkillPriority = require(script.Parent.SkillPriority)
 
 --- Rules of the bot defense.
 ---
@@ -19,18 +19,18 @@ const SkillPriority = require(script.Parent.SkillPriority)
 --- would not be pressed in time, and a guard pressed late gives no perfect block,
 --- because the window is stamped at activation time.
 
-const DEFENSE_TAG = "Defense"
-const ESCAPE_TAG = "Escape"
-const COUNTER_TAG = "Counter"
+local DEFENSE_TAG = "Defense"
+local ESCAPE_TAG = "Escape"
+local COUNTER_TAG = "Counter"
 
-const BLOCKABLE_TAG = "Blockable"
-const PERFECT_BLOCKABLE_TAG = "PerfectBlockable"
-const PERFECT_BLOCK_TAG = "PerfectBlock"
+local BLOCKABLE_TAG = "Blockable"
+local PERFECT_BLOCKABLE_TAG = "PerfectBlockable"
+local PERFECT_BLOCK_TAG = "PerfectBlock"
 
 --- Conditions that justify raising the guard. The list lives at module level
 --- because `Conditions.Mask` caches by table identity: a literal built per tick
 --- would miss the cache and allocate every frame.
-const BLOCKABLE_CONDITIONS = { "TARGET_BLOCKABLE", "TARGET_PERFECT_BLOCKABLE" }
+local BLOCKABLE_CONDITIONS = { "TARGET_BLOCKABLE", "TARGET_PERFECT_BLOCKABLE" }
 
 --- Skill description for role resolution: the id and the tags are enough.
 export type RoleSkill = {
@@ -46,20 +46,20 @@ export type Roles = {
 
 --- Skill tags are plain strings rather than vocabulary constants:
 --- `SkillCharacters` stores values like `"PerfectBlock"`, not keys.
-const HasTag = function(tags: { string }?, tag: string): boolean
+local function HasTag(tags: { string }?, tag: string): boolean
 	return tags ~= nil and table.find(tags, tag) ~= nil
 end
 
 --- Is the hit blockable? Both spellings of the tag are accepted, the vocabulary
 --- key and its value, otherwise a skill written with the value silently stops
 --- being blocked.
-const IsBlockable = function(tags: { string }?): boolean
+local function IsBlockable(tags: { string }?): boolean
 	return HasTag(tags, BLOCKABLE_TAG)
 		or HasTag(tags, PERFECT_BLOCKABLE_TAG)
 		or HasTag(tags, PERFECT_BLOCK_TAG)
 end
 
-const Defense = {}
+local Defense = {}
 
 --- Splits the skills of a spec into defense roles.
 ---
@@ -68,12 +68,23 @@ const Defense = {}
 --- offence, and handing it to the defense would make the bot strike instead of
 --- blocking.
 ---
---- Iteration order does not matter: a spec has exactly one guard, and if there
---- were several the first one wins — choosing between two shields is meaningless.
-function Defense.ResolveRoles(skills: { RoleSkill }): Roles
-	const roles: Roles = {}
+--- `configurable` is the `Skills` table of the bot config, and only a skill listed
+--- there can take a role. A role outside the config surface is untunable: the
+--- release rules (`HoldWhile`, `HoldUntil`) are read from that table, so a guard
+--- the config does not describe is a guard nothing can release — and the release
+--- paths only ever know the id this function returns.
+---
+--- Among the skills the config does describe there is exactly one guard: if a spec
+--- has two, the `pairs` order of `spec.Skills` picks one, which is arbitrary.
+function Defense.ResolveRoles(
+	skills: { RoleSkill },
+	configurable: { [string]: BotsCharacters.SkillPreference }
+): Roles
+	local roles: Roles = {}
 
 	for _, skill in skills do
+		if not configurable[skill.Id] then continue end
+
 		if HasTag(skill.Tags, DEFENSE_TAG) and not HasTag(skill.Tags, COUNTER_TAG) then
 			if HasTag(skill.Tags, ESCAPE_TAG) then
 				roles.Escape = skill.Id
@@ -84,6 +95,18 @@ function Defense.ResolveRoles(skills: { RoleSkill }): Roles
 	end
 
 	return roles
+end
+
+--- Is this skill the held guard: the shield the defense layer owns and releases.
+---
+--- `Escape` is deliberately not excluded from the attack layer by this rule: a
+--- retreat ends on its own, so pressing it as an attacking move leaves the slot
+--- free again. A held guard does not — nothing but `DeactivateSkill` on the guard
+--- id ends it, and the bot has no key release.
+function Defense.IsHeldGuard(tags: { string }?): boolean
+	return HasTag(tags, DEFENSE_TAG)
+		and not HasTag(tags, ESCAPE_TAG)
+		and not HasTag(tags, COUNTER_TAG)
 end
 
 --- What the bot has to be known for deciding what to do with an incoming hit.
@@ -126,7 +149,7 @@ export type Decision = "Press" | "Hold" | "Escape" | "Ignore"
 --- and the escape is the only defense left. This is only called for a real threat
 --- (`Threat:Track`), so it does not turn into dashing on every single hit.
 function Defense.React(incoming: Incoming, context: ReactionContext): Decision
-	const skill = incoming.Skill
+	local skill = incoming.Skill
 
 	if skill and IsBlockable(skill.Data.SkillCharacters) and context.GuardId then
 		if not context.GuardOnCooldown then return if context.GuardHeld then "Hold" else "Press" end

@@ -1,7 +1,7 @@
 --!native
 --!optimize 2
 
-const RunService = game:GetService("RunService")
+local RunService = game:GetService("RunService")
 
 type Cleanup = () -> ()
 
@@ -35,12 +35,12 @@ export type StateMachineConfig = {
 	States: { [string]: State }?,
 }
 
-const StateMachine = {}
+local StateMachine = {}
 StateMachine.__index = StateMachine
 
 function StateMachine.ChangeState<T>(self: StateMachine<T>, new: keyof<T>)
 	if new == self.CurrentState then return end
-	const old = self.CurrentState
+	local old = self.CurrentState
 
 	if old then
 		self.CurrentState = nil
@@ -91,7 +91,7 @@ function StateMachine.OnStateChanged<T>(
 	table.insert(self.Listeners, callback)
 
 	return function()
-		const index = table.find(self.Listeners, callback)
+		local index = table.find(self.Listeners, callback)
 		if index then table.remove(self.Listeners, index) end
 	end
 end
@@ -116,7 +116,7 @@ return {
 			end
 		end
 
-		const machine = setmetatable({
+		local machine = setmetatable({
 			States = config.States or {},
 			Listeners = {},
 			CurrentState = nil,

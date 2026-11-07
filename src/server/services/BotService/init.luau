@@ -1,17 +1,17 @@
-const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const ServerScriptService = game:GetService("ServerScriptService")
-const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-const types = require(ServerScriptService.server.types)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+local types = require(ServerScriptService.server.types)
 
-const Bot = require(script.Bot)
-const NavigationController = require(script.NavigationController)
-const StateMachine = NavigationController.StateMachine
+local Bot = require(script.Bot)
+local NavigationController = require(script.NavigationController)
+local StateMachine = NavigationController.StateMachine
 
-const Crane = require(ReplicatedStorage.shared.packages.Crane)
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
 
-const rand = Random.new(tick())
+local rand = Random.new(tick())
 
-const BotsService = Crane:CreateService({
+local BotsService = Crane:CreateService({
 	Name = "BotsService",
 })
 
@@ -22,22 +22,32 @@ function BotsService:onStart()
 end
 
 function BotsService:Instance(botName: string, character: types.Character)
-	const config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
+	local config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
+	local bot = Bot.new(character, config)
 
-	const bot = Bot.new(character, config)
+	self.Bots[character] = bot
 
 	return bot
 end
 
 function BotsService:Remove(character: types.Character)
-	if not self.Bots[character] then return end
+	const bot = self.Bots[character]
+	if not bot then return end
 
-	self.Bots[character].Cleaner:Cleanup()
+	bot.Cleaner:Cleanup()
+	self.Bots[character] = nil
+end
+
+--- Looks a bot up by its character component. Returns nil for non-bot characters
+--- (e.g. a player). Used by CombatService's knockback to route a client-side
+--- knockback to the player the bot is currently targeting.
+function BotsService:GetBot(character: types.Character): any?
+	return self.Bots[character]
 end
 
 function BotsService:Create(botName: string, model: Model)
-	const character = Crane:AddComponent(model, "Character")
-	const bot = self:Instance(botName, character)
+	local character = Crane:AddComponent(model, "Character")
+	local bot = self:Instance(botName, character)
 
 	return bot, character
 end

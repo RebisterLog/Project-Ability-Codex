@@ -1,21 +1,11 @@
 --!native
 --!optimize 2
 
-const BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
-const SkillPriority = require(script.Parent.SkillPriority)
-const types = require(game:GetService("ServerScriptService").server.types)
-
---- Attack layer: skill selection by priority and combo progression.
----
---- There is no defense here and there must not be one. The bot has a single
---- action slot, and the guard must not compete with an attack by weights: on a
---- tie it would win and occupy the slot instead of the attack, and a guard
---- pressed late does not produce a perfect block. The "should we block" question
---- is answered by `BotService/Defense`.
----
---- The escape skill stays a candidate: it is also part of combos, so the attack
---- layer cannot be denied it. Defense has the first move, but while the slot is
---- free the escape is available as an attacking move as well.
+local BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
+local Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
+local Defense = require(script.Parent.Defense)
+local SkillPriority = require(script.Parent.SkillPriority)
+local types = require(game:GetService("ServerScriptService").server.types)
 
 type Host = {
 	Config: BotsCharacters.BotCharacterConfig,
@@ -25,54 +15,94 @@ type Host = {
 	Random: Random,
 }
 
---- Candidates are reused between ticks: the scorer only reads them and never
---- yields, so there is no reason to build a new table every frame.
-const CANDIDATES: { types.Skill } = {}
+local CANDIDATES: { types.Skill } = {}
 
-const CollectCandidates = function(spec: types.Spec, guardId: string?): { types.Skill }
+local function CollectCandidates(
+	spec: types.Spec,
+	config: BotsCharacters.BotCharacterConfig,
+	stand: types.Stand?
+): { types.Skill }
 	table.clear(CANDIDATES)
 
 	for id, skill in spec.Skills do
-		if id ~= guardId and skill:Validate() then table.insert(CANDIDATES, skill) end
+		if Defense.IsHeldGuard(skill.Data.SkillCharacters) then continue end
+
+		local options = config.Skills[id]
+		if not options then continue end
+
+		local valid = skill:Validate()
+		local requiredStandState = options.StandSummon
+		local isStandActive = stand ~= nil and stand:IsActive()
+		local standNeedsToggle = requiredStandState ~= nil
+			and isStandActive ~= requiredStandState
+			and stand ~= nil
+
+		if not valid and standNeedsToggle then
+			valid = not skill.Character:GetParameter("NoSkillCast")
+				and skill.Character:GetParameter("Stun").Duration <= 0
+				and not skill.Character:GetParameter("Ragdoll")
+				and skill.Character.Humanoid.Health > 0
+				and not skill:IsOnCooldown()
+		end
+
+		if valid then table.insert(CANDIDATES, skill) end
 	end
 
 	return CANDIDATES
 end
 
-const Attack = {}
+local Attack = {}
 
---- An empty combo is allowed: the plan then gives a bonus to nobody and the
---- choice is fully driven by conditions.
 function Attack.RollCombo(
 	config: BotsCharacters.BotCharacterConfig,
 	random: Random
 ): BotsCharacters.SkillCombo
-	const combos = config.Combos
+	local combos = config.Combos
 	if not combos or #combos == 0 then return {} end
 
 	return combos[random:NextInteger(1, #combos)]
 end
 
---- One step of the attack: slot busy, leave; no candidates, leave; otherwise
---- activate the winner.
-function Attack.Step(host: Host, mask: number, distance: number, guardId: string?)
-	const spec = host.Character.Spec
+function Attack.Step(host: Host, mask: number, distance: number)
+	local spec = host.Character.Spec
 	if not spec then return end
 
 	if spec:CheckActiveSkills() then return end
 
-	const combo = host.Combo
-	const comboSkillId = combo[host.ComboIndex]
+	local combo = host.Combo
+	local comboSkillId = combo[host.ComboIndex]
+	local stand = Crane:GetService("StandService"):GetStand(host.Character) :: types.Stand?
 
-	const candidates = CollectCandidates(spec, guardId)
-	if #candidates == 0 then return end
+	local candidates = CollectCandidates(spec, host.Config, stand)
+	if #candidates == 0 then 
+		if host.Config.Debug then print("Bot no candidates") end
+		return
+	end
 
-	const best = SkillPriority.Select(host.Config, candidates, mask, distance, comboSkillId)
+	if host.Config.Debug then
+		local ids = {}
+		for _, c in candidates do table.insert(ids, c.Data.Id) end
+		print("Bot candidates:", table.concat(ids, ", "))
+	end
+
+	local best = SkillPriority.Select(host.Config, candidates, mask, distance, comboSkillId)
 	if not best then return end
 
-	-- Deviating from the plan (a skill outside the combo was picked) does not
-	-- advance the index: the combo stays the same, conditions just overrode it
-	-- for now.
+	if host.Config.Debug then print("Bot selected skill:", best.Id) end
+
+	local options = host.Config.Skills[best.Id]
+	local requiredStandState = options and options.StandSummon
+	if requiredStandState ~= nil then
+		local isStandActive = stand ~= nil and stand:IsActive()
+		if requiredStandState and not stand then return end
+
+		if isStandActive ~= requiredStandState then
+			if host.Config.Debug then print("Bot summons stand for", best.Id) end
+			spec:ActivateSkill("Summon")
+			return
+		end
+	end
+
 	if comboSkillId == best.Id then
 		host.ComboIndex += 1
 

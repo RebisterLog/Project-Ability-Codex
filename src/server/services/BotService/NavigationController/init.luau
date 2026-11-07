@@ -1,20 +1,20 @@
 --!native
 --!optimize 2
 
-const PathfindingService = game:GetService("PathfindingService")
-const RunService = game:GetService("RunService")
+local PathfindingService = game:GetService("PathfindingService")
+local RunService = game:GetService("RunService")
 
-const MovementStyles = require(script.MovementStyles)
-const StateMachine = require(script.StateMachine)
+local MovementStyles = require(script.MovementStyles)
+local StateMachine = require(script.StateMachine)
 
 const LOWEST_MAGNITUDE = 0.001
 
-const VisualizePath = function(path: Path): ()
+local function VisualizePath(path: Path): ()
 	if not path then return end
-	const nodes = path:GetWaypoints()
+	local nodes = path:GetWaypoints()
 
 	for i, waypoint: PathWaypoint in ipairs(nodes) do
-		const part = Instance.new("Part")
+		local part = Instance.new("Part")
 		part.Size = Vector3.new(1, 1, 1)
 		part.Anchored = true
 		part.CanCollide = false
@@ -25,27 +25,27 @@ const VisualizePath = function(path: Path): ()
 	end
 end
 
-const MovementStyleConfigs: { [string]: MovementCallback } = {
+local MovementStyleConfigs: { [string]: MovementCallback } = {
 	direct = function(self: NavigationController, baseDirection, dt, distance)
 		return baseDirection
 	end,
 
 	strafe = function(self: NavigationController, baseDirection, dt, distance)
-		const right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
-		const time = tick()
+		local right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
+		local time = tick()
 
-		const strafeAmount = math.sin(time * 2.5) * 0.8
-		const result = baseDirection + right * strafeAmount
+		local strafeAmount = math.sin(time * 2.5) * 0.8
+		local result = baseDirection + right * strafeAmount
 
 		if result.Magnitude > LOWEST_MAGNITUDE then return result.Unit end
 		return baseDirection
 	end,
 
 	zigzag = function(self: NavigationController, baseDirection, dt, distance)
-		const right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
+		local right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
 
-		const zigzagAmount = math.sin(tick() * 2) * 2
-		const result = baseDirection + right * zigzagAmount
+		local zigzagAmount = math.sin(tick() * 2) * 2
+		local result = baseDirection + right * zigzagAmount
 
 		if result.Magnitude > LOWEST_MAGNITUDE then return result.Unit end
 
@@ -53,7 +53,7 @@ const MovementStyleConfigs: { [string]: MovementCallback } = {
 	end,
 
 	flank = function(self: NavigationController, baseDirection, dt, distance)
-		const right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
+		local right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
 
 		--local hash = math.noise(self.rootPart.Position.X * 0.03, 0, self.rootPart.Position.Z * 0.03)
 		--local side = hash > 0 and 1 or -1
@@ -68,9 +68,9 @@ const MovementStyleConfigs: { [string]: MovementCallback } = {
 	end,
 
 	bait = function(self: NavigationController, baseDirection, dt, distance)
-		const reachDist = self.config.ReachDistance or 4
-		const baitStart = reachDist + 10
-		const baitEnd = reachDist + 20
+		local reachDist = self.config.ReachDistance or 4
+		local baitStart = reachDist + 10
+		local baitEnd = reachDist + 20
 
 		if distance >= baitEnd then
 			self.StartBait = false
@@ -95,7 +95,7 @@ const MovementStyleConfigs: { [string]: MovementCallback } = {
 			distance < 15 + self.config.ReachDistance
 			and distance > 2 + self.config.ReachDistance
 		then
-			self:Jump()
+			--self:Jump()
 		end
 
 		return baseDirection
@@ -139,8 +139,6 @@ export type NavigationConfig = {
 }
 
 type NavigationControllerMethods = {
-	DisableRotation: (self: NavigationController) -> (),
-	EnableRotation: (self: NavigationController) -> (),
 	SetTarget: (self: NavigationController, target: BasePart) -> (),
 	SetReachDistance: (self: NavigationController, distance: number) -> (),
 	SetHoldDistance: (self: NavigationController, distance: number?) -> (),
@@ -150,12 +148,15 @@ type NavigationControllerMethods = {
 
 	Jump: (self: NavigationController) -> (),
 
+	DisableRotation: (self: NavigationController) -> (),
+	EnableRotation: (self: NavigationController) -> (),
+
 	Destroy: (self: NavigationController) -> (),
 }
 
 type NavigatorState = StateMachine.State & { navigator: NavigationController }
 
-const States = {
+local States = {
 	Idle = {
 		Enter = function(self: NavigatorState)
 			self.navigator.humanoid:Move(Vector3.zero)
@@ -169,10 +170,10 @@ const States = {
 				return
 			end
 
-			const target = self.navigator.target
-			const pos = self.navigator.rootPart.Position
-			const targetPos = target.Position
-			const dist = (pos - targetPos).Magnitude
+			local target = self.navigator.target
+			local pos = self.navigator.rootPart.Position
+			local targetPos = target.Position
+			local dist = (pos - targetPos).Magnitude
 
 			self.navigator.alignOrient.CFrame =
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
@@ -180,7 +181,7 @@ const States = {
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
 				and not self.navigator.RotationSuppressed
 
-			const hasLOS: boolean, result: RaycastResult =
+			local hasLOS: boolean, result: RaycastResult =
 				self.navigator:HasLineOfSight(pos, targetPos)
 
 			if self.navigator.config.HoldDistance then
@@ -224,10 +225,10 @@ const States = {
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			const target = self.navigator.target
-			const pos = self.navigator.rootPart.Position
-			const targetPos = target.Position
-			const dist = (pos - targetPos).Magnitude
+			local target = self.navigator.target
+			local pos = self.navigator.rootPart.Position
+			local targetPos = target.Position
+			local dist = (pos - targetPos).Magnitude
 
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
 				and not self.navigator.RotationSuppressed
@@ -240,7 +241,7 @@ const States = {
 				return
 			end
 
-			const hasLOS: boolean, result: RaycastResult =
+			local hasLOS: boolean, result: RaycastResult =
 				self.navigator:HasLineOfSight(pos, targetPos)
 
 			if
@@ -266,8 +267,8 @@ const States = {
 				hasLOS
 				or ((result.Position - pos).Magnitude > self.navigator.config.ObstacleCheckDistance)
 			then
-				const baseDirection = self.navigator:GetBaseDirection(pos, targetPos)
-				const styleCallback = MovementStyleConfigs[self.navigator.config.Style]
+				local baseDirection = self.navigator:GetBaseDirection(pos, targetPos)
+				local styleCallback = MovementStyleConfigs[self.navigator.config.Style]
 				local finalDirection = baseDirection
 				if styleCallback then
 					finalDirection = styleCallback(self.navigator, baseDirection, dt, dist)
@@ -287,10 +288,10 @@ const States = {
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			const target = self.navigator.target
-			const pos = self.navigator.rootPart.Position
-			const targetPos = target.Position
-			const dist = (pos - targetPos).Magnitude
+			local target = self.navigator.target
+			local pos = self.navigator.rootPart.Position
+			local targetPos = target.Position
+			local dist = (pos - targetPos).Magnitude
 
 			self.navigator.alignOrient.CFrame =
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
@@ -303,7 +304,7 @@ const States = {
 				return
 			end
 
-			const hasLOS: boolean, result: RaycastResult =
+			local hasLOS: boolean, result: RaycastResult =
 				self.navigator:HasLineOfSight(pos, targetPos)
 
 			if not hasLOS then
@@ -321,11 +322,11 @@ const States = {
 				return
 			end
 
-			const baseDirection = self.navigator:GetBaseDirection(
+			local baseDirection = self.navigator:GetBaseDirection(
 				targetPos,
 				(pos - targetPos).Unit * self.navigator.config.HoldDistance
 			) -- switched direction
-			const styleCallback = MovementStyleConfigs[self.navigator.config.Style]
+			local styleCallback = MovementStyleConfigs[self.navigator.config.Style]
 			local finalDirection = baseDirection
 
 			if styleCallback then
@@ -343,10 +344,10 @@ const States = {
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			const target = self.navigator.target
-			const pos = self.navigator.rootPart.Position
-			const targetPos = target.Position
-			const dist = (pos - targetPos).Magnitude
+			local target = self.navigator.target
+			local pos = self.navigator.rootPart.Position
+			local targetPos = target.Position
+			local dist = (pos - targetPos).Magnitude
 
 			self.navigator.alignOrient.CFrame =
 				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
@@ -354,7 +355,7 @@ const States = {
 			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
 				and not self.navigator.RotationSuppressed
 
-			const hasValidPath = self.navigator.path
+			local hasValidPath = self.navigator.path
 				and self.navigator.waypoint
 				and self.navigator.waypoint > 0
 				and self.navigator.waypoint <= #self.navigator.waypoints
@@ -365,8 +366,8 @@ const States = {
 			else
 				self.navigator:UpdatePathfinding(pos, targetPos, dt)
 
-				const baseDirection = self.navigator:GetBaseDirection(pos, targetPos)
-				const styleCallback = MovementStyleConfigs[self.navigator.config.Style]
+				local baseDirection = self.navigator:GetBaseDirection(pos, targetPos)
+				local styleCallback = MovementStyleConfigs[self.navigator.config.Style]
 				local finalDirection = baseDirection
 				if styleCallback then
 					finalDirection = styleCallback(self.navigator, baseDirection, dt, dist)
@@ -384,16 +385,16 @@ const States = {
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			const target = self.navigator.target
-			const pos = self.navigator.rootPart.Position
-			const targetPos = target.Position
-			const dist = (pos - targetPos).Magnitude
+			local target = self.navigator.target
+			local pos = self.navigator.rootPart.Position
+			local targetPos = target.Position
+			local dist = (pos - targetPos).Magnitude
 
-			const currentWaypoint = self.navigator.waypoints[self.navigator.waypoint]
-			const waypointPos = currentWaypoint.Position
-			const distToWaypoint = (waypointPos * Vector3.new(1, 0, 1) - pos * Vector3.new(1, 0, 1)).Magnitude
+			local currentWaypoint = self.navigator.waypoints[self.navigator.waypoint]
+			local waypointPos = currentWaypoint.Position
+			local distToWaypoint = (waypointPos * Vector3.new(1, 0, 1) - pos * Vector3.new(1, 0, 1)).Magnitude
 
-			const moveDir = (waypointPos - pos).Unit
+			local moveDir = (waypointPos - pos).Unit
 			self.navigator.humanoid:Move(moveDir)
 
 			if
@@ -403,7 +404,7 @@ const States = {
 				self.navigator.humanoid.Jump = true
 			end
 
-			const hasLOS: boolean, result: RaycastResult =
+			local hasLOS: boolean, result: RaycastResult =
 				self.navigator:HasLineOfSight(pos, targetPos)
 
 			if hasLOS then
@@ -451,9 +452,10 @@ type NavigationControllerProperties = {
 
 	isComputingPath: boolean?,
 
-	RotationSuppressed: boolean,
 	alignOrient: AlignOrientation,
 	rotateAttach: Attachment,
+
+	RotationSuppressed: boolean,
 }
 
 export type NavigationController = NavigationControllerProperties & NavigationControllerMethods
@@ -465,7 +467,7 @@ type MovementCallback = (
 	distance: number
 ) -> Vector3?
 
-const NavigationController = {}
+local NavigationController = {}
 NavigationController.__index = NavigationController
 
 function NavigationController.Jump(self: NavigationController)
@@ -486,17 +488,17 @@ function NavigationController.HasLineOfSight(
 	from: Vector3,
 	to: Vector3
 ): boolean
-	const direction = to - from
-	const distance = direction.Magnitude
+	local direction = to - from
+	local distance = direction.Magnitude
 
-	const result = workspace:Raycast(from, direction.Unit * distance, self.rayParams)
+	local result = workspace:Raycast(from, direction.Unit * distance, self.rayParams)
 
 	if not result then return true end
 
 	if result.Instance and self.target then
 		if result.Instance == self.target then return true end
 
-		const targetModel = self.target:FindFirstAncestorOfClass("Model")
+		local targetModel = self.target:FindFirstAncestorOfClass("Model")
 		if targetModel and result.Instance:IsDescendantOf(targetModel) then return true end
 	end
 
@@ -509,12 +511,12 @@ function NavigationController.UpdatePathfinding(
 	to: Vector3,
 	deltaTime: number
 )
-	const timeSinceLastCalc = tick() - self.lastCalcPathTime
+	local timeSinceLastCalc = tick() - self.lastCalcPathTime
 	if timeSinceLastCalc < self.config.PathRecalculateInterval then return end
 	if self.isComputingPath then return end
 
-	const pathFinished = self.path and self.waypoint and self.waypoint > #self.waypoints
-	const targetMoved = self.lastTargetPos
+	local pathFinished = self.path and self.waypoint and self.waypoint > #self.waypoints
+	local targetMoved = self.lastTargetPos
 		and (to - self.lastTargetPos).Magnitude > self.config.PathRecalculateDistance
 
 	if self.path and not pathFinished and not targetMoved then return end
@@ -523,8 +525,8 @@ function NavigationController.UpdatePathfinding(
 	self.lastCalcPathTime = tick()
 
 	task.spawn(function()
-		const success, path = pcall(function()
-			const newPath = PathfindingService:CreatePath(self.agentParams)
+		local success, path = pcall(function()
+			local newPath = PathfindingService:CreatePath(self.agentParams)
 			newPath:ComputeAsync(from, to)
 			return newPath
 		end)
@@ -549,7 +551,7 @@ function NavigationController.UpdatePathfinding(
 end
 
 function NavigationController:GetBaseDirection(from: Vector3, to: Vector3): Vector3
-	const direction = (to - from) * Vector3.new(1, 0, 1)
+	local direction = (to - from) * Vector3.new(1, 0, 1)
 
 	if direction.Magnitude < LOWEST_MAGNITUDE then return self.rootPart.CFrame.LookVector end
 
@@ -616,17 +618,17 @@ return {
 			end
 		end
 
-		const root = rig.PrimaryPart or rig:FindFirstChild("HumanoidRootPart")
+		local root = rig.PrimaryPart or rig:FindFirstChild("HumanoidRootPart")
 		if not root then
 			error(
 				"NavigationController rig must have a PrimaryPart or a part named HumanoidRootPart"
 			)
 		end
 
-		const humanoid = rig:FindFirstChildOfClass("Humanoid")
+		local humanoid = rig:FindFirstChildOfClass("Humanoid")
 		if not humanoid then error("NavigationController rig must have a Humanoid") end
 
-		const agentParams = {
+		local agentParams = {
 			AgentRadius = config and config.ObstacleCheckRadius or 5,
 			AgentHeight = rig:GetExtentsSize().Y,
 			AgentCanJump = config and config.AutoJump or false,
@@ -644,11 +646,11 @@ return {
 			rayParams:AddToFilter(rig)
 		end
 
-		const rotateAttachment = Instance.new("Attachment")
+		local rotateAttachment = Instance.new("Attachment")
 		rotateAttachment.Name = "RotateAttachment"
 		rotateAttachment.Parent = root
 
-		const alignOrientation = Instance.new("AlignOrientation")
+		local alignOrientation = Instance.new("AlignOrientation")
 		alignOrientation.Name = "RotateToTarget"
 		alignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
 		alignOrientation.Attachment0 = rotateAttachment
@@ -658,7 +660,7 @@ return {
 
 		if config.Debug then print("Navigator controller created successfully") end
 
-		const navigator = setmetatable(
+		local navigator = setmetatable(
 			{
 				config = config or table.clone(DEFAULT_CONFIG),
 				stateMachine = StateMachine.new({
@@ -677,9 +679,10 @@ return {
 				rootPart = root,
 				humanoid = humanoid,
 
-				RotationSuppressed = false,
 				alignOrient = alignOrientation,
 				rotateAttach = rotateAttachment,
+
+				RotationSuppressed = false,
 
 				isComputingPath = false,
 			} :: NavigationController,
@@ -687,7 +690,7 @@ return {
 		) :: NavigationController
 
 		for name, state in States do
-			const copy = table.clone(state)
+			local copy = table.clone(state)
 			copy["navigator"] = navigator
 			navigator.stateMachine:AddState(name, copy)
 		end
