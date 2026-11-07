@@ -1,145 +1,110 @@
 --!native
 --!optimize 2
 
-const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const TweenService = game:GetService("TweenService")
+local TweenService = game:GetService("TweenService")
 
-const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+local RNG = Random.new()
 
---[=[
-	Floating damage number over the victim, one clone per hit.
+-- Floating damage number that accumulates total damage dealt to the same
+-- character (per gradient/type) within a short window, instead of spawning a
+-- new number for every hit.
+local DamageIndicator = {
+	Cache = {},
+}
 
-	Every number, easing and delay below is copied from the legacy
-	`Modules.Effects.Combat.DamageIndicator`, and `DamageIndicator.rbxm` is the
-	legacy `BillboardGui` transferred instance-for-instance — same 4x2 box, same
-	bold-italic asset font, Bright red fill, grey->white gradient, 2.5 white
-	stroke with its own dark-red gradient. Two things differ, because this project
-	ports no parts:
+for _, Gradient in script:WaitForChild("Gradients"):GetChildren() do
+	DamageIndicator.Cache[Gradient.Name] = {}
+end
 
-	- the legacy transparent 1x1x1 part dropped into `workspace.Effects` became an
-	  `Attachment` in the same folder, which the BillboardGui adorns. The number is
-	  still anchored where the hit landed and does not follow the victim;
-	- legacy read the R6 `Torso`, here the root is `HumanoidRootPart`.
-
-	One deliberate adaptation: legacy measured the `±1.6 … 4.0` stud spread along
-	the X axis of the *attacker's* frame (`TagHumanoid` passed its `LookVector`),
-	which collapses every number into one screen column whenever the attacker
-	faces along the camera. The same magnitude is applied here along the viewer's
-	horizontal camera axis, resolved per client; the `0.6 … 2.7` stud height and
-	the 5 stud rise stay world-up, as in legacy.
-
-	Legacy read `Properties.Type` and never used it, so the gradient name stays
-	unused here too — it is kept as the slot for future damage-type colors, which
-	`Gradients/` already feeds.
-]=]
-
--- Sequencer counts 60 frames per second: the legacy `task.delay(.5)` fade and
--- the `Debris:AddItem(Indicator, 1.5)` removal.
-const FADE_FRAME = 30
-const DEATH_FRAME = 90
-
-const RISE = Vector3.new(0, 5, 0)
-const RISE_TWEEN = TweenInfo.new(1.5, Enum.EasingStyle.Circular, Enum.EasingDirection.In)
-const POP_TWEEN = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-const FADE_TWEEN = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-
--- Legacy ladder, read from the largest threshold down. The legacy source asked
--- `>= 5` first, which left `>= 10 … >= 50` unreachable; the ladder applies in
--- full here, as agreed.
-local function textSize(Damage: number): number
-	if Damage >= 50 then
-		return 1
-	elseif Damage >= 30 then
-		return 0.9
-	elseif Damage >= 20 then
-		return 0.87
-	elseif Damage >= 10 then
-		return 0.75
-	elseif Damage >= 5 then
-		return 0.68
+local function getBucket(gradientName: string)
+	local bucket = DamageIndicator.Cache[gradientName]
+	if not bucket then
+		bucket = {}
+		DamageIndicator.Cache[gradientName] = bucket
 	end
-
-	return 0.4
+	return bucket
 end
 
 type DamageIndicatorData = {
 	Character: Model?,
 	Amount: number?,
+	-- Optional: selects a gradient from script.Gradients (defaults to "Damage").
+	Type: string?,
+	Gradient: string?,
 }
 
-return {
-	onStart = function(self, data: DamageIndicatorData)
-		local character, amount = data.Character, data.Amount
-		if character == nil or amount == nil or amount == 0 then return end
+function DamageIndicator:onStart(data: DamageIndicatorData)
+	local character = data.Character
+	local amount = data.Amount
+	if character == nil or amount == nil or amount == 0 then return end
+	if not character:IsDescendantOf(workspace) then return end
 
-		const root = character:FindFirstChild("HumanoidRootPart")
-		if root == nil or not root:IsA("BasePart") then return end
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if rootPart == nil or not rootPart:IsA("BasePart") then return end
 
-		const Damage = math.floor(amount * 10 + 0.5) / 10
+	local gradientName = data.Type or data.Gradient or "Damage"
+	local bucket = getBucket(gradientName)
 
-		const Indicator = script.DamageIndicator:Clone()
-		const Label = Indicator.Label
+	local isFirst = false
+	local indicatorData = bucket[character]
 
-		Label.Text = "-" .. tostring(Damage)
-		Label.Size = UDim2.fromScale(1, 0)
+	if not indicatorData or not indicatorData.Indicator or not indicatorData.Indicator.Parent then
+		isFirst = true
 
-		-- The viewer's horizontal axis, so the fan reads as a fan from any angle.
-		local spread = Vector3.new(
-			workspace.CurrentCamera.CFrame.RightVector.X,
-			0,
-			workspace.CurrentCamera.CFrame.RightVector.Z
-		)
-		if spread.Magnitude < 0.001 then
-			spread = Vector3.new(root.CFrame.RightVector.X, 0, root.CFrame.RightVector.Z)
+		local indicator = script.DamageIndicator:Clone()
+		indicator.Name = ("%*Indicator"):format(gradientName)
+		indicator.Enabled = true
+		indicator.Adornee = workspace.Terrain
+		indicator.Archivable = false
+
+		local gradient = script.Gradients:FindFirstChild(gradientName)
+		if gradient then
+			gradient:Clone().Parent = indicator.Label
 		end
 
-		local Offset = -1.5
-		if math.random(1, 2) == 1 then
-			Offset = -1.5 - math.random(1, 25) / 10
-		else
-			Offset = 1.5 + math.random(1, 25) / 10
+		indicator.Parent = character
+
+		indicatorData = {
+			Indicator = indicator,
+			Value = 0,
+		}
+		bucket[character] = indicatorData
+	end
+
+	indicatorData.Value += amount
+
+	local label = indicatorData.Indicator:FindFirstChild("Label")
+	if not label or not label:IsA("TextLabel") then return end
+
+	label.Text = if indicatorData.Value % 1 > 0
+		then string.format("%.2f", indicatorData.Value)
+		else tostring(math.floor(indicatorData.Value))
+
+	local offset = rootPart.Position
+		+ Vector3.new(RNG:NextNumber(-1, 1), RNG:NextNumber(-1, 1), RNG:NextNumber(-1, 1))
+
+	if isFirst then
+		indicatorData.Indicator.StudsOffsetWorldSpace = offset
+	else
+		TweenService:Create(
+			indicatorData.Indicator,
+			TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+			{ StudsOffsetWorldSpace = offset }
+		):Play()
+	end
+
+	local oldValue = indicatorData.Value
+	task.delay(1.5, function()
+		-- Only clear if no new damage was added since this tick and the indicator
+		-- still belongs to this character bucket.
+		if bucket[character] ~= indicatorData then return end
+		if indicatorData.Value ~= oldValue then return end
+
+		if indicatorData.Indicator then
+			indicatorData.Indicator:Destroy()
 		end
+		bucket[character] = nil
+	end)
+end
 
-		-- The legacy part anchor: an attachment in `workspace.Effects` holds the
-		-- world position the hit landed at, so the number never rides the victim.
-		const Anchor = Instance.new("Attachment")
-		Anchor.Name = "DamageIndicator"
-		Anchor.Parent = workspace.Effects
-		Anchor.WorldPosition = root.Position
-			+ spread.Unit * Offset
-			+ Vector3.new(0, 0.5 + math.random(1, 22) / 10, 0)
-
-		const start = Anchor.WorldPosition
-
-		Indicator.Adornee = Anchor
-		Indicator.Parent = workspace.Effects
-		TweenService:Create(Anchor, RISE_TWEEN, { WorldPosition = start + RISE }):Play()
-
-		Label.Rotation = math.random(-90, 90)
-		TweenService:Create(Label, POP_TWEEN, {
-			Size = UDim2.fromScale(1, textSize(Damage)),
-			Rotation = 0,
-		}):Play()
-
-		const sequence = Sequencer.new({
-			Frames = {
-				{
-					FADE_FRAME,
-					function()
-						TweenService:Create(Label, FADE_TWEEN, { TextTransparency = 1 }):Play()
-
-						const Stroke = Label:FindFirstChildOfClass("UIStroke")
-						if Stroke ~= nil then
-							TweenService:Create(Stroke, FADE_TWEEN, { Transparency = 1 }):Play()
-						end
-					end,
-				},
-				{ DEATH_FRAME },
-			},
-		})
-
-		sequence.Cleaner:Add(Indicator)
-		sequence.Cleaner:Add(Anchor)
-		sequence:Play()
-	end,
-}
+return DamageIndicator
