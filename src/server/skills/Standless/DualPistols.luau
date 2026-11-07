@@ -170,7 +170,7 @@ function Skill:onInit()
 			UseForge = true,
 		})
 
-		VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["DualPistolsShot"])
+		VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["DualPistolsShot"] })
 	end
 
 	-- The last entry has to be the highest frame: the sequencer treats it as the
@@ -190,24 +190,15 @@ function Skill:onInit()
 				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Slowdown.WalkSpeed))
 				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", Slowdown.JumpPower))
 
-				VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+				VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+					Character = character.instance,
 					Animation = Anims["DualPistols"],
 					Speed = seq.Speed,
 				})
 
-				VFXService:StartEffect(
-					Players:GetPlayers(),
-					"Sound",
-					RootPart,
-					Sounds["DualPistolsVoice"]
-				)
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["DualPistolsVoice"] })
 
-				VFXService:StartEffect(
-					Players:GetPlayers(),
-					"Sound",
-					RootPart,
-					Sounds["DualPistolsReload"]
-				)
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["DualPistolsReload"] })
 
 				-- Runs on both a clean finish and an interrupt, so the pistols end
 				-- up on the floor exactly like the old `onEnd`.
@@ -224,7 +215,8 @@ function Skill:onInit()
 					const anim = Anims["DualPistols"]
 					if not anim then return end
 
-					VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
 						Animation = anim.Animation,
 					})
 				end)
@@ -263,7 +255,8 @@ function Skill:Interrupt()
 	const anim = self.Spec.Data.Assets.Animations["DualPistols"]
 	if not anim then return end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = self.Character.instance,
 		Animation = anim.Animation,
 	})
 end

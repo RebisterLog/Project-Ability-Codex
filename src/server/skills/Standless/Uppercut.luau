@@ -82,22 +82,15 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"EmitFolder",
-						self.Character.instance,
-						Models.Uppercut
-					)
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+						VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", { Character = self.Character.instance, EffectsFolder = Models.UppercutHit })
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
 						Animation = Anims.Uppercut,
 						Speed = seq.Speed,
 					})
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["UppercutVL"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["UppercutVL"] })
+		
+		
 				end,
 			},
 
@@ -124,20 +117,10 @@ function Skill.onInit(self)
 							if Data.State.PerfectBlocked or Data.State.BlockBroken then return end
 
 							if #self.AlreadyHit <= 1 then
-								VFXService:StartEffect(
-									Players:GetPlayers(),
-									"EmitFolder",
-									self.Character.instance,
-									Models.UppercutHit
-								)
+								VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", { Character = self.Character.instance, EffectsFolder = Models.UppercutHit })
 							end
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Sound",
-								Data.Victim.RootPart.CFrame,
-								Sounds.UppercutHit
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = Data.Victim.RootPart.CFrame, Sound = Sounds["UppercutHit"] })
 						end)
 					end
 				end,
@@ -173,10 +156,15 @@ function Skill.Interrupt(self)
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = character.instance,
 		Animation = Anims.Uppercut.Animation,
 	})
-	VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds.UppercutVL.Sound)
+
+	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
+		Origin = RootPart,
+		Sound = Sounds.UppercutVL.Sound,
+	})
 end
 
 return Skill

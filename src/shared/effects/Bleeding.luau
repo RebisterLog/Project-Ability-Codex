@@ -5,8 +5,13 @@ const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 
 const Cleaners = {}
 
+type CharacterData = {
+	Character: Model?,
+}
+
 return {
-	onStart = function(self, character: Model)
+	onStart = function(self, data: CharacterData)
+		const character = data.Character
 		if Cleaners[character] then return end
 		if not character:IsDescendantOf(workspace) then return end
 
@@ -44,11 +49,11 @@ return {
 		Cleaners[character] = cleaner
 	end,
 
-	onStop = function(self, character: Model)
-		const cleaner = Cleaners[character]
+	onStop = function(self, data: CharacterData)
+		const cleaner = Cleaners[data.Character]
 		if not cleaner then return end
 
-		Cleaners[character] = nil
+		Cleaners[data.Character] = nil
 		cleaner:Destroy()
 	end,
 }

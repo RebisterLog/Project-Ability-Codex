@@ -6,6 +6,7 @@ const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
 const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const Signal = require(ReplicatedStorage.shared.packages.Signal)
+const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 
 export type PlayerModule = {
 	Name: string,
@@ -17,11 +18,21 @@ export type PlayerModule = {
 
 export type Bind = Enum.KeyCode | Enum.UserInputType
 
+export type SpecSlot = "Spec" | "SubSpec"
+
+export type SpecInitOptions = {
+	Movement: boolean?,
+}
+
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(game:GetService("ReplicatedStorage").shared.packages.Crane)
 const Parameters = require(ServerScriptService.server.components.Character.Parameters)
 
 export type CleanUp = () -> ()
+
+-- Shape of the per-effect argument table passed to StartEffect/StopEffect.
+-- Every effect module declares the protocol it expects inside its own file.
+export type EffectData = { [string]: any }
 
 export type Parameters = typeof(Parameters)
 export type ParameterName = keyof<Parameters>
@@ -111,12 +122,26 @@ export type AttackInfo = {
 		Interval: number?,
 		Slow: number?,
 	}?,
+
+	Burn: {
+		Damage: number,
+		Duration: number,
+		Interval: number?,
+		Slow: number?,
+	}?,
 }
 
 export type AttackData = {
 	Attacker: Character,
 	Victim: Character,
 	Info: AttackInfo,
+	-- Frozen snapshot of the attack as it was first submitted; set by
+	-- CombatService:Attack and used when a held attack is replayed.
+	OriginalInfo: AttackInfo?,
+	-- Health actually removed by the Damage hook, after multipliers and holds.
+	DamageDealt: number?,
+	-- Set when the attack was queued behind DamageHold and is being replayed.
+	NoDeathDeferred: boolean?,
 
 	State: {
 		Success: boolean,
@@ -301,11 +326,16 @@ export type ProjectileConfig = {
 	-- Optional skill, forwarded to `CombatService:Hitbox` for cast tracking.
 	Skill: Skill?,
 
-	-- Template instance, cloned by the class. Never mutated.
-	Model: Model | BasePart,
+	-- Template instance, cloned by the class. Never mutated. When omitted the
+	-- projectile is tracked without a replicated body (server-side hidden math),
+	-- and the visual effects are left to the client.
+	Model: Model | BasePart?,
 	Position: Vector3,
 	Direction: Vector3,
 	Speed: number,
+	-- Fixed visual rotation used when `OrientToVelocity` is false.
+	Orientation: CFrame?,
+	OrientToVelocity: boolean?,
 	-- Constant acceleration, default `Vector3.zero`.
 	Gravity: Vector3?,
 
@@ -315,6 +345,9 @@ export type ProjectileConfig = {
 	-- When true the projectile keeps flying after a hit and never damages the
 	-- same target twice. When false it ends on the first hit.
 	CanPierce: boolean,
+	-- When false the projectile flies and bounces but never queries a hitbox
+	-- (pure visual / virtual flight). Defaults to true.
+	HitboxEnabled: boolean?,
 
 	-- Seconds before the projectile ends on its own, default 5.
 	Lifetime: number?,
@@ -331,13 +364,17 @@ export type ProjectileConfig = {
 
 type ProjectileProperities = {
 	Config: ProjectileConfig,
-	-- The cloned visual instance. Parented to `workspace.Effects`.
-	Instance: Model | BasePart,
+	-- The cloned visual instance. Parented to `workspace.Effects`. Nil when
+	-- `Model` was omitted: server-side virtual projectiles have no body.
+	Instance: Model | BasePart | nil,
 
 	Position: Vector3,
 	Velocity: Vector3,
 	Direction: Vector3,
 	Speed: number,
+	HitboxEnabled: boolean,
+	OrientToVelocity: boolean,
+	FixedRotation: CFrame,
 
 	Elapsed: number,
 	Traveled: number,
@@ -352,7 +389,7 @@ type ProjectileProperities = {
 	Running: boolean,
 	Finished: boolean,
 	Connection: RBXScriptConnection?,
-	RayParams: RaycastParams,
+	RayParams: RaycastParams?,
 	-- Resolved lazily on the first step, since services may not be started yet.
 	CombatService: any?,
 
@@ -415,6 +452,9 @@ type StandProperities = {
 	Owner: Character,
 	RootPart: BasePart,
 	Cleaner: typeof(Crane.Buttler.new()),
+	VisibilityRevision: number,
+	VisibilitySuppressions: { [string]: boolean },
+	VisibleDelay: thread?,
 }
 
 type StandMethods = {
@@ -425,9 +465,12 @@ type StandMethods = {
 
 	SetActive: (self: Stand, state: boolean) -> (),
 	SetVisible: (self: Stand, state: boolean) -> (),
+	RefreshVisibility: (self: Stand) -> (),
+	SetVisibilitySuppressed: (self: Stand, reason: string, state: boolean) -> (),
 
 	WeldToOwner: (self: Stand) -> (),
 	WeldTo: (self: Stand, part: BasePart) -> (),
+	WeldToPoint: (self: Stand, cframe: CFrame) -> (),
 }
 
 export type Stand = Crane.Component<Model> & StandProperities & StandMethods
@@ -446,6 +489,9 @@ export type SkillData = {
 	onDestroy: (self: Skill) -> (),
 	Activate: (self: Skill) -> (),
 	Interrupt: (self: Skill) -> (),
+	-- Combo buffer handler: swallows another skill's input while this skill
+	-- is active. Returns true when the input was consumed.
+	TryComboInput: ((self: Skill, skillId: string) -> boolean)?,
 }
 
 type SkillProperties = {
@@ -459,18 +505,26 @@ type SkillProperties = {
 	Cleaner: typeof(Crane.Buttler.new()),
 	Proxy: Proxy.ProxyTab<SkillReplicationData>,
 	Deactivated: Signal.Signal<Skill>,
+	-- The queue of the cast that is running right now, when the skill drives
+	-- itself with a Sequencer. Nil while the skill is idle, and for skills that
+	-- have no sequence at all.
+	Sequence: Sequencer.Sequencer?,
 }
 
 type SkillMethods = {
 	Activate: (self: Skill) -> (),
 	Interrupt: (self: Skill) -> (),
 	Deactivate: (self: Skill) -> (),
+	-- Suspends / continues the running sequence, keeping its progress.
+	Pause: (self: Skill) -> (),
+	Resume: (self: Skill) -> (),
 	SetCooldown: (self: Skill, Time: number) -> (),
 	SetDisplayName: (self: Skill, name: string) -> (),
 	SetEnabled: (self: Skill, enabled: boolean) -> (),
 	SetBind: (self: Skill, bind: Bind) -> (),
 	IsOnCooldown: (self: Skill) -> boolean,
 	Validate: (self: Skill) -> (boolean, string?),
+	TryComboInput: (self: Skill, skillId: string) -> boolean,
 	Init: (self: Skill) -> (),
 	Destroy: (self: Skill) -> (),
 }
@@ -491,14 +545,22 @@ export type SpecSaveData = PlayerSaveData.SpecData
 
 export type SpecDef = {
 	Id: string,
-	Name: string,
-	Skin: string,
-	Binds: { [string]: Bind },
+	Skin: string?,
+	Binds: { [string]: Bind }?,
+	InstanceId: string?,
 }
 
 export type SpecData = {
+	Id: string,
+	Slot: SpecSlot,
+	InstanceId: string?,
 	DisplayName: string,
 	IsPublic: boolean,
+
+	-- Wearers see through Time Stop: they are not shown the private stasis
+	-- illusion and keep acting while everyone else is frozen. A single flag in
+	-- either the spec or the subspec slot is enough.
+	TimeStopVision: boolean?,
 
 	Binds: { [string]: Enum.KeyCode & Enum.UserInputType },
 
@@ -521,13 +583,28 @@ export type SpecData = {
 		Models: {
 			[string]: Model | BasePart,
 		},
+
+		-- Stand presentation (Summon/Unsummon animations, sounds, particles and
+		-- the owner-body aura template). Optional: a spec without a stand simply
+		-- has no entry here.
+		Stand: {
+			Animations: {
+				[string]: {
+					Animation: Animation,
+					Priority: Enum.AnimationPriority,
+				},
+			},
+			Sounds: { [string]: { Sound: Sound, Volume: number?, PlaybackSpeed: number? } },
+			Models: { [string]: Model | BasePart },
+			Aura: Folder?,
+		}?,
 	},
 
 	Skills: {
-		[string]: Skill,
+		[string]: string,
 	},
 
-	onInit: (self: Skill) -> (),
+	onInit: (self: Spec) -> (),
 }
 
 type SpecProperities = {
@@ -548,14 +625,15 @@ type SpecProperities = {
 }
 
 type SpecMethods = {
-	Init: (self: Spec) -> (),
+	Init: (self: Spec, options: SpecInitOptions?) -> (),
 	AddSkill: (self: Spec, skill: Skill) -> (),
+	RemoveSkill: (self: Spec, skillId: string) -> (),
 	GetAvailableSkills: (self: Spec) -> { Skill },
 	ActivateSkill: (self: Spec, skillId: string) -> (),
 	DeactivateSkill: (self: Spec, skillId: string) -> (),
 	InterruptSkill: (self: Spec, skillId: string) -> (),
 	Destroy: (self: Spec) -> (),
-	CheckActiveSkills: (self: Spec) -> boolean,
+	CheckActiveSkills: (self: Spec) -> (boolean, { Skill }),
 	SetEnableSkills: (self: Spec, tag: string, state: boolean) -> (),
 }
 
@@ -581,16 +659,50 @@ export type PlayerComponent = Crane.Component<Player> & PlayerProperties & Playe
 
 --CHARACTER
 
+-- One entry in the DamageHold queue: a whole attack to replay, or a raw
+-- damage/heal amount applied in order when the hold is released.
+export type HealData = {
+	Healer: Character?,
+	Target: Character,
+	Amount: number,
+	State: { Success: boolean }?,
+}
+
+export type NoDeathEntry =
+	{
+		Kind: "Attack",
+		Attack: AttackData,
+	}
+	| {
+		Kind: "Damage" | "Heal",
+		Amount: number,
+	}
+
 type CharacterProperities = {
 	Player: Player?, -- only if character owned by player
+	NPCNetworkOwner: Player?,
+	Navigator: {
+		DisableRotation: (self: any) -> (),
+		EnableRotation: (self: any) -> (),
+	}?,
 	Spec: Spec?,
+	SubSpec: Spec?,
 	OnTakeDamage: Signal.Signal<(Character, AttackData)>,
 	Humanoid: Humanoid,
 	RootPart: BasePart,
+	TornDown: boolean,
 	Parameters: {
 		[ParameterName]: {
 			Watchers: { (value: any) -> () },
 			Objects: { ParameterObject<any> },
+
+			-- NoDeath / DamageHold runtime state, kept on the parameter entry
+			-- itself so the watchers and hooks share one source of truth.
+			Queue: { NoDeathEntry }?,
+			Draining: boolean?,
+			Generation: number?,
+			Debt: number?,
+			DebtFrom: AttackData?,
 		},
 	},
 
@@ -599,6 +711,7 @@ type CharacterProperities = {
 		PerfectBlockTime: number,
 		PerfectBlockWindow: number,
 		AlwaysPerfect: boolean,
+		Changed: Signal.Signal<boolean>,
 	},
 
 	Motors: { Motor6D },
@@ -609,7 +722,20 @@ type CharacterProperities = {
 }
 
 type CharacterMethods = {
-	SetSpec: <T>(self: Character, name: string, skin: string?) -> (),
+	ClaimNPCNetworkOwner: (self: Character, player: Player?) -> (),
+	SetSpec: (
+		self: Character,
+		name: string,
+		skin: string?,
+		binds: { [string]: Bind }?,
+		instanceId: string?
+	) -> Spec?,
+	ClearSpec: (self: Character) -> (),
+	ClearSubSpec: (self: Character) -> (),
+	GetSpec: (self: Character) -> Spec?,
+	GetSubSpec: (self: Character) -> Spec?,
+	CheckActiveSkills: (self: Character) -> (boolean, { Skill }),
+	SetEnableSkills: (self: Character, tag: string, state: boolean) -> (),
 
 	AddParameter: <T>(
 		self: Character,
@@ -617,6 +743,12 @@ type CharacterMethods = {
 		value: ParameterValue<T>
 	) -> ParameterObject<ParameterName>,
 	GetParameter: <T>(self: Character, param: ParameterName) -> ParameterValue<T>,
+	SetParameterValue: <T>(
+		self: Character,
+		param: ParameterName,
+		value: ParameterValue<T>
+	) -> ParameterValue<T>,
+	RefreshParameter: <T>(self: Character, param: ParameterName) -> ParameterValue<T>,
 	WatchParameter: <T>(
 		self: Character,
 		param: ParameterName,

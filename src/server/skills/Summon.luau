@@ -14,7 +14,6 @@ const Skill: types.SkillData = {
 }
 
 function Skill.Activate(self: types.Skill)
-	const VFXService = Crane:GetService("VFXService")
 	const StandService = Crane:GetService("StandService")
 
 	const stand = StandService:GetStand(self.Character) :: types.Stand
@@ -22,11 +21,12 @@ function Skill.Activate(self: types.Skill)
 
 	if not stand then return end
 
-	self.Spec:SetEnableSkills("OnlyForStand", not isStandActive)
-	self.Spec:SetEnableSkills("OnlyForUser", isStandActive)
+	self.Character:SetEnableSkills("OnlyForStand", not isStandActive)
+	self.Character:SetEnableSkills("OnlyForUser", isStandActive)
 
+	-- SetActive drives RefreshVisibility itself; suppression (death, ragdoll,
+	-- time stop) decides whether the stand actually shows.
 	stand:SetActive(not isStandActive)
-	stand:SetVisible(not isStandActive)
 end
 
 return Skill

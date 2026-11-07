@@ -112,7 +112,7 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 12))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 						Animation = Anims["Barrage"],
 						Speed = seq.Speed,
 					})
@@ -126,26 +126,15 @@ function Skill.onInit(self)
 					})
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							character.instance,
-							{
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 								Animation = Anims["Barrage"].Animation,
 							}
 						)
 
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"EmitParticle",
-							self.BarrageUUID
-						)
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Sound",
-							RootPart,
-							Sounds["Barrage"].Sound
-						)
+
+						VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", { UUID = self.BarrageUUID })
+						VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Barrage"].Sound })
+
 					end)
 				end,
 			},
@@ -153,12 +142,8 @@ function Skill.onInit(self)
 			{
 				15,
 				function()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["PreBarrage"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["PreBarrage"]
+					 })
 
 					const targets = CombatService:Hitbox({
 						Caster = character,
@@ -179,12 +164,8 @@ function Skill.onInit(self)
 			{
 				30,
 				function()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["PreBarrage"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["PreBarrage"]
+					 })
 
 					const targets = CombatService:Hitbox({
 						Caster = character,
@@ -204,20 +185,11 @@ function Skill.onInit(self)
 			{
 				44,
 				function(seq)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["Barrage"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Barrage"]
+					 })
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Sound",
-							RootPart,
-							Sounds["Barrage"].Sound
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Barrage"].Sound })
 					end)
 				end,
 			},
@@ -247,7 +219,7 @@ function Skill.onInit(self)
 			{
 				191,
 				function()
-					VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", self.BarrageUUID)
+			VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", { UUID = self.BarrageUUID })
 				end,
 			},
 

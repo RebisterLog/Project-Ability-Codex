@@ -142,27 +142,19 @@ function Skill.onInit(self)
 						)
 					)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", self.Caster, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
 						Animation = Anims["GrabThrow"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						self.Target.instance,
-						{
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Target.instance, 
 							Animation = Anims["GrabThrowVictim"],
 							Speed = seq.Speed,
 						}
 					)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["Grabbed"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Grabbed"]
+					 })
 				end,
 			},
 
@@ -199,18 +191,14 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", self.Caster, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
 						Animation = Anims["Grab"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["Grab"])
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["GrabVL"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Grab"] })
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["GrabVL"]
+					 })
 
 					self.Target = nil
 				end,
@@ -286,7 +274,7 @@ function Skill.Interrupt(self)
 
 	if self.GrabSequence then self.GrabSequence:Stop() end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Caster, {
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
 		Animation = Anims["Grab"],
 	})
 

@@ -9,9 +9,9 @@ const Configuration = LocalPlayer.PlayerScripts.client.Configuration
 const EffectsFolder = Configuration.EffectsFolder.Value
 
 type Effect = {
-	Validate: (self: Effect, ...any) -> boolean,
-	onStart: (self: Effect, ...any) -> (),
-	onStop: (self: Effect, ...any) -> (),
+	Validate: (self: Effect, data: any?) -> boolean,
+	onStart: (self: Effect, data: any?) -> (),
+	onStop: (self: Effect, data: any?) -> (),
 }
 
 const VFXService = Crane:CreateService({
@@ -30,34 +30,33 @@ function VFXService.onStart(self: typeof(VFXService))
 	const StopVFXPacket = Crane:GetPacket("StopVFX")
 
 	StartVFXPacket.listen(function(data: { name: string, args: { unknown } })
-		self:StartEffect(data.name, table.unpack(data.args))
+		self:StartEffect(data.name, data.args[1])
 	end)
 
 	StopVFXPacket.listen(function(data: { name: string, args: { unknown } })
-		self:StopEffect(data.name, table.unpack(data.args))
-	end)
-end
+		self:StopEffect(data.name, data.args[1])
+	end)end
 
-function VFXService:StartEffect(name: string, ...)
+function VFXService:StartEffect(name: string, data: any?)
 	if not self.Effects[name] then
 		Crane.Utils.Log(script.Name, `Can't find VFX with name {name}`, "error")
 		return
 	end
 
 	const effect: Effect = self.Effects[name]
-	if effect.Validate and not effect:Validate(...) then return end
+	if effect.Validate and not effect:Validate(data) then return end
 
-	effect:onStart(...)
+	effect:onStart(data)
 end
 
-function VFXService:StopEffect(name: string, ...)
+function VFXService:StopEffect(name: string, data: any?)
 	if not self.Effects[name] then
 		Crane.Utils.Log(script.Name, `Can't find VFX with name {name}`, "error")
 		return
 	end
 
 	const effect: Effect = self.Effects[name]
-	if effect.onStart then effect:onStop(...) end
+	if effect.onStop then effect:onStop(data) end
 end
 
 return VFXService

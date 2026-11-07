@@ -24,6 +24,10 @@ local function prepareParticle(paricle: BasePart)
 	paricle.Transparency = 1
 end
 
+type EmitStopData = {
+	UUID: number?,
+}
+
 return {
 	onStart = function(self, Data: EmitData)
 		const Particle = Data.Particle:Clone()
@@ -91,7 +95,7 @@ return {
 		Debris:AddItem(Particle, MaxLifetime + 3)
 	end,
 
-	onStop = function(self, uuid: number)
-		if Particles[uuid] then Particles[uuid]:Destroy() end
+	onStop = function(self, data: EmitStopData)
+		if data.UUID then Particles[data.UUID]:Destroy() end
 	end,
 }

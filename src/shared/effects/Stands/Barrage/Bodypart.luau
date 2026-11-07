@@ -10,7 +10,7 @@ end
 const Bodypart = {}
 Bodypart.__index = Bodypart
 
-function Bodypart.new(instance: BasePart)
+function Bodypart.new(instance: BasePart, points: { A: Vector3, B: Vector3, C: Vector3 })
 	for i, v in instance:QueryDescendants("BasePart") :: { BasePart } do
 		v.CanCollide = false
 		v.CastShadow = false
@@ -28,41 +28,33 @@ function Bodypart.new(instance: BasePart)
 		trail.Enabled = true
 	end
 
+	-- Cache world-space control points at spawn so owner movement cannot reshape
+	-- the fist's path.
 	return setmetatable({
 		instance = instance,
 		createTime = os.clock(),
+		pointA = points.A,
+		pointB = points.B,
+		pointC = points.C,
 	}, Bodypart)
 end
 
-function Bodypart:GetNextPos(
-	originPart: BasePart,
-	offsets: { A: CFrame, B: CFrame, C: CFrame },
-	alpha: number,
-	delta: number
-)
-	const pointA = originPart.CFrame:ToWorldSpace(offsets.A or CFrame.identity).Position
-	const pointB = originPart.CFrame:ToWorldSpace(offsets.B or CFrame.identity).Position
-	const pointC = originPart.CFrame:ToWorldSpace(offsets.C or CFrame.identity).Position
-
-	const point = QuadBezier(pointA, pointB, pointC, alpha)
-	const nextPoint = QuadBezier(pointA, pointB, pointC, alpha + delta)
+function Bodypart:GetNextPos(alpha: number)
+	const point = QuadBezier(self.pointA, self.pointB, self.pointC, alpha)
+	const nextPoint = QuadBezier(self.pointA, self.pointB, self.pointC, alpha + 0.001)
 
 	const current = self.instance.CFrame
 	const look = CFrame.new(point, nextPoint)
-	const rotate = CFrame.Angles(math.pi / 2, 0, 0)
+	const rotate = CFrame.Angles(1.5, 0, 0)
 
 	return current:Lerp(look * rotate, 0.5)
 end
 
 -- Don't use it
-function Bodypart:Fly(
-	originPart: BasePart,
-	lifetime: number,
-	offsets: { A: CFrame, B: CFrame, C: CFrame }
-)
+function Bodypart:Fly(lifetime: number)
 	const startTime = os.clock()
 
-	self.runConnection = RunService.RenderStepped:Connect(function(delta)
+	self.runConnection = RunService.RenderStepped:Connect(function()
 		if os.clock() - startTime >= lifetime then
 			self:Stop()
 			return
@@ -74,18 +66,7 @@ function Bodypart:Fly(
 			return
 		end
 
-		--local pointA = originPart.CFrame:ToWorldSpace(offsets.A or CFrame.identity).Position
-		--local pointB = originPart.CFrame:ToWorldSpace(offsets.B or CFrame.identity).Position
-		--local pointC = originPart.CFrame:ToWorldSpace(offsets.C or CFrame.identity).Position
-
-		--local point = QuadBezier(pointA, pointB, pointC, alpha)
-		--local nextPoint = QuadBezier(pointA, pointB, pointC, alpha + delta)
-
-		--local current = self.instance.CFrame
-		--local look = CFrame.new(point, nextPoint)
-		--local rotate = CFrame.Angles(math.pi / 2, 0, 0)
-
-		self.instance.CFrame = self:GetNextPos(originPart, offsets, alpha)
+		self.instance.CFrame = self:GetNextPos(alpha)
 	end)
 end
 

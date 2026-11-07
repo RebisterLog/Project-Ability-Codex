@@ -72,13 +72,13 @@ function Skill:onInit()
 
 					const direction = GetDashDirection(Normal)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 						Animation = Anims["Dash" .. direction],
 						SpecId = self.Spec.Data.Id,
 					})
 
 					if Sounds.Dash then
-						VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds.Dash)
+						VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds.Dash })
 					end
 
 					const moveDirection = RootPart.CFrame:VectorToWorldSpace(Normal).Unit

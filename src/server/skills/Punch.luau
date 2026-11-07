@@ -54,22 +54,18 @@ function Skill:onInit()
 					table.clear(self.AlreadyHit)
 
 					if self.PunchCount > 1 then
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Caster, {
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
 							Animation = Anims["Punch" .. self.PunchCount - 1],
 						})
 					end
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", self.Caster, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
 						Animation = Anims["Punch" .. self.PunchCount],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds[`Punch{self.PunchCount}`]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds[`Punch{self.PunchCount}`]
+					 })
 
 					for i, trail: Trail in self.Caster:QueryDescendants("#PunchTrail") do
 						trail.Enabled = true
@@ -189,7 +185,7 @@ function Skill:Interrupt()
 
 	const Anims = self.Assets.Animations
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Caster, {
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
 		Animation = Anims["Punch" .. PunchCount],
 	})
 end

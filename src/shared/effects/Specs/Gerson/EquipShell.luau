@@ -4,7 +4,13 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Cleaners = {}
 
 return {
-	onStart = function(self, character: Model, shell: Model)
+	Validate = function(self, data)
+		return data and data.Character and data.Shell
+	end,
+
+	onStart = function(self, data)
+		local character = data.Character
+		local shell = data.Shell
 		if Cleaners[character] then return end
 
 		const cleaner = Crane.Buttler.new()
@@ -31,8 +37,9 @@ return {
 		end)
 	end,
 
-	onStop = function(self, character: Model)
-		if Cleaners[character] then
+	onStop = function(self, data)
+		local character = data and data.Character or data
+		if character and Cleaners[character] then
 			Cleaners[character]:Destroy()
 			Cleaners[character] = nil
 		end

@@ -20,6 +20,7 @@ function CombatService:onStart()
 	self.VFXService = Crane:GetService("VFXService")
 
 	self.AttackHook = Hook.new("Attack", { "Precast", "Cast", "Postcast" })
+	self.HealHook = Hook.new("Heal", { "Cast" })
 	self.Casted = Signal()
 	self.Attacked = Signal()
 	self.Interrupted = Signal()
@@ -27,10 +28,12 @@ function CombatService:onStart()
 	for i, v in pairs(script.Hooks:GetChildren()) do
 		if not v:IsA("ModuleScript") then continue end
 		const module = require(v)
-		self.AttackHook:Hook(module.Type, module.Name, module.Priority, module.Function)
+		const hook = if module.Hook == "Heal" then self.HealHook else self.AttackHook
+		hook:Hook(module.Type, module.Name, module.Priority, module.Function)
 	end
 
 	self.AttackHook:Hook("Precast", "Main", 0, function(Data)
+		if Data.NoDeathDeferred then return true end
 		self.Attacked:Fire("Precast", Data)
 		return true
 	end)
@@ -120,27 +123,39 @@ function CombatService:Hitbox(Data: types.HitboxData)
 		end)
 	end
 
-	if Info.Debug then self.VFXService:StartEffect({ Caster.instance }, "Hitbox", Origin, Size) end
+	if Info.Debug then
+		self.VFXService:StartEffect({ Caster.instance }, "Hitbox", {
+			Origin = Origin,
+			Size = Size,
+		})
+	end
 
 	return Hit
 end
 
 function CombatService:Attack(data: types.AttackData)
-	data.State = CombatService:GetStates(data.Victim)
-	data.State.Success = true
-	data.State.Continue = true
+	if not data.NoDeathDeferred then
+		data.State = self:GetStates(data.Victim)
+		data.State.Success = true
+		data.State.Continue = true
 
-	const OriginalInfo = data.Info or {}
+		const OriginalInfo = data.Info or {}
 
-	if not table.isfrozen(OriginalInfo) then Crane.Utils.DeepFreeze(OriginalInfo) end
+		if not table.isfrozen(OriginalInfo) then Crane.Utils.DeepFreeze(OriginalInfo) end
 
-	data.OriginalInfo = OriginalInfo
-	data.Info = table.clone(OriginalInfo)
+		data.OriginalInfo = OriginalInfo
+		data.Info = table.clone(OriginalInfo)
+	end
 
 	return Promise.new(function(resolve)
 		const result = self.AttackHook:Apply(data)
 		if result then resolve(result) end
 	end)
+end
+
+function CombatService:Heal(data: types.HealData)
+	data.State = { Success = true }
+	return self.HealHook:Apply(data)
 end
 
 function CombatService.CreateSequence(Character: types.Character, data)
@@ -181,20 +196,22 @@ function CombatService.GetStates(self: typeof(CombatService), Character: types.C
 end
 
 function CombatService.AddArmor(self: typeof(CombatService), Character: types.Character)
-	const Cleaner = Crane.Buttler.new()
+	local Cleaner = Crane.Buttler.new()
 
 	Cleaner:Add(Character:AddParameter("Armor", true))
 
-	const UUID = os.clock()
-	self.VFXService:StartEffect(Players:GetPlayers(), "Highlight", Character.instance, {
+	local UUID = os.clock()
+	self.VFXService:StartEffect(Players:GetPlayers(), "Highlight", {
+		Character = Character.instance,
 		UUID = UUID,
 		FillColor = Color3.fromRGB(255, 136, 0),
 		OutlineColor = Color3.fromRGB(255, 136, 0),
 		OutlineTransparency = 0.1,
 		FillTransparency = 0.8,
 	})
+
 	Cleaner:Add(function()
-		self.VFXService:StopEffect(Players:GetPlayers(), "Highlight", UUID)
+		self.VFXService:StopEffect(Players:GetPlayers(), "Highlight", { UUID = UUID })
 	end)
 
 	return Cleaner
@@ -257,6 +274,21 @@ function CombatService:Equip(character: types.Character, model: Model): (Model, 
 	return Weapon, Motor
 end
 
+const function makeMassless(character: types.Character): () -> ()
+	const originalMassless: { [BasePart]: boolean } = {}
+	for _, descendant in character.instance:GetDescendants() do
+		if not descendant:IsA("BasePart") then continue end
+		originalMassless[descendant] = descendant.Massless
+		descendant.Massless = true
+	end
+
+	return function()
+		for part, wasMassless in originalMassless do
+			if part.Parent then part.Massless = wasMassless end
+		end
+	end
+end
+
 function CombatService.CreateGrab(
 	self: typeof(CombatService),
 	attacker: types.Character,
@@ -270,16 +302,26 @@ function CombatService.CreateGrab(
 	Cleaner:Add(attacker:AddParameter("IFrames", Enums.IFrames.Grab))
 	Cleaner:Add(victim:AddParameter("IFrames", Enums.IFrames.Grab))
 	Cleaner:Add(victim:AddParameter("NoSkillCast", true))
+	Cleaner:Add(makeMassless(victim))
 
 	const victimPlayer = Players:GetPlayerFromCharacter(victim.instance)
 	const attackerPlayer = Players:GetPlayerFromCharacter(attacker.instance)
+	const previousNPCNetworkOwner = victim.NPCNetworkOwner
 
 	if attackerPlayer then
-		Crane.Utils.ChangeNetworkOwner(
-			victim.instance,
-			Players:GetPlayerFromCharacter(attacker.instance)
-		)
-
+		if victimPlayer then
+			Crane.Utils.ChangeNetworkOwner(victim.instance, attackerPlayer)
+			Cleaner:Add(function()
+				Crane.Utils.ChangeNetworkOwner(victim.instance, victimPlayer)
+			end)
+		else
+			victim:ClaimNPCNetworkOwner(attackerPlayer)
+			Cleaner:Add(function()
+				victim:ClaimNPCNetworkOwner(previousNPCNetworkOwner)
+			end)
+		end
+	elseif victimPlayer then
+		Crane.Utils.ChangeNetworkOwner(victim.instance, nil)
 		Cleaner:Add(function()
 			Crane.Utils.ChangeNetworkOwner(victim.instance, victimPlayer)
 		end)
@@ -291,6 +333,14 @@ function CombatService.CreateGrab(
 		if data.Attacker.Restrain ~= false then
 			Cleaner:Add(attacker:AddParameter("Restrain", true))
 		end
+
+		const navigator = attacker.Navigator
+		if navigator then
+			navigator:DisableRotation()
+			Cleaner:Add(function()
+				navigator:EnableRotation()
+			end)
+		end
 	end
 
 	if data.Victim then
@@ -298,12 +348,22 @@ function CombatService.CreateGrab(
 
 		if data.Victim.Restrain ~= false then Cleaner:Add(victim:AddParameter("Restrain", true)) end
 
+		const humanoid = victim.Humanoid
+		const wasPlatformStand = humanoid.PlatformStand
+		humanoid.PlatformStand = true
+		Cleaner:Add(function()
+			if not humanoid.Parent then return end
+			humanoid.PlatformStand = wasPlatformStand or victim:GetParameter("Ragdoll") == true
+		end)
+
 		if data.Victim.Bind then
 			const Bind = data.Victim.Bind
 			const C0 = Bind.Offset or CFrame.identity
 			const C1 = Bind.Offset1 or CFrame.identity
 
 			Bind.Part1.CFrame = Bind.Part0.CFrame * C0 * C1:Inverse()
+			Bind.Part1.AssemblyLinearVelocity = Vector3.zero
+			Bind.Part1.AssemblyAngularVelocity = Vector3.zero
 
 			const Weld = Cleaner:Construct(Instance, "Weld") :: Weld
 

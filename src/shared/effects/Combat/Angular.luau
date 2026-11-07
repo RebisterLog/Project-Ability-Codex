@@ -1,6 +1,6 @@
 type AngularData = {
-	Part: BasePart,
-	Velocity: Vector3,
+	Part: BasePart?,
+	Velocity: Vector3?,
 	Speed: number?,
 	MaxTorque: number?,
 	Duration: number?,
@@ -8,6 +8,8 @@ type AngularData = {
 
 return {
 	onStart = function(self, data: AngularData)
+		if not (data.Part and data.Velocity) then return end
+
 		const Attachment = Instance.new("Attachment")
 		Attachment.Parent = data.Part
 
@@ -24,5 +26,5 @@ return {
 		game.Debris:AddItem(Attachment, data.Duration or 0.2)
 	end,
 
-	onStop = function(self) end,
+	onStop = function(self, _data: AngularData) end,
 }

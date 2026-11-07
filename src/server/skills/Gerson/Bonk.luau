@@ -86,17 +86,13 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 						Animation = Anims["Bonk"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["BonkSlam"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["BonkSlam"]
+					 })
 				end,
 			},
 
@@ -131,7 +127,7 @@ function Skill.onInit(self)
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 
-							--VFXService:StartEffect(Players:GetPlayers(), "Sound", Data.Victim.RootPart.CFrame, Sounds["ArcSpearStrikeHit"])
+							--VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = Data.Victim.RootPart.CFrame, Sound = Sounds["ArcSpearStrikeHit"] })
 						end)
 					end
 				end,
@@ -160,7 +156,7 @@ function Skill.Interrupt(self)
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 		Animation = Anims["Bonk"].Animation,
 	})
 end

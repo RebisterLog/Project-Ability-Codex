@@ -124,36 +124,32 @@ function Skill:onInit()
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
 						Animation = Anims["CounterHit"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", target.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = target.instance,
 						Animation = Anims["EnemyCounter"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["CounterHit"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["CounterHit"] })
+
+
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							character.instance,
-							{
-								Animation = Anims["CounterHit"].Animation,
-							}
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = character.instance,
+							Animation = Anims["CounterHit"].Animation,
+						})
 					end)
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", target.instance, {
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = target.instance,
 							Animation = Anims["EnemyCounter"].Animation,
 						})
 					end)
@@ -225,27 +221,20 @@ function Skill:onInit()
 					self.CanCounter = true
 					self.Target = nil
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
 						Animation = Anims["Counter"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["CounterVoice"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["CounterVoice"] })
+
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							character.instance,
-							{
-								Animation = Anims["Counter"].Animation,
-							}
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = character.instance,
+							Animation = Anims["Counter"].Animation,
+						})
 					end)
 
 					seq.Cleaner:Add(
@@ -293,7 +282,8 @@ function Skill:onInit()
 					self.CanCounter = false
 					if self.Countered then return end
 
-					VFXService:StartEffect(Players:GetPlayers(), "Highlight", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Highlight", {
+						Character = character.instance,
 						FillColor = Color3.fromRGB(255, 60, 60),
 						OutlineColor = Color3.fromRGB(255, 60, 60),
 						FillTransparency = 0.5,
@@ -331,17 +321,17 @@ end
 -- 	self.CanCounter = false
 -- 	self.Countered = true
 --
--- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
+-- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Character.instance, 
 -- 		Animation = Anims["Counter"].Animation,
 -- 	})
 --
--- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
+-- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Character.instance, 
 -- 		Animation = Anims["CounterHit"].Animation,
 -- 	})
 --
 -- 	local target = self.Target
 -- 	if target then
--- 		VFXService:StopEffect(Players:GetPlayers(), "Animation", target.instance, {
+-- 		VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = target.instance, 
 -- 			Animation = Anims["EnemyCounter"].Animation,
 -- 		})
 -- 	end

@@ -6,9 +6,16 @@ const STYLE_OUT = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.O
 
 const BusyObjects = {}
 
+type CrashData = {
+	Object: Model?,
+	Projectile: Model?,
+}
+
 return {
-	onStart = function(self, object: Model, projectile: Model)
-		if not projectile.Parent or not projectile.PrimaryPart then return end
+	onStart = function(self, data: CrashData)
+		const object, projectile = data.Object, data.Projectile
+		if not projectile or not projectile.Parent or not projectile.PrimaryPart then return end
+		if not object then return end
 		if table.find(BusyObjects, object) then return end
 		table.insert(BusyObjects, object)
 		object.Parent = nil

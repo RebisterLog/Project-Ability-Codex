@@ -1,7 +1,13 @@
 const RagdolledCharacters = {}
 
+type RagdollData = {
+	Character: Model?,
+}
+
 const Ragdoll = {
-	onStart = function(self, character: Model)
+	onStart = function(self, data: RagdollData)
+		const character = data.Character
+		if character == nil then return end
 		if table.find(RagdolledCharacters, character) then return end
 
 		const humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -11,7 +17,9 @@ const Ragdoll = {
 		table.insert(RagdolledCharacters, character)
 	end,
 
-	onStop = function(self, character: Model)
+	onStop = function(self, data: RagdollData)
+		const character = data.Character
+		if character == nil then return end
 		if not table.find(RagdolledCharacters, character) then return end
 		table.remove(RagdolledCharacters, table.find(RagdolledCharacters, character))
 

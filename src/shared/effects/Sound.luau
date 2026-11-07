@@ -2,36 +2,42 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const TweenService = game:GetService("TweenService")
 
 type SoundData = {
-	Sound: Sound,
+	Origin: CFrame | Instance,
+	Sound: Sound?,
 	Volume: number?,
 	MaxDistance: number?,
 	MinDistance: number?,
 }
 
+type SoundStopData = {
+	Origin: Instance?,
+	Sound: Sound?,
+}
+
 return {
-	Validate = function(self, Origin: CFrame | Instance, SoundData: SoundData)
-		const pos = typeof(Origin) == "CFrame" and Origin.Position or Origin.Position
-		if
-			(pos - workspace.CurrentCamera.CFrame.Position).Magnitude
-			> (SoundData.MaxDistance and SoundData.MaxDistance or 100)
-		then
-			return false
-		end
+	Validate = function(self, data: SoundData)
+-- 		const Origin = data.Origin
+-- 		if Origin == nil then return false end
+-- 
+-- 		const pos = typeof(Origin) == "CFrame" and Origin.Position or Origin.Position
+-- 		const maxDistance = data.MaxDistance or 100
+-- 		if (pos - workspace.CurrentCamera.CFrame.Position).Magnitude > maxDistance then
+-- 			return false
+-- 		end
 		return true
 	end,
 
-	onStart = function(self, Origin: CFrame | Instance, SoundData: SoundData)
-		if not SoundData then return end
+	onStart = function(self, data: SoundData)
+		local SoundTemplate = data.Sound
+		local Origin = data.Origin
 
-		local Sound = SoundData.Sound
+		if not (SoundTemplate and Origin and SoundTemplate.Parent) then return end
 
-		if not (Sound and Sound.Parent and Origin) then return end
+		const Sound = SoundTemplate:Clone()
 
-		Sound = Sound:Clone()
-
-		Sound.RollOffMaxDistance = SoundData.MaxDistance or 100
-		Sound.RollOffMinDistance = SoundData.MinDistance or 10
-		Sound.Volume = SoundData.Volume or 1
+		Sound.RollOffMaxDistance = data.MaxDistance or 100
+		Sound.RollOffMinDistance = data.MinDistance or 10
+		Sound.Volume = data.Volume or 1
 
 		if typeof(Origin) == "CFrame" then
 			const Attachment = Instance.new("Attachment")
@@ -49,7 +55,10 @@ return {
 			Sound:Destroy()
 		end)
 	end,
-	onStop = function(self, Inst: Instance, Sound: Sound)
+	onStop = function(self, data: SoundStopData)
+		local Inst = data.Origin
+		local Sound = data.Sound
+
 		if not (Inst and Sound) then return end
 		if Inst:FindFirstChild(Sound.Name) then Inst[Sound.Name]:Destroy() end
 	end,

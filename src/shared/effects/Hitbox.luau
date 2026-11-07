@@ -4,7 +4,15 @@ const Skins = require(ReplicatedStorage.shared.configs.Skins)
 
 const Hitbox = {}
 
-function Hitbox:onStart(Origin: CFrame, Size: Vector3 | number)
+type HitboxData = {
+	Origin: CFrame?,
+	-- A number draws a ball, a Vector3 a block.
+	Size: Vector3 | number?,
+}
+
+function Hitbox:onStart(data: HitboxData)
+	const Origin, Size = data.Origin, data.Size
+	if not (Origin and Size) then return end
 	const Part = Instance.new("Part")
 	Part.CFrame = Origin
 	Part.Anchored = true

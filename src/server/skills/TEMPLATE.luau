@@ -69,15 +69,15 @@ function Skill.onInit(self)
 
 					--table.clear(self.AlreadyHit)
 
-					--VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					--VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 					--	Animation = Anims["NAME"],
 					--	Speed = seq.Speed,
 					--})
 
-					--VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["NAME"])
+					--VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["NAME"] })
 
 					--seq.Cleaner:Add(function()
-					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
+					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 					--		Animation = Anims["NAME"].Animation,
 					--	})
 					--end)

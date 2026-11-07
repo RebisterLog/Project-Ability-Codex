@@ -15,49 +15,54 @@ function VFXService:onStart()
 	self.StopEffectPacket = Crane:GetPacket("StopVFX")
 end
 
--- Accepts Players and their models
-function VFXService:StartEffect(players: { Player | Model }, name: string, ...)
+-- Accepts Players and their models. `data` is the effect's protocol table; every
+-- effect declares the shape it expects inside its own module.
+function VFXService:StartEffect(players: { Player | Model }, name: string, data: types.EffectData)
 	for i, player in players do
 		if player:IsA("Model") then player = Players:GetPlayerFromCharacter(player) end
 		if not player then continue end
 
 		self.StartEffectPacket.sendTo({
 			name = name,
-			args = { ... },
+			args = { data },
 		}, player)
 	end
 end
 
-function VFXService:StartEffectExcept(players: { Player | Model }, name: string, ...)
+function VFXService:StartEffectExcept(
+	players: { Player | Model },
+	name: string,
+	data: types.EffectData
+)
 	for i, player in Players:GetPlayers() do
 		if table.find(players, player) then continue end
 
 		self.StartEffectPacket.sendTo({
 			name = name,
-			args = { ... },
+			args = { data },
 		}, player)
 	end
 end
 
-function VFXService:StopEffect(players: { Player | Model }, name: string, ...)
+function VFXService:StopEffect(players: { Player | Model }, name: string, data: types.EffectData)
 	for i, player in players do
 		if player:IsA("Model") then player = game.Players:GetPlayerFromCharacter(player) end
 		if not player then continue end
 
 		self.StopEffectPacket.sendTo({
 			name = name,
-			args = { ... },
+			args = { data },
 		}, player)
 	end
 end
 
-function VFXService:StopEffectExcept(players: { Player }, name: string, ...)
+function VFXService:StopEffectExcept(players: { Player }, name: string, data: types.EffectData)
 	for i, player in Players:GetPlayers() do
 		if table.find(players, player) then continue end
 
 		self.StopEffectPacket.sendTo({
 			name = name,
-			args = { ... },
+			args = { data },
 		}, player)
 	end
 end

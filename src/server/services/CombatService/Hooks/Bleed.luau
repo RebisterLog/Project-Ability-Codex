@@ -2,6 +2,7 @@ const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Damage = require(ServerScriptService.server.services.CombatService.Hooks.Damage)
 const types = require(ServerScriptService.server.types)
 
 const VFXService = Crane:GetService("VFXService")
@@ -37,26 +38,29 @@ return {
 			if not Data.Victim.instance.Parent then return end
 			if Data.Victim.Humanoid.Health <= 0 then return end
 
-			local Damage = Bleed.Damage
-			Damage *= Data.Attacker:GetParameter("DamageMultiplier")
-			Damage *= Data.Victim:GetParameter("DamageReceivalMultiplier")
+			const damage = Bleed.Damage
+				* Data.Attacker:GetParameter("DamageMultiplier")
+				* Data.Victim:GetParameter("DamageReceivalMultiplier")
 
 			-- Same gate as Hooks/Damage, and for the same reason: what god mode
-			-- removes is the damage, not the tick.
+			-- removes is the damage, not the tick. `Damage.Apply` owns the hold
+			-- bookkeeping: a DamageHold queues the tick, a NoDeath accumulates debt.
 			if not Data.Victim:GetParameter("GodMode") then
-				Data.Victim.Humanoid:TakeDamage(Damage)
+				const debtBefore = Data.Victim.Parameters.NoDeath.Debt or 0
+				Damage.Apply(Data.Victim, damage)
+
+				if (Data.Victim.Parameters.NoDeath.Debt or 0) > debtBefore then
+					Data.Victim.Parameters.NoDeath.DebtFrom = Data
+				end
 			end
 
 			-- Same shape as Hooks/Damage: a tick is damage like any other, so it
 			-- shows an indicator and lets the target's allies react to it.
-			if Damage > 0 then
-				VFXService:StartEffect(
-					Players:GetPlayers(),
-					"DamageIndicator",
-					Data.Victim.instance,
-					Damage,
-					"Damage"
-				)
+			if damage > 0 then
+				VFXService:StartEffect(Players:GetPlayers(), "DamageIndicator", {
+					Character = Data.Victim.instance,
+					Amount = damage,
+				})
 			end
 
 			Data.Victim.OnTakeDamage:Fire(Data.Attacker, Data)

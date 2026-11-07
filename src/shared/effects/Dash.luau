@@ -26,7 +26,17 @@ type SpecData = {
 
 type Directions = "Forward" | "Back" | "Left" | "Right"
 
-function Dash:Validate(character: Model)
+type DashData = {
+	Character: Model?,
+	SpecData: SpecData?,
+	-- The movement direction of the dash; the effect turns it into one of the four
+	-- animation directions.
+	Normal: Vector3?,
+}
+
+function Dash:Validate(data: DashData)
+	const character = data.Character
+	if not character then return false end
 	const primaryPart = character.PrimaryPart
 	if not primaryPart then return false end
 
@@ -54,9 +64,12 @@ function Dash.PlayAnimation(Character: Model, SpecData: SpecData, Direction: Dir
 	})
 end
 
-function Dash.onStart(self: typeof(Dash), Character: Model, SpecData: SpecData, Normal: Vector3)
-	const direction = GetDashDirection(Normal)
-	self.PlayAnimation(Character, SpecData, direction)
+function Dash.onStart(self: typeof(Dash), data: DashData)
+	const character, specData, normal = data.Character, data.SpecData, data.Normal
+	if not (character and specData and normal) then return end
+
+	const direction = GetDashDirection(normal)
+	self.PlayAnimation(character, specData, direction)
 end
 
 return Dash

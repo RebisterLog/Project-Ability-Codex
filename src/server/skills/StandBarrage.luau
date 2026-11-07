@@ -95,27 +95,15 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 12))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						self.Caster.instance,
-						{
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Caster.instance, 
 							Animation = Anims["Barrage"],
 							Speed = seq.Speed,
 						}
 					)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["BarrageVL"]
-					)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["Barrage"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["BarrageVL"]
+					 })
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Barrage"]
+					 })
 
 					self.BarrageUUID = os.clock()
 
@@ -126,28 +114,14 @@ function Skill.onInit(self)
 					--})
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							self.Caster.instance,
-							{
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Caster.instance, 
 								Animation = Anims["Barrage"].Animation,
 							}
 						)
 
-						VFXService:StopEffect(Players:GetPlayers(), "Barrage", self.BarrageUUID)
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Sound",
-							RootPart,
-							Sounds["BarrageVL"].Sound
-						)
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Sound",
-							RootPart,
-							Sounds["Barrage"].Sound
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Barrage", { UUID = self.BarrageUUID })
+						VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["BarrageVL"].Sound })
+						VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Barrage"].Sound })
 					end)
 				end,
 			},
@@ -155,22 +129,13 @@ function Skill.onInit(self)
 			{
 				4,
 				function()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Barrage",
-						self.Caster.instance,
-						"Arm",
-						{
-							Offsets = {
-								A = CFrame.new(1 * math.random(0, 2), math.random(-1, 1), 1),
-								B = CFrame.new(1 * math.random(-6, 6), math.random(-5.5, 5.5), -2),
-								C = CFrame.new(0, 0, -7),
-							},
-							Rate = 120,
-							Lifetime = 0.3,
-						},
-						self.BarrageUUID
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Barrage", {
+						Character = self.Caster.instance,
+						Type = "Arm",
+						Rate = 120,
+						Lifetime = 0.3,
+						UUID = self.BarrageUUID,
+					})
 				end,
 			},
 
@@ -199,31 +164,17 @@ function Skill.onInit(self)
 			{
 				171,
 				function()
-					VFXService:StopEffect(Players:GetPlayers(), "Barrage", self.BarrageUUID)
-					VFXService:StopEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["BarrageVL"].Sound
-					)
-					VFXService:StopEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["Barrage"].Sound
-					)
+					VFXService:StopEffect(Players:GetPlayers(), "Barrage", { UUID = self.BarrageUUID })
+					VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["BarrageVL"].Sound })
+					VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["Barrage"].Sound })
 				end,
 			},
 
 			{
 				173,
 				function()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						RootPart,
-						Sounds["BarrageHit"]
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["BarrageHit"]
+					 })
 				end,
 			},
 

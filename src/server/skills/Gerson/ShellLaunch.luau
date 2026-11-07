@@ -137,12 +137,8 @@ function Skill.onInit(self)
 							const nearest, dist =
 								FindNearestCharacter(attachment.WorldPosition, { character })
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Sound",
-								shell.PrimaryPart,
-								Sounds["ShellBounce"]
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = shell.PrimaryPart, Sound = Sounds["ShellBounce"]
+							 })
 
 							if nearest and dist < 100 then
 								const aimVector = (
@@ -222,17 +218,15 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 						Animation = Anims["ShellLaunch"],
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"EquipShell",
-						character.instance,
-						Models.Shell
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "EquipShell", {
+						Character = character.instance,
+						Shell = Models.Shell,
+					})
 				end,
 			},
 
@@ -262,7 +256,7 @@ function Skill.Interrupt(self)
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	--VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
+	--VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
 	--	Animation = Anims["ShellLaunch"].Animation,
 	--})
 end

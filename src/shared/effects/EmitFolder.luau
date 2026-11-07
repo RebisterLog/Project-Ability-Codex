@@ -2,10 +2,21 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 
+type EmitFolderData = {
+	Character: Model?,
+	-- Folder of per-body-part effect copies, matched against the character's limbs.
+	EffectsFolder: Folder?,
+	-- Defaults to the folder name, so one folder is one stoppable slot.
+	UUID: string?,
+}
+
 return {
 	Characters = {},
 
-	onStart = function(self, character: Model, effectsFolder: Folder, uuid: string?)
+	onStart = function(self, data: EmitFolderData)
+		local character, effectsFolder, uuid = data.Character, data.EffectsFolder, data.UUID
+		if not (character and effectsFolder) then return end
+
 		if not self.Characters[character] then
 			self.Characters[character] = {}
 
@@ -40,9 +51,14 @@ return {
 		self.Characters[character][uuid or effectsFolder.Name] = cleaner
 	end,
 
-	onStop = function(self, character: Model, uuid: string)
-		if self.Characters[character] and self.Characters[character][uuid] then
-			self.Characters[character][uuid]:Clean()
-		end
+	onStop = function(self, data: EmitFolderData)
+		local character, folder = data.Character, data.EffectsFolder
+		if not (character and folder) then return end
+
+		const cache = self.Characters[character]
+		if not cache then return end
+
+		const cleaner = cache[data.UUID or folder.Name]
+		if cleaner then cleaner:Clean() end
 	end,
 }
