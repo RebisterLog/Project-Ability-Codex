@@ -15,10 +15,11 @@ const Spec = {
 		["Punch"] = "~/skills/Punch",
 		["Block"] = "~/skills/Block",
 		["Run"] = "~/skills/Run",
-		["Grab"] = "~/skills/Grab",
+		-- ["Grab"] = "~/skills/Grab",
 		["Summon"] = "~/skills/Summon",
 
 		["StandBarrage"] = "~/skills/StandBarrage",
+		["GroundSlam"] = "@Specs/StarPlatinum/GroundSlam",
 	},
 
 	onInit = function(self: types.Spec)
@@ -34,7 +35,10 @@ const Spec = {
 			"Walk",
 			self.Data.Assets.Stand.Animations.Walk.Animation.AnimationId
 		)
-		stand.instance:SetAttribute("Run", self.Data.Assets.Stand.Animations.Run.Animation.AnimationId)
+		stand.instance:SetAttribute(
+			"Run",
+			self.Data.Assets.Stand.Animations.Run.Animation.AnimationId
+		)
 
 		if not self.Character.Player then stand:HandleMovement() end
 	end,

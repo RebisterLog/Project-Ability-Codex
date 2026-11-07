@@ -1,284 +1,105 @@
 const Assets = game:GetService("ReplicatedStorage").assets
 const GlobalAssets = Assets.Default
 const NonArmedSpecs = GlobalAssets.NonArmedSpecs
-
 const Animations = Assets.Standless.None.Animations
 const Sounds = Assets.Standless.None.Sounds
+const Helpers = require(script.Parent.Parent.helpers)
+const idleAnimation = Helpers.idleAnimation
+const movementAnimation = Helpers.movementAnimation
+const actionAnimation = Helpers.actionAnimation
+const sound = Helpers.sound
 
 const None = {
 	Animations = {
 		-- Movement
-		Idle = {
-			Animation = Animations.User.Movements.Idle,
-			Priority = Enum.AnimationPriority.Idle,
-		},
-
-		Walk = {
-			Animation = Animations.User.Movements.Walk,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
-		Run = {
-			Animation = NonArmedSpecs.Animations.Run,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
-		Jump = {
-			Animation = GlobalAssets.Movement.Jump,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
+		Idle = idleAnimation(Animations.User.Movements.Idle),
+		Walk = movementAnimation(Animations.User.Movements.Walk),
+		Run = movementAnimation(NonArmedSpecs.Animations.Run),
+		Jump = movementAnimation(GlobalAssets.Movement.Jump),
 		-- Grab
-
-		Grab = {
-			Animation = Animations.User.GrabStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		GrabThrow = {
-			Animation = Animations.User.GrabHit,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		GrabThrowVictim = {
-			Animation = Animations.Enemy.Grab,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Grab = actionAnimation(Animations.User.GrabStart),
+		GrabThrow = actionAnimation(Animations.User.GrabHit),
+		GrabThrowVictim = actionAnimation(Animations.Enemy.Grab),
 		-- Dash
-		DashForward = {
-			Animation = GlobalAssets.Dash.Forward,
-			Priority = Enum.AnimationPriority.Action,
-		},
+		DashForward = actionAnimation(GlobalAssets.Dash.Forward),
 		DashLeft = {
 			Animation = GlobalAssets.Dash.Left,
 			Priority = Enum.AnimationPriority.Action,
 			--FadeInTime = 0.2,
 		},
-		DashRight = {
-			Animation = GlobalAssets.Dash.Right,
-			Priority = Enum.AnimationPriority.Action,
-		},
-		DashBack = {
-			Animation = GlobalAssets.Dash.Backward,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		DashRight = actionAnimation(GlobalAssets.Dash.Right),
+		DashBack = actionAnimation(GlobalAssets.Dash.Backward),
 		--Punches
-
-		Punch1 = {
-			Animation = Animations.Punches.Punch1,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch2 = {
-			Animation = Animations.Punches.Punch2,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch3 = {
-			Animation = Animations.Punches.Punch3,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch4 = {
-			Animation = Animations.Punches.Punch4,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Block = {
-			Animation = Animations.User.Block,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Punch1 = actionAnimation(Animations.Punches.Punch1),
+		Punch2 = actionAnimation(Animations.Punches.Punch2),
+		Punch3 = actionAnimation(Animations.Punches.Punch3),
+		Punch4 = actionAnimation(Animations.Punches.Punch4),
+		Block = actionAnimation(Animations.User.Block),
 		-- Skills
-
-		Footrest = {
-			Animation = Animations.User.FootrestStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-		FootrestVictim = {
-			Animation = Animations.Enemy.Footrest,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Uppercut = {
-			Animation = Animations.User.UppercutStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Footrest = actionAnimation(Animations.User.FootrestStart),
+		FootrestVictim = actionAnimation(Animations.Enemy.Footrest),
+		Uppercut = actionAnimation(Animations.User.UppercutStart),
 		--Circular Kick
-		CircularKick = {
-			Animation = Animations.User.CircularKick,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		CircularKick = actionAnimation(Animations.User.CircularKick),
 		-- Counter
-		Counter = {
-			Animation = Animations.User.CounterStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		CounterHit = {
-			Animation = Animations.User.CounterHit,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		EnemyCounter = {
-			Animation = Animations.Enemy.Counter,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Counter = actionAnimation(Animations.User.CounterStart),
+		CounterHit = actionAnimation(Animations.User.CounterHit),
+		EnemyCounter = actionAnimation(Animations.Enemy.Counter),
 		-- Dual Pistols
-		DualPistols = {
-			Animation = Animations.User.DualPistols,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		DualPistols = actionAnimation(Animations.User.DualPistols),
 		-- Knife Stab
-		KnifeStab = {
-			Animation = Animations.User.KnifeStab,
-			Priority = Enum.AnimationPriority.Action,
-		},
+		KnifeStab = actionAnimation(Animations.User.KnifeStab),
 	},
 	Sounds = {
 		-- Dash
-		Dash = {
-			Sound = GlobalAssets.Dash.DashSound,
-			Volume = 0.25,
-		},
-
-		Punch1 = {
-			Sound = Sounds.Punches.Punch1,
-			Volume = 1,
-		},
-		Punch2 = {
-			Sound = Sounds.Punches.Punch2,
-			Volume = 1,
-		},
-		Punch3 = {
-			Sound = Sounds.Punches.Punch3,
-			Volume = 1,
-		},
-		Punch4 = {
-			Sound = Sounds.Punches.Punch4,
-			Volume = 1,
-		},
-
-		FootrestVL = {
-			Sound = Sounds.FootrestVoice,
-			Volume = 1,
-		},
-
-		UppercutVL = {
-			Sound = Sounds.UppercutVoice,
-			Volume = 1,
-		},
-		UppercutHit = {
-			Sound = Sounds.UppercutHit,
-			Volume = 1,
-		},
-
+		Dash = sound(GlobalAssets.Dash.DashSound, 0.25),
+		Punch1 = sound(Sounds.Punches.Punch1),
+		Punch2 = sound(Sounds.Punches.Punch2),
+		Punch3 = sound(Sounds.Punches.Punch3),
+		Punch4 = sound(Sounds.Punches.Punch4),
+		FootrestVL = sound(Sounds.FootrestVoice),
+		UppercutVL = sound(Sounds.UppercutVoice),
+		UppercutHit = sound(Sounds.UppercutHit),
 		-- Grab
-
-		Grab = {
-			Sound = Sounds.GrabStart,
-			Volume = 1,
-		},
-
-		Grabbed = {
-			Sound = Sounds.GrabHit,
-			Volume = 1,
-		},
-
-		GrabVL = {
-			Sound = Sounds.GrabVoice,
-			Volume = 1,
-		},
-
+		Grab = sound(Sounds.GrabStart),
+		Grabbed = sound(Sounds.GrabHit),
+		GrabVL = sound(Sounds.GrabVoice),
 		-- CircularKick
-		CircularKick = {
-			Sound = Sounds.CircularKick,
-			Volume = 1,
-		},
-
-		CircularKickVL = {
-			Sound = Sounds.CircularKickVoice,
-			Volume = 1,
-		},
-
-		CircularKickHit = {
-			Sound = Sounds.CircularKickHit,
-			Volume = 1,
-		},
-
+		CircularKick = sound(Sounds.CircularKick),
+		CircularKickVL = sound(Sounds.CircularKickVoice),
+		CircularKickHit = sound(Sounds.CircularKickHit),
 		-- Counter
-		CounterVoice = {
-			Sound = Sounds.CounterVoice,
-			Volume = 1,
-		},
-
-		CounterHit = {
-			Sound = Sounds.CounterHit,
-			Volume = 1,
-		},
-
+		CounterVoice = sound(Sounds.CounterVoice),
+		CounterHit = sound(Sounds.CounterHit),
 		-- Dual Pistols
-		DualPistolsVoice = {
-			Sound = Sounds.DualPistolsVoice,
-			Volume = 1,
-		},
-
-		DualPistolsReload = {
-			Sound = Sounds.DualPistolsReload,
-			Volume = 1,
-		},
-
-		DualPistolsShot = {
-			Sound = Sounds.DualPistolsShot,
-			Volume = 1,
-		},
-
+		DualPistolsVoice = sound(Sounds.DualPistolsVoice),
+		DualPistolsReload = sound(Sounds.DualPistolsReload),
+		DualPistolsShot = sound(Sounds.DualPistolsShot),
 		-- Knife Stab
-		KnifeStab = {
-			Sound = Sounds.KnifeStab,
-			Volume = 1,
-		},
-
-		KnifeStabHit = {
-			Sound = Sounds.KnifeStabHit,
-			Volume = 1,
-		},
+		KnifeStab = sound(Sounds.KnifeStab),
+		KnifeStabHit = sound(Sounds.KnifeStabHit),
 	},
 	Models = {
 		-- Punches
 		PunchHit = GlobalAssets.HandledPunchHit,
 		ArmPunchTrail = GlobalAssets.ArmPunchTrails,
-
 		-- Uppercut
 		Uppercut = Assets.Standless.None.Models.Uppercut,
-
 		-- Uppercut Hit
 		UppercutHit = Assets.Standless.None.Models.UppercutHit,
-
 		-- Footrest
 		Footrest = Assets.Standless.None.Models.Footrest,
-
 		-- Footrest enemy drop
 		FootrestVictim = Assets.Standless.None.Models.FootrestEnemy,
-
 		-- Circular Kick
 		CircularKick = Assets.Standless.None.Models.CircularKick,
-
 		-- Circular Kick Ground hit
 		CircularKickGroundHit = Assets.Standless.None.Models.CircularKickGround,
-
 		-- Dual Pistols
 		LeftPistol = Assets.Standless.None.Models.LeftPistol,
 		RightPistol = Assets.Standless.None.Models.RightPistol,
 		Bullet = Assets.Standless.None.Models.Bullet,
 		PistolShotEffectPart = Assets.Standless.None.Models.PistolShotEffectPart,
-
 		-- Knife Stab
 		Knife = Assets.Standless.None.Models.Knife,
 		KnifeStabHit = Assets.Standless.None.Models.KnifeStabHit,
@@ -289,7 +110,6 @@ const None = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
 			FinalFrame = 30,
 		},
-
 		Counter = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
 			StartHitFrame = 30,

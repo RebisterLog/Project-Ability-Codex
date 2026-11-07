@@ -12,7 +12,7 @@ const Spec = {
 		["Punch"] = "~/skills/Punch",
 		["Block"] = "~/skills/Block",
 		["Run"] = "~/skills/Run",
-		["Grab"] = "~/skills/Grab",
+		-- ["Grab"] = "~/skills/Grab",
 		--
 		["Footrest"] = "@Specs/Standless/Footrest",
 		["Uppercut"] = "@Specs/Standless/Uppercut",

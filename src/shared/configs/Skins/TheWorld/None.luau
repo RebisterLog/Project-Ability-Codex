@@ -1,137 +1,51 @@
 const Assets = game:GetService("ReplicatedStorage").assets
 const GlobalAssets = Assets.Default
-
 const Animations = Assets.TheWorld.None.Animations
 const Models = Assets.TheWorld.None.Models
 const Sounds = Assets.TheWorld.None.Sounds
+const Helpers = require(script.Parent.Parent.helpers)
+const idleAnimation = Helpers.idleAnimation
+const movementAnimation = Helpers.movementAnimation
+const actionAnimation = Helpers.actionAnimation
+const sound = Helpers.sound
 
 const None = {
 	Animations = {
 		-- Movement
-		Idle = {
-			Animation = Animations.User.Movements.Idle,
-			Priority = Enum.AnimationPriority.Idle,
-		},
-
-		Walk = {
-			Animation = Animations.User.Movements.Walk,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
-		Run = {
-			Animation = Animations.User.Movements.Run,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
+		Idle = idleAnimation(Animations.User.Movements.Idle),
+		Walk = movementAnimation(Animations.User.Movements.Walk),
+		Run = movementAnimation(Animations.User.Movements.Run),
 		-- Grab
-
-		Grab = {
-			Animation = GlobalAssets.Grab.Animations.User.GrabStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		GrabThrow = {
-			Animation = GlobalAssets.Grab.Animations.User.GrabHit,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		GrabThrowVictim = {
-			Animation = GlobalAssets.Grab.Animations.Enemy.Grab,
-			Priority = Enum.AnimationPriority.Action,
-		},
+		Grab = actionAnimation(GlobalAssets.Grab.Animations.User.GrabStart),
+		GrabThrow = actionAnimation(GlobalAssets.Grab.Animations.User.GrabHit),
+		GrabThrowVictim = actionAnimation(GlobalAssets.Grab.Animations.Enemy.Grab),
 		-- Dash
-		DashForward = {
-			Animation = GlobalAssets.Dash.Forward,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		DashLeft = {
-			Animation = GlobalAssets.Dash.Left,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		DashRight = {
-			Animation = GlobalAssets.Dash.Right,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		DashBack = {
-			Animation = GlobalAssets.Dash.Backward,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		DashForward = actionAnimation(GlobalAssets.Dash.Forward),
+		DashLeft = actionAnimation(GlobalAssets.Dash.Left),
+		DashRight = actionAnimation(GlobalAssets.Dash.Right),
+		DashBack = actionAnimation(GlobalAssets.Dash.Backward),
 		--Punches
-
-		Punch1 = {
-			Animation = Animations.User.Punches.Punch1,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch2 = {
-			Animation = Animations.User.Punches.Punch2,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch3 = {
-			Animation = Animations.User.Punches.Punch3,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch4 = {
-			Animation = Animations.User.Punches.Punch4,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Block = {
-			Animation = Animations.User.Block,
-			Priority = Enum.AnimationPriority.Action,
-		},
+		Punch1 = actionAnimation(Animations.User.Punches.Punch1),
+		Punch2 = actionAnimation(Animations.User.Punches.Punch2),
+		Punch3 = actionAnimation(Animations.User.Punches.Punch3),
+		Punch4 = actionAnimation(Animations.User.Punches.Punch4),
+		Block = actionAnimation(Animations.User.Block),
 	},
 	Sounds = {
 		-- Dash
-		Dash = {
-			Sound = GlobalAssets.Dash.DashSound,
-			Volume = 1,
-		},
-
-		Punch1 = {
-			Sound = Sounds.User.Punches.Punch1,
-			Volume = 1,
-		},
-		Punch2 = {
-			Sound = Sounds.User.Punches.Punch2,
-			Volume = 1,
-		},
-		Punch3 = {
-			Sound = Sounds.User.Punches.Punch3,
-			Volume = 1,
-		},
-		Punch4 = {
-			Sound = Sounds.User.Punches.Punch4,
-			Volume = 1,
-		},
-
+		Dash = sound(GlobalAssets.Dash.DashSound),
+		Punch1 = sound(Sounds.User.Punches.Punch1),
+		Punch2 = sound(Sounds.User.Punches.Punch2),
+		Punch3 = sound(Sounds.User.Punches.Punch3),
+		Punch4 = sound(Sounds.User.Punches.Punch4),
 		-- Grab
-
-		Grab = {
-			Sound = GlobalAssets.Grab.Sounds.GrabStart,
-			Volume = 1,
-		},
-
-		GrabHit = {
-			Sound = GlobalAssets.Grab.Sounds.GrabHit,
-			Volume = 1,
-		},
-
-		GrabVL = {
-			Sound = GlobalAssets.Grab.Sounds.GrabVoice,
-			Volume = 1,
-		},
+		Grab = sound(GlobalAssets.Grab.Sounds.GrabStart),
+		GrabHit = sound(GlobalAssets.Grab.Sounds.GrabHit),
+		GrabVL = sound(GlobalAssets.Grab.Sounds.GrabVoice),
 	},
 	Models = {
 		-- Punches
 		PunchHit = GlobalAssets.HandledPunchHit,
-
 		-- Stand model
 		Stand = Models.Stand,
 	},
@@ -146,157 +60,48 @@ const None = {
 	Stand = {
 		Animations = {
 			-- Movement
-			Idle = {
-				Animation = Animations.Stand.Movements.Idle,
-				Priority = Enum.AnimationPriority.Idle,
-			},
-
-			Walk = {
-				Animation = Animations.Stand.Movements.Walk,
-				Priority = Enum.AnimationPriority.Movement,
-			},
-
-			Run = {
-				Animation = Animations.Stand.Movements.Run,
-				Priority = Enum.AnimationPriority.Movement,
-			},
-
+			Idle = idleAnimation(Animations.Stand.Movements.Idle),
+			Walk = movementAnimation(Animations.Stand.Movements.Walk),
+			Run = movementAnimation(Animations.Stand.Movements.Run),
 			--Punches
-
-			Punch1 = {
-				Animation = Animations.Stand.Punches.Punch1,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			Punch2 = {
-				Animation = Animations.Stand.Punches.Punch2,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			Punch3 = {
-				Animation = Animations.Stand.Punches.Punch3,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			Punch4 = {
-				Animation = Animations.Stand.Punches.Punch4,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			Block = {
-				Animation = Animations.Stand.Block,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
+			Punch1 = actionAnimation(Animations.Stand.Punches.Punch1),
+			Punch2 = actionAnimation(Animations.Stand.Punches.Punch2),
+			Punch3 = actionAnimation(Animations.Stand.Punches.Punch3),
+			Punch4 = actionAnimation(Animations.Stand.Punches.Punch4),
+			Block = actionAnimation(Animations.Stand.Block),
 			-- Grab
-
-			Grab = {
-				Animation = Animations.Stand.GrabStart,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			GrabThrow = {
-				Animation = Animations.Stand.GrabHit,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			GrabThrowVictim = {
-				Animation = Animations.Enemy.GrabStandOn,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
+			Grab = actionAnimation(Animations.Stand.GrabStart),
+			GrabThrow = actionAnimation(Animations.Stand.GrabHit),
+			GrabThrowVictim = actionAnimation(Animations.Enemy.GrabStandOn),
 			-- Summon
-
-			Summon = {
-				Animation = Animations.Stand.Summon,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
-			Unsummon = {
-				Animation = Animations.Stand.Unsummon,
-				Priority = Enum.AnimationPriority.Action,
-			},
-
+			Summon = actionAnimation(Animations.Stand.Summon),
+			Unsummon = actionAnimation(Animations.Stand.Unsummon),
 			-- Barrage
-
-			Barrage = {
-				Animation = Animations.Stand.BarrageStart,
-				Priority = Enum.AnimationPriority.Action,
-			},
+			Barrage = actionAnimation(Animations.Stand.BarrageStart),
 		},
-
 		Sounds = {
-			Punch1 = {
-				Sound = Sounds.Stand.Punches.Punch1,
-				Volume = 1,
-			},
-			Punch2 = {
-				Sound = Sounds.Stand.Punches.Punch2,
-				Volume = 1,
-			},
-			Punch3 = {
-				Sound = Sounds.Stand.Punches.Punch3,
-				Volume = 1,
-			},
-			Punch4 = {
-				Sound = Sounds.Stand.Punches.Punch4,
-				Volume = 1,
-			},
-
-			Grab = {
-				Sound = Sounds.Stand.GrabStart,
-				Volume = 1,
-			},
-
-			Grabbed = {
-				Sound = Sounds.Stand.GrabHit,
-				Volume = 1,
-			},
-
-			GrabVL = {
-				Sound = Sounds.Stand.GrabVoice,
-				Volume = 1,
-			},
-
-			Summon = {
-				Sound = Sounds.Stand.Summon,
-				Volume = 1,
-			},
-
-			SummonVL = {
-				Sound = Sounds.Stand.SummonVL,
-				Volume = 1,
-			},
-
+			Punch1 = sound(Sounds.Stand.Punches.Punch1),
+			Punch2 = sound(Sounds.Stand.Punches.Punch2),
+			Punch3 = sound(Sounds.Stand.Punches.Punch3),
+			Punch4 = sound(Sounds.Stand.Punches.Punch4),
+			Grab = sound(Sounds.Stand.GrabStart),
+			Grabbed = sound(Sounds.Stand.GrabHit),
+			GrabVL = sound(Sounds.Stand.GrabVoice),
+			Summon = sound(Sounds.Stand.Summon),
+			SummonVL = sound(Sounds.Stand.SummonVL),
 			-- Barrage
-
-			Barrage = {
-				Sound = Sounds.Stand.Barrage,
-				Volume = 0.25,
-			},
-
-			BarrageHit = {
-				Sound = Sounds.Stand.BarrageHeavyHit,
-				Volume = 0.25,
-			},
-
-			BarrageVL = {
-				Sound = Sounds.Stand.BarrageVL,
-				Volume = 1,
-			},
+			Barrage = sound(Sounds.Stand.Barrage, 0.25),
+			BarrageHit = sound(Sounds.Stand.BarrageHeavyHit, 0.25),
+			BarrageVL = sound(Sounds.Stand.BarrageVL),
 		},
-
 		Models = {
 			-- Punches
 			PunchHit = GlobalAssets.HandledPunchHit,
-
 			-- Stand model
 			Stand = Models.Stand,
-
 			-- Summon effect part
 			Summon = Models.Summon,
 		},
-
 		Stats = {
 			Grab = {
 				AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),

@@ -1,198 +1,69 @@
 const Assets = game:GetService("ReplicatedStorage").assets
 const GlobalAssets = Assets.Default
-
 const Animations = Assets.Undyne.None.Animations
 const Sounds = Assets.Undyne.None.Sounds
 const Models = Assets.Undyne.None.Models
+const Helpers = require(script.Parent.Parent.helpers)
+const idleAnimation = Helpers.idleAnimation
+const movementAnimation = Helpers.movementAnimation
+const actionAnimation = Helpers.actionAnimation
+const sound = Helpers.sound
 
 const None = {
 	Animations = {
 		-- Movement
-		Idle = {
-			Animation = Animations.User.Movements.Idle,
-			Priority = Enum.AnimationPriority.Idle,
-		},
-
-		Walk = {
-			Animation = Animations.User.Movements.Walk,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
-		Run = {
-			Animation = Animations.User.Movements.Run,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
-		Jump = {
-			Animation = GlobalAssets.Movement.Jump,
-			Priority = Enum.AnimationPriority.Movement,
-		},
-
+		Idle = idleAnimation(Animations.User.Movements.Idle),
+		Walk = movementAnimation(Animations.User.Movements.Walk),
+		Run = movementAnimation(Animations.User.Movements.Run),
+		Jump = movementAnimation(GlobalAssets.Movement.Jump),
 		-- Grab
-
-		Grab = {
-			Animation = Animations.User.GrabStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		GrabThrow = {
-			Animation = Animations.User.GrabHit,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		GrabThrowVictim = {
-			Animation = Animations.Enemy.Grab,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Grab = actionAnimation(Animations.User.GrabStart),
+		GrabThrow = actionAnimation(Animations.User.GrabHit),
+		GrabThrowVictim = actionAnimation(Animations.Enemy.Grab),
 		-- Dash
-		DashForward = {
-			Animation = GlobalAssets.Dash.Forward,
-			Priority = Enum.AnimationPriority.Action,
-		},
-		DashLeft = {
-			Animation = GlobalAssets.Dash.Left,
-			Priority = Enum.AnimationPriority.Action,
-		},
-		DashRight = {
-			Animation = GlobalAssets.Dash.Right,
-			Priority = Enum.AnimationPriority.Action,
-		},
-		DashBack = {
-			Animation = GlobalAssets.Dash.Backward,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		DashForward = actionAnimation(GlobalAssets.Dash.Forward),
+		DashLeft = actionAnimation(GlobalAssets.Dash.Left),
+		DashRight = actionAnimation(GlobalAssets.Dash.Right),
+		DashBack = actionAnimation(GlobalAssets.Dash.Backward),
 		--Punches
-
-		Punch1 = {
-			Animation = Animations.Punches.Punch1,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch2 = {
-			Animation = Animations.Punches.Punch2,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch3 = {
-			Animation = Animations.Punches.Punch3,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Punch4 = {
-			Animation = Animations.Punches.Punch4,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
-		Block = {
-			Animation = Animations.User.Block,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Punch1 = actionAnimation(Animations.Punches.Punch1),
+		Punch2 = actionAnimation(Animations.Punches.Punch2),
+		Punch3 = actionAnimation(Animations.Punches.Punch3),
+		Punch4 = actionAnimation(Animations.Punches.Punch4),
+		Block = actionAnimation(Animations.User.Block),
 		-- Barrage
-		Barrage = {
-			Animation = Animations.User.Barrage,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		Barrage = actionAnimation(Animations.User.Barrage),
 		-- Arc Spear Strike
-		ArcSpearStrike = {
-			Animation = Animations.User.ArcSpearStrikeStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
-
+		ArcSpearStrike = actionAnimation(Animations.User.ArcSpearStrikeStart),
 		-- Wait A Little Bit
-		WaitALittleBit = {
-			Animation = Animations.User.WaitALittleBitStart,
-			Priority = Enum.AnimationPriority.Action,
-		},
+		WaitALittleBit = actionAnimation(Animations.User.WaitALittleBitStart),
 	},
 	Sounds = {
 		-- Dash
-		Dash = {
-			Sound = GlobalAssets.Dash.DashSound,
-			Volume = 1,
-		},
-
-		Punch1 = {
-			Sound = Sounds.Punches.Punch1,
-			Volume = 1,
-		},
-		Punch2 = {
-			Sound = Sounds.Punches.Punch2,
-			Volume = 1,
-		},
-		Punch3 = {
-			Sound = Sounds.Punches.Punch3,
-			Volume = 1,
-		},
-		Punch4 = {
-			Sound = Sounds.Punches.Punch4,
-			Volume = 1,
-		},
-
+		Dash = sound(GlobalAssets.Dash.DashSound),
+		Punch1 = sound(Sounds.Punches.Punch1),
+		Punch2 = sound(Sounds.Punches.Punch2),
+		Punch3 = sound(Sounds.Punches.Punch3),
+		Punch4 = sound(Sounds.Punches.Punch4),
 		-- Grab
-
-		Grab = {
-			Sound = Sounds.GrabStart,
-			Volume = 1,
-		},
-
-		Grabbed = {
-			Sound = Sounds.GrabHit,
-			Volume = 1,
-		},
-
-		GrabVL = {
-			Sound = Sounds.GrabVoice,
-			Volume = 1,
-		},
-
+		Grab = sound(Sounds.GrabStart),
+		Grabbed = sound(Sounds.GrabHit),
+		GrabVL = sound(Sounds.GrabVoice),
 		-- Barrage
-		PreBarrage = {
-			Sound = Sounds.PreBarrage,
-			Volume = 1,
-		},
-
-		Barrage = {
-			Sound = Sounds.Barrage,
-			Volume = 1,
-		},
-
-		PostBarrage = {
-			Sound = Sounds.PostBarrage,
-			Volume = 1,
-		},
-
+		PreBarrage = sound(Sounds.PreBarrage),
+		Barrage = sound(Sounds.Barrage),
+		PostBarrage = sound(Sounds.PostBarrage),
 		-- Arc Spear Strike
-		ArcSpearStrike = {
-			Sound = Sounds.ArcSpearStrikeStart,
-			Volume = 1,
-		},
-
-		ArcSpearStrikeHit = {
-			Sound = Sounds.ArcSpearStrikeHit,
-			Volume = 1,
-		},
-
+		ArcSpearStrike = sound(Sounds.ArcSpearStrikeStart),
+		ArcSpearStrikeHit = sound(Sounds.ArcSpearStrikeHit),
 		-- Wait A Little Bit
-		WaitALittleBit = {
-			Sound = Sounds.WaitALittleBitStart,
-			Volume = 1,
-		},
-
-		WaitALittleBitHit = {
-			Sound = Sounds.WaitALittleBitHit,
-			Volume = 1,
-		},
+		WaitALittleBit = sound(Sounds.WaitALittleBitStart),
+		WaitALittleBitHit = sound(Sounds.WaitALittleBitHit),
 	},
 	Models = {
 		Spear = Models.Spear,
-
 		-- Punches
 		PunchHit = Models.PunchHit,
-
 		-- Barrage
 		Barrage = Models.Barrage,
 	},
