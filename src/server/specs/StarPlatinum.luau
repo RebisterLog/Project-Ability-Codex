@@ -1,13 +1,7 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
-const Configuration = ServerScriptService.server.Configuration
-const Configs = Configuration.ConfigsFolder.Value
-const SpecsConfig = require(Configs.Specs)
-const skills = ServerScriptService.server.skills
 const types = require(ServerScriptService.server.types)
-
-const Players = game:GetService("Players")
 
 const Spec = {
 	Skills = {
@@ -20,6 +14,9 @@ const Spec = {
 
 		["StandBarrage"] = "~/skills/StandBarrage",
 		["GroundSlam"] = "@Specs/StarPlatinum/GroundSlam",
+		["StarFinger"] = "@Specs/StarPlatinum/StarFinger",
+		["StarStrike"] = "@Specs/StarPlatinum/StarStrike",
+		["GrabSlam"] = "@Specs/StarPlatinum/GrabSlam",
 	},
 
 	onInit = function(self: types.Spec)

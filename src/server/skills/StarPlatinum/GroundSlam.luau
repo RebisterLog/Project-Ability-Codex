@@ -9,7 +9,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Ground Slam",
-	Cooldown = 20,
+	Cooldown = 15,
 	Tag = "OnlyForStand",
 
 	SkillCharacters = {

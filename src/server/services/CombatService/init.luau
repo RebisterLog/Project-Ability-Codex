@@ -354,6 +354,8 @@ function CombatService.CreateGrab(
 		Cleaner:Add(function()
 			if not humanoid.Parent then return end
 			humanoid.PlatformStand = wasPlatformStand or victim:GetParameter("Ragdoll") == true
+
+			victim.RootPart.CFrame = victim.instance:FindFirstChild("Torso").CFrame
 		end)
 
 		if data.Victim.Bind then

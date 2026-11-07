@@ -3,17 +3,19 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Enums = require(ServerScriptService.server.Enums)
-const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Star Finger",
-	Cooldown = 15,
+	Cooldown = 8,
+	Tag = "OnlyForStand",
+
+	SkillCharacters = { "Hit", "Stun", "Blockable" },
 
 	AttackInfo = {
 		Hitbox = {
-			Size = Vector3.new(4, 4, 8),
-			Offset = CFrame.new(0, 0, -5),
+			Size = Vector3.new(2, 2, 14),
+			Offset = CFrame.new(0, 0, -7),
 			Debug = true,
 		},
 
@@ -34,15 +36,12 @@ const Skill: types.SkillData = {
 
 function Skill.onInit(self)
 	const character = self.Character
-	const RootPart = character.RootPart
-	const Humanoid = character.Humanoid
 	const VFXService = Crane:GetService("VFXService")
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
+	const Anims = self.Spec.Data.Assets.Stand.Animations
+	const Sounds = self.Spec.Data.Assets.Stand.Sounds
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -52,51 +51,48 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
-					--seq.Cleaner:Add(CombatService:AddArmor(character, true))
-					--seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
-					--seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Walk))
+					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+					table.clear(self.AlreadyHit)
 
-					--table.clear(self.AlreadyHit)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Stand.instance,
+						Animation = Anims.StarFinger,
+						Speed = seq.Speed,
+					})
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = self.Stand.RootPart,
+						Sound = Sounds.StarFinger,
+					})
 
-					--VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--	Animation = Anims["NAME"],
-					--	Speed = seq.Speed,
-					--})
-
-					--VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["NAME"] })
-
-					--seq.Cleaner:Add(function()
-					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--		Animation = Anims["NAME"].Animation,
-					--	})
-					--end)
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = self.Stand.instance,
+							Animation = Anims.StarFinger.Animation,
+						})
+					end)
 				end,
 			},
 
 			{
 				30,
-				function(seq)
-					--local Targets = CombatService:Hitbox({
-					--	Skill = self,
-					--	Caster = character,
-					--	Info = AttackInfo.Hitbox
-					--})
+				function()
+					local Targets = CombatService:Hitbox({
+						Skill = self,
+						Caster = character,
+						Info = AttackInfo.Hitbox,
+					})
 
-					--for _, Target in Targets do
-					--	if table.find(self.AlreadyHit, Target) then
-					--		continue
-					--	end
+					for _, Target in Targets do
+						if table.find(self.AlreadyHit, Target) then continue end
+						table.insert(self.AlreadyHit, Target)
 
-					--	CombatService:Attack({
-					--		Attacker = character,
-					--		Victim = Target,
-					--		Info = AttackInfo,
-					--	}):andThen(function(Data: types.AttackData)
-					--		if not Data.State.Success then return end
-					--		table.insert(self.AlreadyHit, Target)
-
-					--	end)
-					--end
+						CombatService:Attack({
+							Attacker = character,
+							Victim = Target,
+							Info = AttackInfo,
+						})
+					end
 				end,
 				35,
 			},
@@ -107,6 +103,8 @@ function Skill.onInit(self)
 end
 
 function Skill.Activate(self)
+	self.Stand = Crane:GetService("StandService"):GetStand(self.Character)
+
 	if self.Sequence then
 		self.Sequence:Play()
 		self.Sequence:Await()
@@ -114,11 +112,14 @@ function Skill.Activate(self)
 end
 
 function Skill.Interrupt(self)
-	const character = self.Character
-	const RootPart = character.RootPart
 	const VFXService = Crane:GetService("VFXService")
 
 	if self.Sequence then self.Sequence:Stop() end
+
+	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
+		Origin = self.Stand.RootPart,
+		Sound = self.Spec.Data.Assets.Stand.Sounds.StarFinger.Sound,
+	})
 end
 
 return Skill

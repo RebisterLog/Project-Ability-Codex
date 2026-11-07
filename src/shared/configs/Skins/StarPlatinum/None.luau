@@ -81,7 +81,7 @@ const None = {
 			GroundSlam = actionAnimation(Animations.Stand.GroundSlam),
 			-- Grab Slam
 			GrabSlamVictim = actionAnimation(Animations.Enemy.GrabSlam),
-			GrabSlamStart = actionAnimation(Animations.Stand.GrabSlam),
+			GrabSlamStart = actionAnimation(Animations.Stand.GrabSlamStart),
 			GrabSlam = actionAnimation(Animations.Stand.GrabSlam),
 			-- Star Finger
 			StarFinger = actionAnimation(Animations.Stand.StarFinger),
