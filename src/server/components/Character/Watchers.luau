@@ -99,10 +99,11 @@ const function DamageHoldWatcher(self: types.Character, value: boolean?)
 				-- The tick stayed silent during the hold; its floating number
 				-- shows together with the actual payout, like deferred attacks.
 				if entry.Amount > 0 then
-					Crane:GetService("VFXService"):StartEffect(Players:GetPlayers(), "DamageIndicator", {
-						Character = self.instance,
-						Amount = entry.Amount,
-					})
+					Crane:GetService("VFXService")
+						:StartEffect(Players:GetPlayers(), "DamageIndicator", {
+							Character = self.instance,
+							Amount = entry.Amount,
+						})
 				end
 			else
 				self.Humanoid.Health =

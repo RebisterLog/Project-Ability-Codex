@@ -7,11 +7,12 @@
 	Covers what the ad-hoc `BodyVelocity` + `Heartbeat` raycast blocks in skills
 	used to reimplement (Dual Pistols bullets, Gerson's Shell Launch):
 
-	- a travelling visual model
+	- a travelling visual model (or none at all, for server-side virtual flight)
 	- a hitbox query via `CombatService:Hitbox`
 	- a custom per-frame move function (homing, arcs, acceleration)
 	- surface reflection / bouncing
 	- piercing, with a unique-target set so nobody is hit twice
+	- Time Stop freeze zones that pause any projectile standing inside them
 
 	The class reports hits through signals and never applies damage itself.
 	Connect `Hit` and call `CombatService:Attack` from the skill.
@@ -60,6 +61,38 @@ Projectile.__index = Projectile
 const DEFAULT_LIFETIME = 5
 const DEFAULT_SURFACE_OFFSET = 0.05
 
+-- Time Stop: any active blast radius pauses the projectiles inside it. Zones
+-- are registered by the cast itself, not a global flag, so elsewhere in the
+-- world projectiles keep flying undisturbed.
+const TimeZones: { { Id: number, Center: Vector3, Radius: number } } = {}
+local NextZoneId = 0
+
+function Projectile.FreezeZone(center: Vector3, radius: number): number
+	NextZoneId += 1
+
+	const id = NextZoneId
+	table.insert(TimeZones, { Id = id, Center = center, Radius = radius })
+
+	return id
+end
+
+function Projectile.UnfreezeZone(id: number)
+	for index, zone in TimeZones do
+		if zone.Id == id then
+			table.remove(TimeZones, index)
+			return
+		end
+	end
+end
+
+function Projectile.IsFrozen(position: Vector3): boolean
+	for _, zone in TimeZones do
+		if (position - zone.Center).Magnitude <= zone.Radius then return true end
+	end
+
+	return false
+end
+
 -- Characters are resolved by the hitbox query, not the surface sweep. Unless a
 -- skill explicitly asks for character bounces, the sweep passes straight through
 -- them instead of deflecting off a ragdolling torso.
@@ -73,6 +106,11 @@ end
 const Orient = function(position: Vector3, direction: Vector3): CFrame
 	if direction.Magnitude < 0.001 then return CFrame.new(position) end
 	return CFrame.lookAt(position, position + direction)
+end
+
+const GetPivot = function(self: types.Projectile, position: Vector3, direction: Vector3): CFrame
+	if self.OrientToVelocity then return Orient(position, direction) end
+	return CFrame.new(position) * self.FixedRotation
 end
 
 function Projectile.new(Config: types.ProjectileConfig): types.Projectile
@@ -99,6 +137,11 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 		Velocity = Direction.Unit * Config.Speed,
 		Direction = Direction.Unit,
 		Speed = Config.Speed,
+		HitboxEnabled = Config.HitboxEnabled ~= false,
+		OrientToVelocity = Config.OrientToVelocity ~= false,
+		FixedRotation = Config.Orientation
+			or (Config.Model and Config.Model:GetPivot().Rotation)
+			or CFrame.identity.Rotation,
 
 		Elapsed = 0,
 		Traveled = 0,
@@ -119,22 +162,27 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 		Stepped = Signal(),
 	}, Projectile) :: types.Projectile
 
-	self.Instance = Cleaner:Clone(Config.Model) :: Model | BasePart
+	if Config.Model then
+		self.Instance = Cleaner:Clone(Config.Model) :: Model | BasePart
 
-	-- Parent to `workspace.Effects`, never `workspace.Live`. The default hitbox
-	-- query whitelists `workspace.Live` only, so the projectile is structurally
-	-- unable to detect itself. The workspace root is an equally safe fallback,
-	-- since it is not inside `workspace.Live` either.
-	self.Instance.Parent = Workspace.Effects or Workspace
-	self.Instance:PivotTo(Orient(Config.Position, self.Direction))
+		-- Parent to `workspace.Effects`, never `workspace.Live`. The default hitbox
+		-- query whitelists `workspace.Live` only, so the projectile is structurally
+		-- unable to detect itself. The workspace root is an equally safe fallback,
+		-- since it is not inside `workspace.Live` either.
+		self.Instance.Parent = Workspace.Effects or Workspace
+		self.Instance:PivotTo(GetPivot(self, Config.Position, self.Direction))
+	else
+		self.Instance = nil
+	end
 
-	-- Surface sweep params are the inverse of the hitbox params: geometry lives
-	-- outside `workspace.Live`, so exclude the characters and keep the world.
+	-- The swept surface test doesn't need a replicated body; it needs the world.
+	-- Build it even for virtual projectiles so obstacles and floors still
+	-- deflect/land the track.
 	const RayParams = RaycastParams.new()
 	RayParams.FilterType = Enum.RaycastFilterType.Exclude
 	RayParams.RespectCanCollide = true
 	RayParams:AddToFilter(Workspace.Live)
-	RayParams:AddToFilter(self.Instance)
+	if self.Instance then RayParams:AddToFilter(self.Instance) end
 
 	self.RayParams = RayParams
 
@@ -266,6 +314,9 @@ end
 	5. checks the self-imposed lifetime / distance limits
 ]=]
 function Projectile.Step(self: types.Projectile, deltaTime: number)
+	-- Time Stop: a blast radius freezes this projectile while it stands inside.
+	if Projectile.IsFrozen(self.Position) then return end
+
 	const Config = self.Config
 	const Reflection = self.Reflection
 
@@ -295,7 +346,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 	-- 2. Swept raycast across the entire step.
 	local result = nil
 
-	if (destination - origin).Magnitude > 0.001 then
+	if (destination - origin).Magnitude > 0.001 and self.RayParams then
 		result = Workspace:Raycast(origin, destination - origin, self.RayParams)
 
 		if result and Reflection.IgnoreCharacters and IsCharacterPart(result.Instance) then
@@ -308,7 +359,9 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 		if not Reflection.Enabled then
 			destination = result.Position
 			self.Position = destination
-			self.Instance:PivotTo(Orient(destination, self.Direction))
+			if self.Instance then
+				self.Instance:PivotTo(GetPivot(self, destination, self.Direction))
+			end
 			Projectile.Finish(self, "Wall")
 			return
 		end
@@ -318,7 +371,9 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 		if reflected.Magnitude < 0.001 then
 			-- Degenerate bounce (perfectly head-on), just stop at the surface.
 			self.Position = result.Position
-			self.Instance:PivotTo(Orient(self.Position, self.Direction))
+			if self.Instance then
+				self.Instance:PivotTo(GetPivot(self, self.Position, self.Direction))
+			end
 			Projectile.Finish(self, "Bounce")
 			return
 		end
@@ -332,7 +387,9 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 
 		if Reflection.MaxBounces >= 0 and self.Bounces > Reflection.MaxBounces then
 			self.Position = destination
-			self.Instance:PivotTo(Orient(destination, self.Direction))
+			if self.Instance then
+				self.Instance:PivotTo(GetPivot(self, destination, self.Direction))
+			end
 			Projectile.Finish(self, "Bounce")
 			return
 		end
@@ -341,32 +398,34 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 	-- 4. Commit position and orientation.
 	self.Position = destination
 	self.Traveled += (destination - origin).Magnitude
-	self.Instance:PivotTo(Orient(destination, self.Direction))
+	if self.Instance then self.Instance:PivotTo(GetPivot(self, destination, self.Direction)) end
 
 	-- 5. Hitbox query at the new position.
-	const Info = {
-		Size = Config.HitboxSize,
-		Origin = CFrame.new(destination),
-		-- Defaults to ignoring the caster, matching how skills query hitboxes.
-		CanQueryCaster = Config.IgnoreCaster == false,
-		Debug = Config.Debug,
-	}
+	if self.HitboxEnabled then
+		const Info = {
+			Size = Config.HitboxSize,
+			Origin = CFrame.new(destination),
+			-- Defaults to ignoring the caster, matching how skills query hitboxes.
+			CanQueryCaster = Config.IgnoreCaster == false,
+			Debug = Config.Debug,
+		}
 
-	if Config.HitboxOffset then Info.Offset = Config.HitboxOffset end
+		if Config.HitboxOffset then Info.Offset = Config.HitboxOffset end
 
-	if not self.CombatService then self.CombatService = Crane:GetService("CombatService") end
+		if not self.CombatService then self.CombatService = Crane:GetService("CombatService") end
 
-	const targets = self.CombatService:Hitbox({
-		Caster = Config.Caster,
-		Skill = Config.Skill,
-		Info = Info,
-	})
+		const targets = self.CombatService:Hitbox({
+			Caster = Config.Caster,
+			Skill = Config.Skill,
+			Info = Info,
+		})
 
-	for _, target: types.Character in targets do
-		if not self:HitTarget(target, destination) then continue end
-		if not Config.CanPierce then
-			Projectile.Finish(self, "Hit")
-			return
+		for _, target: types.Character in targets do
+			if not self:HitTarget(target, destination) then continue end
+			if not Config.CanPierce then
+				Projectile.Finish(self, "Hit")
+				return
+			end
 		end
 	end
 

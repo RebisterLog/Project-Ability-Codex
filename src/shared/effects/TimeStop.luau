@@ -111,19 +111,31 @@ const function release(character: Model, data: TimeStopData)
 		):Play()
 		TweenService:Create(
 			bubble,
-			TweenInfo.new(BUBBLE_EXPAND_DURATION, Enum.EasingStyle.Circular, Enum.EasingDirection.InOut),
+			TweenInfo.new(
+				BUBBLE_EXPAND_DURATION,
+				Enum.EasingStyle.Circular,
+				Enum.EasingDirection.InOut
+			),
 			{ Transparency = 1 }
 		):Play()
 
 		task.delay(BUBBLE_COLLAPSE_DELAY, function()
 			TweenService:Create(
 				bubble,
-				TweenInfo.new(BUBBLE_COLLAPSE_DURATION, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+				TweenInfo.new(
+					BUBBLE_COLLAPSE_DURATION,
+					Enum.EasingStyle.Back,
+					Enum.EasingDirection.In
+				),
 				{ Size = Vector3.new(0.1, 0.1, 0.1) }
 			):Play()
 			TweenService:Create(
 				bubble,
-				TweenInfo.new(BUBBLE_COLLAPSE_DURATION, Enum.EasingStyle.Sine, Enum.EasingDirection.In),
+				TweenInfo.new(
+					BUBBLE_COLLAPSE_DURATION,
+					Enum.EasingStyle.Sine,
+					Enum.EasingDirection.In
+				),
 				{ Transparency = 10 }
 			):Play()
 			Debris:AddItem(bubble, BUBBLE_COLLAPSE_DURATION)
@@ -224,7 +236,8 @@ const function clientImpact(character: Model, data: TimeStopData)
 		sound:Play()
 		ActiveTicks[character] = sound
 		task.delay(duration, function()
-			TweenService:Create(sound, TweenInfo.new(1, Enum.EasingStyle.Linear), { Volume = 0 }):Play()
+			TweenService:Create(sound, TweenInfo.new(1, Enum.EasingStyle.Linear), { Volume = 0 })
+				:Play()
 			Debris:AddItem(sound, 1)
 			ActiveTicks[character] = nil
 		end)

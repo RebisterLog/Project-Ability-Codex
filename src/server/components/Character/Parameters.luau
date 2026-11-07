@@ -60,10 +60,33 @@ return {
 		Parser = BleedingParser,
 	},
 
+	-- Burn: the same shape as `Bleeding`, so the attack that lights it carries the
+	-- damage, the pace and the slowdown of the ticks.
+	Burning = {
+		Default = {
+			Damage = 0,
+			Duration = 0,
+			Interval = 0,
+			Slow = 0,
+		},
+
+		Parser = BleedingParser,
+	},
+
 	Armor = { Default = false, Parser = ORParser },
 	Ragdoll = { Default = false, Parser = ORParser },
 	GodMode = { Default = false, Parser = ORParser },
 	NoCollision = { Default = false, Parser = ORParser },
 	Restrain = { Default = false, Parser = ORParser },
 	NoSkillCast = { Default = false, Parser = ORParser },
+
+	-- Health cannot drop below one while active. The beat lands as usual (knockback,
+	-- ragdoll, stun all apply); excess damage is tracked as debt and paid out when
+	-- the last hold is released.
+	NoDeath = { Default = false, Parser = ORParser },
+
+	-- Time Stop semantics: the world is frozen, damage does not touch the health bar
+	-- at all; the whole attack is queued and replayed in order when the last hold
+	-- is released. Healing keeps its order in the same queue.
+	DamageHold = { Default = false, Parser = ORParser },
 }
