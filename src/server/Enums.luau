@@ -12,4 +12,10 @@ return {
 		Medium = 20,
 		Heavy = 30,
 	},
+
+	Ragdoll = {
+		Light = 1,
+		Medium = 1.5,
+		Heavy = 2,
+	}
 }
