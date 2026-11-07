@@ -47,9 +47,12 @@ function NoCooldownModule.Set(self: typeof(NoCooldownModule), enabled: boolean):
 		-- Rewriting them is what makes the toggle take effect on the skills the
 		-- player is using right now rather than only on the next cast. Nothing
 		-- needs this on a respawn: a new character starts every skill at 0.
-		if component and component.Spec then
-			for _, skill in component.Spec.Skills do
-				skill:SetCooldown(0)
+		if component then
+			for _, spec in { component.Spec, component.SubSpec } do
+				if not spec then continue end
+				for _, skill in spec.Skills do
+					skill:SetCooldown(0)
+				end
 			end
 		end
 	else

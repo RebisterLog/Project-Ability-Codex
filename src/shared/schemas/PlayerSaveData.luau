@@ -26,6 +26,7 @@ export type PlayerSaveData = {
 	Specs: { [string]: SpecData }, -- [unique id]: data
 
 	Spec: string,
+	SubSpec: string,
 }
 
 return {
@@ -38,4 +39,5 @@ return {
 	Specs = {},
 
 	Spec = "None",
+	SubSpec = "None",
 } :: PlayerSaveData

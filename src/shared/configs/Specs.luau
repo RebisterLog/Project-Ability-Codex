@@ -1,6 +1,7 @@
 export type SpecInfo = {
 	DisplayName: string,
 	IsPublic: boolean,
+	Type: ("Spec" | "SubSpec")?,
 	Binds: {
 		[string]: { Enum.KeyCode & Enum.UserInputType },
 	},
@@ -89,7 +90,16 @@ const Specs = {
 			["Summon"] = Enum.KeyCode.Q,
 
 			["StandBarrage"] = Enum.KeyCode.E,
+			["GroundSlam"] = Enum.KeyCode.G,
 		},
+	},
+
+	["Hamon"] = {
+		Type = "SubSpec",
+		DisplayName = "Hamon",
+		IsPublic = true,
+
+		Binds = {},
 	},
 }
 

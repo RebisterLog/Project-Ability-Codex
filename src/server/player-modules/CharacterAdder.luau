@@ -4,6 +4,7 @@ const ServerScriptService = game:GetService("ServerScriptService")
 
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
+const CharacterReplication = require(script.Parent.Parent.components.Character.Replication)
 const types = require(ServerScriptService.server.types)
 
 const CharacterAdder = {} :: types.PlayerModule
@@ -15,13 +16,16 @@ end
 
 function CharacterAdder.onCharacterAdded(self: typeof(CharacterAdder), character: Model)
 	self.Character = Crane:AddComponent(character, "Character")
+	CharacterReplication.Bind(self.Character, self.playerProxy)
 
 	self.Character.Destroying:Once(function()
 		self:Spawn()
 	end)
 
 	Crane:GetService("CollisionService"):SetCollisionGroup("Player", character)
-	self.player.Modules["SpecModule"]:SetSpec(self.player.Modules["SpecModule"]:GetSpec())
+	const specModule = self.player.Modules["SpecModule"]
+	specModule:SetSpec(specModule:GetSpec())
+	if specModule:GetSubSpec() ~= "None" then specModule:SetSubSpec(specModule:GetSubSpec()) end
 	self.player.Modules["GodModeModule"]:OnCharacter(self.Character)
 	self.player.Modules["NoCooldownModule"]:OnCharacter(self.Character)
 end
