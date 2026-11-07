@@ -56,6 +56,19 @@ const Jotaro: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
+		["Barrage"] = {
+			Distance = 10,
+			StandSummon = true,
+			PreferredDistance = {
+				Min = 5,
+				Max = 10,
+			},
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
+				"TARGET_ARMORED",
+			},
+		},
+
 		["StarStrike"] = {
 			StandSummon = true,
 			Priority = 2,
