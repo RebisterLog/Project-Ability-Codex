@@ -1,202 +1,204 @@
---!native
---!optimize 2
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-
-local CacheTab = require(ReplicatedStorage.shared.packages.CacheTab)
-
---[=[ RockModule
-
-   Ground debris. `Ground` rings a position with two rows of paired rocks, drops
-   each pair where a downward raycast finds the surface, and shrinks it back into
-   the cache once its lifetime passes.
-
-   The rocks take the material and colour of whatever they land on, so a slam on
-   stone throws stone chips.
-]=]
-
-const SHRINK = TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-const SHRINK_SIZE = Vector3.new(0.01, 0.01, 0.01)
-const DEFAULT_SIZE = Vector3.new(2, 2, 2)
-const DEFAULT_LIFETIME = 3
-const RAY_DOWN = Vector3.new(0, -20, 0)
-const RAY_HEIGHT = 10
-const CACHE_SIZE = 100
-const RINGS = 2
-const POOL_NAME = "RockCache"
-
-type RockCache = CacheTab.CacheTab<BasePart>
-
-local rockCache: RockCache? = nil
-
-local function storeRock(part: BasePart, position: Vector3)
-	part.CFrame = CFrame.new(position)
-end
-
-local function unstoreRock(_part: BasePart) end
-
-local function getPool(): Folder
-	local existing = workspace:FindFirstChild(POOL_NAME)
-
-	if existing and existing:IsA("Folder") then return existing end
-
-	local folder = Instance.new("Folder")
-	folder.Name = POOL_NAME
-	folder.Parent = workspace
-
-	return folder
-end
-
-local function getCache(): RockCache
-	local existing = rockCache
-
-	if existing then return existing end
-
-	local created = CacheTab.new(
-		Instance.new("Part"),
-		CACHE_SIZE,
-		storeRock,
-		unstoreRock,
-		getPool()
-	) :: RockCache
-	rockCache = created
-
-	return created
-end
-
-local function createRock(
-	hit: RaycastResult,
-	lookAt: Vector3,
-	size: Vector3,
-	iceMode: boolean?,
-	rocks: RockCache
-): (BasePart, BasePart)
-	const random = Random.new()
-	local mainRock = rocks:Get()
-	local topRock = rocks:Get()
-
-	mainRock.Anchored = true
-	mainRock.CanCollide = false
-	mainRock.CanTouch = false
-	topRock.Anchored = true
-	topRock.CanCollide = false
-	topRock.CanTouch = false
-
-	const finalSize = Vector3.new(size.X * 1.3, size.Y, size.Z * 1.3) * random:NextNumber(1, 1.5)
-
-	mainRock.Size = finalSize
-	topRock.Size = Vector3.new(finalSize.X * 1.01, finalSize.Y * 0.25, finalSize.Z * 1.01)
-
-	mainRock.CFrame = CFrame.new(hit.Position - Vector3.yAxis * (finalSize.Y * 0.4), lookAt)
-		* CFrame.fromEulerAnglesXYZ(
-			random:NextNumber(-0.5, 0.5),
-			random:NextNumber(-0.3, 0.3),
-			random:NextNumber(-0.3, 0.3)
-		)
-
-	topRock.CFrame = mainRock.CFrame * CFrame.new(0, mainRock.Size.Y / 2 - topRock.Size.Y / 2.1, 0)
-
-	const ground = hit.Instance
-
-	local function applyGroundAppearance(rock: BasePart)
-		rock.Material = ground.Material
-		rock.Reflectance = ground.Reflectance
-		rock.Transparency = ground.Transparency
-		rock.Color = ground.Color
-		rock.MaterialVariant = ground.MaterialVariant
-
-		-- Copy legacy texture instances (Decal, Texture object with Texture ID).
-		for _, child in ipairs(ground:GetChildren()) do
-			if child:IsA("Texture") or child:IsA("Decal") then
-				local cloned = child:Clone()
-				cloned.Parent = rock
-			end
-		end
-	end
-
-	if iceMode then
-		mainRock.Material = Enum.Material.Ice
-		topRock.Material = Enum.Material.Sand
-		mainRock.Color = BrickColor.new("Pastel light blue").Color
-		topRock.Color = BrickColor.new("Lily white").Color
-	else
-		applyGroundAppearance(mainRock)
-		applyGroundAppearance(topRock)
-
-		mainRock.Color = mainRock.Color:Lerp(Color3.fromRGB(100, 100, 100), 0.3)
-	end
-
-	local parent = rocks.Parent
-
-	if parent then
-		mainRock.Parent = parent
-		topRock.Parent = parent
-	end
-
-	return mainRock, topRock
-end
-
-local function shrinkAndReturn(
-	mainRock: BasePart,
-	topRock: BasePart,
-	rocks: RockCache,
-	time: number
-)
-	task.delay(time, function()
-		TweenService:Create(mainRock, SHRINK, { Size = SHRINK_SIZE }):Play()
-		TweenService:Create(topRock, SHRINK, { Size = SHRINK_SIZE }):Play()
-
-		task.delay(0.6, function()
-			rocks:Add(mainRock)
-			rocks:Add(topRock)
-		end)
-	end)
-end
-
 local RockModule = {}
+local TweenSerivce = game:GetService("TweenService")
+local Players= game:GetService("Players")
+local DebrisFolder
 
-function RockModule.Ground(
-	position: Vector3,
-	radius: number,
-	size: Vector3?,
-	rockCount: number,
-	iceMode: boolean?,
-	lifetime: number?
-)
-	if rockCount <= 0 then return end
 
-	const rocks = getCache()
-	const rockSize = size or DEFAULT_SIZE
-	const lifeTime = lifetime or DEFAULT_LIFETIME
+local function CheckDebrisFolder()
+	if not workspace:FindFirstChild("Debris") then
+		DebrisFolder = Instance.new("Folder")
+		DebrisFolder.Name = "Debris"
+		DebrisFolder.Parent = workspace
+	else
+		DebrisFolder = workspace:FindFirstChild("Debris")
+	end
+end
 
-	const rayParams = RaycastParams.new()
-	rayParams.FilterType = Enum.RaycastFilterType.Include
-	rayParams.FilterDescendantsInstances = { workspace:FindFirstChild("Map") or workspace }
 
-	local currentAngle = 0
-	const angleStep = 360 / rockCount
 
-	for ring = 1, RINGS do
-		const offset = if ring == 1 then radius / 2 + radius / 10 else radius / 2 + radius / 2.7
-
-		for _ = 1, rockCount do
-			local rayOrigin = (
-				CFrame.new(position)
-				* CFrame.Angles(0, math.rad(currentAngle), 0)
-				* CFrame.new(offset, RAY_HEIGHT, 0)
-			).Position
-
-			currentAngle += angleStep
-
-			local hit = workspace:Raycast(rayOrigin, RAY_DOWN, rayParams)
-
-			if hit then
-				const mainRock, topRock = createRock(hit, position, rockSize, iceMode, rocks)
-				shrinkAndReturn(mainRock, topRock, rocks, lifeTime)
+function RockModule.Crater(Center : CFrame, Radius : number, MinRocks : number, MaxRocks : number, PlayerCollision : boolean)
+	Radius = Radius or 7
+	MinRocks = MinRocks or 7
+	MaxRocks = MaxRocks or 10
+	if PlayerCollision == nil then
+		PlayerCollision = true
+	end
+	
+	
+	CheckDebrisFolder()
+	
+	local raycastParams = RaycastParams.new()
+	
+	local players = {DebrisFolder}
+	for i, v in pairs(Players:GetPlayers()) do
+		local Character = v.Character
+		if Character then
+			table.insert(players, Character)
+		end
+	end
+	for i, v in pairs(game.Workspace:GetDescendants()) do
+		if game:GetService("CollectionService"):HasTag(v, "RockModuleIgnore") then
+			table.insert(players, v)
+		end
+	end
+	raycastParams.FilterDescendantsInstances = players
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.IgnoreWater = true
+	local ray = workspace:Raycast(Center.Position, Center.UpVector * -1000, raycastParams)
+	
+	if ray then
+	local numRocks = math.round(math.random(MinRocks, MaxRocks))
+		local distance = Radius
+		local newCframe = CFrame.new(ray.Position)
+		local angle = 0
+		
+		for i = 1, numRocks do
+			local Rock = Instance.new("Part")
+			Rock.Parent = DebrisFolder
+			Rock.Name = "GroundSlam"
+			Rock.Size = Vector3.new(math.random(3,5), math.random(2, 3), math.random(2,4))
+			Rock.CFrame = newCframe * CFrame.Angles(0, math.rad(angle), 0) * CFrame.new(0,0, -distance) + Vector3.new(0, -5, 0)
+			Rock.CFrame = CFrame.lookAt(Rock.Position, ray.Position)
+			local ray2 = workspace:Raycast(Rock.CFrame.Position + Vector3.new(0,7,0), Vector3.new(0,1,0) * -1000, raycastParams)
+			if ray2 then
+				Rock.Color = ray2.Instance.Color
+				Rock.Material = ray2.Instance.Material
+				Rock.Transparency = ray2.Instance.Transparency
+				
+			else
+				Rock.Color = ray.Instance.Color
+				Rock.Material = ray.Instance.Material
+				Rock.Transparency = ray.Instance.Transparency
 			end
+			if PlayerCollision == false then
+				Rock.CollisionGroup = "RockDebris"
+			end
+			
+			Rock.Anchored = true
+			
+			Rock.CanCollide = true
+			game:GetService("Debris"):AddItem(Rock, 30)
+			local Tween = TweenSerivce:Create(Rock, TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = Rock.Position + Vector3.new(0, 4.5, 0)})
+			Tween:Play()
+			task.spawn(function()
+				task.wait(math.random(650, 950) / 100)
+				local Tween = TweenSerivce:Create(Rock, TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Position = Rock.Position + Vector3.new(0, -5, 0), Size = Vector3.new(1,1,1)})
+				Tween:Play()
+			end)
+			angle += 360/numRocks
+		end
+	end
+	
+end
+
+function RockModule.Explosion(Center : CFrame, TotalRocks : number, MinSize : number, MaxSize : number, PlayerCollision : boolean)
+	TotalRocks = TotalRocks or 7
+	MinSize = MinSize or 0.5
+	MaxSize = MaxSize or 2.5
+	PlayerCollision = PlayerCollision or false
+	
+	local numOfRocks = TotalRocks
+	CheckDebrisFolder()
+	
+	local raycastParams = RaycastParams.new()
+	local players = {DebrisFolder}
+	for i, v in pairs(Players:GetPlayers()) do
+		local Character = v.Character
+		if Character then
+			table.insert(players, Character)
+		end
+	end
+	for i, v in pairs(game.Workspace:GetDescendants()) do
+		if game:GetService("CollectionService"):HasTag(v, "RockModuleIgnore") then
+			table.insert(players, v)
+		end
+	end
+	raycastParams.FilterDescendantsInstances = players
+	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	raycastParams.IgnoreWater = true
+
+	local ray = workspace:Raycast(Center.Position, Center.UpVector * -100, raycastParams)
+	
+	if ray then
+		for i = 1, numOfRocks do
+			local Rock = Instance.new("Part")
+			Rock.Name = "ExplosionPart"
+			Rock.Parent = DebrisFolder
+			
+			local RandomSize = (math.random(MinSize * 100, MaxSize * 100)) / 100.0
+			if math.random(1, 5) == 3 then
+				Rock.Size = Vector3.new(RandomSize * 2, 0.15, RandomSize * 2)
+			else
+				Rock.Size = Vector3.new(RandomSize, RandomSize, RandomSize)
+			end
+			
+			Rock.CFrame = Center
+			Rock.Color = ray.Instance.Color
+			Rock.Material = ray.Instance.Material
+			Rock.Anchored = false
+			Rock.Orientation = Vector3.new(math.random(-359, 359),math.random(-359, 359),math.random(-359, 359))
+			Rock.Transparency = ray.Instance.Transparency
+			Rock.CanCollide = true
+			if PlayerCollision == false then
+				Rock.CollisionGroup = "RockDebris"
+			end
+			
+			
+			game:GetService("Debris"):AddItem(Rock, 4.5)
+			
+			local velocitySpread = 32 
+			local upwardForce = 22
+			local velocity = Vector3.new(math.random(-velocitySpread, velocitySpread),upwardForce,math.random(-velocitySpread, velocitySpread))
+			local bodyVelocity = Instance.new("BodyVelocity")
+		
+			bodyVelocity.Velocity = velocity
+			bodyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+			bodyVelocity.P = 5000
+			bodyVelocity.Parent = Rock
+			
+			game:GetService("Debris"):AddItem(bodyVelocity, 0.25)
+			task.spawn(function()
+				task.wait(4)
+				local Tween = TweenSerivce:Create(Rock, TweenInfo.new(0.75, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {Size = Vector3.new(0.1,0.1,0.1), Transparency = 1}):Play()	
+			end)
 		end
 	end
 end
+
+function RockModule.CraterRows(Center : CFrame, Radius : number, Rows: number, NextRowRadius : number, MinRocks : number, MaxRocks : number, PlayerCollision : boolean)
+	if PlayerCollision == nil then
+		PlayerCollision = true
+	end
+	Radius = Radius or 7
+	MinRocks = MinRocks or 7
+	MaxRocks = MaxRocks or 10
+	Rows = Rows or 3
+	NextRowRadius = NextRowRadius or 4
+	local currentRadius = Radius
+	for i = 1, Rows do
+		RockModule.Crater(Center, currentRadius, MinRocks * i, MaxRocks * i, PlayerCollision)
+		currentRadius += NextRowRadius
+	end
+end
+
+function RockModule.ClearDebris(Fade : boolean)
+	CheckDebrisFolder()
+	
+	if Fade then
+		for i, v in pairs(DebrisFolder:GetChildren()) do
+			if v:IsA("BasePart") then
+				local Tween = TweenSerivce:Create(v, TweenInfo.new(0.75, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {Size = Vector3.new(0.1,0.1,0.1), Transparency = 1}):Play()	
+				game:GetService("Debris"):AddItem(v, 1)
+				
+			end
+		end
+	else
+		for i, v in pairs(DebrisFolder:GetChildren()) do
+			v:Destroy()
+		end
+	end
+end
+
+
 
 return RockModule

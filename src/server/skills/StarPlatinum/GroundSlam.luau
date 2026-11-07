@@ -105,9 +105,9 @@ function Skill.onInit(self)
 					-- Ground impact effects (once per slam, not per target)
 					local standRoot = (self.Stand and self.Stand.RootPart) or character.RootPart
 					local impactOffset = AttackInfo.Hitbox.Offset
-					local impactPosition = (standRoot.CFrame * impactOffset).Position
+					local impactPosition = standRoot.CFrame * impactOffset
 
-					RockModule.Ground(impactPosition, 10, Vector3.new(2, 2.5, 2), 8, false, 3)
+					RockModule.Crater(impactPosition, 10, 8, 8, false)
 
 					if Models["GroundImpact"] then
 						VFXService:StartEffect(
@@ -115,8 +115,8 @@ function Skill.onInit(self)
 							"EmitParticle",
 							{
 								Particle = Models["GroundImpact"],
-								Origin = standRoot,
-								Offset = impactOffset,
+								Origin = impactPosition,
+								Offset = CFrame.identity,
 							}
 						)
 					end
