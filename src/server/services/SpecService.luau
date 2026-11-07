@@ -1,4 +1,3 @@
-const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
@@ -18,48 +17,67 @@ function SpecService:onStart()
 	self.SkillService = Crane:GetService("SkillService")
 end
 
-function SpecService:GetSpecData(spec: types.SpecDef): types.SpecData
-	if self.CachedInfo[spec.Id] then -- if already was imported
-		return self.CachedInfo[spec.Id]
-	end
+function SpecService:GetSpecData(spec: types.SpecDef): types.SpecData?
+	const skinName = spec.Skin or "None"
+	const cacheKey = `{spec.Id}/{skinName}`
+	if self.CachedInfo[cacheKey] then return self.CachedInfo[cacheKey] end
 
 	const specInfo = self.ConfigService:Get("Specs")[spec.Id]
 	if not specInfo then
-		Crane.Utils.Log("SpecService", `Config doesn't exists: {spec.Id}`, "error")
-		return
+		Crane.Utils.Log("SpecService", `Config doesn't exist: {spec.Id}`, "warn")
+		return nil
 	end
 
-	const skin = self.ConfigService:Get("Skins")[spec.Id][spec.Skin or "None"]
+	const skins = self.ConfigService:Get("Skins")[spec.Id]
+	const skin = skins and skins[skinName]
 	if not skin then
-		Crane.Utils.Log("SpecService", `Skin doesn't exists: {spec.Skin}`, "error")
-		return
+		Crane.Utils.Log("SpecService", `Skin doesn't exist: {skinName} (spec {spec.Id})`, "warn")
+		return nil
 	end
 
 	const module = SpecsFolder:FindFirstChild(spec.Id)
-	if not module then
-		Crane.Utils.Log("SpecService", `Can't find spec module with Name: {spec.Id}`, "error")
-		return
+	if not module or not module:IsA("ModuleScript") then
+		Crane.Utils.Log("SpecService", `Can't find spec module with Name: {spec.Id}`, "warn")
+		return nil
 	end
 
-	const data = require(module)
-	for i, v in specInfo do
-		data[i] = v
+	const data = Crane.Utils.DeepClone(require(module))
+	for key, value in specInfo do
+		data[key] = value
 	end
 
 	data.Id = spec.Id
-	data["Assets"] = skin
+	data.Slot = specInfo.Type or "Spec"
+	data.Assets = skin
 
-	self.CachedInfo[spec.Id] = data
-
+	self.CachedInfo[cacheKey] = data
 	return data
 end
 
-function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
-	const specData: types.SpecData = self:GetSpecData(data)
+--- The slot a spec belongs to, taken from the spec config (`Type`, `"Spec"` by
+--- default). This is the single source of truth for the slot routing.
+function SpecService:GetSpecType(specId: string): types.SpecSlot?
+	const spec = self.ConfigService:Get("Specs")[specId]
+	if not spec then
+		Crane.Utils.Log("SpecService", `Spec doesn't exist: {specId}`, "warn")
+		return nil
+	end
+
+	return spec.Type or "Spec"
+end
+
+function SpecService:CreateSpec(character: types.Character, data: types.SpecDef): types.Spec?
+	const baseData = self:GetSpecData(data)
+	if not baseData then return nil end
+
+	-- CachedInfo is shared by all owners of a definition. Per-owned-spec state
+	-- must only ever be stamped onto this shallow per-runtime copy.
+	const specData = table.clone(baseData) :: types.SpecData
+	specData.InstanceId = data.InstanceId
 
 	const spec = SpecClass.new(character, specData)
 
-	for skillId, skillData in spec.Data.Skills do
+	for skillId in spec.Data.Skills do
 		const skill = self.SkillService:CreateSkill(character, {
 			Spec = spec,
 			SkillId = skillId,
@@ -67,11 +85,12 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 
 		spec:AddSkill(skill)
 
-		if data.Binds[skillId] then
-			skill:SetBind(data.Binds[skillId])
-		else
-			skill:SetBind(specData.Binds[skillId])
-		end
+		local bind = data.Binds and data.Binds[skillId]
+		if not bind then bind = specData.Binds[skillId] end
+
+		if not bind then continue end
+
+		skill:SetBind(bind)
 	end
 
 	if _G["CRANE_DEBUGGING"] then

@@ -101,6 +101,26 @@ function Skill.IsOnCooldown(self: types.Skill)
 	return self.Proxy().Parameters.ReleaseTime > os.clock()
 end
 
+function Skill.TryComboInput(self: types.Skill, skillId: string): boolean
+	if self.Data.TryComboInput then return self.Data.TryComboInput(self, skillId) end
+	return false
+end
+
+-- Freeze the cast where it is: the sequence keeps `CurrentFrame` and its
+-- clean-up, only the heartbeat stops advancing it. Skills without a sequence
+-- are left alone.
+function Skill.Pause(self: types.Skill)
+	const sequence = self.Sequence
+	if sequence and sequence:IsPlaying() then sequence:Pause() end
+end
+
+-- Continue a sequence that `Pause` stopped. The `IsPaused` check is what keeps
+-- a stopped (or never started) queue from being replayed from frame zero.
+function Skill.Resume(self: types.Skill)
+	const sequence = self.Sequence
+	if sequence and sequence:IsPaused() then sequence:Play() end
+end
+
 function Skill.Validate(self: types.Skill)
 	if self.Character:GetParameter("NoSkillCast") then return false end
 	if not self.Proxy().Parameters.Enabled then return false end

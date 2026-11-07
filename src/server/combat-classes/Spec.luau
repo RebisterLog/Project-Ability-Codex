@@ -34,23 +34,29 @@ function Spec.new(character: types.Character, data: types.SpecData): types.Spec
 	return self
 end
 
-function Spec.Init(self: types.Spec)
+function Spec.Init(self: types.Spec, options: types.SpecInitOptions?)
 	if self.Initialized then return end
 	self.Initialized = true
 
+	const ownsMovement = if options == nil then true else options.Movement ~= false
 	const defaultMovements = Crane:GetService("ConfigService"):Get("DefaultAnimations").Movement
 
-	for _, name in MOVEMENT_ANIMATIONS do
-		const animation = self.Data.Assets.Animations[name]
+	if ownsMovement then
+		for _, name in MOVEMENT_ANIMATIONS do
+			const animation = self.Data.Assets.Animations[name]
 
-		if not animation then
-			if not defaultMovements[name] then continue end
+			if not animation then
+				if not defaultMovements[name] then continue end
 
-			self.Character.instance:SetAttribute(name, defaultMovements[name].Animation.AnimationId)
-			continue
+				self.Character.instance:SetAttribute(
+					name,
+					defaultMovements[name].Animation.AnimationId
+				)
+				continue
+			end
+
+			self.Character.instance:SetAttribute(name, animation.Animation.AnimationId)
 		end
-
-		self.Character.instance:SetAttribute(name, animation.Animation.AnimationId)
 	end
 
 	if self.Data.onInit then self.Data.onInit(self) end
@@ -66,8 +72,8 @@ function Spec.GetAvailableSkills(self: types.Spec): { types.Skill }
 	return availableSkills
 end
 
-function Spec.CheckActiveSkills(self: types.Spec): boolean
-	const activeSkills = {}
+function Spec.CheckActiveSkills(self: types.Spec): (boolean, { types.Skill })
+	const activeSkills: { types.Skill } = {}
 
 	for _, skill in self.Skills do
 		if skill.Active then table.insert(activeSkills, skill) end
@@ -114,13 +120,23 @@ function Spec.RemoveSkill(self: types.Spec, skillId: string)
 	self.Skills[skillId] = nil
 
 	self.Proxy:Patch({
-		{ Name = "RemoveDictionary", Path = { skillId }, Args = {} },
+		{ Name = "RemoveDictionary", Path = { "Skills" }, Args = { skillId } },
 	})
 end
 
 function Spec.ActivateSkill(self: types.Spec, skillId: string)
 	if not self.Skills[skillId] then return end
-	if self:CheckActiveSkills() then return end
+
+	-- One active skill at a time across both spec slots, with one exception:
+	-- an active skill may swallow the input as a combo buffer. The buffered
+	-- skill does not activate — it just becomes available to the active skill.
+	const isBusy, activeSkills = self.Character:CheckActiveSkills()
+	if isBusy then
+		for _, activeSkill in activeSkills do
+			if activeSkill:TryComboInput(skillId) then return true end
+		end
+		return
+	end
 
 	const skill = self.Skills[skillId]
 

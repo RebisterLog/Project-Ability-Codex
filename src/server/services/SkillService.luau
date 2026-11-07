@@ -21,13 +21,7 @@ function SkillService:onStart()
 		const character = player.Character
 		if not character then return end
 
-		const component = Crane:GetComponent("Character", character)
-		if not component then return end
-
-		const spec = component.Spec
-		if not spec then return end
-
-		spec:ActivateSkill(skillId)
+		self:ActivateSkill(character, skillId)
 	end)
 
 	Crane:GetPacket("StopSkill").listen(function(skillId: string, player)
@@ -37,14 +31,34 @@ function SkillService:onStart()
 		const component = Crane:GetComponent("Character", character)
 		if not component then return end
 
-		const spec = component.Spec
-		if not spec then return end
+		local spec = component:GetSpec()
+		if not spec or not spec.Skills[skillId] then spec = component:GetSubSpec() end
+		if not spec or not spec.Skills[skillId] then return end
 
 		spec:DeactivateSkill(skillId)
 	end)
 end
 
-function SkillService:GetSkillData(skillId: string): types.SkillData
+--- Activates a skill through the canonical spec validation path. Accepting a
+--- Model keeps the packet handler and Studio Bridge on the same code path.
+function SkillService:ActivateSkill(character: types.Character | Model, skillId: string): boolean
+	local component: types.Character?
+	if typeof(character) == "Instance" then
+		component = Crane:GetComponent("Character", character) :: types.Character?
+	else
+		component = character :: types.Character
+	end
+	if not component then return false end
+
+	local spec = component:GetSpec()
+	if not spec or not spec.Skills[skillId] then spec = component:GetSubSpec() end
+	if not spec or not spec.Skills[skillId] then return false end
+
+	spec:ActivateSkill(skillId)
+	return true
+end
+
+function SkillService:GetSkillData(skillId: string): types.SkillData?
 	if self.CachedData[skillId] then -- if already imported
 		return self.CachedData[skillId]
 	end
@@ -59,13 +73,16 @@ function SkillService:GetSkillData(skillId: string): types.SkillData
 
 		return data
 	end
+
+	return nil
 end
 
 function SkillService:CreateSkill(
 	character: types.Character,
 	data: { Spec: types.SpecData, SkillId: string }
 )
-	const skillData: types.SkillData = self:GetSkillData(data.SkillId)
+	const skillData = self:GetSkillData(data.SkillId)
+	if skillData == nil then error(`SkillService: unknown skill "{data.SkillId}"`) end
 
 	return character.Cleaner:Add(SkillClass.new(character, data.Spec, skillData), "Destroy")
 end
