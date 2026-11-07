@@ -1,0 +1,12 @@
+-- {{Name}} component template
+--!strict
+
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
+
+local {{Name}} = Crane:CreateComponent({ Name = "{{Name}}" })
+
+function {{Name}}.onStart(self)
+    self.Instance = self.instance
+end
+
+return {{Name}}

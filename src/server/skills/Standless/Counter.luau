@@ -142,9 +142,14 @@ function Skill:onInit()
 					)
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-							Animation = Anims["CounterHit"].Animation,
-						})
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"Animation",
+							character.instance,
+							{
+								Animation = Anims["CounterHit"].Animation,
+							}
+						)
 					end)
 
 					seq.Cleaner:Add(function()
@@ -153,33 +158,37 @@ function Skill:onInit()
 						})
 					end)
 
--- 					CombatService:Attack({
--- 						Attacker = character,
--- 						Victim = self.Target,
--- 						Info = {
--- 							Block = {
--- 								PerfectBlockable = false,
--- 							},
--- 
--- 							Stun = {
--- 								Priority = Enums.Stun.Heavy,
--- 								Duration = 2,
--- 							},
--- 						},
--- 					})
+					-- 					CombatService:Attack({
+					-- 						Attacker = character,
+					-- 						Victim = self.Target,
+					-- 						Info = {
+					-- 							Block = {
+					-- 								PerfectBlockable = false,
+					-- 							},
+					--
+					-- 							Stun = {
+					-- 								Priority = Enums.Stun.Heavy,
+					-- 								Duration = 2,
+					-- 							},
+					-- 						},
+					-- 					})
 
 					seq.Cleaner:Set(
 						"GrabObject",
-						CombatService:CreateGrab(character, target, {
-							Attacker = {},
-							Victim = {
-								Bind = {
-									Part0 = RootPart,
-									Part1 = target.RootPart,
-									Offset = self.CounterData.Offset,
+						CombatService:CreateGrab(
+							character,
+							target,
+							{
+								Attacker = {},
+								Victim = {
+									Bind = {
+										Part0 = RootPart,
+										Part1 = target.RootPart,
+										Offset = self.CounterData.Offset,
+									},
 								},
-							},
-						} :: types.GrabData)
+							} :: types.GrabData
+						)
 					)
 				end,
 			},
@@ -229,50 +238,57 @@ function Skill:onInit()
 					)
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-							Animation = Anims["Counter"].Animation,
-						})
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"Animation",
+							character.instance,
+							{
+								Animation = Anims["Counter"].Animation,
+							}
+						)
 					end)
 
 					seq.Cleaner:Add(
-						CombatService.Attacked:Connect(function(Type: string, Data: types.AttackData)
-							if Type ~= "Precast" or Data.Victim ~= character then return end
-							if not self.CanCounter or self.Countered then return end
-							if Data.Attacker == character then return end
+						CombatService.Attacked:Connect(
+							function(Type: string, Data: types.AttackData)
+								if Type ~= "Precast" or Data.Victim ~= character then return end
+								if not self.CanCounter or self.Countered then return end
+								if Data.Attacker == character then return end
 
-							self.Countered = true
-							self.CanCounter = false
+								self.Countered = true
+								self.CanCounter = false
 
-							-- ignores the incoming hit entirely:
-							-- Info is shared between Precast and Cast, so clearing it here
-							-- prevents damage, stun, knockback, ragdoll and angular from applying
-							Data.Info.Damage = nil
-							Data.Info.Stun = nil
-							Data.Info.Ragdoll = nil
-							Data.Info.Knockback = nil
-							Data.Info.Angular = nil
+								-- ignores the incoming hit entirely:
+								-- Info is shared between Precast and Cast, so clearing it here
+								-- prevents damage, stun, knockback, ragdoll and angular from applying
+								Data.Info.Damage = nil
+								Data.Info.Stun = nil
+								Data.Info.Ragdoll = nil
+								Data.Info.Knockback = nil
+								Data.Info.Angular = nil
 
-							Data.State.Success = false
-							Data.State.Continue = false
+								Data.State.Success = false
+								Data.State.Continue = false
 
-							-- stops the attacker's current skill and drops their hyper armor
-							CombatService.Interrupted:Fire(Data.Attacker)
+								-- stops the attacker's current skill and drops their hyper armor
+								CombatService.Interrupted:Fire(Data.Attacker)
 
-							for _, armor in table.clone(Data.Attacker.Parameters.Armor.Objects) do
-								armor:Destroy()
+								for _, armor in table.clone(Data.Attacker.Parameters.Armor.Objects) do
+									armor:Destroy()
+								end
+
+								self.Target = Data.Attacker
+
+								self.CounterSequence:Play()
+								seq:Stop()
 							end
-
-							self.Target = Data.Attacker
-
-							self.CounterSequence:Play()
-							seq:Stop()
-						end)
+						)
 					)
 				end,
 			},
 
 			{
-				150,
+				60,
 				function()
 					self.CanCounter = false
 					if self.Countered then return end
@@ -288,7 +304,7 @@ function Skill:onInit()
 				end,
 			},
 
-			{ 150 + 60 },
+			{ 60 + 60 },
 		},
 	}))
 end
@@ -306,23 +322,23 @@ end
 
 -- function Skill:Interrupt()
 -- 	local VFXService = Crane:GetService("VFXService")
--- 
+--
 -- 	local Anims = self.Spec.Data.Assets.Animations
--- 
+--
 -- 	if self.Sequence then self.Sequence:Stop() end
 -- 	if self.CounterSequence then self.CounterSequence:Stop() end
--- 
+--
 -- 	self.CanCounter = false
 -- 	self.Countered = true
--- 
+--
 -- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
 -- 		Animation = Anims["Counter"].Animation,
 -- 	})
--- 
+--
 -- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
 -- 		Animation = Anims["CounterHit"].Animation,
 -- 	})
--- 
+--
 -- 	local target = self.Target
 -- 	if target then
 -- 		VFXService:StopEffect(Players:GetPlayers(), "Animation", target.instance, {

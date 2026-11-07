@@ -19,31 +19,29 @@ type DefaultProps = {
 }
 
 return function(scope: Fusion.Scope, props: DefaultProps, router: Router.Router)
-    const preloadScope = scope:innerScope()
+	const preloadScope = scope:innerScope()
 
-    const preloadedAssets, totalAssets = Preload(preloadScope, function()
-        task.wait(3)
-        preloadScope:doCleanup()
-        router:SwitchPage("PlayerHUD", nil, {
-            style = "Transparency",
-            duration = 2,
-            easingStyle = Enum.EasingStyle.Exponential,
-        })
-    end)
+	const preloadedAssets, totalAssets = Preload(preloadScope, function()
+		task.wait(3)
+		preloadScope:doCleanup()
+		router:SwitchPage("PlayerHUD", nil, {
+			style = "Transparency",
+			duration = 2,
+			easingStyle = Enum.EasingStyle.Exponential,
+		})
+	end)
 
-    const progress = preloadScope:Value(peek(preloadedAssets) / peek(totalAssets))
+	const progress = preloadScope:Value(peek(preloadedAssets) / peek(totalAssets))
 
-    preloadScope:Observer(preloadedAssets):onBind(function()
-        const value = peek(preloadedAssets) / peek(totalAssets)
-        progress:set(value)
+	preloadScope:Observer(preloadedAssets):onBind(function()
+		const value = peek(preloadedAssets) / peek(totalAssets)
+		progress:set(value)
 
-        if value >= 1 then
-            router:SwitchPage("PlayerHUD")
-        end
-    end)
+		if value >= 1 then router:SwitchPage("PlayerHUD") end
+	end)
 
-    router:SwitchPage("LoadingScreen", {
-        Text = "Preloading game assets",
-        Progress = progress,
-    })
+	router:SwitchPage("LoadingScreen", {
+		Text = "Preloading game assets",
+		Progress = progress,
+	})
 end

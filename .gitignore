@@ -7,5 +7,5 @@
 
 sourcemap.json
 
-# Local cache for downloaded checking tools; `Toolchain.searchDirs` looks here
-.tools/
+/generated docs: reproduced by `lune run tools/sync-docs.luau`
+docs/ref/

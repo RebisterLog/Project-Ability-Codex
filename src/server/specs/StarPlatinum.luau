@@ -26,15 +26,15 @@ const Spec = {
 		const stand =
 			Crane:GetService("StandService"):AddStandFor(self.Character, standModel) :: types.Stand
 
-		standModel:SetAttribute(
+		stand.instance:SetAttribute(
 			"Idle",
 			self.Data.Assets.Stand.Animations.Idle.Animation.AnimationId
 		)
-		standModel:SetAttribute(
+		stand.instance:SetAttribute(
 			"Walk",
 			self.Data.Assets.Stand.Animations.Walk.Animation.AnimationId
 		)
-		standModel:SetAttribute("Run", self.Data.Assets.Stand.Animations.Run.Animation.AnimationId)
+		stand.instance:SetAttribute("Run", self.Data.Assets.Stand.Animations.Run.Animation.AnimationId)
 
 		if not self.Character.Player then stand:HandleMovement() end
 	end,

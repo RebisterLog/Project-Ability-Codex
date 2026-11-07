@@ -385,15 +385,6 @@ src/shared/packages/Promise.luau ImplicitReturn: Function can implicitly return 
 src/shared/packages/Promise.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 882; add explicit return to silence
 src/shared/packages/Promise.luau TypeError: Expected this to be '{ [any]: any }', but got 'any?'
 src/shared/packages/Promise.luau TypeError: Key 'TEST' not found in table 'Promise'
-src/shared/packages/Proxy.luau TypeError: Cannot cast 'T' into '{any}' because the types are unrelated
-src/shared/packages/Proxy.luau TypeError: Cannot cast '{any}' into 'T' because the types are unrelated
-src/shared/packages/Proxy.luau TypeError: Expected this to be 'number', but got 'string'
-src/shared/packages/Proxy.luau TypeError: Expected this to be '{string}', but got 'true | {string} | {string}'
-src/shared/packages/Proxy.luau TypeError: Expected type table, got 'true | {string} | {string}' instead
-src/shared/packages/Proxy.luau TypeError: Type '() -> (any, a...)' does not have key '__listeners'
-src/shared/packages/Proxy.luau TypeError: Type '() -> (any, a...)' does not have key '__patchHandler'
-src/shared/packages/Proxy.luau TypeError: Unknown type 'keyof'
-src/shared/packages/Proxy.luau TypeError: Unknown type 'setmetatable'
 src/shared/packages/Signal.luau TypeError: Not all codepaths in this function return 'Connection'.
 src/shared/packages/Signal.luau TypeError: Not all codepaths in this function return 'Signal<>'.
 src/shared/packages/Signal.luau TypeError: Recursive type being used with different parameters.

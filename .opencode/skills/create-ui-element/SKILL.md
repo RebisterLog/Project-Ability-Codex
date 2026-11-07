@@ -100,7 +100,12 @@ Source of truth: `src/shared/packages/Proxy.luau`. Proxies are created in `src/c
 | `SetDictionary` | set dict key | `key, newValue, oldValue` |
 | `RemoveDictionary` | remove dict key | `key, oldValue` |
 | `Clear` | clear table / reset primitive | `oldValue` |
-| `AnyChange` | fires for the exact key or any nested key under it | same as underlying instruction |
+| `AnyChange` | fires when the changed leaf is at or below the subscribed path (the subscribed path is a prefix of the touched path) | `newValue, oldValue, instruction` |
+
+`AnyChange` receives the changed leaf, not the subscribed path: `SetDictionary {"Skills"}` with key `s1` notifies a listener on `{"Skills"}` with `newValue = Skills.s1` and `instruction.Path = {"Skills"}`. A path may use `*` (exactly one segment) and `**` (one or more segments) — e.g. `{"Skills", "*", "Parameters"}` — at the cost of a linear scan over pattern subscriptions.
+
+Replacing a parent (`ChangeValue {"Skills"}`) does **not** notify subscriptions below it: subscribe to the parent for wholesale replacement.
+
 
 ### Subscription pattern (from real code)
 

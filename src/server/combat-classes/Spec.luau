@@ -42,9 +42,9 @@ function Spec.Init(self: types.Spec)
 
 	for _, name in MOVEMENT_ANIMATIONS do
 		const animation = self.Data.Assets.Animations[name]
-		
+
 		if not animation then
-		    if not defaultMovements[name] then continue end
+			if not defaultMovements[name] then continue end
 
 			self.Character.instance:SetAttribute(name, defaultMovements[name].Animation.AnimationId)
 			continue

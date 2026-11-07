@@ -60,52 +60,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --------------------------------------------------------------------------------
 
-]]--
+]]
+--
 
 -- Types.
 export type Signal<Parameters...> = {
-	Connect: typeof(
-		-- Connects a function.
-		function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end
-	),
-	Once: typeof(
-		-- Connects a function, then auto-disconnects after the first call.
-		function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end
-	),
-	Wait: typeof(
-		-- Yields the calling thread until the next fire.
-		function(signal: Signal<Parameters...>): Parameters... end
-	),
-	
-	Fire: typeof(
-		-- Runs all connected functions and resumes all waiting threads.
-		function(signal: Signal<Parameters...>, ...: Parameters...) end
-	),
-	
-	DisconnectAll: typeof(
-		-- Erases all connections.
-		-- <strong>Much faster than calling <code>Disconnect</code> on each.</strong>
-		function(signal: Signal<Parameters...>) end
-	),
-	Destroy: typeof(
-		-- Erases all connections and methods.
-		-- <strong>To fully erase, also remove all references to the signal.</strong>
-		function(signal: Signal<Parameters...>) end
-	)
+	Connect: typeof(	-- Connects a function.
+function(
+		signal: Signal<Parameters...>,
+		callback: (Parameters...) -> ()
+	): Connection
+	end),
+	Once: typeof(	-- Connects a function, then auto-disconnects after the first call.
+function(
+		signal: Signal<Parameters...>,
+		callback: (Parameters...) -> ()
+	): Connection
+	end),
+	Wait: typeof(	-- Yields the calling thread until the next fire.
+function(signal: Signal<Parameters...>): Parameters... end),
+
+	Fire: typeof(	-- Runs all connected functions and resumes all waiting threads.
+function(signal: Signal<Parameters...>, ...: Parameters...) end),
+
+	DisconnectAll: typeof(	-- Erases all connections.
+	-- <strong>Much faster than calling <code>Disconnect</code> on each.</strong>
+function(signal: Signal<Parameters...>) end),
+	Destroy: typeof(	-- Erases all connections and methods.
+	-- <strong>To fully erase, also remove all references to the signal.</strong>
+function(signal: Signal<Parameters...>) end),
 }
 export type Connection = {
 	Signal: Signal,
 	Connected: boolean,
-	Disconnect: typeof(
-		-- Removes the connection from the signal.
-		-- <strong>The connection's data remains.</strong>
-		function(connection: Connection) end
-	)
+	Disconnect: typeof(	-- Removes the connection from the signal.
+	-- <strong>The connection's data remains.</strong>
+function(connection: Connection) end),
 }
-type CreateSignal = typeof(
-	-- Creates a new signal.
-	function(): Signal end
-)
+type CreateSignal = typeof(-- Creates a new signal.
+function(): Signal end)
 
 -- Spawn function.
 local spawnThread = if script:GetAttribute("Deferred") then task.defer else task.spawn
@@ -127,10 +120,10 @@ end
 local function disconnect(connection)
 	-- Verify connection.
 	if not connection.Connected then return end
-	
+
 	-- Remove connection.
 	connection.Connected = nil
-	
+
 	local signal = connection.Signal
 	local previous = connection.Previous
 	local next = connection.Next
@@ -153,18 +146,18 @@ Signal.__index = Signal
 Signal.Connect = function(signal, callback)
 	-- Linked list head.
 	local head = signal.Head
-	
+
 	-- Create connection.
 	local connection = {
 		Signal = signal,
 		Previous = head,
-		
+
 		Callback = callback,
-		
+
 		Connected = true,
-		Disconnect = disconnect
+		Disconnect = disconnect,
 	}
-	
+
 	-- Add connection.
 	if head then
 		head.Next = connection
@@ -172,27 +165,27 @@ Signal.Connect = function(signal, callback)
 		signal.Tail = connection
 	end
 	signal.Head = connection
-	
+
 	-- Return connection.
 	return connection
 end
 Signal.Once = function(signal, callback)
 	-- Linked list head.
 	local head = signal.Head
-	
+
 	-- Create connection.
 	local connection
 	connection = {
 		Signal = signal,
 		Previous = head,
-		
+
 		Callback = function(...)
 			-- Verify connection.
 			if not connection.Connected then return end
-			
+
 			-- Remove connection.
 			connection.Connected = false
-			
+
 			local previous = connection.Previous
 			local next = connection.Next
 			if previous then
@@ -205,15 +198,15 @@ Signal.Once = function(signal, callback)
 			else
 				signal.Head = previous
 			end
-			
+
 			-- Fire callback.
 			callback(...)
 		end,
-		
+
 		Connected = true,
-		Disconnect = disconnect
+		Disconnect = disconnect,
 	}
-	
+
 	-- Add connection.
 	if head then
 		head.Next = connection
@@ -221,26 +214,26 @@ Signal.Once = function(signal, callback)
 		signal.Tail = connection
 	end
 	signal.Head = connection
-	
+
 	-- Return connection.
 	return connection
 end
 Signal.Wait = function(signal)
 	-- Save this thread to resume later.
 	local thread = coroutine.running()
-	
+
 	-- Linked list head.
 	local head = signal.Head
-	
+
 	-- Create connection.
 	local connection
 	connection = {
 		Previous = head,
-		
+
 		Callback = function(...)
 			-- Remove connection.
 			connection.Connected = false
-			
+
 			local previous = connection.Previous
 			local next = connection.Next
 			if previous then
@@ -253,14 +246,14 @@ Signal.Wait = function(signal)
 			else
 				signal.Head = previous
 			end
-			
+
 			-- Resume the thread.
 			if coroutine.status(thread) == "suspended" then -- To avoid creating new threads.
 				task.spawn(thread, ...)
 			end
-		end
+		end,
 	}
-	
+
 	-- Add connection.
 	if head then
 		head.Next = connection
@@ -268,7 +261,7 @@ Signal.Wait = function(signal)
 		signal.Tail = connection
 	end
 	signal.Head = connection
-	
+
 	-- Yield until the next fire, then return the arguments on resume.
 	return coroutine.yield()
 end
@@ -325,7 +318,7 @@ Signal.Destroy = function(signal)
 	-- Remove signal's references.
 	signal.Tail = nil
 	signal.Head = nil
-	
+
 	-- Unlink signal methods.
 	setmetatable(signal, nil)
 end

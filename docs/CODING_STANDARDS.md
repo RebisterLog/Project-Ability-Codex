@@ -212,14 +212,28 @@ self.Proxy:Patch({
 })
 
 -- Subscribe to changes
-skill.Proxy:Subscribe("AnyChange", {"Parameters"}, function(data)
-    -- React to changes
+local cleanup = skill.Proxy:Subscribe("AnyChange", {"Parameters"}, function(newValue, oldValue, instruction)
+    -- `newValue` / `oldValue` are the changed leaf, `instruction` is the original patch entry
 end)
+
+-- Subscribe to every skill's parameters with a wildcard (`*` = one segment, `**` = one or more)
+playerProxy:Subscribe("AnyChange", {"Skills", "*", "Parameters"}, function() ... end)
+
+-- Cleanup when the consumer goes away
+cleanup()
 
 -- Read current value
 local state = self.Proxy()
 print(state.Skills)
 ```
+
+Rules of the module:
+
+- `AnyChange` fires when the subscribed path is a **prefix** of the changed path. Replacing a parent does not notify deeper subscribers — subscribe to the parent for that.
+- Exact subscriptions (`"ChangeValue"`, `"SetDictionary"`, ...) are an O(1) lookup; `AnyChange` costs one lookup per path segment; patterns cost a scan of the pattern list.
+- A throwing listener is reported with `warn` and does not stop the rest of the batch or `OnPatch`.
+- A patch that changes nothing produces no callback and is not forwarded to `OnPatch`.
+
 
 ---
 

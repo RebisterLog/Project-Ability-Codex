@@ -49,7 +49,7 @@ const Skill: types.SkillData = {
 	SkillCharacters = {
 		"Projectile",
 		"Hit",
-		"IgnoreBlock"
+		"IgnoreBlock",
 	},
 
 	AttackInfo = {
@@ -107,16 +107,14 @@ const Skill: types.SkillData = {
 }
 
 const function DropPistol(model: Model, throwVector: Vector3)
-    for _, child in model:QueryDescendants("BasePart") do
-        child.CollisionGroup = "NoCollision"
+	for _, child in model:QueryDescendants("BasePart") do
+		child.CollisionGroup = "NoCollision"
 		child.CanCollide = true
 	end
 
 	model.Parent = Workspace.Effects
 
-	if model.PrimaryPart then
-	    model.PrimaryPart:ApplyImpulse(throwVector)
-	end
+	if model.PrimaryPart then model.PrimaryPart:ApplyImpulse(throwVector) end
 end
 
 function Skill:onInit()
@@ -185,7 +183,7 @@ function Skill:onInit()
 				const right, motorR = CombatService:Equip(character, Models["RightPistol"])
 
 				if character.Player then
-				    Crane.Utils.ChangeNetworkOwner(left, character.Player)
+					Crane.Utils.ChangeNetworkOwner(left, character.Player)
 					Crane.Utils.ChangeNetworkOwner(right, character.Player)
 				end
 
@@ -197,26 +195,34 @@ function Skill:onInit()
 					Speed = seq.Speed,
 				})
 
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["DualPistolsVoice"])
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					RootPart,
+					Sounds["DualPistolsVoice"]
+				)
 
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["DualPistolsReload"])
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					RootPart,
+					Sounds["DualPistolsReload"]
+				)
 
 				-- Runs on both a clean finish and an interrupt, so the pistols end
 				-- up on the floor exactly like the old `onEnd`.
 				seq.Cleaner:Add(function()
-    				Debris:AddItem(left, 3)
-                    Debris:AddItem(right, 3)
-        
-				    motorL:Destroy()
+					Debris:AddItem(left, 3)
+					Debris:AddItem(right, 3)
+
+					motorL:Destroy()
 					motorR:Destroy()
 
 					DropPistol(left, -character.RootPart.CFrame.LookVector)
 					DropPistol(right, -character.RootPart.CFrame.LookVector)
-					
+
 					const anim = Anims["DualPistols"]
-					if not anim then
-						return
-					end
+					if not anim then return end
 
 					VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
 						Animation = anim.Animation,
@@ -252,14 +258,10 @@ end
 function Skill:Interrupt()
 	const VFXService = Crane:GetService("VFXService")
 
-	if self.Sequence then
-		self.Sequence:Stop()
-	end
+	if self.Sequence then self.Sequence:Stop() end
 
 	const anim = self.Spec.Data.Assets.Animations["DualPistols"]
-	if not anim then
-		return
-	end
+	if not anim then return end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", self.Character.instance, {
 		Animation = anim.Animation,

@@ -113,7 +113,6 @@ character parameter table and `Enums` are all real; the Roblox environment, the 
 services and the `Skill` class are fakes that record what the skill did.
 
 ```luau
-local Harness = require("../../tools/SkillTest")
 
 local world = Harness.world({ spec = "Standless", skin = "None", targets = 2 })
 local skill = world:skill("Standless/Uppercut")
@@ -179,7 +178,6 @@ Two consequences worth knowing:
 - `require` inside a `loadstring` chunk is unsupported, so the prelude declares its own
   local `require`, which resolves Roblox instance paths through a registry.
 - Inside `SkillHarness/init.luau` a relative require resolves from the *parent*
-  directory, which is why the entry point is the plain file `tools/SkillTest.luau`.
 
 ### Reading the trace
 

@@ -1,215 +1,440 @@
 --!strict
 --!native
 --!optimize 2
+
+--[[
+	Proxy — a reactive wrapper around a replicated table.
+
+	The proxy deep-copies its source on construction, applies batches of patch
+	instructions, and notifies subscribers. Subscriptions are indexed in three
+	buckets so that a patch costs one lookup plus the depth of the path:
+
+	  exact       one instruction at exactly one path    O(1)
+	  anyChange   every instruction at or under a path   O(depth)
+	  pattern     paths containing `*` or `**`           O(number of patterns)
+
+	`AnyChange` watches a subtree: a listener at `{"Skills"}` hears
+	`SetDictionary {"Skills"}` as well as anything deeper. The opposite direction
+	is deliberately not covered — replacing a parent with `ChangeValue` does not
+	notify subscriptions below it, so a subscriber that cares about wholesale
+	replacement watches the parent itself.
+]]
+
+-- TYPES
+
+--- A path is either an array of segments or a `/`-separated string.
+export type Path = string | { string }
+
+--- Every real patch instruction. `AnyChange` is missing on purpose: it is a
+--- subscription kind, not something that can be applied to the data.
+export type InstructionName =
+	"ChangeValue"
+	| "InsertArray"
+	| "RemoveArray"
+	| "SetDictionary"
+	| "RemoveDictionary"
+	| "Clear"
+
+export type Subscription = InstructionName | "AnyChange"
+
+--- One entry in a `Patch` batch. `Args` is optional so that a caller can spell
+--- the no-argument instructions without `Args = {}`.
+export type Instruction = {
+	Name: InstructionName,
+	Path: Path,
+	Args: { any }?,
+}
+
+--- Function returned by `Subscribe` to remove the listener.
+export type CleanupFunction = () -> ()
+
+--- Internal subscription. `Key` is `Path` already normalized into a hash key.
+export type Listener = {
+	Instruction: Subscription,
+	Path: { string },
+	Key: string,
+	Callback: (...any) -> (),
+}
+
+--- What an instruction reports about itself. A handler returns `nil` when the
+--- instruction changed nothing, which is what keeps no-ops out of `OnPatch`.
+type InstructionResult = {
+	Values: { any },
+	Touched: { string },
+	OldValue: any,
+	NewValue: any,
+}
+
+type ListenerIndex = {
+	exact: { [InstructionName]: { [string]: { Listener } } },
+	anyChange: { [string]: { Listener } },
+	patterns: { Listener },
+}
+
+type ProxyMethods<T> = {
+	Patch: (self: ProxyTab<T>, instructions: { Instruction }) -> (),
+	Subscribe: (
+		self: ProxyTab<T>,
+		instruction: Subscription,
+		path: Path,
+		callback: (...any) -> ()
+	) -> CleanupFunction,
+	OnPatch: (self: ProxyTab<T>, callback: (instructions: { Instruction }) -> ()) -> (),
+}
+
+type ProxyData<T> = {
+	__source: T,
+	__patchHandler: ((instructions: { Instruction }) -> ())?,
+	__listeners: ListenerIndex,
+}
+
+--- Proxy table type. Calling it returns the underlying source table directly.
+--- The call signature has to come first: the analyzer only keeps the callable
+--- behaviour of an intersection when the function type leads it.
+export type ProxyTab<T> = (() -> T) & ProxyData<T> & ProxyMethods<T>
+
 -- UTILS
 
-local function DeepCopy<T>(t: T): T
-	local copy = {}
+local function DeepCopy<T>(source: T): T
+	local copy: any = {}
 
-	for key, value in t :: { any } do
-		if typeof(value) ~= "table" then
-			copy[key] = value
-			continue
-		end
-
-		copy[key] = DeepCopy(value)
+	for key, value in source :: any do
+		copy[key] = if type(value) == "table" then DeepCopy(value) else value
 	end
 
-	return copy :: T
+	return copy
 end
 
---- Traverses a nested table using a path array of keys.
---- @param t table The source table.
---- @param path {string} Array of keys representing the path.
---- @return any value The value at the specified path.
-local function GetValueByPath(t: any, path: { string })
-	for _, v in path do
-		t = t[v] or t[tonumber(v)]
+--- Splits a `/`-separated path and drops empty segments, so `"/A/B"` behaves
+--- like `"A/B"`. `string.split` would keep the leading empty one.
+local function NormalizePath(path: Path): { string }
+	local segments: { string } = {}
+
+	if type(path) == "string" then
+		for segment in path:gmatch("[^/]+") do
+			table.insert(segments, segment)
+		end
+
+		return segments
+	end
+
+	for _, segment in path do
+		table.insert(segments, tostring(segment))
+	end
+
+	return segments
+end
+
+--- Escapes the separator so that `{"A", "B"}` and `{"AB"}` cannot collide.
+local function EscapeSegment(segment: string): string
+	local escaped = segment:gsub("%%", "%%25")
+
+	return (escaped:gsub("/", "%%2F"))
+end
+
+--- Lua hashes strings for table lookups already, so this is the only hash the
+--- index needs: a second, hand-rolled one would just add work to every patch.
+local function GetPathKey(path: { string }): string
+	local parts: { string } = {}
+
+	for _, segment in path do
+		table.insert(parts, EscapeSegment(segment))
+	end
+
+	return table.concat(parts, "/")
+end
+
+local function HasPattern(path: { string }): boolean
+	for _, segment in path do
+		if segment == "*" or segment == "**" then return true end
+	end
+
+	return false
+end
+
+--- Resolves one segment against a table. Paths travel as strings — the `Patch`
+--- packet schema is `array(string)` — while arrays are indexed by numbers, so
+--- both spellings have to work. `~= nil` rather than `or` keeps a stored `false`.
+local function GetKey(t: any, segment: string): any
+	if t[segment] ~= nil then return segment end
+
+	local index = tonumber(segment)
+
+	if index ~= nil and t[index] ~= nil then return index end
+
+	--- A key that does not exist yet is written as a string: instruction paths
+	--- name dictionary fields, and arrays are changed through Insert/Remove.
+	return segment
+end
+
+local function GetValueByPath(t: any, path: { string }): any
+	for _, segment in path do
+		if type(t) ~= "table" then return nil end
+
+		local value = t[GetKey(t, segment)]
+
+		if value == nil then return nil end
+
+		t = value
 	end
 
 	return t
 end
 
---- Updates the leaf value at the specified path.
---- @param t table The source table.
---- @param path {string} Array of keys representing the path.
---- @param value any The value to set.
-local function SetValueByPath(t: any, path: { string }, value: any)
-	for i, v in path do
-		if i == #path then
-			t[v] = value
-		else
-			t = t[v] or t[tonumber(v)]
+--- Writes the leaf of a path. Intermediate tables have to exist: silently
+--- creating them would turn a typo in a path into data that looks meaningful.
+local function SetValueByPath(t: any, path: { string }, value: any): boolean
+	if #path == 0 then return false end
+
+	local parent = t
+
+	for index = 1, #path - 1 do
+		local nextParent = GetValueByPath(parent, { path[index] })
+
+		if nextParent == nil then return false end
+
+		parent = nextParent
+	end
+
+	if type(parent) ~= "table" then return false end
+
+	parent[GetKey(parent, path[#path])] = value
+
+	return true
+end
+
+--- Path of the leaf an instruction actually touched.
+local function Touch(path: { string }, key: string): { string }
+	local touched = table.clone(path)
+
+	table.insert(touched, key)
+
+	return touched
+end
+
+--- `*` matches exactly one segment, `**` one or more. With `allowPrefix` the
+--- pattern only has to match the head of the path, which is how `AnyChange`
+--- hears changes below the subscribed path.
+local function MatchPattern(pattern: { string }, path: { string }, allowPrefix: boolean): boolean
+	local function walk(patternIndex: number, pathIndex: number): boolean
+		if patternIndex > #pattern then return allowPrefix or pathIndex > #path end
+
+		local segment = pattern[patternIndex]
+
+		if segment == "**" then
+			-- At the end it swallows the rest; otherwise the tail of the pattern
+			-- has to fit after some number of consumed segments.
+			if patternIndex == #pattern then return pathIndex <= #path end
+
+			for nextIndex = pathIndex + 1, #path + 1 do
+				if walk(patternIndex + 1, nextIndex) then return true end
+			end
+
+			return false
 		end
-	end
-end
 
---- Converts a path array into a single string for fast equality comparison.
---- @param path {string} The path array.
---- @return string The joined path string.
-local function GetPathAsString(path: { string })
-	local pathString = ""
+		if pathIndex > #path then return false end
+		if segment ~= "*" and segment ~= path[pathIndex] then return false end
 
-	for _, v in path do
-		pathString = pathString .. v
+		return walk(patternIndex + 1, pathIndex + 1)
 	end
 
-	return pathString
-end
-
-local function GetPathFromString(pathString: string)
-	return pathString:split("/")
+	return walk(1, 1)
 end
 
 -- PATCH INSTRUCTIONS
-local PatchInstructions = {
 
-	--- Changes a primitive value at the given path. Only for simple value types (number, boolean, string).
-	--- @param t table Target table
-	--- @param path {string} Path to the value
-	--- @param value any New value
-	--- @return any newValue, any? oldValue
-	["ChangeValue"] = function(t, path: { string }, value: any)
-		if not path or #path == 0 then return end
+--- Every handler returns `nil` when nothing changed, so an equal value or a
+--- missing target never reaches a listener and never reaches `OnPatch`.
 
-		local oldValue = GetValueByPath(t, path)
+local function ChangeValue(source: any, path: { string }, value: any): InstructionResult?
+	local oldValue = GetValueByPath(source, path)
 
-		if oldValue == value then return end
+	if oldValue == value then return nil end
+	if not SetValueByPath(source, path, value) then return nil end
 
-		SetValueByPath(t, path, value)
-		return value, oldValue
-	end,
+	return {
+		Values = { value, oldValue },
+		Touched = path,
+		OldValue = oldValue,
+		NewValue = value,
+	}
+end
 
-	--- Inserts a value into an array at the given path.
-	--- @param t table Target table
-	--- @param path {string} Path to the array
-	--- @param value any Value to insert
-	--- @return any newValue, number index
-	["InsertArray"] = function(t, path: { string }, value: any)
-		if not path or #path == 0 then return end
+local function InsertArray(source: any, path: { string }, value: any): InstructionResult?
+	local target = GetValueByPath(source, path)
 
-		table.insert(GetValueByPath(t, path), value)
+	if type(target) ~= "table" then return nil end
 
-		return value, #path
-	end,
+	local index = #target + 1
+	target[index] = value
 
-	--- Removes a value from an array at the given path by index.
-	--- @param t table Target table
-	--- @param path {string} Path to the array
-	--- @param index number Index to remove
-	--- @return number index, any? oldValue
-	["RemoveArray"] = function(t, path: { string }, index: number)
-		if not path or #path == 0 then return end
-		if not GetValueByPath(t, path)[index] then return end
+	return {
+		Values = { value, index },
+		Touched = Touch(path, tostring(index)),
+		OldValue = nil,
+		NewValue = value,
+	}
+end
 
-		local oldValue = GetValueByPath(t, path)[index]
-		table.remove(GetValueByPath(t, path), index)
+local function RemoveArray(source: any, path: { string }, index: any): InstructionResult?
+	local target = GetValueByPath(source, path)
+	local position = tonumber(index)
 
-		return index, oldValue
-	end,
+	if type(target) ~= "table" or position == nil then return nil end
 
-	--- Sets or updates a key-value pair in a dictionary at the given path.
-	--- @param t table Target table
-	--- @param path {string} Path to the dictionary
-	--- @param key string Dictionary key
-	--- @param value any New value
-	--- @return string key, any newValue, any? oldValue
-	["SetDictionary"] = function(t, path: { string }, key: string, value: any)
-		if not path or #path == 0 then return end
+	local oldValue = target[position]
 
-		local target = GetValueByPath(t, path)
-		local oldValue = target[key]
+	if oldValue == nil then return nil end
 
-		if oldValue == value then return end
+	table.remove(target, position)
 
-		target[key] = value
+	return {
+		Values = { position, oldValue },
+		Touched = Touch(path, tostring(position)),
+		OldValue = oldValue,
+		NewValue = nil,
+	}
+end
 
-		return key, value, oldValue
-	end,
+local function SetDictionary(
+	source: any,
+	path: { string },
+	key: any,
+	value: any
+): InstructionResult?
+	local target = GetValueByPath(source, path)
 
-	--- Removes a key-value pair from a dictionary at the given path.
-	--- @param t table Target table
-	--- @param path {string} Path to the dictionary
-	--- @param key string Key to remove
-	--- @return string key, any? oldValue
-	["RemoveDictionary"] = function(t, path: { string }, key: string)
-		if not path or #path == 0 then return end
-		if not GetValueByPath(t, path)[key] then return end
+	if type(target) ~= "table" then return nil end
 
-		local oldValue = GetValueByPath(t, path)[key]
+	local dictionaryKey = tostring(key)
+	local oldValue = target[dictionaryKey]
 
-		GetValueByPath(t, path)[key] = nil
+	if oldValue == value then return nil end
 
-		return key, oldValue
-	end,
+	target[dictionaryKey] = value
 
-	["Clear"] = function(t, path: { string })
-		if not path or #path == 0 then return end
-		local oldValue = GetValueByPath(t, path)
+	return {
+		Values = { dictionaryKey, value, oldValue },
+		Touched = Touch(path, dictionaryKey),
+		OldValue = oldValue,
+		NewValue = value,
+	}
+end
 
-		if typeof(oldValue) == "table" then
-			SetValueByPath(t, path, {})
-		else
-			SetValueByPath(t, path, oldValue)
-		end
+local function RemoveDictionary(source: any, path: { string }, key: any): InstructionResult?
+	local target = GetValueByPath(source, path)
 
-		return oldValue
-	end,
+	if type(target) ~= "table" then return nil end
 
-	["AnyChange"] = function(t, path: { string })
-		if not path or #path == 0 then return end
-		return GetValueByPath(t, path)
-	end,
+	local dictionaryKey = tostring(key)
+	local oldValue = target[dictionaryKey]
+
+	if oldValue == nil then return nil end
+
+	target[dictionaryKey] = nil
+
+	return {
+		Values = { dictionaryKey, oldValue },
+		Touched = Touch(path, dictionaryKey),
+		OldValue = oldValue,
+		NewValue = nil,
+	}
+end
+
+--- Empties a table by replacing it, not by iterating it: the old reference then
+--- stays readable for listeners, and a patch never mutates the table a caller
+--- already holds. A primitive is reset to `nil`.
+local function Clear(source: any, path: { string }): InstructionResult?
+	local oldValue = GetValueByPath(source, path)
+
+	if oldValue == nil then return nil end
+
+	local newValue = if type(oldValue) == "table" then {} else nil
+
+	if not SetValueByPath(source, path, newValue) then return nil end
+
+	return {
+		Values = { oldValue },
+		Touched = path,
+		OldValue = oldValue,
+		NewValue = newValue,
+	}
+end
+
+const VALID_NAMES: { [string]: boolean } = {
+	ChangeValue = true,
+	InsertArray = true,
+	RemoveArray = true,
+	SetDictionary = true,
+	RemoveDictionary = true,
+	Clear = true,
 }
 
--- TYPES
+local function NormalizeArgs(args: { any }?): { any }
+	if type(args) == "table" then return args end
+	if args == nil then return {} end
 
---- Function returned by Subscribe to remove the listener.
---- @type CleanupFunction
-export type CleanupFunction = () -> ()
+	return { args }
+end
 
---- Internal listener structure for path-specific callbacks.
---- @type Listener
-export type Listener = {
-	Instruction: string,
-	Path: { string },
-	Callback: (...any) -> (),
-}
+local function ApplyInstruction(
+	source: any,
+	name: InstructionName,
+	path: { string },
+	args: { any }
+): InstructionResult?
+	if name == "ChangeValue" then return ChangeValue(source, path, args[1]) end
+	if name == "InsertArray" then return InsertArray(source, path, args[1]) end
+	if name == "RemoveArray" then return RemoveArray(source, path, args[1]) end
+	if name == "SetDictionary" then return SetDictionary(source, path, args[1], args[2]) end
+	if name == "RemoveDictionary" then return RemoveDictionary(source, path, args[1]) end
+	if name == "Clear" then return Clear(source, path) end
 
---- Instruction object passed to Patch.
---- @type Instruction
-export type Instruction = {
-	Name: keyof<typeof(PatchInstructions)>,
-	Path: { string },
-	Args: { any },
-}
+	return nil
+end
 
---- Public methods exposed on the proxy table.
---- @type ProxyMethods
-type ProxyMethods<T> = {
-	Patch: (self: ProxyTab<T>, instructions: { Instruction }) -> (),
-	Subscribe: (
-		self: ProxyTab<T>,
-		instruction: keyof<typeof(PatchInstructions)>,
-		path: { string },
-		callback: (...any) -> ()
-	) -> CleanupFunction,
-	OnPatch: (self: ProxyTab<T>, callback: (patchedInstructions: { Instruction }) -> ()) -> (),
-}
+-- LISTENERS
 
---- Internal proxy data structure combined with public methods.
---- @type ProxyData
-type ProxyData<T> = {
-	__source: T,
-	__patchHandler: ((patchedInstructions: { Instruction }) -> ())?,
-	__listeners: { Listener },
-}
+--- A listener that throws must not take the rest of the batch down with it:
+--- losing the `OnPatch` call would desynchronise every client. The failure is
+--- reported and the batch continues.
+local function Fire(callback: (...any) -> (), ...: any)
+	-- `pcall` is typed as returning the callback's own results, and a listener
+	-- returns none: packing it keeps the error message as the second value.
+	local packed = table.pack(pcall(callback, ...))
 
---- Proxy table type. Calling it returns the underlying source table directly.
---- @type ProxyTab
-export type ProxyTab<T> = setmetatable<ProxyData<T> & ProxyMethods<T>, { __call: (self: any) -> T }>
+	if not packed[1] then warn(`Proxy: subscription callback failed: {packed[2]}`) end
+end
+
+local function RemoveListener(index: ListenerIndex, listener: Listener)
+	local bucket: { Listener }?
+	local owner: { [string]: { Listener } }?
+
+	if HasPattern(listener.Path) then
+		bucket = index.patterns
+	elseif listener.Instruction == "AnyChange" then
+		bucket = index.anyChange[listener.Key]
+		owner = index.anyChange
+	else
+		local byInstruction = index.exact[listener.Instruction :: InstructionName]
+		bucket = if byInstruction then byInstruction[listener.Key] else nil
+		owner = byInstruction
+	end
+
+	if not bucket then return end
+
+	local position = table.find(bucket, listener)
+
+	if position then table.remove(bucket, position) end
+
+	-- Ids come and go, so a path nobody listens to is dropped instead of leaving
+	-- one small table behind per skill that was ever replicated.
+	if owner and #bucket == 0 then owner[listener.Key] = nil end
+end
 
 -- CLASS
+
 local Proxy = {}
 
 --- Applies a batch of patch instructions to the proxied table.
@@ -218,75 +443,157 @@ local Proxy = {}
 --- @param instructions {Instruction}
 function Proxy.Patch<T>(self: ProxyTab<T>, instructions: { Instruction })
 	if #instructions == 0 then return end
-	local patchedInstructions = {}
+
+	local source: any = self.__source
+	local index = self.__listeners
+	local patched: { Instruction } = {}
 
 	for _, instruction in instructions do
-		if not PatchInstructions[instruction.Name] then
-			warn("Invalid patch instruction Name:", instruction.Name)
+		-- The annotation is load-bearing: an unannotated local widens the union of
+		-- singletons to `string`, and every lookup below then fails to type-check.
+		local name: InstructionName = instruction.Name
+
+		if not VALID_NAMES[name] then
+			warn(`Proxy: unknown patch instruction "{tostring(name)}" was skipped`)
 			continue
 		end
 
-		instruction.Args = instruction.Args or {}
-		local args = typeof(instruction.Args) ~= "table" and { instruction.Args }
-			or instruction.Args
-		local path = typeof(instruction.Path) == "table" and instruction.Path
-			or typeof(instruction.Path) == "string" and GetPathFromString(instruction.Path)
-		if not path or #path == 0 then
-			warn("Invalid patch instruction Path:", instruction.Path)
+		local path = NormalizePath(instruction.Path)
+
+		if #path == 0 then
+			warn("Proxy: patch instruction with an empty path was skipped")
 			continue
 		end
-		-- table.pack safely captures variable return values from dynamic instruction calls
-		local results =
-			table.pack(PatchInstructions[instruction.Name](self(), path, table.unpack(args)))
-		if results.n == 0 then continue end
 
-		table.insert(patchedInstructions, instruction)
+		local args = NormalizeArgs(instruction.Args)
+		local result = ApplyInstruction(source, name, path, args)
 
-		for _, listener in self.__listeners :: { Listener } do
-			if listener.Instruction ~= instruction.Name then continue end
-			-- Stringified path comparison avoids O(n) table equality checks
-			if GetPathAsString(listener.Path) ~= GetPathAsString(path) then continue end
+		if not result then continue end
 
-			listener.Callback(table.unpack(results))
+		-- The forwarded copy carries a normalized path: the packet schema is
+		-- `array(string)`, and the caller's tables stay untouched.
+		table.insert(patched, { Name = name, Path = path, Args = args })
+
+		local byInstruction = index.exact[name]
+		local exact = if byInstruction then byInstruction[GetPathKey(path)] else nil
+
+		if exact then
+			for _, listener in exact do
+				Fire(listener.Callback, table.unpack(result.Values))
+			end
 		end
 
-		for _, listener in self.__listeners :: { Listener } do
-			if
-				listener.Instruction == "AnyChange"
-				and GetPathAsString(path) == GetPathAsString(listener.Path)
-			then
-				listener.Callback(table.unpack(results))
+		-- `AnyChange` at the touched leaf and at every path above it, so a single
+		-- `SetDictionary {"Skills"}` reaches listeners on `{"Skills", id}` too.
+		local prefix = ""
+
+		for depth, segment in result.Touched do
+			local escaped = EscapeSegment(segment)
+
+			prefix = if depth == 1 then escaped else `{prefix}/{escaped}`
+
+			local bucket = index.anyChange[prefix]
+
+			if not bucket then continue end
+
+			for _, listener in bucket do
+				Fire(listener.Callback, result.NewValue, result.OldValue, instruction)
+			end
+		end
+
+		-- Patterns are rare, so scanning the list beats maintaining a trie.
+		for _, listener in index.patterns do
+			local matches: boolean
+
+			if listener.Instruction == "AnyChange" then
+				matches = MatchPattern(listener.Path, result.Touched, true)
+			else
+				matches = listener.Instruction == name and MatchPattern(listener.Path, path, false)
+			end
+
+			if not matches then continue end
+
+			if listener.Instruction == "AnyChange" then
+				Fire(listener.Callback, result.NewValue, result.OldValue, instruction)
+			else
+				Fire(listener.Callback, table.unpack(result.Values))
 			end
 		end
 	end
 
-	if self.__patchHandler then self.__patchHandler(patchedInstructions) end
+	local handler = self.__patchHandler
+
+	if handler and #patched > 0 then
+		local packed = table.pack(pcall(handler, patched))
+
+		if not packed[1] then warn(`Proxy: OnPatch handler failed: {packed[2]}`) end
+	end
 end
 
---- Subscribes to a specific patch instruction at a given path.
---- Returns a cleanup function to unsubscribe.
+--- Subscribes to an instruction at a path, or to every change at and below it
+--- with `"AnyChange"`. Returns a cleanup function to unsubscribe.
 --- @param self ProxyTab<T>
---- @param instruction keyof<typeof(PatchInstructions)>
---- @param path {string}
+--- @param instruction Subscription
+--- @param path Path
 --- @param callback (...any) -> ()
 --- @return CleanupFunction
 function Proxy.Subscribe<T>(
 	self: ProxyTab<T>,
-	instruction: keyof<typeof(PatchInstructions)>,
-	path: { string },
+	instruction: Subscription,
+	path: Path,
 	callback: (...any) -> ()
-)
-	local listener = {
-		Instruction = instruction,
-		Path = path,
-		Callback = callback,
-	} :: Listener
+): CleanupFunction
+	local segments = NormalizePath(path)
 
-	table.insert(self.__listeners, listener)
+	if #segments == 0 then
+		warn("Proxy: Subscribe requires a non-empty path")
+		return function() end
+	end
+
+	local listener: Listener = {
+		Instruction = instruction,
+		Path = segments,
+		Key = GetPathKey(segments),
+		Callback = callback,
+	}
+
+	local index = self.__listeners
+	local bucket: { Listener }
+
+	if HasPattern(segments) then
+		bucket = index.patterns
+	elseif instruction == "AnyChange" then
+		local existing = index.anyChange[listener.Key]
+
+		if existing then
+			bucket = existing
+		else
+			bucket = {}
+			index.anyChange[listener.Key] = bucket
+		end
+	else
+		local name: InstructionName = instruction :: InstructionName
+		local byInstruction = index.exact[name]
+
+		if not byInstruction then
+			byInstruction = {}
+			index.exact[name] = byInstruction
+		end
+
+		local existing = byInstruction[listener.Key]
+
+		if existing then
+			bucket = existing
+		else
+			bucket = {}
+			byInstruction[listener.Key] = bucket
+		end
+	end
+
+	table.insert(bucket, listener)
 
 	return function()
-		local index = table.find(self.__listeners, listener)
-		if index then table.remove(self.__listeners, index) end
+		RemoveListener(index, listener)
 	end
 end
 
@@ -303,20 +610,24 @@ end
 --- The proxy can be called as a function to retrieve the source table directly.
 --- @param t T Source table to proxy
 --- @return ProxyTab<T>
-local function New<T>(t: T)
+local function New<T>(t: T): ProxyTab<T>
 	assert(type(t) == "table", "Proxy only accepts a table")
 
 	local proxy = setmetatable({
 		__source = DeepCopy(t),
-		__listeners = {},
+		__listeners = {
+			exact = {},
+			anyChange = {},
+			patterns = {},
+		},
 	}, {
-		__call = function(self)
+		__call = function(self: any)
 			return self.__source
 		end,
 		__index = Proxy,
-	}) :: ProxyTab<T>
+	}) :: any
 
-	return proxy
+	return proxy :: ProxyTab<T>
 end
 
 return New

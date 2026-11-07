@@ -109,20 +109,20 @@ function Skill.onInit(self)
 					const Anims = self.Assets.Animations
 					const Sounds = self.Assets.Sounds
 
--- 					CombatService:Attack({
--- 						Attacker = character,
--- 						Victim = self.Target,
--- 						Info = {
--- 							Block = {
--- 								PerfectBlockable = false,
--- 							},
--- 
--- 							Stun = {
--- 								Priority = Enums.Stun.Heavy,
--- 								Duration = 2,
--- 							},
--- 						},
--- 					})
+					-- 					CombatService:Attack({
+					-- 						Attacker = character,
+					-- 						Victim = self.Target,
+					-- 						Info = {
+					-- 							Block = {
+					-- 								PerfectBlockable = false,
+					-- 							},
+					--
+					-- 							Stun = {
+					-- 								Priority = Enums.Stun.Heavy,
+					-- 								Duration = 2,
+					-- 							},
+					-- 						},
+					-- 					})
 
 					seq.Cleaner:Set(
 						"GrabObject",

@@ -1,6 +1,5 @@
 const Assets = game:GetService("ReplicatedStorage").assets
 const GlobalAssets = Assets.Default
-const NonArmedSpecs = GlobalAssets.NonArmedSpecs
 
 const Animations = Assets.TheWorld.None.Animations
 const Models = Assets.TheWorld.None.Models
@@ -20,7 +19,7 @@ const None = {
 		},
 
 		Run = {
-			Animation = NonArmedSpecs.Animations.Run,
+			Animation = Animations.User.Movements.Run,
 			Priority = Enum.AnimationPriority.Movement,
 		},
 

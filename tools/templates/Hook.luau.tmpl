@@ -1,0 +1,12 @@
+-- {{Name}} hook example
+--!strict
+
+local Hook = require(ReplicatedStorage.shared.packages.Hook) -- adjust
+
+local h = Hook.new("{{Name}}", { "Precast", "Cast", "Postcast" })
+
+h:Hook("Precast", "Example", 1, function(Data)
+    return true
+end)
+
+return h

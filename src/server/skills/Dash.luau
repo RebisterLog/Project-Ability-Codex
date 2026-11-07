@@ -18,7 +18,7 @@ const Skill: types.SkillData = {
 	},
 
 	DashProperties = {
-		Speed = 80,
+		Speed = 100,
 		MaxForce = Vector3.new(60_000, 0, 60_000),
 	},
 }
@@ -46,16 +46,17 @@ end
 function Skill:onInit()
 	const character = self.Character
 	const DashProperties = self.Data.DashProperties
+	
 	const RootPart = character.RootPart
 	const Humanoid = character.Humanoid :: Humanoid
+	
 	const VFXService = Crane:GetService("VFXService")
-
 	const CombatService = Crane:GetService("CombatService")
 
 	const Anims = self.Spec.Data.Assets.Animations
 	const Sounds = self.Spec.Data.Assets.Sounds
-
-	const style = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	
+ 	const style = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -80,35 +81,54 @@ function Skill:onInit()
 						VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds.Dash)
 					end
 
-					ClearBodyMovers(RootPart)
+					const moveDirection = RootPart.CFrame:VectorToWorldSpace(Normal).Unit
 
 					const velocity = Instance.new("BodyVelocity") :: BodyVelocity
 					velocity.Name = "DashVelocity"
 					velocity.MaxForce = DashProperties.MaxForce or Vector3.new(60_000, 0, 60_000)
 					if DashProperties.P then velocity.P = DashProperties.P end
-					velocity.Velocity = RootPart.CFrame:VectorToWorldSpace(Normal)
-						* (DashProperties.Speed or 80)
+					velocity.Velocity = moveDirection * (DashProperties.Speed or 80)
 					velocity.Parent = RootPart
 
+					const AlignOrientation = Instance.new("AlignOrientation")
+					AlignOrientation.Name = "DashAlignOrientation"
+					AlignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
+					AlignOrientation.Attachment0 = RootPart:FindFirstChildOfClass("Attachment") or RootPart.RootAttachment
+					AlignOrientation.RigidityEnabled = true
+					AlignOrientation.CFrame = RootPart.CFrame
+					AlignOrientation.Parent = RootPart
+
 					seq.Velocity = velocity
+					seq.AlignOrientation = AlignOrientation
+					seq.MoveDirection = moveDirection
 
-					seq.Cleaner:Set("Velocity", velocity)
-				end,
-			},
+					self.LastDashMoveDirection = moveDirection
 
-			{
-				10,
-				function(seq)
-					const velocity = seq.Velocity
-					if not velocity then return end
+					-- seq.Cleaner:Set("Velocity", velocity)
+					-- seq.Cleaner:Set("AlignOrientation", AlignOrientation)
 
-					TweenService:Create(velocity, style, { Velocity = Vector3.zero }):Play()
-
+					task.delay(0.1, function()
+						TweenService:Create(velocity, style, { Velocity = Vector3.zero }):Play()
+					end)
+					
 					task.delay(0.25, function()
-						seq.Cleaner:Remove("Velocity")
+						seq.Velocity:Destroy()
+						seq.AlignOrientation:Destroy()
+						-- seq.Cleaner:Remove("Velocity")
+						-- seq.Cleaner:Remove("AlignOrientation")
 					end)
 				end,
 			},
+-- 
+-- 			{
+-- 				1,
+-- 				function(seq)
+-- 					const velocity = seq.Velocity
+-- 					if not velocity then return end
+-- 
+-- 					
+-- 				end,
+-- 			},
 		},
 	}))
 end
@@ -122,6 +142,16 @@ function Skill:Activate()
 end
 
 function Skill:Interrupt()
+	const RootPart = self.Character.RootPart
+
+	-- Preserve current dash momentum on interrupt, close to the original Quickstep path.
+	local velocity = self.Sequence and self.Sequence.Velocity
+	if velocity and velocity.Parent then
+		ClearBodyMovers(RootPart)
+
+		RootPart.AssemblyLinearVelocity = Vector3.new(velocity.Velocity.X, RootPart.AssemblyLinearVelocity.Y, velocity.Velocity.Z)
+	end
+
 	self.Sequence:Stop()
 end
 

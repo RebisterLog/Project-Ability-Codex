@@ -44,6 +44,24 @@ const attachmentCFrames = {
 	},
 }
 
+-- const removeFriction = function(character: Model)
+-- 	const noFriction = PhysicalProperties.new(0.7, 0, 0.5, 1, 1)
+-- 	
+-- 	for i, part in character:QueryDescendants("BasePart") do
+-- 		part.CustomPhysicalProperties = noFriction
+-- 		
+-- 		if part.Name == "HumanoidRootPart" then
+-- 			continue
+-- 		end
+-- 
+-- 		if part.Name == "Left Leg" or part.Name == "Right Leg" then
+-- 			continue
+-- 		end
+-- 
+-- 		part.Massless = true
+-- 	end
+-- end
+
 const createColliderPart = function(part: BasePart)
 	if not part then return end
 	const rp = Instance.new("Part")
@@ -140,6 +158,8 @@ function Character.onStart(self: typeof(Character))
 		Animate(self.instance)
 		self.Humanoid.AutomaticScalingEnabled = false
 	end
+
+	--removeFriction(self.instance)
 end
 
 function Character.SetSpec(

@@ -2,6 +2,7 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Configuration = ServerScriptService.server.Configuration
 const Configs = Configuration.ConfigsFolder.Value
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
 const SpecsConfig = require(Configs.Specs)
 const types = require(ServerScriptService.server.types)
 const skills = ServerScriptService.server.skills
@@ -21,21 +22,9 @@ const Spec = {
 	},
 
 	onInit = function(self: types.Spec)
-		const spear = self.Data.Assets.Models["Spear"] :: Model
-
-		if spear then
-			const copy = self.Cleaner:Clone(spear)
-			copy:PivotTo(self.Character.instance:GetPivot())
-
-			const motor = Instance.new("Motor6D")
-			motor.Name = "HandleMotor"
-			motor.Part0 = self.Character.instance:FindFirstChild("Right Arm")
-			motor.Part1 = copy:FindFirstChild("Handle")
-			motor.C0 = CFrame.new(0, -1, 0)
-			motor.Parent = copy
-
-			copy.Parent = self.Character.instance
-		end
+		const CombatService = Crane:GetService("CombatService")
+		const spear = CombatService:Equip(self.Character, self.Data.Assets.Models["Spear"])
+		self.Cleaner:Add(spear)
 	end,
 }
 

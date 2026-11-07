@@ -131,24 +131,24 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 		},
 
 		["DualPistols"] = {
-            Distance = 50,
-    
-    		ForbiddenConditions = {
-    			"TARGET_RAGDOLLED",
-    		},
+			Distance = 50,
+
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
+			},
 		},
 
 		["KnifeStab"] = {
-		    Distance = 6,
+			Distance = 6,
 
 			PreferredConditions = {
 				"TARGET_BLOCKING",
-				"TARGET_STUNNED"
+				"TARGET_STUNNED",
 			},
-						
+
 			ForbiddenConditions = {
-    			"TARGET_RAGDOLLED",
-    		},
+				"TARGET_RAGDOLLED",
+			},
 		},
 	},
 

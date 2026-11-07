@@ -114,18 +114,18 @@ function Skill:onInit()
 									--BlockCancel = self.PunchCount == self.Data.MaxCombo
 								},
 								Knockback = {
-									RelativePart = self.PunchCount == self.Data.MaxCombo
-										and "Attacker",
-									ToFront = if self.PunchCount ~= self.Data.MaxCombo
-										then 5
-										else false,
-									Speed = self.PunchCount == self.Data.MaxCombo and 200 or 8,
-									Duration = self.PunchCount == self.Data.MaxCombo and 0.05
-										or 0.05,
+									RelativePart = "Attacker",
+									-- ToFront = if self.PunchCount ~= self.Data.MaxCombo
+									-- 	then 5
+									-- 	else false,
+									Speed = self.PunchCount == self.Data.MaxCombo and 75 or 8,
+									Duration = 0.2,--self.PunchCount == self.Data.MaxCombo and 0.05
+										--or 0.05,
+									MaxForce = Vector3.new(20_000, 0, 20_000),
 								},
 								Stun = {
 									Priority = Enums.Stun.Medium,
-									Duration = 0.55,
+									Duration = self.PunchCount == self.Data.MaxCombo and 0.2 or 0.4,
 								},
 							},
 						}):andThen(function(data)
