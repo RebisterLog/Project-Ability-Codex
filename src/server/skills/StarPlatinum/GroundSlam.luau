@@ -2,6 +2,7 @@ const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const RockModule = require(ReplicatedStorage.shared.packages.RockModule)
 const Enums = require(ServerScriptService.server.Enums)
 const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const types = require(ServerScriptService.server.types)
@@ -101,6 +102,31 @@ function Skill.onInit(self)
 			{
 				40,
 				function(seq)
+					-- Ground impact effects (once per slam, not per target)
+					local standRoot = (self.Stand and self.Stand.RootPart) or character.RootPart
+					local impactOffset = AttackInfo.Hitbox.Offset
+					local impactPosition = (standRoot.CFrame * impactOffset).Position
+
+					RockModule.Ground(impactPosition, 10, Vector3.new(2, 2.5, 2), 8, false, 3)
+
+					if Models["GroundImpact"] then
+						VFXService:StartEffect(
+							Players:GetPlayers(),
+							"EmitParticle",
+							{
+								Particle = Models["GroundImpact"],
+								Origin = standRoot,
+								Offset = impactOffset,
+							}
+						)
+					end
+
+					VFXService:StartEffect(
+						{ self.Character.instance },
+						"CameraShake",
+						{ Type = "Slam" }
+					)
+
 					local Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
@@ -119,7 +145,7 @@ function Skill.onInit(self)
 				end,
 			},
 
-			{ 55 },
+			{ 70 },
 		},
 	}))
 end

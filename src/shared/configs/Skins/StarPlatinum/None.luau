@@ -49,7 +49,6 @@ const None = {
 		-- Stand model
 		Stand = Models.Stand,
 	},
-
 	Stats = {
 		Grab = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
@@ -121,6 +120,8 @@ const None = {
 			Stand = Models.Stand,
 			-- Summon effect part
 			Summon = Models.Summon,
+			-- Ground slam impact (from Gerson Bonk)
+			GroundImpact = Models.GroundSlam,
 		},
 		Stats = {
 			Grab = {
