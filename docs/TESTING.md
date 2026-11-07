@@ -17,7 +17,6 @@ rather than what it does. The same applies to new suites.
 |---|---|---|
 | `tools/check.luau` | external tools | syntax, formatting, types and lint |
 | `tests/*.luau` | `lune` | behaviour of pure logic |
-| `tests/skills/*.luau` | `lune` | combat skills, executed headlessly |
 | `src/shared/packages/SkillConstructor/tests/*.luau` | `lune` (and Studio) | blueprint to skill emission |
 
 `tests/` is scanned recursively, so a new suite is picked up by name without touching
@@ -30,9 +29,7 @@ Three gates, ordered by cost. Each one is only worth running if the previous is 
 ### syntax
 
 `luau-compile --only-parse` over every first-party `.luau`. It knows nothing about
-Roblox, but it is the fastest possible check that a file parses, and the harness that
-later loads skill modules uses `loadstring`, where a parse error surfaces as a stack
-trace rather than a message.
+Roblox, but it is the fastest possible check that a file parses.
 
 ### format
 
@@ -105,140 +102,6 @@ the same.
 Lookup order: `PAC_TOOLS_DIR`, the directory of the running `lune`, `<root>/.tools`,
 `PATH`. `LUAU_DEFS` overrides the location of `globalTypes.d.luau`, `PAC_ROOT` the
 repository root.
-
-## Skill tests
-
-Combat skills run headlessly. The skill source, the skin config with its assets, the
-character parameter table and `Enums` are all real; the Roblox environment, the Crane
-services and the `Skill` class are fakes that record what the skill did.
-
-```luau
-
-local world = Harness.world({ spec = "Standless", skin = "None", targets = 2 })
-local skill = world:skill("Standless/Uppercut")
-
-skill:Activate()
-world:Step(40)
-
-for _, hit in world.trace:attacks() do
-	print(hit.frame, hit.damage)
-end
-```
-
-Suites live in `tests/skills/<Skill>.luau` and are picked up automatically. Shared
-helpers live in `tests/support/` and are skipped by the runner, since a module is not
-a suite.
-
-| Suite | Covers |
-|---|---|
-| `tests/skills/Contract.luau` | every skill: contract, assets, runnability |
-| `tests/skills/<Skill>.luau` | one skill, frame by frame |
-| `tests/skills/Golden.luau` | the recorded trace of the skills in its manifest |
-
-There is also a CLI for working with skills by hand:
-
-```bash
-lune run tools/skills.luau list                  # which skills the harness can drive
-lune run tools/skills.luau Standless/Uppercut    # run one and print its trace
-lune run tools/skills.luau inspect Punch --spec=Undyne
-lune run tools/skills.luau Punch --interrupt=10   # cut the skill short and watch the cleanup
-```
-
-`list` runs every skill in turn with the spec that owns it, which is the only pairing
-the game ever uses — `StandBarrage` belongs to StarPlatinum and reads assets the
-Standless skin does not have. All seventeen real skills run; `TEMPLATE` is a template
-and is expected to fail. A skill that cannot run is a gap in the harness, not a known
-limitation: `Contract` fails on it, so the gap shows up the day the skill is written.
-
-### What the harness substitutes
-
-| Real | Fake | Why |
-|---|---|---|
-| skill source | — | the code under test is never copied or rewritten |
-| skin config, assets, `Parameters`, `Enums` | — | the test must agree with the game on names and values |
-| `game`, `task`, `os.clock` | `Roblox.luau` | Lune has no Roblox globals; time and tasks are virtual |
-| `CombatService`, `VFXService`, `StandService` | `Services.luau` | they record instead of executing |
-| `Sequencer` | `Sequence.luau` | frames are advanced by the test, not by a heartbeat |
-| `Skill` class | `World.handle` | lifecycle without the UI proxy |
-
-The model, the root part and `CFrame` come from `@lune/roblox`, so geometry is real. The
-humanoid is a plain table: the Lune Roblox standard library implements none of its
-properties, not even `Health`.
-
-### Loading
-
-A skill module cannot simply be `require`d: inside it calls `game:GetService` and
-`require(ReplicatedStorage.shared.packages.Crane)`, and Lune cannot patch another
-module's globals. `Loader` reads the source, prepends a one-line prelude that binds the
-fakes as locals, and runs it through `loadstring`. The prelude has no trailing newline,
-so line numbers in a stack trace match the file exactly.
-
-Two consequences worth knowing:
-
-- `require` inside a `loadstring` chunk is unsupported, so the prelude declares its own
-  local `require`, which resolves Roblox instance paths through a registry.
-- Inside `SkillHarness/init.luau` a relative require resolves from the *parent*
-
-### Reading the trace
-
-`world.trace` records every effect with the frame it happened on:
-
-| Query | Records |
-|---|---|
-| `hitboxes()` | hitbox checks: frame, size, offset, target count |
-| `attacks()` | each attack: victim, damage, stun, ragdoll, knockback |
-| `against(target)` | attacks against one target |
-| `parameters()` | `AddParameter` and its removal |
-| `effects()` | VFX starts and stops |
-| `armor()` | super armor on and off |
-| `world:missingAssets()` | asset keys the skill asked for and the skin does not have |
-| `world:missingModules()` | modules replaced by a stub, so their behaviour is unchecked |
-
-A stubbed module is the one gap a passing test can hide: the skill ran, and part of it
-did nothing. `Contract` allows a stub only when the reason is written down
-(`KNOWN_STUBS`), because "it loads" is not the same as "it works".
-
-### What to assert
-
-Start from the contract, then the timing, then the numbers:
-
-- **Contract** — `DisplayName`, `Cooldown`, tags backed by `AttackInfo`.
-- **Assets** — no missing keys. Asset names are strings; a typo passes the compiler and
-  becomes `nil` mid-fight.
-- **Timing** — which frames check the hitbox, exactly. `{20, fn, 24}` means every frame
-  from 20 to 24; getting this wrong changes the whole skill.
-- **Hits** — one hit per target, no matter how many hitbox checks ran (`AlreadyHit`).
-- **Numbers** — damage, stun priority and duration, knockback, ragdoll.
-- **Cleanup** — armor removed on its own frame, parameters released at the end, so the
-  player does not stay frozen after an uppercut.
-- **Cooldown** — set after activation, and the skill stops validating while on it.
-- **Interrupt** — animation and sound stopped.
-
-### Golden traces
-
-`tests/skills/Golden.luau` compares the whole effect list of a skill with the text
-recorded when the suite was written. It is the tier that catches silent balance drift:
-nobody notices in a playtest that damage went from 15 to 20 or that the hitbox moved
-from frame 20 to 21, but a diff does.
-
-```bash
-lune run tests/skills/Golden.luau --update   # accept a deliberate change
-```
-
-The comparison is deliberately narrow — only what the skill does, not coordinates or
-asset identities — so an unrelated tweak of a hitbox offset does not produce noise here.
-That belongs to a hand-written assertion.
-
-### Proving the test works
-
-A test that never fails proves nothing. Break the skill on purpose and watch it fail:
-
-```bash
-# Damage 15 -> 20 and the hitbox frame 20 -> 21
-# expect: AttackInfo.Damage, per-target damage, frame list, first-hit frame, VFX frames
-```
-
-Then restore the file.
 
 ## Adding a suite
 

@@ -17,8 +17,6 @@ Start here: `docs/AI_CONTEXT.md` (Rojo paths, naming, pragmas, commands, gotchas
 See `docs/TESTING.md`. Headless:
 ```
 lune run tools/run-tests.luau                 # gates + every suite
-lune run tests/skills/Contract.luau            # every skill
-lune run tools/skills.luau inspect Standless/Uppercut
 ```
 
 ## Runtime Bridge (Studio only)

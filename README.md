@@ -35,39 +35,8 @@ Individual suites can be run on their own:
 
 ```bash
 lune run tests/json.luau
-lune run tests/skills/Uppercut.luau
 lune run src/shared/packages/SkillConstructor/tests/structural.luau
 ```
-
-### Skill tests
-
-Combat skills are executed headlessly â€” no Studio, no playtest. The skill source, the
-skin config with its assets, the character parameter table and `Enums` are real; the
-Roblox environment, the Crane services and the `Skill` class are recorded instead of
-run. Suites live in `tests/skills/`:
-
-```luau
-
-local world = Harness.world({ spec = "Standless", skin = "None", targets = 2 })
-local skill = world:skill("Standless/Uppercut")
-
-skill:Activate()
-world:Step(40)
-
-for _, hit in world.trace:attacks() do
-	print(hit.frame, hit.damage)
-end
-```
-
-All seventeen real skills run under the harness; `tests/skills/Contract.luau` keeps it
-that way by loading every skill and failing on one that cannot run.
-
-```bash
-lune run tools/skills.luau list                  # which skills the harness can drive
-lune run tools/skills.luau inspect Punch         # one skill, frame by frame, as text
-```
-
-See `docs/TESTING.md` for the harness internals and for what to assert.
 
 ### Quality gates
 

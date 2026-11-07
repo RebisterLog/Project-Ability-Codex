@@ -6,7 +6,7 @@
 ---
 ---   syntax   — `luau-compile --only-parse`, ~10 ms for the whole repository. It
 ---               knows nothing about Roblox, but it catches a syntax error before
----               `loadstring` in the harness or Studio ever sees it.
+---               Studio ever sees it.
 ---   format   — `stylua --check`. Checked in two passes, one per line-ending
 ---               style: a Windows working copy arrives with CRLF while `stylua.toml`
 ---               asks for Unix, and a file that differs only in line endings must

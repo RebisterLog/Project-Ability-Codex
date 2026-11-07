@@ -28,10 +28,9 @@ multiple_statements = "allow"
 
 [config]
 # `function self:Method()` declares an implicit `self`, which shadows an outer
-# `local self`. That is how a method is written in Lua, and the SkillHarness
-# builds its fake services exactly that way — 39 declarations across two files.
-# Relaxing the name rather than the lint keeps shadowing reported for everything
-# else, including a genuine `local self = self` inside a method.
+# `local self`. That is how a method is written in Lua. Relaxing the name rather
+# than the lint keeps shadowing reported for everything else, including a genuine
+# `local self = self` inside a method.
 shadowing = { ignore_pattern = "^_|^self$" }
 
 # Note on `parse_error`: selene 0.32.0 fails to parse an if-expression that is

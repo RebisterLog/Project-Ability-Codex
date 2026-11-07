@@ -32,8 +32,5 @@ Both server/client `BridgeService` check `RunService:IsStudio()` before creating
 ## 9. Zed format on save needs `--stdin-filepath`
 Without it, StyLua looks up `stylua.toml` in whatever directory Zed spawns the process. Config is lost.
 
-## 10. Headless skill tests are the gate for combat changes
-Combat skills run under lune (no Studio/playtest). If you edit a skill, add/adjust suite in `tests/skills/`. `Contract.luau` loads every skill and fails if one cannot run. All 17 real skills must remain runnable.
-
-## 11. Performance pragmas placement
+## 10. Performance pragmas placement
 `--!native` / `--!optimize 2` at top of file for server combat. `--!strict` for type-checked modules. Keep them above any requires.

@@ -42,11 +42,10 @@ const EXTRA_SUITES = {
 
 --- Directories the walk does not enter: `baseline` holds gate data, not checks.
 --- Directories the walk does not enter: `baseline` holds gate data rather than
---- checks, and `support` holds modules shared between suites — running either
---- as a suite would report a meaningless pass.
-const SKIP_DIRS = { "tests/baseline", "tests/support" }
+--- checks, so running it as a suite would report a meaningless pass.
+const SKIP_DIRS = { "tests/baseline" }
 
---- Suite name from a path: `tests/skills/Punch.luau` → `skills.Punch`.
+--- Suite name from a path: `tests/Example.luau` → `Example`.
 local function suiteName(root: string, path: string): string
 	local relative = (Toolchain.relative(root, path):gsub("%.luau$", ""))
 	local parts = Toolchain.split(relative)

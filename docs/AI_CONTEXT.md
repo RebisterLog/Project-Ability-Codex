@@ -38,9 +38,6 @@ Read this FIRST before touching code. Compact reference; full details in skills.
 ## Standard commands
 ```bash
 lune run tools/run-tests.luau                # gates + all suites
-lune run tests/skills/Contract.luau          # contract of all skills
-lune run tools/skills.luau list              # list driveable skills
-lune run tools/skills.luau inspect Punch     # frame-by-frame
 lune run tools/check.luau                    # syntax/format/lint/analyze
 lune run tools/check.luau --only=lint
 lune run tools/check.luau --update-baseline  # accept current findings
