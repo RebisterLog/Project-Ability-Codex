@@ -82,15 +82,21 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-						VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", { Character = self.Character.instance, EffectsFolder = Models.UppercutHit })
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"EmitFolder",
+						{ Character = self.Character.instance, EffectsFolder = Models.UppercutHit }
+					)
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
 						Animation = Anims.Uppercut,
 						Speed = seq.Speed,
 					})
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["UppercutVL"] })
-		
-		
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds["UppercutVL"] }
+					)
 				end,
 			},
 
@@ -117,10 +123,24 @@ function Skill.onInit(self)
 							if Data.State.PerfectBlocked or Data.State.BlockBroken then return end
 
 							if #self.AlreadyHit <= 1 then
-								VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", { Character = self.Character.instance, EffectsFolder = Models.UppercutHit })
+								VFXService:StartEffect(
+									Players:GetPlayers(),
+									"EmitFolder",
+									{
+										Character = self.Character.instance,
+										EffectsFolder = Models.UppercutHit,
+									}
+								)
 							end
 
-							VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = Data.Victim.RootPart.CFrame, Sound = Sounds["UppercutHit"] })
+							VFXService:StartEffect(
+								Players:GetPlayers(),
+								"Sound",
+								{
+									Origin = Data.Victim.RootPart.CFrame,
+									Sound = Sounds["UppercutHit"],
+								}
+							)
 						end)
 					end
 				end,

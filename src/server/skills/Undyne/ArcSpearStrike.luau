@@ -88,9 +88,11 @@ function Skill.onInit(self)
 						Animation = Anims["ArcSpearStrike"],
 						Speed = seq.Speed,
 					})
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["ArcSpearStrike"] })
-	
-	
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds["ArcSpearStrike"] }
+					)
 				end,
 			},
 
@@ -114,7 +116,14 @@ function Skill.onInit(self)
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 
-							VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = Data.Victim.RootPart.CFrame, Sound = Sounds["ArcSpearStrikeHit"] })
+							VFXService:StartEffect(
+								Players:GetPlayers(),
+								"Sound",
+								{
+									Origin = Data.Victim.RootPart.CFrame,
+									Sound = Sounds["ArcSpearStrikeHit"],
+								}
+							)
 						end)
 					end
 				end,

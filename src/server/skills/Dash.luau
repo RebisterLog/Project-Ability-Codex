@@ -46,17 +46,17 @@ end
 function Skill:onInit()
 	const character = self.Character
 	const DashProperties = self.Data.DashProperties
-	
+
 	const RootPart = character.RootPart
 	const Humanoid = character.Humanoid :: Humanoid
-	
+
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
 	const Anims = self.Spec.Data.Assets.Animations
 	const Sounds = self.Spec.Data.Assets.Sounds
-	
- 	const style = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+	const style = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -72,13 +72,22 @@ function Skill:onInit()
 
 					const direction = GetDashDirection(Normal)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-						Animation = Anims["Dash" .. direction],
-						SpecId = self.Spec.Data.Id,
-					})
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Animation",
+						{
+							Character = character.instance,
+							Animation = Anims["Dash" .. direction],
+							SpecId = self.Spec.Data.Id,
+						}
+					)
 
 					if Sounds.Dash then
-						VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds.Dash })
+						VFXService:StartEffect(
+							Players:GetPlayers(),
+							"Sound",
+							{ Origin = RootPart, Sound = Sounds.Dash }
+						)
 					end
 
 					const moveDirection = RootPart.CFrame:VectorToWorldSpace(Normal).Unit
@@ -93,7 +102,8 @@ function Skill:onInit()
 					const AlignOrientation = Instance.new("AlignOrientation")
 					AlignOrientation.Name = "DashAlignOrientation"
 					AlignOrientation.Mode = Enum.OrientationAlignmentMode.OneAttachment
-					AlignOrientation.Attachment0 = RootPart:FindFirstChildOfClass("Attachment") or RootPart.RootAttachment
+					AlignOrientation.Attachment0 = RootPart:FindFirstChildOfClass("Attachment")
+						or RootPart.RootAttachment
 					AlignOrientation.RigidityEnabled = true
 					AlignOrientation.CFrame = RootPart.CFrame
 					AlignOrientation.Parent = RootPart
@@ -110,7 +120,7 @@ function Skill:onInit()
 					task.delay(0.1, function()
 						TweenService:Create(velocity, style, { Velocity = Vector3.zero }):Play()
 					end)
-					
+
 					task.delay(0.25, function()
 						seq.Velocity:Destroy()
 						seq.AlignOrientation:Destroy()
@@ -119,16 +129,16 @@ function Skill:onInit()
 					end)
 				end,
 			},
--- 
--- 			{
--- 				1,
--- 				function(seq)
--- 					const velocity = seq.Velocity
--- 					if not velocity then return end
--- 
--- 					
--- 				end,
--- 			},
+			--
+			-- 			{
+			-- 				1,
+			-- 				function(seq)
+			-- 					const velocity = seq.Velocity
+			-- 					if not velocity then return end
+			--
+			--
+			-- 				end,
+			-- 			},
 		},
 	}))
 end
@@ -149,7 +159,8 @@ function Skill:Interrupt()
 	if velocity and velocity.Parent then
 		ClearBodyMovers(RootPart)
 
-		RootPart.AssemblyLinearVelocity = Vector3.new(velocity.Velocity.X, RootPart.AssemblyLinearVelocity.Y, velocity.Velocity.Z)
+		RootPart.AssemblyLinearVelocity =
+			Vector3.new(velocity.Velocity.X, RootPart.AssemblyLinearVelocity.Y, velocity.Velocity.Z)
 	end
 
 	self.Sequence:Stop()

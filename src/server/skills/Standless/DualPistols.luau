@@ -170,7 +170,11 @@ function Skill:onInit()
 			UseForge = true,
 		})
 
-		VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["DualPistolsShot"] })
+		VFXService:StartEffect(
+			Players:GetPlayers(),
+			"Sound",
+			{ Origin = RootPart, Sound = Sounds["DualPistolsShot"] }
+		)
 	end
 
 	-- The last entry has to be the highest frame: the sequencer treats it as the
@@ -196,9 +200,17 @@ function Skill:onInit()
 					Speed = seq.Speed,
 				})
 
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["DualPistolsVoice"] })
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					{ Origin = RootPart, Sound = Sounds["DualPistolsVoice"] }
+				)
 
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["DualPistolsReload"] })
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					{ Origin = RootPart, Sound = Sounds["DualPistolsReload"] }
+				)
 
 				-- Runs on both a clean finish and an interrupt, so the pistols end
 				-- up on the floor exactly like the old `onEnd`.

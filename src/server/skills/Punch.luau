@@ -54,18 +54,31 @@ function Skill:onInit()
 					table.clear(self.AlreadyHit)
 
 					if self.PunchCount > 1 then
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
-							Animation = Anims["Punch" .. self.PunchCount - 1],
-						})
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"Animation",
+							{
+								Character = self.Caster,
+								Animation = Anims["Punch" .. self.PunchCount - 1],
+							}
+						)
 					end
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
-						Animation = Anims["Punch" .. self.PunchCount],
-						Speed = seq.Speed,
-					})
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Animation",
+						{
+							Character = self.Caster,
+							Animation = Anims["Punch" .. self.PunchCount],
+							Speed = seq.Speed,
+						}
+					)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds[`Punch{self.PunchCount}`]
-					 })
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds[`Punch{self.PunchCount}`] }
+					)
 
 					for i, trail: Trail in self.Caster:QueryDescendants("#PunchTrail") do
 						trail.Enabled = true
@@ -115,8 +128,8 @@ function Skill:onInit()
 									-- 	then 5
 									-- 	else false,
 									Speed = self.PunchCount == self.Data.MaxCombo and 75 or 8,
-									Duration = 0.2,--self.PunchCount == self.Data.MaxCombo and 0.05
-										--or 0.05,
+									Duration = 0.2, --self.PunchCount == self.Data.MaxCombo and 0.05
+									--or 0.05,
 									MaxForce = Vector3.new(20_000, 0, 20_000),
 								},
 								Stun = {
@@ -185,9 +198,11 @@ function Skill:Interrupt()
 
 	const Anims = self.Assets.Animations
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Caster, 
-		Animation = Anims["Punch" .. PunchCount],
-	})
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"Animation",
+		{ Character = self.Caster, Animation = Anims["Punch" .. PunchCount] }
+	)
 end
 
 return Skill

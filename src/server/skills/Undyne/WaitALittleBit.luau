@@ -97,9 +97,11 @@ function Skill:onInit()
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["WaitALittleBit"] })
-	
-		
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds["WaitALittleBit"] }
+					)
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
@@ -130,7 +132,11 @@ function Skill:onInit()
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 
-							VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = Target.RootPart, Sound = Sounds["WaitALittleBitHit"] })
+							VFXService:StartEffect(
+								Players:GetPlayers(),
+								"Sound",
+								{ Origin = Target.RootPart, Sound = Sounds["WaitALittleBitHit"] }
+							)
 						end)
 					end
 				end,

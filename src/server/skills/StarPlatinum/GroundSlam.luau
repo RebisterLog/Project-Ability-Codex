@@ -69,17 +69,31 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = self.Stand.instance, 
-						Animation = Anims["GroundSlam"],
-						Speed = seq.Speed,
-					})
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Animation",
+						{
+							Character = self.Stand.instance,
+							Animation = Anims["GroundSlam"],
+							Speed = seq.Speed,
+						}
+					)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = self.Stand.RootPart, Sound = Sounds["GroundSlam"] })
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = self.Stand.RootPart, Sound = Sounds["GroundSlam"] }
+					)
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Stand.instance, 
-							Animation = Anims["GroundSlam"].Animation,
-						})
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"Animation",
+							{
+								Character = self.Stand.instance,
+								Animation = Anims["GroundSlam"].Animation,
+							}
+						)
 					end)
 				end,
 			},
@@ -90,7 +104,7 @@ function Skill.onInit(self)
 					local Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
-						Info = AttackInfo.Hitbox
+						Info = AttackInfo.Hitbox,
 					})
 
 					for _, Target in Targets do
@@ -100,7 +114,6 @@ function Skill.onInit(self)
 							Info = AttackInfo,
 						}):andThen(function(Data: types.AttackData)
 							if not Data.State.Success then return end
-
 						end)
 					end
 				end,
@@ -132,7 +145,11 @@ function Skill.Interrupt(self)
 
 	const Sounds = self.Spec.Data.Assets.Stand.Sounds
 
-	VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = self.Stand.RootPart, Sound = Sounds["GroundSlam"].Sound })
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"Sound",
+		{ Origin = self.Stand.RootPart, Sound = Sounds["GroundSlam"].Sound }
+	)
 end
 
 return Skill

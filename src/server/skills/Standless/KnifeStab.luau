@@ -103,12 +103,20 @@ function Skill:onInit()
 					const Knife = CombatService:Equip(character, Models.Knife)
 					seq.Cleaner:Add(Knife)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-						Animation = Anims.KnifeStab,
-						Speed = seq.Speed,
-					})
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds.KnifeStab })
-		
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Animation",
+						{
+							Character = character.instance,
+							Animation = Anims.KnifeStab,
+							Speed = seq.Speed,
+						}
+					)
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds.KnifeStab }
+					)
 				end,
 			},
 
@@ -140,7 +148,11 @@ function Skill:onInit()
 					}):andThen(function(Data: types.AttackData)
 						if not Data.State.Success then return end
 
-						VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = Data.Victim.RootPart, Sound = Sounds.KnifeStabHit })
+						VFXService:StartEffect(
+							Players:GetPlayers(),
+							"Sound",
+							{ Origin = Data.Victim.RootPart, Sound = Sounds.KnifeStabHit }
+						)
 
 						VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 							Particle = Models.KnifeStabHit,
@@ -170,9 +182,11 @@ function Skill:Interrupt()
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Character.instance, 
-		Animation = Anims.KnifeStab.Animation,
-	})
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"Animation",
+		{ Character = self.Character.instance, Animation = Anims.KnifeStab.Animation }
+	)
 end
 
 return Skill

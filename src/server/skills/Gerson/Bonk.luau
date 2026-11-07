@@ -86,13 +86,21 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-						Animation = Anims["Bonk"],
-						Speed = seq.Speed,
-					})
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Animation",
+						{
+							Character = character.instance,
+							Animation = Anims["Bonk"],
+							Speed = seq.Speed,
+						}
+					)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["BonkSlam"]
-					 })
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds["BonkSlam"] }
+					)
 				end,
 			},
 
@@ -156,9 +164,11 @@ function Skill.Interrupt(self)
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-		Animation = Anims["Bonk"].Animation,
-	})
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"Animation",
+		{ Character = character.instance, Animation = Anims["Bonk"].Animation }
+	)
 end
 
 return Skill

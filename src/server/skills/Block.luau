@@ -40,13 +40,17 @@ function Block:Activate()
 		Collector:Add(character:AddParameter("MaxJumpPower", 0))
 
 		Collector:Add(function()
-			VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-				Animation = Anim.Animation,
-			})
+			VFXService:StopEffect(
+				Players:GetPlayers(),
+				"Animation",
+				{ Character = character.instance, Animation = Anim.Animation }
+			)
 		end)
-		VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-			Animation = Anim,
-		})
+		VFXService:StartEffect(
+			Players:GetPlayers(),
+			"Animation",
+			{ Character = character.instance, Animation = Anim }
+		)
 
 		Collector:Add(CombatService.Attacked:Connect(function(Type, Data)
 			if not (Type == "Precast" and Data.Victim == character) then return end
@@ -64,15 +68,28 @@ function Block:Activate()
 					Origin = RootPart,
 					Offset = CFrame.new(0, 0, -2),
 				})
-				VFXService:StartEffect(Players:GetPlayers(), "Highlight", { Character = character.instance, 
-					FillColor = Color3.fromRGB(255, 162, 0),
-					OutlineColor = Color3.fromRGB(255, 162, 0),
-					FillTransparency = 0,
-					OutlineTransparency = 0,
-					Lifetime = 1,
-					Tween = true,
-				})
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = ReplicatedStorage.assets.Default.Block.Sounds.PerfectBlock, Volume = 1 })
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Highlight",
+					{
+						Character = character.instance,
+						FillColor = Color3.fromRGB(255, 162, 0),
+						OutlineColor = Color3.fromRGB(255, 162, 0),
+						FillTransparency = 0,
+						OutlineTransparency = 0,
+						Lifetime = 1,
+						Tween = true,
+					}
+				)
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					{
+						Origin = RootPart,
+						Sound = ReplicatedStorage.assets.Default.Block.Sounds.PerfectBlock,
+						Volume = 1,
+					}
+				)
 			elseif Data.State.BlockBroken then
 				const stun = Data.Victim:AddParameter("Stun", {
 					Duration = 2,
@@ -86,9 +103,25 @@ function Block:Activate()
 					Origin = RootPart,
 					Offset = CFrame.new(0, 0, -2),
 				})
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = ReplicatedStorage.assets.Default.Block.Sounds.BlockBreak, Volume = 1 })
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					{
+						Origin = RootPart,
+						Sound = ReplicatedStorage.assets.Default.Block.Sounds.BlockBreak,
+						Volume = 1,
+					}
+				)
 			elseif Data.State.Blocked then
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = ReplicatedStorage.assets.Default.Block.Sounds.Hit, Volume = 1 })
+				VFXService:StartEffect(
+					Players:GetPlayers(),
+					"Sound",
+					{
+						Origin = RootPart,
+						Sound = ReplicatedStorage.assets.Default.Block.Sounds.Hit,
+						Volume = 1,
+					}
+				)
 			end
 
 			return

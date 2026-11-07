@@ -66,12 +66,20 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-						Animation = Anims.Footrest,
-						Speed = seq.Speed,
-					})
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds.FootrestVL
-					 })
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Animation",
+						{
+							Character = character.instance,
+							Animation = Anims.Footrest,
+							Speed = seq.Speed,
+						}
+					)
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"Sound",
+						{ Origin = RootPart, Sound = Sounds.FootrestVL }
+					)
 				end,
 			},
 
@@ -79,7 +87,15 @@ function Skill.onInit(self)
 				24,
 				function()
 					self.UUID = tick()
-					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", { Character = character.instance, EffectsFolder = Models.Footrest, UUID = self.UUID })
+					VFXService:StartEffect(
+						Players:GetPlayers(),
+						"EmitFolder",
+						{
+							Character = character.instance,
+							EffectsFolder = Models.Footrest,
+							UUID = self.UUID,
+						}
+					)
 				end,
 			},
 
@@ -104,10 +120,20 @@ function Skill.onInit(self)
 							table.insert(self.AlreadyHit, Target)
 							if not Data.State.Continue then return end
 
-							VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", { Character = Data.Victim.instance, EffectsFolder = Models.FootrestVictim
-							 })
+							VFXService:StartEffect(
+								Players:GetPlayers(),
+								"EmitFolder",
+								{
+									Character = Data.Victim.instance,
+									EffectsFolder = Models.FootrestVictim,
+								}
+							)
 
-							VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = Data.Victim.instance, 
+							VFXService:StartEffect(
+								Players:GetPlayers(),
+								"Animation",
+								{
+									Character = Data.Victim.instance,
 									Animation = Anims.FootrestVictim,
 									Speed = seq.Speed,
 								}
@@ -141,11 +167,21 @@ function Skill.Interrupt(self)
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance, 
-		Animation = Anims.Footrest.Animation,
-	})
-	VFXService:StopEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds.FootrestVL.Sound })
-	VFXService:StopEffect(Players:GetPlayers(), "EmitFolder", { Character = character.instance, EffectsFolder = Models.Footrest, UUID = self.UUID })
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"Animation",
+		{ Character = character.instance, Animation = Anims.Footrest.Animation }
+	)
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"Sound",
+		{ Origin = RootPart, Sound = Sounds.FootrestVL.Sound }
+	)
+	VFXService:StopEffect(
+		Players:GetPlayers(),
+		"EmitFolder",
+		{ Character = character.instance, EffectsFolder = Models.Footrest, UUID = self.UUID }
+	)
 end
 
 return Skill
