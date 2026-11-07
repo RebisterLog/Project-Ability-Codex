@@ -13,7 +13,7 @@ const Stand = Crane:CreateComponent({
 
 function Stand:onStart()
 	self.Cleaner = Crane.Buttler.new()
-	self.RootPart = self.instance:FindFirstChild("HumanoidRootPart") or self.instance.PrimartPart
+	self.RootPart = self.instance:FindFirstChild("HumanoidRootPart") or self.instance.PrimaryPart
 
 	self:HandleMovement()
 end

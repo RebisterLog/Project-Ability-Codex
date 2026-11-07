@@ -6,6 +6,59 @@ const Actor = script:GetActor()
 
 const Tracks: { [Animator]: { [Animation]: AnimationTrack } } = {}
 
+-- Speed of every track currently held at zero by a Time Stop. A track already
+-- in the map is skipped by a later hold — the first one owns the restore.
+const HeldSpeeds: { [AnimationTrack]: number } = {}
+
+-- Hold every playing clip of `models` at speed zero, remembering each
+-- track's speed. Tracks already held (Speed == 0) are skipped.
+const function pauseModels(models: { Model })
+	for _, character in models do
+		if typeof(character) ~= "Instance" then continue end
+		if not character:IsA("Model") then continue end
+
+		const animator = character:FindFirstChildWhichIsA("Animator", true)
+		if not animator then continue end
+
+		for _, track in animator:GetPlayingAnimationTracks() do
+			if HeldSpeeds[track] ~= nil then continue end
+			if track.Speed == 0 then continue end
+			HeldSpeeds[track] = track.Speed
+			track:AdjustSpeed(0)
+		end
+	end
+end
+
+-- Hand the remembered speeds back to the still-alive tracks and forget the
+-- rest.
+const function resumeModels(models: { Model })
+	for _, character in models do
+		if typeof(character) ~= "Instance" then continue end
+		if not character:IsA("Model") then continue end
+
+		const animator = character:FindFirstChildWhichIsA("Animator", true)
+		if not animator then continue end
+
+		for _, track in animator:GetPlayingAnimationTracks() do
+			const speed = HeldSpeeds[track]
+			if speed == nil then continue end
+
+			HeldSpeeds[track] = nil
+			track:AdjustSpeed(speed)
+		end
+	end
+end
+
+Actor:BindToMessage("PauseAll", function(models: { Model }?)
+	if type(models) ~= "table" then return end
+	pauseModels(models)
+end)
+
+Actor:BindToMessage("ResumeAll", function(models: { Model }?)
+	if type(models) ~= "table" then return end
+	resumeModels(models)
+end)
+
 type AnimationsPlayProps = {
 	Priority: Enum.AnimationPriority?,
 	Speed: number?,

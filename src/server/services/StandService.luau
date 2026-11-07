@@ -16,7 +16,7 @@ function StandService:onStart()
 end
 
 function StandService:AddStandFor(character: types.Character, model: Model)
-	task.wait() -- for getting time to clean stand
+	task.wait(0.1) -- for getting time to clean stand
 
 	if self.Stands[character] then error("User already have stand") end
 

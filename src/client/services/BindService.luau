@@ -18,15 +18,18 @@ function BindService.onStart(self: typeof(BindService))
 	self.playerProxy =
 		Crane:GetService("PlayerService").Proxy :: Proxy.ProxyTab<PlayerData.PlayerData>
 
-	self.playerProxy:Subscribe("AnyChange", { "Skills" }, function()
-		for skillId, data in self.playerProxy().Skills do
-			self.Binds[data.Parameters.Bind] = skillId
+	const function rebuildBinds()
+		table.clear(self.Binds)
+		for _, slotSkills in self.playerProxy().Skills do
+			for skillId, data in slotSkills do
+				self.Binds[data.Parameters.Bind] = skillId
+			end
 		end
-	end)
-
-	for skillId, data in self.playerProxy().Skills do
-		self.Binds[data.Parameters.Bind] = skillId
 	end
+
+	self.playerProxy:Subscribe("AnyChange", { "Skills" }, rebuildBinds)
+
+	rebuildBinds()
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if gameProcessed then return end
@@ -38,6 +41,7 @@ function BindService.onStart(self: typeof(BindService))
 			or self.Binds[input.UserInputType]
 		if not skillName then return end
 
+		Crane:GetService("ClientSkillService"):Activate(skillName)
 		Crane:GetPacket("StartSkill").send(skillName)
 	end)
 
@@ -49,6 +53,7 @@ function BindService.onStart(self: typeof(BindService))
 			or self.Binds[input.UserInputType]
 		if not skillName then return end
 
+		Crane:GetService("ClientSkillService"):Stop(skillName)
 		Crane:GetPacket("StopSkill").send(skillName)
 	end)
 end

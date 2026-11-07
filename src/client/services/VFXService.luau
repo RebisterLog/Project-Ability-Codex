@@ -35,7 +35,8 @@ function VFXService.onStart(self: typeof(VFXService))
 
 	StopVFXPacket.listen(function(data: { name: string, args: { unknown } })
 		self:StopEffect(data.name, data.args[1])
-	end)end
+	end)
+end
 
 function VFXService:StartEffect(name: string, data: any?)
 	if not self.Effects[name] then
