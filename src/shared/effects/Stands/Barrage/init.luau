@@ -4,145 +4,83 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 
 const Bodypart = require(script.Bodypart)
 
-type BarrageData = {
-	-- The limb pair the barrage flies from.
-	Type: "Arm" | "Leg",
-	Character: Model,
-	UUID: string,
-	Rate: number,
-	Lifetime: number?,
-	-- Part whose Attachment0 trails and Attachment1 are copied onto every thrown
-	-- fist, so each punch drags the same ribbons as the kick barrage.
-	Trail: BasePart?,
-	-- One-shot swing cloned onto the stand root while the fists fly.
-	Swing: Sound?,
-	SwingVolume: number?,
-}
-
 type BarrageStopData = {
-	UUID: string?,
+	UUID: string | number?,
 }
 
--- The barrage faded its ribbons down once they were on screen.
-const TRAIL_FADE_DELAY = 0.15
-const TRAIL_TRANSPARENCY = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 0.7),
-	NumberSequenceKeypoint.new(1, 0.7),
-})
-
--- The swing loop played a sound every 0.09 seconds.
-const SWING_INTERVAL = 0.09
-
-const TRAIL_ATTACHMENT_NAMES = { "Attachment0", "Attachment1" }
-
-local function lightEmissionOf(part: BasePart): number
-	if part.Material == Enum.Material.Neon then return Random.new():NextInteger(100, 150) / 10 end
-
-	return Random.new():NextInteger(0, 10) / 10
-end
-
--- Cached fists are reused, so the ribbons of the previous punch go first.
-local function clearTrail(part: BasePart)
-	for _, name in TRAIL_ATTACHMENT_NAMES do
-		const attachment = part:FindFirstChild(name)
-
-		if attachment then attachment:Destroy() end
-	end
-end
-
-local function addTrail(part: BasePart, trailSource: BasePart, color: Color3, emission: number)
-	const trailSourceStart = trailSource:FindFirstChild("Attachment0")
-	const trailSourceEnd = trailSource:FindFirstChild("Attachment1")
-
-	if trailSourceStart == nil or trailSourceEnd == nil then return end
-
-	const trailEnd = trailSourceEnd:Clone()
-	trailEnd.Parent = part
-
-	const trailStart = trailSourceStart:Clone()
-	trailStart.Parent = part
-
-	for _, trail in trailStart:GetChildren() do
-		trail.Attachment0 = trailStart
-		trail.Attachment1 = trailEnd
-
-		if trail.Name == "Color" then
-			trail.Color = ColorSequence.new(color)
-			trail.LightEmission = emission
-		elseif trail.Name == "Trail" then
-			task.delay(TRAIL_FADE_DELAY, function()
-				trail.Transparency = TRAIL_TRANSPARENCY
-			end)
-		end
-	end
-end
+type BarrageData = {
+	Type: "Arm" | "Leg"?,
+	Character: Model?,
+	UUID: string | number?,
+	Rate: number?,
+	Lifetime: number?,
+}
 
 return {
 	Barrages = {},
 
 	Validate = function(self, data: BarrageData)
-		return data.Character ~= nil and data.UUID ~= nil and data.Rate ~= nil
+		return true
 	end,
 
-	storeBodyPart = function(part: BasePart, pos: Vector3)
-		clearTrail(part)
+	storeBodyPart = function(part: BasePart)
 		part.Parent = nil
-		part.Position = pos
 	end,
 
-	unstoreBodyPart = function(part: BasePart, character: Model)
-		--part.CFrame = character:GetPivot()
-		--part.Parent = workspace.Effects
+	unstoreBodyPart = function(part: BasePart)
+		-- restored by Bodypart.new when re-used
 	end,
 
 	onStart = function(self, data: BarrageData)
-		local character, uuid = data.Character, data.UUID
-		if not (character and uuid) then return end
+		const character = data.Character
+		const uuid = data.UUID
+		const bodyType = data.Type or "Arm"
+		const rate = data.Rate or 30
+		const lifetime = data.Lifetime or 0.3
 
-		const originParts: { BasePart } = if data.Type == "Arm"
-			then { character:FindFirstChild("Left Arm"), character:FindFirstChild("Right Arm") }
-			else { character:FindFirstChild("Left Leg"), character:FindFirstChild("Right Leg") }
+		if self.Barrages[uuid] then
+			self:onStop({ UUID = uuid })
+		end
 
-		if #originParts < 2 then return end
+		const leftName = if bodyType == "Arm" then "Left Arm" else "Left Leg"
+		const rightName = if bodyType == "Arm" then "Right Arm" else "Right Leg"
 
+		const originLeft = character:FindFirstChild(leftName) :: BasePart
+		const originRight = character:FindFirstChild(rightName) :: BasePart
 		const torso = character:FindFirstChild("HumanoidRootPart") :: BasePart
-		if not torso then return end
+
+		if not originLeft or not originRight or not torso then return end
 
 		const cleaner = Crane.Buttler.new()
 
 		const cacheL = cleaner:Construct(
 			Crane.CacheTab,
-			originParts[1],
+			originLeft,
 			5,
-			self.storeBodyPart,
 			function(part)
-				self.unstoreBodyPart(part, character)
+				self.storeBodyPart(part)
+			end,
+			function(part)
+				self.unstoreBodyPart(part)
 			end
 		)
 
 		const cacheR = cleaner:Construct(
 			Crane.CacheTab,
-			originParts[2],
+			originRight,
 			5,
-			self.storeBodyPart,
 			function(part)
-				self.unstoreBodyPart(part, character)
+				self.storeBodyPart(part)
+			end,
+			function(part)
+				self.unstoreBodyPart(part)
 			end
 		)
 
-		const interval = 1 / data.Rate
+		const interval = 1 / rate
 		local lastSpawn = os.clock()
-
 		local isLeft = true
-
 		const components = {}
-
-		-- Every punch cycles through both fist colours, left then right.
-		const colors = { originParts[1].Color, originParts[2].Color }
-		const emissions = { lightEmissionOf(originParts[1]), lightEmissionOf(originParts[2]) }
-		const colorIndexes = { 1, 1 }
-
-		local lastSwing = 0
 
 		cleaner:Set(
 			"Spawn",
@@ -151,61 +89,29 @@ return {
 
 				lastSpawn = os.clock()
 
-				const side = isLeft and -1 or 1
-				const part = isLeft and cacheL:Get() or cacheR:Get()
-				const originCFrame = torso.CFrame
-				const targetPosition = (originCFrame * CFrame.new(
-					math.random() / 2,
-					math.random() / 2,
-					-8.5
-				)).Position
-				const startPosition = (originCFrame * CFrame.new(
-					math.random(100, 200) / 100 * side,
-					math.random(-100, 200) / 100,
-					math.random(0, 100) / 100
-				)).Position
-				const movementDirection = -(startPosition - targetPosition).Unit
-				const points = {
-					A = startPosition,
-					B = startPosition
-						+ movementDirection * ((startPosition - targetPosition).Magnitude / 2)
-						+ originCFrame.RightVector * side * (math.random(0, 600) / 100)
-						+ originCFrame.UpVector * (math.random(-600, 600) / 100),
-					C = targetPosition,
-				}
-				const component = Bodypart.new(part, points)
+				const side = if isLeft then -1 else 1
+				const part = if isLeft then cacheL:Get() else cacheR:Get()
 
-				if data.Trail then
-					const slot = if part.Name == "Right Arm" or part.Name == "Right Leg"
-						then 2
-						else 1
-					const colorIndexesForSlot = colorIndexes[slot]
-					local nextIndex = colorIndexesForSlot + 1
+				const randomSide = if math.random() > 0.5 then 1 else -1
+				const offsetA = CFrame.new(side * math.random(50, 100) / 100, math.random(-100, 100) / 100, 1)
+					+ Vector3.zAxis * -3
+				const offsetB = CFrame.new(side * math.random(0, 400) / 100, math.random(-550, 550) / 100, -2)
+					+ Vector3.zAxis * -3
+				const offsetC = CFrame.new(
+					math.random(0, 50) / 100 * side,
+					math.random(0, 100) / 100 * randomSide,
+					-9 + (randomSide * math.random(0, 50) / 100)
+				)
 
-					if colorIndexesForSlot == #colors then nextIndex = 1 end
-
-					addTrail(part, data.Trail, colors[colorIndexesForSlot], emissions[nextIndex])
-					colorIndexes[slot] = nextIndex
-				end
-
-				if data.Swing and os.clock() - lastSwing >= SWING_INTERVAL then
-					lastSwing = os.clock()
-
-					const swing = data.Swing:Clone()
-					swing.PlaybackSpeed *= Random.new():NextNumber(1, 1.25)
-					swing.Volume = (data.SwingVolume or 0.5) * Random.new():NextNumber(0.75, 1.25)
-					swing.Parent = torso
-					swing.PlayOnRemove = true
-					swing:Destroy()
-				end
+				const component = Bodypart.new(part, {
+					A = offsetA,
+					B = offsetB,
+					C = offsetC,
+				}, torso)
 
 				component.isLeft = isLeft
-
 				table.insert(components, component)
 				isLeft = not isLeft
-
-				part.CFrame = CFrame.new(startPosition, targetPosition) * CFrame.Angles(1.5, 0, 0)
-				part.Parent = workspace.Effects
 			end)
 		)
 
@@ -215,34 +121,43 @@ return {
 			table.clear(parts)
 			table.clear(cframes)
 
-			for i, component in components do
-				const alpha = (os.clock() - component.createTime) / (data.Lifetime or 1)
+			for i = #components, 1, -1 do
+				const component = components[i]
+				const alpha = (os.clock() - component.createTime) / lifetime
 
-				if alpha > 0.95 then
-					(component.isLeft and cacheL or cacheR):Add(component.instance)
-
+				if alpha >= 1 then
+					(if component.isLeft then cacheL else cacheR):Add(component.instance)
 					component:Destroy()
 					table.remove(components, i)
 				else
 					table.insert(parts, component.instance)
-					table.insert(cframes, component:GetNextPos(alpha))
+					table.insert(cframes, component:GetNextPos(torso, component.points, alpha))
 				end
 			end
 
-			workspace:BulkMoveTo(parts, cframes, Enum.BulkMoveMode.FireCFrameChanged)
+			if #parts > 0 then
+				workspace:BulkMoveTo(parts, cframes, Enum.BulkMoveMode.FireCFrameChanged)
+			end
 		end)
 
 		self.Barrages[uuid] = cleaner
 	end,
 
 	onStop = function(self, data: BarrageStopData)
-		local barrage = self.Barrages[data.UUID]
-		if barrage then
-			barrage:Remove("Spawn")
+		const uuid = if data ~= nil then data.UUID else nil
+		if uuid == nil then return end
 
-			task.delay(1, function()
-				barrage:Destroy()
-			end)
-		end
+		const cleaner = self.Barrages[uuid]
+		if not cleaner then return end
+
+		cleaner:Remove("Spawn")
+
+		task.delay(1, function()
+			-- allow in-flight fists to finish, then clean up
+			if self.Barrages[uuid] == cleaner then
+				self.Barrages[uuid] = nil
+				cleaner:Destroy()
+			end
+		end)
 	end,
 }

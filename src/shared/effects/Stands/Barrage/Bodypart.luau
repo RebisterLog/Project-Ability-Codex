@@ -10,7 +10,7 @@ end
 const Bodypart = {}
 Bodypart.__index = Bodypart
 
-function Bodypart.new(instance: BasePart, points: { A: Vector3, B: Vector3, C: Vector3 })
+function Bodypart.new(instance: BasePart, points: { A: any, B: any, C: any }, torso: BasePart?)
 	for i, v in instance:QueryDescendants("BasePart") :: { BasePart } do
 		v.CanCollide = false
 		v.CastShadow = false
@@ -28,20 +28,46 @@ function Bodypart.new(instance: BasePart, points: { A: Vector3, B: Vector3, C: V
 		trail.Enabled = true
 	end
 
-	-- Cache world-space control points at spawn so owner movement cannot reshape
-	-- the fist's path.
 	return setmetatable({
 		instance = instance,
 		createTime = os.clock(),
-		pointA = points.A,
-		pointB = points.B,
-		pointC = points.C,
+		points = points,
+		torso = torso,
 	}, Bodypart)
 end
 
-function Bodypart:GetNextPos(alpha: number)
-	const point = QuadBezier(self.pointA, self.pointB, self.pointC, alpha)
-	const nextPoint = QuadBezier(self.pointA, self.pointB, self.pointC, alpha + 0.001)
+function Bodypart:_resolvePoints(torso: BasePart?)
+	local t = torso or self.torso
+	local p = self.points
+
+	if t and typeof(p.A) == "CFrame" then
+		local cf = t.CFrame
+		return cf:ToWorldSpace(p.A).Position, cf:ToWorldSpace(p.B).Position, cf:ToWorldSpace(p.C).Position
+	end
+
+	return p.A, p.B, p.C
+end
+
+function Bodypart:GetNextPos(torsoOrAlpha: any, offsets: any?, alpha: number?)
+	local a, t
+	if typeof(torsoOrAlpha) == "number" then
+		a = torsoOrAlpha
+		t = nil
+	else
+		t = torsoOrAlpha
+		a = alpha or 0
+		if offsets then
+			self.points = offsets
+		end
+	end
+
+	const pA, pB, pC = self:_resolvePoints(t)
+	const point = QuadBezier(pA, pB, pC, a)
+	const nextPoint = QuadBezier(pA, pB, pC, math.min(a + 0.001, 1))
+
+	if point == nextPoint then
+		return self.instance.CFrame
+	end
 
 	const current = self.instance.CFrame
 	const look = CFrame.new(point, nextPoint)

@@ -78,7 +78,7 @@ return {
 		const Damage = math.floor(amount * 10 + 0.5) / 10
 
 		const Indicator = script.DamageIndicator:Clone()
-		const Label = Indicator.TextLabel
+		const Label = Indicator.Label
 
 		Label.Text = "-" .. tostring(Damage)
 		Label.Size = UDim2.fromScale(1, 0)

@@ -31,35 +31,52 @@ return {
 		local SoundTemplate = data.Sound
 		local Origin = data.Origin
 
-		if not (SoundTemplate and Origin and SoundTemplate.Parent) then return end
+		local volume = data.Volume
+		if typeof(SoundTemplate) == "table" then
+			volume = volume or SoundTemplate.Volume
+			SoundTemplate = SoundTemplate.Sound
+		end
+
+		if not (SoundTemplate and Origin) then return end
+		if typeof(SoundTemplate) ~= "Instance" or not SoundTemplate:IsA("Sound") then return end
 
 		const Sound = SoundTemplate:Clone()
 
 		Sound.RollOffMaxDistance = data.MaxDistance or 100
 		Sound.RollOffMinDistance = data.MinDistance or 10
-		Sound.Volume = data.Volume or 1
+		Sound.Volume = volume or 1
 
 		if typeof(Origin) == "CFrame" then
 			const Attachment = Instance.new("Attachment")
 			Attachment.WorldCFrame = Origin
 			Attachment.Parent = workspace.Terrain
 			Sound.Parent = Attachment
-			task.delay(Sound.TimeLength + 1, Attachment.Destroy, Attachment)
+			Sound:Play()
+			task.delay(Sound.TimeLength + 1, function()
+				Attachment:Destroy()
+			end)
+			return
 		end
 
-		if typeof(Origin) == "Instance" then Sound.Parent = Origin end
-
-		Sound:Play()
-
-		task.delay(Sound.TimeLength + 1, function()
-			Sound:Destroy()
-		end)
+		if typeof(Origin) == "Instance" then
+			Sound.Parent = Origin
+			Sound:Play()
+			task.delay(Sound.TimeLength + 1, function()
+				Sound:Destroy()
+			end)
+		end
 	end,
 	onStop = function(self, data: SoundStopData)
 		local Inst = data.Origin
 		local Sound = data.Sound
 
+		if typeof(Sound) == "table" then
+			Sound = Sound.Sound
+		end
+
 		if not (Inst and Sound) then return end
-		if Inst:FindFirstChild(Sound.Name) then Inst[Sound.Name]:Destroy() end
+		if typeof(Sound) ~= "Instance" then return end
+		local playing = Inst:FindFirstChild(Sound.Name)
+		if playing then playing:Destroy() end
 	end,
 }

@@ -1,9 +1,11 @@
 --!strict
 --- Autoformatting of the codebase.
 ---
----   lune run tools/format.luau             check our own code: tools and tests
----   lune run tools/format.luau --fix       format our own code
----   lune run tools/format.luau --fix --src format src as well
+---   lune run tools/format.luau                          check our own code: tools and tests
+---   lune run tools/format.luau --fix                    format our own code
+---   lune run tools/format.luau --fix --src              format src as well
+---   lune run tools/format.luau --exclude Signal.luau    also exclude matching files/dirs
+---   lune run tools/format.luau --exclude a.luau,b/      comma-separated or repeatable
 ---
 --- The key detail is line endings. `stylua.toml` sets `line_endings = "Unix"`,
 --- while a Windows working copy arrives with CRLF, because `core.autocrlf` is on.
@@ -12,7 +14,8 @@
 --- their current line endings, and each group is formatted with its own
 --- `--line-endings`.
 ---
---- Vendored packages are never touched: they arrived from outside.
+--- Vendored packages are never touched: they arrived from outside. Additional
+--- files and directories can be excluded with `--exclude`.
 
 local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
@@ -21,9 +24,42 @@ local process = require("@lune/process")
 --- Our own code: what the format gate checks strictly.
 const OWN_DIRS = { "tools", "tests" }
 
+--- Files and directories excluded from formatting by default. More entries can be
+--- added with `--exclude`.
+const DEFAULT_EXCLUDES = { "Signal.luau" }
+
 --- Line endings in a file: `\r\n` means the file came from Windows.
 local function hasCrlf(path: string): boolean
 	return fs.readFile(path):find("\r\n", 1, true) ~= nil
+end
+
+--- Returns true when a file matches any exclusion pattern. Patterns match against
+--- the file basename, the root-relative path, or as a path segment/prefix
+--- (directory exclusions). Matching is case-insensitive on Windows-hostile paths.
+local function isExcluded(root: string, path: string, excludes: { string }): boolean
+	const rel = Toolchain.relative(root, path):lower()
+	local parts = Toolchain.split(rel)
+	local base = (parts[#parts] or rel):lower()
+
+	for _, raw in excludes do
+		local pattern = Toolchain.toUnix(raw):gsub("^/+", ""):gsub("/+$", ""):lower()
+
+		if pattern ~= "" then
+			if base == pattern or rel == pattern then return true end
+
+			if rel:sub(1, #pattern + 1) == pattern .. "/" then return true end
+
+			-- Match a directory/file segment anywhere in the path.
+			if
+				rel:find("/" .. pattern .. "/", 1, true)
+				or rel:find("/" .. pattern, #rel - #pattern, true)
+			then
+				return true
+			end
+		end
+	end
+
+	return false
 end
 
 --- Sorts files into line-ending groups and calls stylua once per group.
@@ -86,13 +122,36 @@ end
 
 local wantsFix = false
 local wantsSrc = false
+local excludes: { string } = table.clone(DEFAULT_EXCLUDES)
 
-for _, arg in process.args do
+local index = 1
+while index <= #process.args do
+	local arg = process.args[index]
+
 	if arg == "--fix" then
 		wantsFix = true
 	elseif arg == "--src" then
 		wantsSrc = true
+	elseif arg == "--exclude" then
+		index += 1
+		local value = process.args[index]
+
+		if value then
+			for entry in value:gmatch("[^,]+") do
+				local trimmed = entry:gsub("^%s+", ""):gsub("%s+$", "")
+
+				if trimmed ~= "" then table.insert(excludes, trimmed) end
+			end
+		end
+	elseif arg:sub(1, 10) == "--exclude=" then
+		for entry in arg:sub(11):gmatch("[^,]+") do
+			local trimmed = entry:gsub("^%s+", ""):gsub("%s+$", "")
+
+			if trimmed ~= "" then table.insert(excludes, trimmed) end
+		end
 	end
+
+	index += 1
 end
 
 local root = Toolchain.findRoot()
@@ -121,6 +180,13 @@ if wantsSrc then
 	end
 end
 
+local filtered: { string } = {}
+
+for _, file in files do
+	if not isExcluded(root, file, excludes) then table.insert(filtered, file) end
+end
+
+files = filtered
 table.sort(files)
 print(
 	`{wantsFix and "formatting" or "checking"} {#files} files ({if wantsSrc
