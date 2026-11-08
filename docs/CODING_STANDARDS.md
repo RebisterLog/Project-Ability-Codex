@@ -368,6 +368,11 @@ AttackInfo = {
     Ragdoll = {
         Duration = number,        -- Seconds of ragdoll
     },
+    HitEffects = Folder?,         -- Effect objects cloned into victim Torso on a landed hit
+    HitSounds = Folder?,          -- Sounds; one picked at random per hit
+    HitAnimations = Folder?,      -- Animations; one picked at random, played on victim
+    -- Nil fields fall back to assets.Default.Hits.(HitEffects/HitSounds/HitAnimations).
+    -- No feedback on blocked hits; under DamageHold it plays on payout.
 }
 ```
 

@@ -80,8 +80,7 @@ const None = {
 		KnifeStabHit = sound(Sounds.KnifeStabHit),
 	},
 	Models = {
-		-- Punches
-		PunchHit = GlobalAssets.HandledPunchHit,
+		-- Punche
 		ArmPunchTrail = GlobalAssets.ArmPunchTrails,
 		-- Uppercut
 		Uppercut = Assets.Standless.None.Models.Uppercut,

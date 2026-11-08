@@ -62,8 +62,6 @@ const None = {
 	},
 	Models = {
 		Spear = Models.Spear,
-		-- Punches
-		PunchHit = Models.PunchHit,
 		-- Barrage
 		Barrage = Models.Barrage,
 	},

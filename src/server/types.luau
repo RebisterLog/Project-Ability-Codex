@@ -129,6 +129,11 @@ export type AttackInfo = {
 		Interval: number?,
 		Slow: number?,
 	}?,
+
+	-- Hit feedback on a landed hit; nil falls back to assets.Default.Hits.
+	HitEffects: Folder?,
+	HitSounds: Folder?,
+	HitAnimations: Folder?,
 }
 
 export type AttackData = {

@@ -8,10 +8,17 @@ const Jotaro: BotsCharacters.BotCharacterConfig = {
 	Reaction = 0.6,
 	Agility = 0.6,
 
-	Debug = true,
+	Debug = false,
 	ComboWeight = 1,
 
 	Skills = {
+		["Dash"] = {
+			PreferredConditions = {
+				"TARGET_ATTACKING",
+				"TARGET_IGNORE_BLOCK",
+			},
+		},
+		
 		["Punch"] = {
 			Priority = 1,
 			Distance = 8,
@@ -128,20 +135,22 @@ const Jotaro: BotsCharacters.BotCharacterConfig = {
 
 	Combos = {
 		{
+			"Dash",
+			"Punch",
 			"Punch",
 			"Punch",
 			"StarStrike",
 		},
 		{
-			"Punch",
+			"Dash",
 			"StarFinger",
+			"Punch",
+			"Punch",
+			"Punch",
 			"GrabSlam",
 		},
 		{
-			"StarStrike",
-			"GroundSlam",
-		},
-		{
+			"Dash",
 			"Punch",
 			"Punch",
 			"Punch",

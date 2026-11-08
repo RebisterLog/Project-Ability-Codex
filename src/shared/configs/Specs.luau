@@ -91,8 +91,8 @@ const Specs = {
 
 			["StandBarrage"] = Enum.KeyCode.E,
 			["GroundSlam"] = Enum.KeyCode.G,
-			["StarFinger"] = Enum.KeyCode.R,
-			["StarStrike"] = Enum.KeyCode.T,
+			["StarFinger"] = Enum.KeyCode.T,
+			["StarStrike"] = Enum.KeyCode.R,
 			["GrabSlam"] = Enum.KeyCode.X,
 		},
 	},

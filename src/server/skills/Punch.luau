@@ -140,13 +140,6 @@ function Skill:onInit()
 						}):andThen(function(data)
 							if data.State.Success then
 								table.insert(self.AlreadyHit, Target)
-
-								if not data.State.Blocked then
-									VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-										Particle = Models["PunchHit"],
-										Origin = Target.RootPart,
-									})
-								end
 							end
 						end)
 					end

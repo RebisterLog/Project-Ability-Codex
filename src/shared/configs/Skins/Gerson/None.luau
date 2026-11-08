@@ -57,8 +57,6 @@ const None = {
 		GrabVL = sound(Sounds.GrabVoice),
 	},
 	Models = {
-		-- Punches
-		PunchHit = Models.PunchHit,
 		-- Shell launch
 		Shell = Models.Shell,
 		-- Hammer

@@ -44,8 +44,6 @@ const None = {
 		GrabVL = sound(GlobalAssets.Grab.Sounds.GrabVoice),
 	},
 	Models = {
-		-- Punches
-		PunchHit = GlobalAssets.HandledPunchHit,
 		-- Stand model
 		Stand = Models.Stand,
 	},
@@ -95,8 +93,6 @@ const None = {
 			BarrageVL = sound(Sounds.Stand.BarrageVL),
 		},
 		Models = {
-			-- Punches
-			PunchHit = GlobalAssets.HandledPunchHit,
 			-- Stand model
 			Stand = Models.Stand,
 			-- Summon effect part
