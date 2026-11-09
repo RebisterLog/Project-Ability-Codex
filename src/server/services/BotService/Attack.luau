@@ -74,14 +74,16 @@ function Attack.Step(host: Host, mask: number, distance: number)
 	local stand = Crane:GetService("StandService"):GetStand(host.Character) :: types.Stand?
 
 	local candidates = CollectCandidates(spec, host.Config, stand)
-	if #candidates == 0 then 
+	if #candidates == 0 then
 		if host.Config.Debug then print("Bot no candidates") end
 		return
 	end
 
 	if host.Config.Debug then
 		local ids = {}
-		for _, c in candidates do table.insert(ids, c.Data.Id) end
+		for _, c in candidates do
+			table.insert(ids, c.Data.Id)
+		end
 		print("Bot candidates:", table.concat(ids, ", "))
 	end
 

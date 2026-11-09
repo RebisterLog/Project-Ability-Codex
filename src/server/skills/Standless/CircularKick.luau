@@ -72,9 +72,6 @@ function Skill:onInit()
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -89,31 +86,26 @@ function Skill:onInit()
 
 					table.clear(self.AlreadyHit)
 
+					local circularKickAnim = self:GetAsset("Animations/CircularKick")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims["CircularKick"],
+						Animation = circularKickAnim,
 						Speed = seq.Speed,
 					})
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["CircularKick"] }
-					)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["CircularKickVL"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/CircularKick"),
+					})
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/CircularKickVL"),
+					})
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							{
-								Character = character.instance,
-								Animation = Anims["CircularKick"].Animation,
-							}
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = character.instance,
+							Animation = circularKickAnim.Animation,
+						})
 					end)
 				end,
 			},
@@ -121,26 +113,26 @@ function Skill:onInit()
 			{
 				11,
 				function()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"EmitFolder",
-						{ Character = character.instance, EffectsFolder = Models.CircularKick }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+						Character = character.instance,
+						EffectsFolder = self:GetAsset("Models/CircularKick"),
+					})
 				end,
 			},
 
 			{
 				19,
 				function()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"EmitFolder",
-						{ Character = character.instance, EffectsFolder = Models.CircularKick }
-					)
+					local circularKickFolder = self:GetAsset("Models/CircularKick")
+					local groundHit = self:GetAsset("Models/CircularKickGroundHit")
+					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+						Character = character.instance,
+						EffectsFolder = circularKickFolder,
+					})
 					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-						Particle = Models.CircularKickGroundHit,
+						Particle = groundHit,
 						Origin = character.RootPart.CFrame,
-						Offset = Models.CircularKickGroundHit:GetAttribute("Offset"),
+						Offset = groundHit:GetAttribute("Offset"),
 						UseForge = true,
 					})
 				end,
@@ -167,11 +159,10 @@ function Skill:onInit()
 							table.insert(self.AlreadyHit, Target)
 
 							if #self.AlreadyHit <= 1 then
-								VFXService:StartEffect(
-									Players:GetPlayers(),
-									"Sound",
-									{ Origin = Target.RootPart, Sound = Sounds["CircularKickHit"] }
-								)
+								VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+									Origin = Target.RootPart,
+									Sound = self:GetAsset("Sounds/CircularKickHit"),
+								})
 							end
 						end)
 					end
@@ -194,13 +185,11 @@ end
 function Skill:Interrupt()
 	const VFXService = Crane:GetService("VFXService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-
 	if self.Sequence then self.Sequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 		Character = self.Character.instance,
-		Animation = Anims["CircularKick"].Animation,
+		Animation = self:GetAsset("Animations/CircularKick").Animation,
 	})
 end
 

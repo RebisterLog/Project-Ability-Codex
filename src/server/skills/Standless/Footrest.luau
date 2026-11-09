@@ -48,9 +48,6 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -66,20 +63,15 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = character.instance,
-							Animation = Anims.Footrest,
-							Speed = seq.Speed,
-						}
-					)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds.FootrestVL }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = self:GetAsset("Animations/Footrest"),
+						Speed = seq.Speed,
+					})
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/FootrestVL"),
+					})
 				end,
 			},
 
@@ -87,15 +79,11 @@ function Skill.onInit(self)
 				24,
 				function()
 					self.UUID = tick()
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"EmitFolder",
-						{
-							Character = character.instance,
-							EffectsFolder = Models.Footrest,
-							UUID = self.UUID,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+						Character = character.instance,
+						EffectsFolder = self:GetAsset("Models/Footrest"),
+						UUID = self.UUID,
+					})
 				end,
 			},
 
@@ -120,24 +108,16 @@ function Skill.onInit(self)
 							table.insert(self.AlreadyHit, Target)
 							if not Data.State.Continue then return end
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"EmitFolder",
-								{
-									Character = Data.Victim.instance,
-									EffectsFolder = Models.FootrestVictim,
-								}
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+								Character = Data.Victim.instance,
+								EffectsFolder = self:GetAsset("Models/FootrestVictim"),
+							})
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Animation",
-								{
-									Character = Data.Victim.instance,
-									Animation = Anims.FootrestVictim,
-									Speed = seq.Speed,
-								}
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+								Character = Data.Victim.instance,
+								Animation = self:GetAsset("Animations/FootrestVictim"),
+								Speed = seq.Speed,
+							})
 						end)
 					end
 				end,
@@ -161,27 +141,21 @@ function Skill.Interrupt(self)
 	const RootPart = character.RootPart
 	const VFXService = Crane:GetService("VFXService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
-
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"Animation",
-		{ Character = character.instance, Animation = Anims.Footrest.Animation }
-	)
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"Sound",
-		{ Origin = RootPart, Sound = Sounds.FootrestVL.Sound }
-	)
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"EmitFolder",
-		{ Character = character.instance, EffectsFolder = Models.Footrest, UUID = self.UUID }
-	)
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = character.instance,
+		Animation = self:GetAsset("Animations/Footrest").Animation,
+	})
+	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
+		Origin = RootPart,
+		Sound = self:GetAsset("Sounds/FootrestVL").Sound,
+	})
+	VFXService:StopEffect(Players:GetPlayers(), "EmitFolder", {
+		Character = character.instance,
+		EffectsFolder = self:GetAsset("Models/Footrest"),
+		UUID = self.UUID,
+	})
 end
 
 return Skill

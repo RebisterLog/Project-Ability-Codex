@@ -58,9 +58,7 @@ function DamageIndicator:onStart(data: DamageIndicatorData)
 		indicator.Archivable = false
 
 		local gradient = script.Gradients:FindFirstChild(gradientName)
-		if gradient then
-			gradient:Clone().Parent = indicator.Label
-		end
+		if gradient then gradient:Clone().Parent = indicator.Label end
 
 		indicator.Parent = character
 
@@ -100,9 +98,7 @@ function DamageIndicator:onStart(data: DamageIndicatorData)
 		if bucket[character] ~= indicatorData then return end
 		if indicatorData.Value ~= oldValue then return end
 
-		if indicatorData.Indicator then
-			indicatorData.Indicator:Destroy()
-		end
+		if indicatorData.Indicator then indicatorData.Indicator:Destroy() end
 		bucket[character] = nil
 	end)
 end

@@ -18,7 +18,7 @@ const Jotaro: BotsCharacters.BotCharacterConfig = {
 				"TARGET_IGNORE_BLOCK",
 			},
 		},
-		
+
 		["Punch"] = {
 			Priority = 1,
 			Distance = 8,

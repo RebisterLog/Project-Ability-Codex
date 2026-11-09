@@ -42,7 +42,9 @@ function Bodypart:_resolvePoints(torso: BasePart?)
 
 	if t and typeof(p.A) == "CFrame" then
 		local cf = t.CFrame
-		return cf:ToWorldSpace(p.A).Position, cf:ToWorldSpace(p.B).Position, cf:ToWorldSpace(p.C).Position
+		return cf:ToWorldSpace(p.A).Position,
+			cf:ToWorldSpace(p.B).Position,
+			cf:ToWorldSpace(p.C).Position
 	end
 
 	return p.A, p.B, p.C
@@ -56,18 +58,14 @@ function Bodypart:GetNextPos(torsoOrAlpha: any, offsets: any?, alpha: number?)
 	else
 		t = torsoOrAlpha
 		a = alpha or 0
-		if offsets then
-			self.points = offsets
-		end
+		if offsets then self.points = offsets end
 	end
 
 	const pA, pB, pC = self:_resolvePoints(t)
 	const point = QuadBezier(pA, pB, pC, a)
 	const nextPoint = QuadBezier(pA, pB, pC, math.min(a + 0.001, 1))
 
-	if point == nextPoint then
-		return self.instance.CFrame
-	end
+	if point == nextPoint then return self.instance.CFrame end
 
 	const current = self.instance.CFrame
 	const look = CFrame.new(point, nextPoint)

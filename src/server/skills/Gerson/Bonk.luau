@@ -68,9 +68,6 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Models = self.Spec.Data.Assets.Models
-	const Sounds = self.Spec.Data.Assets.Sounds
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -86,21 +83,16 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = character.instance,
-							Animation = Anims["Bonk"],
-							Speed = seq.Speed,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = self:GetAsset("Animations/Bonk"),
+						Speed = seq.Speed,
+					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["BonkSlam"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/BonkSlam"),
+					})
 				end,
 			},
 
@@ -108,7 +100,7 @@ function Skill.onInit(self)
 				24,
 				function()
 					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-						Particle = Models["BonkSlam"],
+						Particle = self:GetAsset("Models/BonkSlam"),
 						Origin = RootPart.CFrame,
 						Offset = CFrame.new(0, -2.5, -7),
 					})
@@ -156,19 +148,14 @@ end
 
 function Skill.Interrupt(self)
 	const character = self.Character
-	const RootPart = character.RootPart
 	const VFXService = Crane:GetService("VFXService")
-
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"Animation",
-		{ Character = character.instance, Animation = Anims["Bonk"].Animation }
-	)
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = character.instance,
+		Animation = self:GetAsset("Animations/Bonk").Animation,
+	})
 end
 
 return Skill

@@ -81,9 +81,10 @@ function Skill.onInit(self)
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
+	local shellLaunchAnim = self:GetAsset("Animations/ShellLaunch")
+	local shellModel = self:GetAsset("Models/Shell")
+	local shellBounceSound = self:GetAsset("Sounds/ShellBounce")
+	local shellSlideSound = self:GetAsset("Sounds/ShellSlide")
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -94,7 +95,7 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
-					const shell = seq.Cleaner:Clone(Models.Shell) :: Model
+					const shell = seq.Cleaner:Clone(shellModel) :: Model
 					self.Shell = shell
 
 					const velocity = seq.Cleaner:Construct(Instance, "BodyVelocity") :: BodyVelocity
@@ -137,11 +138,10 @@ function Skill.onInit(self)
 							const nearest, dist =
 								FindNearestCharacter(attachment.WorldPosition, { character })
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Sound",
-								{ Origin = shell.PrimaryPart, Sound = Sounds["ShellBounce"] }
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+								Origin = shell.PrimaryPart,
+								Sound = shellBounceSound,
+							})
 
 							if nearest and dist < 100 then
 								const aimVector = (
@@ -164,7 +164,7 @@ function Skill.onInit(self)
 						end
 					end))
 
-					const slideSound = Sounds["ShellSlide"].Sound:Clone() :: Sound
+					const slideSound = shellSlideSound.Sound:Clone() :: Sound
 					slideSound.Parent = shell.PrimaryPart
 					slideSound.Looped = true
 					slideSound:Play()
@@ -221,19 +221,15 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = character.instance,
-							Animation = Anims["ShellLaunch"],
-							Speed = seq.Speed,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = shellLaunchAnim,
+						Speed = seq.Speed,
+					})
 
 					VFXService:StartEffect(Players:GetPlayers(), "EquipShell", {
 						Character = character.instance,
-						Shell = Models.Shell,
+						Shell = shellModel,
 					})
 				end,
 			},
@@ -256,17 +252,7 @@ function Skill.Activate(self)
 end
 
 function Skill.Interrupt(self)
-	const character = self.Character
-	const RootPart = character.RootPart
-	const VFXService = Crane:GetService("VFXService")
-
-	const Anims = self.Spec.Data.Assets.Animations
-
 	if self.Sequence then self.Sequence:Stop() end
-
-	--VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-	--	Animation = Anims["ShellLaunch"].Animation,
-	--})
 end
 
 return Skill

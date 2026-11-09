@@ -74,8 +74,6 @@ function Skill:onInit()
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -91,22 +89,22 @@ function Skill:onInit()
 
 					table.clear(self.AlreadyHit)
 
+					local waitAnim = self:GetAsset("Animations/WaitALittleBit")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims["WaitALittleBit"],
+						Animation = waitAnim,
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["WaitALittleBit"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/WaitALittleBit"),
+					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = character.instance,
-							Animation = Anims["WaitALittleBit"].Animation,
+							Animation = waitAnim.Animation,
 						})
 					end)
 				end,
@@ -132,11 +130,10 @@ function Skill:onInit()
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Sound",
-								{ Origin = Target.RootPart, Sound = Sounds["WaitALittleBitHit"] }
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+								Origin = Target.RootPart,
+								Sound = self:GetAsset("Sounds/WaitALittleBitHit"),
+							})
 						end)
 					end
 				end,
@@ -165,13 +162,11 @@ end
 function Skill:Interrupt()
 	const VFXService = Crane:GetService("VFXService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-
 	if self.Sequence then self.Sequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 		Character = self.Character.instance,
-		Animation = Anims["WaitALittleBit"].Animation,
+		Animation = self:GetAsset("Animations/WaitALittleBit").Animation,
 	})
 end
 

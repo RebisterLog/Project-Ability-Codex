@@ -33,10 +33,6 @@ const Prefixes: { [string]: (typeof(PathUtil), string) -> Instance? } = {
 
 function PathUtil:onStart()
 	self.SpecService = Crane:GetService("SpecService")
-
-	task.delay(1, function()
-		--print(self:Parse("@Specs/Standless/Dash"))
-	end)
 end
 
 function PathUtil:Parse(path: string): Instance? | any

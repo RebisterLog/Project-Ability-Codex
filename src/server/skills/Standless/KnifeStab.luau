@@ -81,9 +81,6 @@ function Skill:onInit()
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -100,23 +97,18 @@ function Skill:onInit()
 
 					-- The knife is out for exactly one swing: the cleaner takes
 					-- it down on interrupt as well as on the last frame.
-					const Knife = CombatService:Equip(character, Models.Knife)
+					const Knife = CombatService:Equip(character, self:GetAsset("Models/Knife"))
 					seq.Cleaner:Add(Knife)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = character.instance,
-							Animation = Anims.KnifeStab,
-							Speed = seq.Speed,
-						}
-					)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds.KnifeStab }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = self:GetAsset("Animations/KnifeStab"),
+						Speed = seq.Speed,
+					})
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/KnifeStab"),
+					})
 				end,
 			},
 
@@ -148,14 +140,13 @@ function Skill:onInit()
 					}):andThen(function(Data: types.AttackData)
 						if not Data.State.Success then return end
 
-						VFXService:StartEffect(
-							Players:GetPlayers(),
-							"Sound",
-							{ Origin = Data.Victim.RootPart, Sound = Sounds.KnifeStabHit }
-						)
+						VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+							Origin = Data.Victim.RootPart,
+							Sound = self:GetAsset("Sounds/KnifeStabHit"),
+						})
 
 						VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-							Particle = Models.KnifeStabHit,
+							Particle = self:GetAsset("Models/KnifeStabHit"),
 							Origin = Data.Victim.RootPart,
 						})
 					end)
@@ -178,15 +169,12 @@ end
 function Skill:Interrupt()
 	const VFXService = Crane:GetService("VFXService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-
 	if self.Sequence then self.Sequence:Stop() end
 
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"Animation",
-		{ Character = self.Character.instance, Animation = Anims.KnifeStab.Animation }
-	)
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = self.Character.instance,
+		Animation = self:GetAsset("Animations/KnifeStab").Animation,
+	})
 end
 
 return Skill

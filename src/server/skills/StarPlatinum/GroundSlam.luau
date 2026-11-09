@@ -56,9 +56,6 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Stand.Animations
-	const Sounds = self.Spec.Data.Assets.Stand.Sounds
-	const Models = self.Spec.Data.Assets.Stand.Models
 	const AttackInfo = self.Data.AttackInfo
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
@@ -70,31 +67,24 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = self.Stand.instance,
-							Animation = Anims["GroundSlam"],
-							Speed = seq.Speed,
-						}
-					)
+					local groundSlamAnim = self:GetAsset("Stand/Animations/GroundSlam")
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Stand.instance,
+						Animation = groundSlamAnim,
+						Speed = seq.Speed,
+					})
 
 					VFXService:StartEffect(
 						Players:GetPlayers(),
 						"Sound",
-						{ Origin = self.Stand.RootPart, Sound = Sounds["GroundSlam"] }
+						{ Origin = self.Stand.RootPart, Sound = self:GetAsset("Stand/Sounds/GroundSlam") }
 					)
 
 					seq.Cleaner:Add(function()
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							{
-								Character = self.Stand.instance,
-								Animation = Anims["GroundSlam"].Animation,
-							}
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = self.Stand.instance,
+							Animation = groundSlamAnim.Animation,
+						})
 					end)
 				end,
 			},
@@ -109,16 +99,13 @@ function Skill.onInit(self)
 
 					RockModule.Crater(impactPosition, 10, 8, 8, false)
 
-					if Models["GroundImpact"] then
-						VFXService:StartEffect(
-							Players:GetPlayers(),
-							"EmitParticle",
-							{
-								Particle = Models["GroundImpact"],
-								Origin = impactPosition,
-								Offset = CFrame.identity,
-							}
-						)
+					local groundImpact = self:TryGetAsset("Stand/Models/GroundImpact")
+					if groundImpact then
+						VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+							Particle = groundImpact,
+							Origin = impactPosition,
+							Offset = CFrame.identity,
+						})
 					end
 
 					VFXService:StartEffect(
@@ -169,12 +156,10 @@ function Skill.Interrupt(self)
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	const Sounds = self.Spec.Data.Assets.Stand.Sounds
-
 	VFXService:StopEffect(
 		Players:GetPlayers(),
 		"Sound",
-		{ Origin = self.Stand.RootPart, Sound = Sounds["GroundSlam"].Sound }
+		{ Origin = self.Stand.RootPart, Sound = self:GetAsset("Stand/Sounds/GroundSlam").Sound }
 	)
 end
 

@@ -40,8 +40,6 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Stand.Animations
-	const Sounds = self.Spec.Data.Assets.Stand.Sounds
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -55,20 +53,21 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 					table.clear(self.AlreadyHit)
 
+					local starFingerAnim = self:GetAsset("Stand/Animations/StarFinger")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = self.Stand.instance,
-						Animation = Anims.StarFinger,
+						Animation = starFingerAnim,
 						Speed = seq.Speed,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
-						Sound = Sounds.StarFinger,
+						Sound = self:GetAsset("Stand/Sounds/StarFinger"),
 					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = self.Stand.instance,
-							Animation = Anims.StarFinger.Animation,
+							Animation = starFingerAnim.Animation,
 						})
 					end)
 				end,
@@ -118,7 +117,7 @@ function Skill.Interrupt(self)
 
 	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 		Origin = self.Stand.RootPart,
-		Sound = self.Spec.Data.Assets.Stand.Sounds.StarFinger.Sound,
+		Sound = self:GetAsset("Stand/Sounds/StarFinger").Sound,
 	})
 end
 

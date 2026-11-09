@@ -97,9 +97,9 @@ const Specs = {
 		},
 	},
 
-	["Hamon"] = {
+	["JonathanHamon"] = {
 		Type = "SubSpec",
-		DisplayName = "Hamon",
+		DisplayName = "Jonathan Hamon",
 		IsPublic = true,
 
 		Binds = {},

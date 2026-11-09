@@ -53,9 +53,6 @@ function Skill:onInit()
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-
 	const style = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
@@ -72,21 +69,18 @@ function Skill:onInit()
 
 					const direction = GetDashDirection(Normal)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = character.instance,
-							Animation = Anims["Dash" .. direction],
-							SpecId = self.Spec.Data.Id,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = self:GetAsset("Animations/Dash" .. direction),
+						SpecId = self.Spec.Data.Id,
+					})
 
-					if Sounds.Dash then
+					local dashSound = self:TryGetAsset("Sounds/Dash")
+					if dashSound then
 						VFXService:StartEffect(
 							Players:GetPlayers(),
 							"Sound",
-							{ Origin = RootPart, Sound = Sounds.Dash }
+							{ Origin = RootPart, Sound = dashSound }
 						)
 					end
 

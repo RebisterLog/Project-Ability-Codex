@@ -70,9 +70,7 @@ return {
 		local Inst = data.Origin
 		local Sound = data.Sound
 
-		if typeof(Sound) == "table" then
-			Sound = Sound.Sound
-		end
+		if typeof(Sound) == "table" then Sound = Sound.Sound end
 
 		if not (Inst and Sound) then return end
 		if typeof(Sound) ~= "Instance" then return end

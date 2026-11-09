@@ -51,17 +51,14 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
 
-	self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
-				1,
+				0,
 				function(seq)
 					--seq.Cleaner:Add(CombatService:AddArmor(character, true))
 					--seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
@@ -69,16 +66,17 @@ function Skill.onInit(self)
 
 					--table.clear(self.AlreadyHit)
 
+					--local anim = self:GetAsset("Animations/NAME")
 					--VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--	Animation = Anims["NAME"],
+					--	Animation = anim,
 					--	Speed = seq.Speed,
 					--})
 
-					--VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = Sounds["NAME"] })
+					--VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = self:GetAsset("Sounds/NAME") })
 
 					--seq.Cleaner:Add(function()
 					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--		Animation = Anims["NAME"].Animation,
+					--		Animation = anim.Animation,
 					--	})
 					--end)
 				end,

@@ -127,16 +127,8 @@ end
 function Spec.ActivateSkill(self: types.Spec, skillId: string)
 	if not self.Skills[skillId] then return end
 
-	-- One active skill at a time across both spec slots, with one exception:
-	-- an active skill may swallow the input as a combo buffer. The buffered
-	-- skill does not activate — it just becomes available to the active skill.
 	const isBusy, activeSkills = self.Character:CheckActiveSkills()
-	if isBusy then
-		for _, activeSkill in activeSkills do
-			if activeSkill:TryComboInput(skillId) then return true end
-		end
-		return
-	end
+	if isBusy then return end
 
 	const skill = self.Skills[skillId]
 

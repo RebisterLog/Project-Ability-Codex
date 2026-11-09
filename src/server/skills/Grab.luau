@@ -81,13 +81,13 @@ function Skill.onInit(self)
 	const isStandActive = if stand then stand:IsActive() else false
 
 	-- if stand exists - it will use stand's Assets
-	self.Assets = if isStandActive then self.Spec.Data.Assets.Stand else self.Spec.Data.Assets
+	self.AssetPrefix = if isStandActive then "Stand/" else ""
 	self.Caster = isStandActive and stand.instance or self.Character.instance
 
 	self.GrabData = {
-		Offset = self.Spec.Data.Assets.Stats.Grab["AnimationOffset"]
+		Offset = self:TryGetAsset("Stats/Grab/AnimationOffset")
 			or CFrame.new(0, 0, -4) * CFrame.Angles(0, 180, 0),
-		FinalFrame = self.Spec.Data.Assets.Stats.Grab["FinalFrame"] or 30,
+		FinalFrame = self:TryGetAsset("Stats/Grab/FinalFrame") or 30,
 	}
 
 	ThrowInfo.Stun.Duration = self.GrabData.FinalFrame / 60
@@ -106,8 +106,7 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq: Sequencer.Sequencer)
-					const Anims = self.Assets.Animations
-					const Sounds = self.Assets.Sounds
+					local assetPrefix = self.AssetPrefix or ""
 
 					-- 					CombatService:Attack({
 					-- 						Attacker = character,
@@ -142,31 +141,22 @@ function Skill.onInit(self)
 						)
 					)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = self.Caster,
-							Animation = Anims["GrabThrow"],
-							Speed = seq.Speed,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Caster,
+						Animation = self:GetAsset(assetPrefix .. "Animations/GrabThrow"),
+						Speed = seq.Speed,
+					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = self.Target.instance,
-							Animation = Anims["GrabThrowVictim"],
-							Speed = seq.Speed,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Target.instance,
+						Animation = self:GetAsset(assetPrefix .. "Animations/GrabThrowVictim"),
+						Speed = seq.Speed,
+					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["Grabbed"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset(assetPrefix .. "Sounds/Grabbed"),
+					})
 				end,
 			},
 
@@ -195,30 +185,27 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
-					const Anims = self.Assets.Animations
-					const Sounds = self.Assets.Sounds
+					local assetPrefix = self.AssetPrefix or ""
 
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 12))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{ Character = self.Caster, Animation = Anims["Grab"], Speed = seq.Speed }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Caster,
+						Animation = self:GetAsset(assetPrefix .. "Animations/Grab"),
+						Speed = seq.Speed,
+					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["Grab"] }
-					)
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["GrabVL"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset(assetPrefix .. "Sounds/Grab"),
+					})
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset(assetPrefix .. "Sounds/GrabVL"),
+					})
 
 					self.Target = nil
 				end,
@@ -271,7 +258,7 @@ function Skill.Activate(self)
 	const stand = StandService:GetStand(self.Character) :: types.Stand
 	const isStandActive = if stand then stand:IsActive() else false
 
-	self.Assets = isStandActive and self.Spec.Data.Assets.Stand or self.Spec.Data.Assets
+	self.AssetPrefix = isStandActive and "Stand/" or ""
 	self.Caster = isStandActive and stand.instance or self.Character.instance
 
 	if self.Sequence then
@@ -288,17 +275,16 @@ function Skill.Interrupt(self)
 
 	const VFXService = Crane:GetService("VFXService")
 
-	const Anims = self.Assets.Animations
+	local assetPrefix = self.AssetPrefix or ""
 
 	if self.Sequence then self.Sequence:Stop() end
 
 	if self.GrabSequence then self.GrabSequence:Stop() end
 
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"Animation",
-		{ Character = self.Caster, Animation = Anims["Grab"] }
-	)
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = self.Caster,
+		Animation = self:GetAsset(assetPrefix .. "Animations/Grab"),
+	})
 
 	--VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."Grab"])
 	--VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."GrabVL"])

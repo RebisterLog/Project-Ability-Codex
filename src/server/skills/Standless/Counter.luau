@@ -91,15 +91,11 @@ function Skill:onInit()
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const CounterStats = (self.Spec.Data.Assets.Stats or {}).Counter or {}
-
 	self.CounterData = {
-		Offset = CounterStats["AnimationOffset"]
+		Offset = self:TryGetAsset("Stats/Counter/AnimationOffset")
 			or CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
-		StartHitFrame = CounterStats["StartHitFrame"] or 30,
-		FinalFrame = CounterStats["FinalFrame"] or 45,
+		StartHitFrame = self:TryGetAsset("Stats/Counter/StartHitFrame") or 30,
+		FinalFrame = self:TryGetAsset("Stats/Counter/FinalFrame") or 45,
 	}
 
 	self.Countered = false
@@ -126,33 +122,33 @@ function Skill:onInit()
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims["CounterHit"],
+						Animation = self:GetAsset("Animations/CounterHit"),
 						Speed = seq.Speed,
 					})
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = target.instance,
-						Animation = Anims["EnemyCounter"],
+						Animation = self:GetAsset("Animations/EnemyCounter"),
 						Speed = seq.Speed,
 					})
 
 					VFXService:StartEffect(
 						Players:GetPlayers(),
 						"Sound",
-						{ Origin = RootPart, Sound = Sounds["CounterHit"] }
+						{ Origin = RootPart, Sound = self:GetAsset("Sounds/CounterHit") }
 					)
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = character.instance,
-							Animation = Anims["CounterHit"].Animation,
+							Animation = self:GetAsset("Animations/CounterHit").Animation,
 						})
 					end)
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = target.instance,
-							Animation = Anims["EnemyCounter"].Animation,
+							Animation = self:GetAsset("Animations/EnemyCounter").Animation,
 						})
 					end)
 
@@ -225,20 +221,20 @@ function Skill:onInit()
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims["Counter"],
+						Animation = self:GetAsset("Animations/Counter"),
 						Speed = seq.Speed,
 					})
 
 					VFXService:StartEffect(
 						Players:GetPlayers(),
 						"Sound",
-						{ Origin = RootPart, Sound = Sounds["CounterVoice"] }
+						{ Origin = RootPart, Sound = self:GetAsset("Sounds/CounterVoice") }
 					)
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = character.instance,
-							Animation = Anims["Counter"].Animation,
+							Animation = self:GetAsset("Animations/Counter").Animation,
 						})
 					end)
 
@@ -318,7 +314,7 @@ end
 -- function Skill:Interrupt()
 -- 	local VFXService = Crane:GetService("VFXService")
 --
--- 	local Anims = self.Spec.Data.Assets.Animations
+-- 	-- local counterAnim = self:GetAsset("Animations/Counter")
 --
 -- 	if self.Sequence then self.Sequence:Stop() end
 -- 	if self.CounterSequence then self.CounterSequence:Stop() end
@@ -327,17 +323,17 @@ end
 -- 	self.Countered = true
 --
 -- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Character.instance,
--- 		Animation = Anims["Counter"].Animation,
+-- 		Animation = self:GetAsset("Animations/Counter").Animation,
 -- 	})
 --
 -- 	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = self.Character.instance,
--- 		Animation = Anims["CounterHit"].Animation,
+-- 		Animation = self:GetAsset("Animations/CounterHit").Animation,
 -- 	})
 --
 -- 	local target = self.Target
 -- 	if target then
 -- 		VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = target.instance,
--- 			Animation = Anims["EnemyCounter"].Animation,
+-- 			Animation = self:GetAsset("Animations/EnemyCounter").Animation,
 -- 		})
 -- 	end
 -- end

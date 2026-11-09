@@ -124,9 +124,10 @@ function Skill:onInit()
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
+	local dualPistolsAnim = self:GetAsset("Animations/DualPistols")
+	local bulletModel = self:GetAsset("Models/Bullet")
+	local pistolShotEffect = self:GetAsset("Models/PistolShotEffectPart")
+	local shotSound = self:GetAsset("Sounds/DualPistolsShot")
 	const AttackInfo = self.Data.AttackInfo
 
 	const ProjectileData = self.Data.ProjectileData
@@ -141,7 +142,7 @@ function Skill:onInit()
 		const bullet = Projectile.new({
 			Caster = character,
 			Skill = self,
-			Model = Models["Bullet"],
+			Model = bulletModel,
 			Position = muzzle.Position,
 			Direction = muzzle.LookVector,
 			Speed = ProjectileData.Speed,
@@ -165,16 +166,15 @@ function Skill:onInit()
 		bullet:Start()
 
 		VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-			Particle = Models["PistolShotEffectPart"],
+			Particle = pistolShotEffect,
 			Origin = muzzle,
 			UseForge = true,
 		})
 
-		VFXService:StartEffect(
-			Players:GetPlayers(),
-			"Sound",
-			{ Origin = RootPart, Sound = Sounds["DualPistolsShot"] }
-		)
+		VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+			Origin = RootPart,
+			Sound = shotSound,
+		})
 	end
 
 	-- The last entry has to be the highest frame: the sequencer treats it as the
@@ -183,8 +183,10 @@ function Skill:onInit()
 		{
 			0,
 			function(seq)
-				const left, motorL = CombatService:Equip(character, Models["LeftPistol"])
-				const right, motorR = CombatService:Equip(character, Models["RightPistol"])
+				local left, motorL =
+					CombatService:Equip(character, self:GetAsset("Models/LeftPistol"))
+				local right, motorR =
+					CombatService:Equip(character, self:GetAsset("Models/RightPistol"))
 
 				if character.Player then
 					Crane.Utils.ChangeNetworkOwner(left, character.Player)
@@ -196,21 +198,19 @@ function Skill:onInit()
 
 				VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 					Character = character.instance,
-					Animation = Anims["DualPistols"],
+					Animation = dualPistolsAnim,
 					Speed = seq.Speed,
 				})
 
-				VFXService:StartEffect(
-					Players:GetPlayers(),
-					"Sound",
-					{ Origin = RootPart, Sound = Sounds["DualPistolsVoice"] }
-				)
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+					Origin = RootPart,
+					Sound = self:GetAsset("Sounds/DualPistolsVoice"),
+				})
 
-				VFXService:StartEffect(
-					Players:GetPlayers(),
-					"Sound",
-					{ Origin = RootPart, Sound = Sounds["DualPistolsReload"] }
-				)
+				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+					Origin = RootPart,
+					Sound = self:GetAsset("Sounds/DualPistolsReload"),
+				})
 
 				-- Runs on both a clean finish and an interrupt, so the pistols end
 				-- up on the floor exactly like the old `onEnd`.
@@ -224,12 +224,9 @@ function Skill:onInit()
 					DropPistol(left, -character.RootPart.CFrame.LookVector)
 					DropPistol(right, -character.RootPart.CFrame.LookVector)
 
-					const anim = Anims["DualPistols"]
-					if not anim then return end
-
 					VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = anim.Animation,
+						Animation = dualPistolsAnim.Animation,
 					})
 				end)
 			end,
@@ -264,9 +261,7 @@ function Skill:Interrupt()
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	const anim = self.Spec.Data.Assets.Animations["DualPistols"]
-	if not anim then return end
-
+	local anim = self:GetAsset("Animations/DualPistols")
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 		Character = self.Character.instance,
 		Animation = anim.Animation,

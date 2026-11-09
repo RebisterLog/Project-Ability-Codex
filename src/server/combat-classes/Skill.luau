@@ -36,13 +36,44 @@ function Skill.new(character: types.Character, spec: types.Spec, data: types.Ski
 	return self
 end
 
+local function softStopActiveSkill(self: types.Skill)
+	if self.Sequence then pcall(function()
+		self.Sequence:Stop()
+	end) end
+
+	if self.Active and self.Data.Interrupt then
+		pcall(function()
+			self.Data.Interrupt(self)
+		end)
+	end
+
+	self.Active = false
+	self.Holding = false
+end
+
 function Skill.Activate(self: types.Skill)
 	if self.Active then return end
 
 	self.Active = true
 	self.Holding = true
 
-	if self.Data.Activate then self.Data.Activate(self) end
+	local ok, err = xpcall(function()
+		if self.Data.Activate then self.Data.Activate(self) end
+	end, debug.traceback)
+
+	if not ok then
+		softStopActiveSkill(self)
+		if not string.find(tostring(err), "Skill:GetAsset:", 1, true) then
+			warn(
+				string.format(
+					"[Skill] Activation error (skill=%s): %s",
+					tostring(self.Data and (self.Data.Id or self.Data.DisplayName)),
+					tostring(err)
+				)
+			)
+		end
+		return
+	end
 
 	self.Active = false
 
@@ -64,9 +95,6 @@ function Skill.Interrupt(self: types.Skill)
 end
 
 function Skill.SetCooldown(self: types.Skill, Time: number)
-	-- A multiplier of 0 (admin no-cooldown) collapses the cooldown here rather than
-	-- in IsOnCooldown, so ReleaseTime itself stops being in the future and anything
-	-- reading it sees a skill that is ready.
 	Time *= self.Character:GetParameter("CooldownMultiplier")
 	Time = math.max(Time, 0)
 
@@ -101,21 +129,11 @@ function Skill.IsOnCooldown(self: types.Skill)
 	return self.Proxy().Parameters.ReleaseTime > os.clock()
 end
 
-function Skill.TryComboInput(self: types.Skill, skillId: string): boolean
-	if self.Data.TryComboInput then return self.Data.TryComboInput(self, skillId) end
-	return false
-end
-
--- Freeze the cast where it is: the sequence keeps `CurrentFrame` and its
--- clean-up, only the heartbeat stops advancing it. Skills without a sequence
--- are left alone.
 function Skill.Pause(self: types.Skill)
 	const sequence = self.Sequence
 	if sequence and sequence:IsPlaying() then sequence:Pause() end
 end
 
--- Continue a sequence that `Pause` stopped. The `IsPaused` check is what keeps
--- a stopped (or never started) queue from being replayed from frame zero.
 function Skill.Resume(self: types.Skill)
 	const sequence = self.Sequence
 	if sequence and sequence:IsPaused() then sequence:Play() end
@@ -135,6 +153,7 @@ function Skill.Init(self: types.Skill)
 	if self.Initialized then return end
 
 	self.Initialized = true
+	self.PathUtil = Crane:GetService("PathUtil")
 
 	if self.Data.onInit then self.Data.onInit(self) end
 
@@ -149,6 +168,82 @@ function Skill.Init(self: types.Skill)
 	if not self.Data.Tag then self:SetEnabled(true) end
 
 	self:SetDisplayName(self.Data.DisplayName)
+end
+
+local function resolveAsset(root: any, segments: { string }): any?
+	local current = root
+	for _, segment in segments do
+		if type(current) ~= "table" then return nil end
+		current = current[segment]
+	end
+	return current
+end
+
+local function parseAssetPath(path: string): { string }
+	assert(type(path) == "string" and path ~= "", "Skill asset path must be a non-empty string")
+
+	local segments = {}
+	for _, segment in string.split(path, "/") do
+		if segment ~= "" then table.insert(segments, segment) end
+	end
+	if #segments == 0 then
+		error(string.format('Skill asset path is invalid: "%s"', path))
+	end
+
+	return segments
+end
+
+local function findSkillAsset(self: types.Skill, segments: { string }): (any, string?, string?)
+	local spec = self.Spec
+	local root = spec and spec.Data and spec.Data.Assets
+	local asset = resolveAsset(root, segments)
+	if asset ~= nil then return asset, nil, nil end
+
+	local baseSpecId = self.Data and self.Data.BaseSpec
+	if baseSpecId then
+		local SpecService = Crane:GetService("SpecService")
+		local baseData = SpecService:GetSpecData({ Id = baseSpecId })
+		if baseData and baseData.Assets then
+			asset = resolveAsset(baseData.Assets, segments)
+			if asset ~= nil then return asset, nil, nil end
+		end
+	end
+
+	local specId = (spec and spec.Data and spec.Data.Id) or "Unknown"
+	return nil, specId, baseSpecId
+end
+
+function Skill:TryGetAsset(path: string): any?
+	local ok, result = pcall(function()
+		return findSkillAsset(self, parseAssetPath(path))
+	end)
+	if not ok then return nil end
+
+	local asset = result
+	if asset ~= nil then return asset end
+	return nil
+end
+
+function Skill:GetAsset(path: string): any
+	local segments = parseAssetPath(path)
+	local asset, specId, baseSpecId = findSkillAsset(self, segments)
+	if asset ~= nil then return asset end
+
+	local skillId = (self.Data and (self.Data.Id or self.Data.DisplayName)) or "Unknown"
+	local assetName = segments[#segments] or path
+	warn(
+		string.format(
+			'[Skill:GetAsset] Отсутствует ассет "%s" (путь: "%s"). Текущий спек: %s. Скилл: %s. BaseSpec: %s',
+			tostring(assetName),
+			path,
+			tostring(specId),
+			tostring(skillId),
+			tostring(baseSpecId)
+		)
+	)
+
+	softStopActiveSkill(self)
+	error(string.format('Skill:GetAsset: missing asset "%s" for spec "%s"', path, tostring(specId or "Unknown")))
 end
 
 function Skill.Destroy(self: types.Skill)

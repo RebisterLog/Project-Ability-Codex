@@ -66,8 +66,6 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -85,14 +83,13 @@ function Skill.onInit(self)
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims["ArcSpearStrike"],
+						Animation = self:GetAsset("Animations/ArcSpearStrike"),
 						Speed = seq.Speed,
 					})
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["ArcSpearStrike"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/ArcSpearStrike"),
+					})
 				end,
 			},
 
@@ -116,14 +113,10 @@ function Skill.onInit(self)
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Sound",
-								{
-									Origin = Data.Victim.RootPart.CFrame,
-									Sound = Sounds["ArcSpearStrikeHit"],
-								}
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+								Origin = Data.Victim.RootPart.CFrame,
+								Sound = self:GetAsset("Sounds/ArcSpearStrikeHit"),
+							})
 						end)
 					end
 				end,
@@ -144,17 +137,13 @@ end
 
 function Skill.Interrupt(self)
 	const character = self.Character
-	const RootPart = character.RootPart
 	const VFXService = Crane:GetService("VFXService")
-
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
 
 	if self.Sequence then self.Sequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 		Character = character.instance,
-		Animation = Anims["ArcSpearStrike"].Animation,
+		Animation = self:GetAsset("Animations/ArcSpearStrike").Animation,
 	})
 end
 

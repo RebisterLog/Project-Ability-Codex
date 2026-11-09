@@ -100,9 +100,10 @@ function Skill.onInit(self)
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
+	local barrageAnim = self:GetAsset("Animations/Barrage")
+	local barrageModel = self:GetAsset("Models/Barrage")
+	local barrageSound = self:GetAsset("Sounds/Barrage")
+	local preBarrageSound = self:GetAsset("Sounds/PreBarrage")
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -114,7 +115,7 @@ function Skill.onInit(self)
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims["Barrage"],
+						Animation = barrageAnim,
 						Speed = seq.Speed,
 					})
 
@@ -122,14 +123,14 @@ function Skill.onInit(self)
 
 					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 						UUID = self.BarrageUUID,
-						Particle = Models["Barrage"],
+						Particle = barrageModel,
 						Origin = character.RootPart,
 					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = character.instance,
-							Animation = Anims["Barrage"].Animation,
+							Animation = barrageAnim.Animation,
 						})
 
 						VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", {
@@ -137,7 +138,7 @@ function Skill.onInit(self)
 						})
 						VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 							Origin = RootPart,
-							Sound = Sounds["Barrage"].Sound,
+							Sound = barrageSound.Sound,
 						})
 					end)
 				end,
@@ -148,7 +149,7 @@ function Skill.onInit(self)
 				function()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
-						Sound = Sounds["PreBarrage"],
+						Sound = preBarrageSound,
 					})
 
 					const targets = CombatService:Hitbox({
@@ -172,7 +173,7 @@ function Skill.onInit(self)
 				function()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
-						Sound = Sounds["PreBarrage"],
+						Sound = preBarrageSound,
 					})
 
 					const targets = CombatService:Hitbox({
@@ -195,13 +196,13 @@ function Skill.onInit(self)
 				function(seq)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
-						Sound = Sounds["Barrage"],
+						Sound = barrageSound,
 					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 							Origin = RootPart,
-							Sound = Sounds["Barrage"].Sound,
+							Sound = barrageSound.Sound,
 						})
 					end)
 				end,
@@ -274,16 +275,7 @@ function Skill.Activate(self: types.Skill)
 end
 
 function Skill.Interrupt(self)
-	const character = self.Character
-	const RootPart = character.RootPart
-	const VFXService = Crane:GetService("VFXService")
-
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-
 	if self.Sequence then self.Sequence:Stop() end
-	--VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."Grab"])
-	--VFXService:StopEffect(Players:GetPlayers(), "Sound", RootPart, Sounds[self.GrabData.Prefix.."GrabVL"])
 end
 
 return Skill

@@ -38,9 +38,7 @@ return {
 		const rate = data.Rate or 30
 		const lifetime = data.Lifetime or 0.3
 
-		if self.Barrages[uuid] then
-			self:onStop({ UUID = uuid })
-		end
+		if self.Barrages[uuid] then self:onStop({ UUID = uuid }) end
 
 		const leftName = if bodyType == "Arm" then "Left Arm" else "Left Leg"
 		const rightName = if bodyType == "Arm" then "Right Arm" else "Right Leg"
@@ -53,29 +51,17 @@ return {
 
 		const cleaner = Crane.Buttler.new()
 
-		const cacheL = cleaner:Construct(
-			Crane.CacheTab,
-			originLeft,
-			5,
-			function(part)
-				self.storeBodyPart(part)
-			end,
-			function(part)
-				self.unstoreBodyPart(part)
-			end
-		)
+		const cacheL = cleaner:Construct(Crane.CacheTab, originLeft, 5, function(part)
+			self.storeBodyPart(part)
+		end, function(part)
+			self.unstoreBodyPart(part)
+		end)
 
-		const cacheR = cleaner:Construct(
-			Crane.CacheTab,
-			originRight,
-			5,
-			function(part)
-				self.storeBodyPart(part)
-			end,
-			function(part)
-				self.unstoreBodyPart(part)
-			end
-		)
+		const cacheR = cleaner:Construct(Crane.CacheTab, originRight, 5, function(part)
+			self.storeBodyPart(part)
+		end, function(part)
+			self.unstoreBodyPart(part)
+		end)
 
 		const interval = 1 / rate
 		local lastSpawn = os.clock()
@@ -93,10 +79,16 @@ return {
 				const part = if isLeft then cacheL:Get() else cacheR:Get()
 
 				const randomSide = if math.random() > 0.5 then 1 else -1
-				const offsetA = CFrame.new(side * math.random(50, 100) / 100, math.random(-100, 100) / 100, 1)
-					+ Vector3.zAxis * -3
-				const offsetB = CFrame.new(side * math.random(0, 400) / 100, math.random(-550, 550) / 100, -2)
-					+ Vector3.zAxis * -3
+				const offsetA = CFrame.new(
+					side * math.random(50, 100) / 100,
+					math.random(-100, 100) / 100,
+					1
+				) + Vector3.zAxis * -3
+				const offsetB = CFrame.new(
+					side * math.random(0, 400) / 100,
+					math.random(-550, 550) / 100,
+					-2
+				) + Vector3.zAxis * -3
 				const offsetC = CFrame.new(
 					math.random(0, 50) / 100 * side,
 					math.random(0, 100) / 100 * randomSide,

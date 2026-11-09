@@ -56,8 +56,6 @@ function Skill.onInit(self)
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Stand.Animations
-	const Sounds = self.Spec.Data.Assets.Stand.Sounds
 	const AttackInfo = self.Data.AttackInfo
 	const ReleaseInfo = self.Data.ReleaseInfo
 
@@ -96,29 +94,31 @@ function Skill.onInit(self)
 						})
 					)
 
+					local grabSlamAnim = self:GetAsset("Stand/Animations/GrabSlam")
+					local grabSlamVictimAnim = self:GetAsset("Stand/Animations/GrabSlamVictim")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = self.Stand.instance,
-						Animation = Anims.GrabSlam,
+						Animation = grabSlamAnim,
 						Speed = seq.Speed,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = target.instance,
-						Animation = Anims.GrabSlamVictim,
+						Animation = grabSlamVictimAnim,
 						Speed = seq.Speed,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
-						Sound = Sounds.GrabSlam,
+						Sound = self:GetAsset("Stand/Sounds/GrabSlam"),
 					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = self.Stand.instance,
-							Animation = Anims.GrabSlam.Animation,
+							Animation = grabSlamAnim.Animation,
 						})
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = target.instance,
-							Animation = Anims.GrabSlamVictim.Animation,
+							Animation = grabSlamVictimAnim.Animation,
 						})
 						self.Target = nil
 					end)
@@ -165,20 +165,21 @@ function Skill.onInit(self)
 					table.clear(self.AlreadyHit)
 					self.Target = nil
 
+					local grabSlamStartAnim = self:GetAsset("Stand/Animations/GrabSlamStart")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = self.Stand.instance,
-						Animation = Anims.GrabSlamStart,
+						Animation = grabSlamStartAnim,
 						Speed = seq.Speed,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
-						Sound = Sounds.GrabSlamStart,
+						Sound = self:GetAsset("Stand/Sounds/GrabSlamStart"),
 					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = self.Stand.instance,
-							Animation = Anims.GrabSlamStart.Animation,
+							Animation = grabSlamStartAnim.Animation,
 						})
 					end)
 				end,
@@ -237,18 +238,17 @@ end
 
 function Skill.Interrupt(self)
 	const VFXService = Crane:GetService("VFXService")
-	const Sounds = self.Spec.Data.Assets.Stand.Sounds
 
 	if self.Sequence then self.Sequence:Stop() end
 	if self.GrabSequence then self.GrabSequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 		Origin = self.Stand.RootPart,
-		Sound = Sounds.GrabSlamStart.Sound,
+		Sound = self:GetAsset("Stand/Sounds/GrabSlamStart").Sound,
 	})
 	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 		Origin = self.Stand.RootPart,
-		Sound = Sounds.GrabSlam.Sound,
+		Sound = self:GetAsset("Stand/Sounds/GrabSlam").Sound,
 	})
 end
 

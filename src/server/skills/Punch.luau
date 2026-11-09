@@ -34,7 +34,7 @@ function Skill:onInit()
 	const isStandActive = if stand then stand:IsActive() else false
 
 	-- if stand exists - it will use stand's Assets
-	self.Assets = if isStandActive then self.Spec.Data.Assets.Stand else self.Spec.Data.Assets
+	self.AssetPrefix = if isStandActive then "Stand/" else ""
 	self.Caster = isStandActive and stand.instance or self.Character.instance
 
 	self.PunchCount = 1
@@ -45,8 +45,7 @@ function Skill:onInit()
 			{
 				0,
 				function(seq)
-					const Anims = self.Assets.Animations
-					const Sounds = self.Assets.Sounds
+					local assetPrefix = self.AssetPrefix or ""
 
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 8))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
@@ -54,31 +53,22 @@ function Skill:onInit()
 					table.clear(self.AlreadyHit)
 
 					if self.PunchCount > 1 then
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"Animation",
-							{
-								Character = self.Caster,
-								Animation = Anims["Punch" .. self.PunchCount - 1],
-							}
-						)
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = self.Caster,
+							Animation = self:GetAsset(assetPrefix .. "Animations/Punch" .. (self.PunchCount - 1)),
+						})
 					end
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Animation",
-						{
-							Character = self.Caster,
-							Animation = Anims["Punch" .. self.PunchCount],
-							Speed = seq.Speed,
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Caster,
+						Animation = self:GetAsset(assetPrefix .. "Animations/Punch" .. self.PunchCount),
+						Speed = seq.Speed,
+					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds[`Punch{self.PunchCount}`] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset(assetPrefix .. "Sounds/Punch" .. self.PunchCount),
+					})
 
 					for i, trail: Trail in self.Caster:QueryDescendants("#PunchTrail") do
 						trail.Enabled = true
@@ -97,8 +87,6 @@ function Skill:onInit()
 			{
 				14,
 				function(seq, Frame)
-					const Models = self.Assets.Models
-
 					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
@@ -138,9 +126,7 @@ function Skill:onInit()
 								},
 							},
 						}):andThen(function(data)
-							if data.State.Success then
-								table.insert(self.AlreadyHit, Target)
-							end
+							if data.State.Success then table.insert(self.AlreadyHit, Target) end
 						end)
 					end
 				end,
@@ -155,7 +141,7 @@ function Skill:Activate()
 	const stand = StandService:GetStand(self.Character) :: types.Stand
 	const isStandActive = if stand then stand:IsActive() else false
 
-	self.Assets = isStandActive and self.Spec.Data.Assets.Stand or self.Spec.Data.Assets
+	self.AssetPrefix = isStandActive and "Stand/" or ""
 	self.Caster = isStandActive and stand.instance or self.Character.instance
 
 	if self.ResetPunches then
@@ -189,13 +175,11 @@ function Skill:Interrupt()
 
 	if self.Sequence then self.Sequence:Stop() end
 
-	const Anims = self.Assets.Animations
-
-	VFXService:StopEffect(
-		Players:GetPlayers(),
-		"Animation",
-		{ Character = self.Caster, Animation = Anims["Punch" .. PunchCount] }
-	)
+	local assetPrefix = self.AssetPrefix or ""
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = self.Caster,
+		Animation = self:GetAsset(assetPrefix .. "Animations/Punch" .. PunchCount),
+	})
 end
 
 return Skill

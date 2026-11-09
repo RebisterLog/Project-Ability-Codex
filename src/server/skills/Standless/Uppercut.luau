@@ -64,9 +64,6 @@ function Skill.onInit(self)
 
 	const CombatService = Crane:GetService("CombatService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-	const Models = self.Spec.Data.Assets.Models
 	const AttackInfo = self.Data.AttackInfo
 
 	self.AlreadyHit = {}
@@ -82,21 +79,19 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"EmitFolder",
-						{ Character = self.Character.instance, EffectsFolder = Models.UppercutHit }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+						Character = self.Character.instance,
+						EffectsFolder = self:GetAsset("Models/UppercutHit"),
+					})
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = Anims.Uppercut,
+						Animation = self:GetAsset("Animations/Uppercut"),
 						Speed = seq.Speed,
 					})
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = Sounds["UppercutVL"] }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/UppercutVL"),
+					})
 				end,
 			},
 
@@ -123,24 +118,16 @@ function Skill.onInit(self)
 							if Data.State.PerfectBlocked or Data.State.BlockBroken then return end
 
 							if #self.AlreadyHit <= 1 then
-								VFXService:StartEffect(
-									Players:GetPlayers(),
-									"EmitFolder",
-									{
-										Character = self.Character.instance,
-										EffectsFolder = Models.UppercutHit,
-									}
-								)
+								VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+									Character = self.Character.instance,
+									EffectsFolder = self:GetAsset("Models/UppercutHit"),
+								})
 							end
 
-							VFXService:StartEffect(
-								Players:GetPlayers(),
-								"Sound",
-								{
-									Origin = Data.Victim.RootPart.CFrame,
-									Sound = Sounds["UppercutHit"],
-								}
-							)
+							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+								Origin = Data.Victim.RootPart.CFrame,
+								Sound = self:GetAsset("Sounds/UppercutHit"),
+							})
 						end)
 					end
 				end,
@@ -171,19 +158,16 @@ function Skill.Interrupt(self)
 	const RootPart = character.RootPart
 	const VFXService = Crane:GetService("VFXService")
 
-	const Anims = self.Spec.Data.Assets.Animations
-	const Sounds = self.Spec.Data.Assets.Sounds
-
 	if self.Sequence then self.Sequence:Stop() end
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 		Character = character.instance,
-		Animation = Anims.Uppercut.Animation,
+		Animation = self:GetAsset("Animations/Uppercut").Animation,
 	})
 
 	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 		Origin = RootPart,
-		Sound = Sounds.UppercutVL.Sound,
+		Sound = self:GetAsset("Sounds/UppercutVL").Sound,
 	})
 end
 

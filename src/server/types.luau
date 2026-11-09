@@ -486,6 +486,7 @@ export type SkillData = {
 	Id: string,
 	Tag: string?,
 
+	BaseSpec: string?,
 	Cooldown: number,
 	DisplayName: string,
 	AttackInfo: AttackInfo,
@@ -494,9 +495,6 @@ export type SkillData = {
 	onDestroy: (self: Skill) -> (),
 	Activate: (self: Skill) -> (),
 	Interrupt: (self: Skill) -> (),
-	-- Combo buffer handler: swallows another skill's input while this skill
-	-- is active. Returns true when the input was consumed.
-	TryComboInput: ((self: Skill, skillId: string) -> boolean)?,
 }
 
 type SkillProperties = {
@@ -523,13 +521,14 @@ type SkillMethods = {
 	-- Suspends / continues the running sequence, keeping its progress.
 	Pause: (self: Skill) -> (),
 	Resume: (self: Skill) -> (),
+	GetAsset: (self: Skill, path: string) -> any,
+	TryGetAsset: (self: Skill, path: string) -> any?,
 	SetCooldown: (self: Skill, Time: number) -> (),
 	SetDisplayName: (self: Skill, name: string) -> (),
 	SetEnabled: (self: Skill, enabled: boolean) -> (),
 	SetBind: (self: Skill, bind: Bind) -> (),
 	IsOnCooldown: (self: Skill) -> boolean,
 	Validate: (self: Skill) -> (boolean, string?),
-	TryComboInput: (self: Skill, skillId: string) -> boolean,
 	Init: (self: Skill) -> (),
 	Destroy: (self: Skill) -> (),
 }

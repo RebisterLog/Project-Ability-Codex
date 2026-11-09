@@ -118,11 +118,23 @@ Called once when the skill is constructed (inside `Spec:AddSkill`). Use for setu
    local CombatService = Crane:GetService("CombatService")
    ```
 
-2. **Access spec assets** for this skill:
+2. **Access spec assets** for this skill (через `Skill:GetAsset` — путь от корня `Spec.Data.Assets`, с фоллбеком в `BaseSpec`/скин `None`; при промахе `warn` + мягкая остановка + `error`). **Импортируй конкретные ассеты в местах использования** (не общие таблицы категорий):
    ```luau
-   local Anims = self.Spec.Data.Assets.Animations
-   local Sounds = self.Spec.Data.Assets.Sounds
-   local Models = self.Spec.Data.Assets.Models
+   local blockAnim = self:GetAsset("Animations/Block")
+   VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+       Character = character.instance,
+       Animation = blockAnim,
+   })
+
+   VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+       Origin = RootPart,
+       Sound = self:GetAsset("Sounds/UppercutVL"),
+   })
+
+   -- динамический ключ: self:GetAsset("Animations/Punch" .. self.PunchCount)
+   -- стенд: self:GetAsset("Stand/Animations/Barrage"), self:GetAsset("Stand/Sounds/StarStrike").Sound
+   -- динамический контекст (user/stand): local prefix = self.AssetPrefix or ""; self:GetAsset(prefix .. "Animations/Grab")
+   -- опционально (без warn/soft-stop/error): self:TryGetAsset("Sounds/Dash"), self:TryGetAsset("Stats/Grab/FinalFrame") or 30
    ```
 
 3. **Initialize state**:
@@ -516,14 +528,15 @@ Throw = {
 }
 ```
 
-Grab stats come from spec skin config (`self.Spec.Data.Assets.Stats.Grab`):
+Grab stats come from spec skin config (`Stats/Grab`). Берём блок через `GetAsset`, дефолты полей сохраняем через `or` (если нужен полностью опциональный блок — `TryGetAsset`):
 ```luau
+local grabStats = self:GetAsset("Stats/Grab")
 self.GrabData = {
     Prefix = "StandOff",
-    Offset = self.Spec.Data.Assets.Stats.Grab["AnimationOffset"] or CFrame.new(0, 0, -4) * CFrame.Angles(0, 180, 0),
-    StartHitFrame = self.Spec.Data.Assets.Stats.Grab["StartHitFrame"] or 30,
-    EndHitFrame = self.Spec.Data.Assets.Stats.Grab["EndHitFrame"] or 40,
-    FinalFrame = self.Spec.Data.Assets.Stats.Grab["FinalFrame"] or 30,
+    Offset = grabStats["AnimationOffset"] or CFrame.new(0, 0, -4) * CFrame.Angles(0, 180, 0),
+    StartHitFrame = grabStats["StartHitFrame"] or 30,
+    EndHitFrame = grabStats["EndHitFrame"] or 40,
+    FinalFrame = grabStats["FinalFrame"] or 30,
 }
 ```
 
