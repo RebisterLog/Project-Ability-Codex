@@ -27,6 +27,11 @@ end
 const ORParser = function(a, b)
 	return a or b
 end
+-- Hamon Charge is a single resource, not a stack of modifiers: the owner object
+-- always carries the current snapshot, so the last one wins.
+const LastParser = function(a, b)
+	return b
+end
 
 return {
 	Timescale = { Default = 1, Parser = MultParser },
@@ -89,4 +94,23 @@ return {
 	-- at all; the whole attack is queued and replayed in order when the last hold
 	-- is released. Healing keeps its order in the same queue.
 	DamageHold = { Default = false, Parser = ORParser },
+
+	-- Hamon Charge is a time-based resource. `Amount` is the value at the end of
+	-- the hold window; the live value is derived from the timestamps (see
+	-- CombatService), so the server never needs a ticking loop.
+	HamonCharge = {
+		Default = {
+			Amount = 0,
+			LastGainAt = 0,
+			Filling = false,
+			FillStartedAt = 0,
+			FillStartAmount = 0,
+			Max = 100,
+			FillRate = 20,
+			DecayRate = 10,
+			HoldSeconds = 5,
+		},
+
+		Parser = LastParser,
+	},
 }

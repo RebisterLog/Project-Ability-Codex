@@ -9,6 +9,7 @@ const skills = ServerScriptService.server.skills
 const Spec = {
 	Skills = {
 		["SendoHamon"] = "@Specs/JonathanHamon/SendoHamon",
+		["Charge"] = "@Specs/JonathanHamon/Charge",
 	},
 
 	onInit = function(self: types.Spec) end,

@@ -102,7 +102,10 @@ const Specs = {
 		DisplayName = "Jonathan Hamon",
 		IsPublic = true,
 
-		Binds = {},
+		Binds = {
+			["Charge"] = Enum.KeyCode.G,
+			["Sendo Hamon"] = Enum.KeyCode.H,
+		},
 	},
 }
 

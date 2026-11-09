@@ -16,15 +16,43 @@ const parameterNames: { types.ParameterName } = {
 	"MinWalkSpeed",
 	"MaxWalkSpeed",
 	"MaxJumpPower",
+	"HamonCharge",
 }
 
 const function serializeParameter(name: types.ParameterName, value: any): any
-	if name ~= "Stun" then return value end
+	if name == "Stun" then
+		local expiresAt = 0
+		if value.Duration > 0 then expiresAt = workspace:GetServerTimeNow() + value.Duration end
 
-	return {
-		Priority = value.Priority,
-		ExpiresAt = if value.Duration > 0 then workspace:GetServerTimeNow() + value.Duration else 0,
-	}
+		return {
+			Priority = value.Priority,
+			ExpiresAt = expiresAt,
+		}
+	end
+
+	if name == "HamonCharge" then
+		-- Ship the timestamps, not a snapshot: the client derives the smooth
+		-- value itself (fill/hold/decay) and never needs server ticks.
+		local expiresAt = 0
+		if value.Amount > 0 and not value.Filling then
+			expiresAt = value.LastGainAt + value.HoldSeconds + value.Amount / value.DecayRate
+		end
+
+		return {
+			Amount = value.Amount,
+			LastGainAt = value.LastGainAt,
+			Filling = value.Filling,
+			FillStartedAt = value.FillStartedAt,
+			FillStartAmount = value.FillStartAmount,
+			Max = value.Max,
+			FillRate = value.FillRate,
+			DecayRate = value.DecayRate,
+			HoldSeconds = value.HoldSeconds,
+			ExpiresAt = expiresAt,
+		}
+	end
+
+	return value
 end
 
 --[=[

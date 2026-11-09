@@ -17,6 +17,20 @@ export type CharacterParameters = {
 	MinWalkSpeed: number,
 	MaxWalkSpeed: number,
 	MaxJumpPower: number,
+
+	-- Time-based snapshot: clients derive the smooth value from these fields.
+	HamonCharge: {
+		Amount: number,
+		LastGainAt: number,
+		Filling: boolean,
+		FillStartedAt: number,
+		FillStartAmount: number,
+		Max: number,
+		FillRate: number,
+		DecayRate: number,
+		HoldSeconds: number,
+		ExpiresAt: number,
+	},
 }
 
 export type PlayerDynamicData = {
@@ -43,6 +57,19 @@ return {
 			MinWalkSpeed = 0,
 			MaxWalkSpeed = 2048,
 			MaxJumpPower = 4096,
+
+			HamonCharge = {
+				Amount = 0,
+				LastGainAt = 0,
+				Filling = false,
+				FillStartedAt = 0,
+				FillStartAmount = 0,
+				Max = 100,
+				FillRate = 20,
+				DecayRate = 10,
+				HoldSeconds = 5,
+				ExpiresAt = 0,
+			},
 		},
 		Blocking = false,
 	},
