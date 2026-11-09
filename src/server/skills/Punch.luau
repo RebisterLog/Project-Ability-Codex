@@ -55,13 +55,17 @@ function Skill:onInit()
 					if self.PunchCount > 1 then
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 							Character = self.Caster,
-							Animation = self:GetAsset(assetPrefix .. "Animations/Punch" .. (self.PunchCount - 1)),
+							Animation = self:GetAsset(
+								assetPrefix .. "Animations/Punch" .. (self.PunchCount - 1)
+							),
 						})
 					end
 
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = self.Caster,
-						Animation = self:GetAsset(assetPrefix .. "Animations/Punch" .. self.PunchCount),
+						Animation = self:GetAsset(
+							assetPrefix .. "Animations/Punch" .. self.PunchCount
+						),
 						Speed = seq.Speed,
 					})
 

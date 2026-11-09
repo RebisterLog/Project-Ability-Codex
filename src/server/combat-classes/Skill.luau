@@ -186,9 +186,7 @@ local function parseAssetPath(path: string): { string }
 	for _, segment in string.split(path, "/") do
 		if segment ~= "" then table.insert(segments, segment) end
 	end
-	if #segments == 0 then
-		error(string.format('Skill asset path is invalid: "%s"', path))
-	end
+	if #segments == 0 then error(string.format('Skill asset path is invalid: "%s"', path)) end
 
 	return segments
 end
@@ -233,7 +231,7 @@ function Skill:GetAsset(path: string): any
 	local assetName = segments[#segments] or path
 	warn(
 		string.format(
-			'[Skill:GetAsset] Отсутствует ассет "%s" (путь: "%s"). Текущий спек: %s. Скилл: %s. BaseSpec: %s',
+			'[Skill:GetAsset] Missing asset "%s" (path: "%s"). Current spec: %s. Skill: %s. BaseSpec: %s',
 			tostring(assetName),
 			path,
 			tostring(specId),
@@ -243,7 +241,13 @@ function Skill:GetAsset(path: string): any
 	)
 
 	softStopActiveSkill(self)
-	error(string.format('Skill:GetAsset: missing asset "%s" for spec "%s"', path, tostring(specId or "Unknown")))
+	error(
+		string.format(
+			'Skill:GetAsset: missing asset "%s" for spec "%s"',
+			path,
+			tostring(specId or "Unknown")
+		)
+	)
 end
 
 function Skill.Destroy(self: types.Skill)

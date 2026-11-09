@@ -9,6 +9,7 @@ const types = require(ServerScriptService.server.types)
 const Skill: types.SkillData = {
 	DisplayName = "Sendo Hamon",
 	Cooldown = 2,
+	BaseSpec = "JonathanHamon",
 
 	AttackInfo = {
 		Hitbox = {
@@ -61,16 +62,16 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
-						Character = character.instance,
-						Animation = self:GetAsset("Animations/SendoHamon"),
-						Speed = seq.Speed,
-					})
-
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-						Origin = RootPart,
-						Sound = self:GetAsset("Sounds/NAME"),
-					})
+					-- 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+					-- 						Character = character.instance,
+					-- 						Animation = self:GetAsset("Animations/SendoHamon"),
+					-- 						Speed = seq.Speed,
+					-- 					})
+					--
+					-- 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+					-- 						Origin = RootPart,
+					-- 						Sound = self:GetAsset("Sounds/NAME"),
+					-- 					})
 
 					--seq.Cleaner:Add(function()
 					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,

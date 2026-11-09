@@ -44,6 +44,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Dual Pistols",
+	BaseSpec = "Standless",
 	Cooldown = 15,
 
 	SkillCharacters = {

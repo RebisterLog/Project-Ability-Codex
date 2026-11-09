@@ -7,6 +7,7 @@ const Types = require(ServerScriptService.server.types)
 
 const Skill = {
 	DisplayName = "Footrest",
+	BaseSpec = "Standless",
 	Cooldown = 10,
 
 	SkillCharacters = {

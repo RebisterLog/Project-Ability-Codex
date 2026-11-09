@@ -27,6 +27,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Wait A Little Bit",
+	BaseSpec = "Undyne",
 	Cooldown = 4,
 
 	SkillCharacters = {

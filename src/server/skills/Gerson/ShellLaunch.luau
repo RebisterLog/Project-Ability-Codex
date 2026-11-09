@@ -10,6 +10,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Shell Launch",
+	BaseSpec = "Gerson",
 	Cooldown = 2.5,
 
 	SkillCharacters = {

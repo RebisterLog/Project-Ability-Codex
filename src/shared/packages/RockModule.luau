@@ -91,7 +91,10 @@ function RockModule.Crater(
 				local Tween = TweenSerivce:Create(
 					Rock,
 					TweenInfo.new(4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut),
-					{ Position = Rock.Position + Vector3.new(0, -5, 0), Size = Vector3.new(1, 1, 1) }
+					{
+						Position = Rock.Position + Vector3.new(0, -5, 0),
+						Size = Vector3.new(1, 1, 1),
+					}
 				)
 				Tween:Play()
 			end)

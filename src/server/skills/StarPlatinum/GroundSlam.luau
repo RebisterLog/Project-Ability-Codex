@@ -9,6 +9,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Ground Slam",
+	BaseSpec = "StarPlatinum",
 	Cooldown = 15,
 	Tag = "OnlyForStand",
 
@@ -77,7 +78,10 @@ function Skill.onInit(self)
 					VFXService:StartEffect(
 						Players:GetPlayers(),
 						"Sound",
-						{ Origin = self.Stand.RootPart, Sound = self:GetAsset("Stand/Sounds/GroundSlam") }
+						{
+							Origin = self.Stand.RootPart,
+							Sound = self:GetAsset("Stand/Sounds/GroundSlam"),
+						}
 					)
 
 					seq.Cleaner:Add(function()
