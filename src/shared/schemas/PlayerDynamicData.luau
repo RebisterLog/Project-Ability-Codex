@@ -1,10 +1,12 @@
 export type SpecSlot = "Spec" | "SubSpec"
 
 type SkillData = {
-	DisplayName: string,
-	ReleaseTime: number,
-	Bind: Enum.KeyCode | Enum.UserInputType,
-	Enable: boolean,
+	Parameters: {
+		DisplayName: string,
+		ReleaseTime: number,
+		Bind: Enum.KeyCode | Enum.UserInputType,
+		Enabled: boolean,
+	},
 }
 
 export type CharacterParameters = {

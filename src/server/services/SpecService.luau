@@ -88,7 +88,18 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 		local bind = data.Binds and data.Binds[skillId]
 		if not bind then bind = specData.Binds[skillId] end
 
-		if not bind then continue end
+		if not bind then
+			-- A skill without a bind keeps `Enum.KeyCode.Unknown`, which is also
+			-- what a mouse click reports. The client would then fire it on every
+			-- click, so the mismatch between the skill id and the bind key has to
+			-- be loud.
+			Crane.Utils.Log(
+				script.Name,
+				`No bind for skill "{skillId}" of spec "{spec.Data.DisplayName}"`,
+				"warn"
+			)
+			continue
+		end
 
 		skill:SetBind(bind)
 	end

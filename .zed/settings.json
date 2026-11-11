@@ -57,13 +57,44 @@
     //"src/shared/packages/Crane/packages/**"
   ],
 
+  // Language server: luwu-lsp, the Luwu fork of luau-lsp. This project is a
+  // Roblox game, so the two things that matter most are Roblox's own type
+  // definitions (without them `game`, `Vector3`, `Instance` are unknown) and
+  // the Rojo sourcemap (without it `ReplicatedStorage.shared...` does not
+  // resolve to a file). Both are configured below.
+  //
+  // Do NOT add Zed's own `lsp.luwu-lsp.binary` here: that makes Zed skip the
+  // extension and all of these settings.
   "lsp": {
-    "luau-lsp": {
+    "luwu-lsp": {
       "settings": {
+        // The extension downloads Roblox's definitions and API docs on first
+        // start and passes them to the server with --definitions/--docs.
+        // `plugin` is luau-lsp's default security level; it is the usual
+        // choice for game code. Use "roblox_script" for the full API surface.
+        "roblox": {
+          "enabled": true,
+          "security_level": "plugin",
+          "download_definitions": true,
+          "download_api_documentation": true
+        },
+
+        // This code runs on Roblox, so reject Luwu-only syntax: only features
+        // that plain Luau accepts are valid here. Flip to false only if the
+        // project ever starts shipping Luwu code.
+        "luau_compat": true,
+
+        // The server's own configuration. Keys mirror luau-lsp's VS Code
+        // settings with the `luau-lsp.` prefix removed.
         "luau-lsp": {
-          // Diagnostics are not reported for anything matching these unless the
-          // file is open. Same vendored list as read_only_files above, so what
-          // the editor underlines matches what the gates check.
+          // Makes the server treat the project as a Roblox DataModel
+          // (`game`, services, instance members) instead of plain Luau.
+          "platform": { "type": "roblox" },
+
+          // Diagnostics are not reported for anything matching these unless
+          // the file is open. Same vendored list as `read_only_files` above
+          // and `Toolchain.VENDORED`, so what the editor underlines matches
+          // what the gates check.
           "ignoreGlobs": [
             "**/src/shared/packages/Roact/**",
             "**/src/shared/packages/Fusion/**",
@@ -76,7 +107,25 @@
             "**/src/shared/packages/SkillConstructor/**",
             "**/src/shared/packages/Signal.luau",
             "**/src/shared/packages/Crane/packages/**"
-          ]
+          ],
+          // Resolves `require(ReplicatedStorage.shared.packages.Crane)` and
+          // friends through the Rojo tree. `autogenerate` runs
+          // `rojo sourcemap default.project.json` for us and watches changes.
+          "sourcemap": {
+            "enabled": true,
+            "autogenerate": true,
+            "rojoProjectFile": "default.project.json",
+            "includeNonScripts": true,
+            "sourcemapFile": "sourcemap.json"
+          },
+
+          // Keep the editor's require completion in Roblox style (instance
+          // paths), never `require("./module")`, which Roblox cannot run.
+          "completion": {
+            "imports": {
+              "stringRequires": { "enabled": false }
+            }
+          }
         }
       }
     }

@@ -22,7 +22,14 @@ function BindService.onStart(self: typeof(BindService))
 		table.clear(self.Binds)
 		for _, slotSkills in self.playerProxy().Skills do
 			for skillId, data in slotSkills do
-				self.Binds[data.Parameters.Bind] = skillId
+				local bind = data.Parameters.Bind
+
+				-- `Enum.KeyCode.Unknown` is also what a mouse click reports as
+				-- its KeyCode. A skill left on the default bind would therefore
+				-- fire on every click, so it must never enter the table.
+				if bind == nil or bind == Enum.KeyCode.Unknown then continue end
+
+				self.Binds[bind] = skillId
 			end
 		end
 	end

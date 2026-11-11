@@ -104,7 +104,7 @@ const Specs = {
 
 		Binds = {
 			["Charge"] = Enum.KeyCode.G,
-			["Sendo Hamon"] = Enum.KeyCode.H,
+			["SendoHamon"] = Enum.KeyCode.H,
 		},
 	},
 }
