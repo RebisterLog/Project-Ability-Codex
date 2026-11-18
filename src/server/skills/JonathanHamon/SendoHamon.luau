@@ -10,15 +10,16 @@ const Skill: types.SkillData = {
 	DisplayName = "Sendo Hamon",
 	Cooldown = 2,
 	BaseSpec = "JonathanHamon",
+	SkillCharacters = {"Hit"},
 
 	AttackInfo = {
 		Hitbox = {
-			Size = Vector3.new(7, 7, 7),
-			Offset = CFrame.new(0, 0, -3),
+			Size = Vector3.new(30, 2, 30),
+			Offset = CFrame.new(0, -3, 0),
 			Debug = true,
 		},
 
-		Damage = 15,
+		Damage = 0.25,
 
 		Block = {
 			Blockable = true,
@@ -28,20 +29,17 @@ const Skill: types.SkillData = {
 
 		Stun = {
 			Priority = Enums.Stun.Medium,
-			Duration = 0.7,
-		},
-
-		Ragdoll = {
-			Duration = 2,
-		},
-
-		Knockback = {
-			RelativePart = "Attacker",
-			Duration = 0.1,
-			Velocity = Vector3.new(0, 50, 0),
-			Speed = 40,
+			Duration = 0.5,
 		},
 	},
+
+	ReleaseInfo = {
+		Damage = 2,
+		
+		Ragdoll = {
+			Duration = Enums.Ragdoll.Heavy,
+		},
+	}
 }
 
 function Skill.onInit(self)
@@ -53,6 +51,7 @@ function Skill.onInit(self)
 	const CombatService = Crane:GetService("CombatService")
 
 	const AttackInfo = self.Data.AttackInfo
+	const ReleaseInfo = self.Data.ReleaseInfo
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -62,22 +61,17 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					-- 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
-					-- 						Character = character.instance,
-					-- 						Animation = self:GetAsset("Animations/SendoHamon"),
-					-- 						Speed = seq.Speed,
-					-- 					})
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = self:GetAsset("Animations/SendoHamon"),
+						Speed = seq.Speed,
+					})
 					--
 					-- 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 					-- 						Origin = RootPart,
 					-- 						Sound = self:GetAsset("Sounds/NAME"),
 					-- 					})
 
-					--seq.Cleaner:Add(function()
-					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--		Animation = self:GetAsset("Animations/NAME").Animation,
-					--	})
-					--end)
 				end,
 			},
 
@@ -93,16 +87,11 @@ function Skill.onInit(self)
 					})
 
 					for _, Target in Targets do
-						if table.find(self.AlreadyHit, Target) then continue end
-
 						CombatService:Attack({
 							Attacker = character,
 							Victim = Target,
 							Info = AttackInfo,
-						}):andThen(function(Data: types.AttackData)
-							if not Data.State.Success then return end
-							table.insert(self.AlreadyHit, Target)
-						end)
+						})
 					end
 				end,
 				120,
@@ -111,27 +100,19 @@ function Skill.onInit(self)
 			{
 				125,
 				function(seq)
-					--local Targets = CombatService:Hitbox({
-					--	Skill = self,
-					--	Caster = character,
-					--	Info = AttackInfo.Hitbox
-					--})
+					local Targets = CombatService:Hitbox({
+						Skill = self,
+						Caster = character,
+						Info = AttackInfo.Hitbox
+					})
 
-					--for _, Target in Targets do
-					--	if table.find(self.AlreadyHit, Target) then
-					--		continue
-					--	end
-
-					--	CombatService:Attack({
-					--		Attacker = character,
-					--		Victim = Target,
-					--		Info = AttackInfo,
-					--	}):andThen(function(Data: types.AttackData)
-					--		if not Data.State.Success then return end
-					--		table.insert(self.AlreadyHit, Target)
-
-					--	end)
-					--end
+					for _, Target in Targets do
+						CombatService:Attack({
+							Attacker = character,
+							Victim = Target,
+							Info = ReleaseInfo,
+						})
+					end
 				end,
 			},
 
@@ -153,6 +134,10 @@ function Skill.Interrupt(self)
 	const VFXService = Crane:GetService("VFXService")
 
 	if self.Sequence then self.Sequence:Stop() end
+	
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
+		Animation = self:GetAsset("Animations/SendoHamon").Animation,
+	})
 end
 
 return Skill

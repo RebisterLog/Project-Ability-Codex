@@ -45,6 +45,9 @@ export type ClientSkillContext = {
 export type ClientSkill = {
 	Id: string,
 	Toggle: boolean?,
+	-- One-shot skills (dash, jumps) must not be cut short by InputEnded: the
+	-- skill owns its own lifetime through ctx.Deactivate().
+	IgnoreRelease: boolean?,
 	CanActivate: ((self: ClientSkill, ctx: ClientSkillContext) -> boolean)?,
 	Activate: (self: ClientSkill, ctx: ClientSkillContext) -> (),
 	Stop: ((self: ClientSkill, ctx: ClientSkillContext) -> ())?,
@@ -142,8 +145,9 @@ function ClientSkillService.Stop(self: typeof(ClientSkillService), skillId: stri
 	const entry = self.Skills[skillId]
 	if not entry then return false end
 
-	-- A toggle skill ignores key release; only the next press flips it.
-	if entry.Module.Toggle then return true end
+	-- Toggle and one-shot skills both ignore key release: the latter ends
+	-- itself through ctx.Deactivate() when its movement is actually finished.
+	if entry.Module.Toggle or entry.Module.IgnoreRelease then return true end
 
 	self:Deactivate(skillId)
 	return true
