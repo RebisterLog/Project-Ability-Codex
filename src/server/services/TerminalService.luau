@@ -14,8 +14,8 @@ function TerminalService:onStart()
 	self.ConfigService = Crane:GetService("ConfigService")
 
 	Cmdr:RegisterDefaultCommands()
-	Cmdr.Registry:RegisterCommandsIn(Configuration.TerminalCommandsFolder.Value)
-	Cmdr:RegisterHooksIn(Configuration.TerminalHooksFolder.Value)
+	Cmdr.Registry:RegisterCommandsIn(ServerScriptService.server["terminal-commands"])
+	Cmdr:RegisterHooksIn(ServerScriptService.server["terminal-hooks"])
 end
 
 return TerminalService

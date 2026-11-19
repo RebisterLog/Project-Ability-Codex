@@ -6,7 +6,7 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const PlayerComponent = require(LocalPlayer.PlayerScripts.client.components.Player)
 const Configuration = LocalPlayer.PlayerScripts.client.Configuration
 
-const EffectsFolder = Configuration.EffectsFolder.Value
+const EffectsFolder = ReplicatedStorage.shared.effects
 
 type Effect = {
 	Validate: (self: Effect, data: any?) -> boolean,

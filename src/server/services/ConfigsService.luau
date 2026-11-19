@@ -6,7 +6,7 @@ const SpecClass = require(ServerScriptService.server["combat-classes"].Spec)
 const Specs = require(ReplicatedStorage.shared.configs.Specs)
 const Configuration = ServerScriptService.server.Configuration
 
-const ConfigsFolder = Configuration.ConfigsFolder.Value
+const ConfigsFolder = ReplicatedStorage.shared.configs
 
 const ConfigService = Crane:CreateService({
 	Name = "ConfigService",

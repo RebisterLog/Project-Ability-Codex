@@ -61,7 +61,7 @@ function Player.GetModule(self: typeof(Player), name: string)
 end
 
 function Player.InitModules(self: typeof(Player))
-	for i, module in Configuration.PlayerModulesFolder.Value:QueryDescendants("ModuleScript") do
+	for i, module in ServerScriptService.server["player-modules"]:QueryDescendants("ModuleScript") do
 		const content = Crane.Utils.DeepClone(require(module)) :: PlayerModule
 		content["Name"] = module.Name
 		content["player"] = self

@@ -3,9 +3,8 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const LocalPlayer = Players.LocalPlayer
 
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
-const Configuration = LocalPlayer.PlayerScripts.client.Configuration
 
-const UIStartPoint = Configuration.UIStartPoint.Value
+const UIStartPoint = LocalPlayer.PlayerScripts.client.ui.main
 
 const UIService = Crane:CreateService({
 	Name = "UIService",

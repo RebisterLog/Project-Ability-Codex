@@ -6,7 +6,7 @@ const SkillClass = require(ServerScriptService.server["combat-classes"].Skill)
 const types = require(ServerScriptService.server.types)
 const Configuration = ServerScriptService.server.Configuration
 
-const SkillsFolder = Configuration.SkillsFolder.Value
+const SkillsFolder = ServerScriptService.server.skills
 
 const SkillService = Crane:CreateService({
 	Name = "SkillService",
