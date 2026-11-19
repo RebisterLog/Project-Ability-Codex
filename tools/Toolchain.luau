@@ -43,7 +43,6 @@ const VENDORED = {
 	"src/shared/packages/Janitor",
 	"src/shared/packages/roact-spring",
 	"src/shared/packages/Sequencer",
-	"src/shared/packages/SkillConstructor",
 	"src/shared/packages/Signal.luau",
 	"src/shared/packages/Crane/packages",
 }

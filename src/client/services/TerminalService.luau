@@ -7,14 +7,11 @@ const TerminalService = Crane:CreateService({
 })
 
 function TerminalService:onStart()
+	-- Команды Cmdr приходят из ReplicatedStorage.CmdrClient, который создаёт
+	-- серверная часть (Initialize.luau). Ждём папку перед require — это и
+	-- включает обработчик F2 и клонирование GUI в PlayerGui.
 	const CmdrClient = ReplicatedStorage:WaitForChild("CmdrClient")
-	const Cmdr = require(CmdrClient)
-
-	-- `CmdrClient` регистрирует только то, что уже лежит в `CmdrClient/Commands`,
-	-- а папку наполняет сервер — команда, объявленная там, на клиенте не появится.
-	const SkillConstructorCommand =
-		require(script.Parent.Parent.ui.components.SkillConstructor.Command)
-	Cmdr.Registry:RegisterCommandObject(SkillConstructorCommand.cmdr)
+	require(CmdrClient)
 end
 
 return TerminalService

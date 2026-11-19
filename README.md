@@ -28,14 +28,12 @@ lune run tools/run-tests.luau --json   # same run, machine-readable report
 ```
 
 The aggregate runner executes each suite as its own process, so one failing suite never
-hides the others. Suites live in `tests/` and are discovered automatically; the
-SkillConstructor suites are listed explicitly because they live next to their package.
+hides the others. Suites live in `tests/` and are discovered automatically.
 
 Individual suites can be run on their own:
 
 ```bash
 lune run tests/json.luau
-lune run src/shared/packages/SkillConstructor/tests/structural.luau
 ```
 
 ### Quality gates

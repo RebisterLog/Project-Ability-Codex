@@ -17,7 +17,6 @@ rather than what it does. The same applies to new suites.
 |---|---|---|
 | `tools/check.luau` | external tools | syntax, formatting, types and lint |
 | `tests/*.luau` | `lune` | behaviour of pure logic |
-| `src/shared/packages/SkillConstructor/tests/*.luau` | `lune` (and Studio) | blueprint to skill emission |
 
 `tests/` is scanned recursively, so a new suite is picked up by name without touching
 any list. `tests/baseline/` holds data for the gates and is skipped.

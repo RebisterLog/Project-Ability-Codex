@@ -81,4 +81,3 @@ Regenerate: `lune run tools/gen-code-map.luau`. Scope: key entry surfaces only.
 - roact-spring
 - Sequencer
 - Signal.luau
-- SkillConstructor

@@ -10,35 +10,13 @@
 --- Every suite is its own process: a failing suite does not stop the others from
 --- being seen, and its exit code reaches the caller without wrappers.
 ---
---- The suites are found by themselves: `tests/` is walked recursively, while the
---- SkillConstructor suites are listed explicitly because they live in `src` next
---- to the package, and a general walk of `src` would drag in all the game code.
+--- The suites are found by themselves: `tests/` is walked recursively.
 ---
 --- The exit code is non-zero if at least one check did not pass.
 
 local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
-
---- Suites that do not live in `tests` and are therefore not found by the walk.
-const EXTRA_SUITES = {
-	{
-		name = "SkillConstructor.structural",
-		path = "src/shared/packages/SkillConstructor/tests/structural.luau",
-	},
-	{
-		name = "SkillConstructor.codec",
-		path = "src/shared/packages/SkillConstructor/tests/codec.luau",
-	},
-	{
-		name = "SkillConstructor.emitter",
-		path = "src/shared/packages/SkillConstructor/tests/emitter.luau",
-	},
-	{
-		name = "SkillConstructor.against-spec",
-		path = "src/shared/packages/SkillConstructor/tests/against-spec.luau",
-	},
-}
 
 --- Directories the walk does not enter: `baseline` holds gate data, not checks.
 --- Directories the walk does not enter: `baseline` holds gate data rather than
@@ -157,10 +135,6 @@ if not gatesOnly then
 
 	for _, path in collect(`{root}/tests`, skip) do
 		table.insert(suites, { name = suiteName(root, path), path = path })
-	end
-
-	for _, extra in EXTRA_SUITES do
-		if fs.isFile(`{root}/{extra.path}`) then table.insert(suites, extra) end
 	end
 
 	table.sort(suites, function(a, b)

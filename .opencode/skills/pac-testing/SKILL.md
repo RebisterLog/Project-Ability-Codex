@@ -9,7 +9,6 @@ description: PAC testing/gates: lune suites, quality gates, baseline.
 ```bash
 lune run tools/run-tests.luau                # gates + all suites
 lune run tools/run-tests.luau --json         # machine-readable report
-lune run src/shared/packages/SkillConstructor/tests/structural.luau
 lune run tools/check.luau                   # all gates
 lune run tools/check.luau --only=lint       # selene
 lune run tools/check.luau --strict          # skipped gate = failure
