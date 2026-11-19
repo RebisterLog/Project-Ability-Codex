@@ -5,7 +5,7 @@ const SpecClass = require(ServerScriptService.server["combat-classes"].Spec)
 const types = require(ServerScriptService.server.types)
 const Configuration = ServerScriptService.server.Configuration
 
-const SpecsFolder = Configuration.SpecsFolder.Value
+const SpecsFolder = ServerScriptService.server.specs
 
 const SpecService = Crane:CreateService({
 	Name = "SpecService",
@@ -85,8 +85,17 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 
 		spec:AddSkill(skill)
 
-		local bind = data.Binds and data.Binds[skillId]
-		if not bind then bind = specData.Binds[skillId] end
+		-- Config binds are either a bare enum (legacy) or a declaration that
+		-- also carries `Hold`. A per-owner override is always a bare enum: it
+		-- replaces the key only, never the options attached in the config.
+		const declared = specData.Binds and specData.Binds[skillId]
+		const declaration = if type(declared) == "table"
+			then declared :: { Key: types.Bind, Hold: boolean? }
+			else nil
+		const defaultKey = if declaration then declaration.Key else declared :: types.Bind?
+
+		local bind: types.Bind? = data.Binds and data.Binds[skillId]
+		if not bind then bind = defaultKey end
 
 		if not bind then
 			-- A skill without a bind keeps `Enum.KeyCode.Unknown`, which is also
@@ -102,6 +111,7 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 		end
 
 		skill:SetBind(bind)
+		skill:SetHold(declaration ~= nil and declaration.Hold == true)
 	end
 
 	if _G["CRANE_DEBUGGING"] then

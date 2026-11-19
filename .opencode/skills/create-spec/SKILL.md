@@ -299,9 +299,9 @@ local Specs = {
         IsPublic = true,
 
         Binds = {
-            ["Dash"]              = Enum.KeyCode.C,
-            ["Block"]             = Enum.KeyCode.F,
-            ["Punch"]             = Enum.UserInputType.MouseButton1,
+            ["Dash"]              = { Key = Enum.KeyCode.C, Hold = true },
+            ["Block"]             = { Key = Enum.KeyCode.F, Hold = true },
+            ["Punch"]             = { Key = Enum.UserInputType.MouseButton1, Hold = true },
             ["Run"]               = Enum.KeyCode.LeftControl,
             ["Grab"]              = Enum.KeyCode.X,
 
@@ -313,9 +313,13 @@ local Specs = {
 ```
 
 ### Bind types:
-- `Enum.KeyCode.X` — Keyboard keys
-- `Enum.UserInputType.MouseButton1` — Mouse buttons
-- `Enum.UserInputType.Touch` — Touch input
+- `Enum.KeyCode.X` — bare enum: keyboard key, fires once per press (legacy form)
+- `Enum.UserInputType.MouseButton1` — mouse buttons
+- `Enum.UserInputType.Touch` — touch input
+- `{ Key = Enum..., Hold = true }` — the same key plus hold-to-cast. BindService keeps re-requesting the skill while the key is down, retrying exactly when the replicated cooldown / character state allows it. Use this for Punch / Block / Dash-like skills; omit `Hold` for one-shot skills.
+
+### Colliding binds
+When several skills share a key, BindService sorts the candidates by slot (`Spec` before `SubSpec`) and then alphabetically by skill id inside the slot, and starts the **first one that can actually be cast right now**. Any reason the higher-priority skill cannot start — cooldown, disabled state (e.g. `OnlyForStand` without a stand), absent skill, or blocked character state — passes the key to the next candidate. If none can start and one is hold-capable, that one is chosen and waited on until release.
 
 ---
 

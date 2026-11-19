@@ -67,6 +67,8 @@ const ClientSkillService = Crane:CreateService({
 function ClientSkillService.onStart(self: typeof(ClientSkillService))
 	self.Skills = {} :: { [string]: SkillEntry }
 	self.Cleaner = Crane.Buttler.new()
+	-- Reused by CanStart so the per-frame input checks never allocate.
+	self.CheckCleaner = Crane.Buttler.new()
 
 	for _, module in SkillsFolder:GetDescendants() do
 		if not module:IsA("ModuleScript") then continue end
@@ -106,6 +108,43 @@ function ClientSkillService.MakeContext(
 			self:Deactivate(skillId)
 		end,
 	}
+end
+
+--- Side-effect-free check used by BindService before it sends a StartSkill
+--- packet. Skills with a client module use their own `CanActivate` gate; the
+--- rest fall back to the replicated CharacterState, which is also what keeps
+--- the check honest for skills that have no local prediction at all.
+function ClientSkillService.CanStart(self: typeof(ClientSkillService), skillId: string): boolean
+	const source = Crane:GetService("PlayerService").Proxy()
+	const state = source and source.CharacterState
+	const parameters = state and state.Parameters
+	if not state or not parameters then return false end
+
+	const now = workspace:GetServerTimeNow()
+	if parameters.Ragdoll or parameters.Restrain then return false end
+	if parameters.Stun and parameters.Stun.ExpiresAt > now then return false end
+
+	const character = LocalPlayer.Character
+	const humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not character or not humanoid or humanoid.Health <= 0 then return false end
+
+	-- A restanding body is still physically down after the authoritative state
+	-- cleared. Block local prediction until the humanoid actually stands up.
+	if humanoid.PlatformStand or humanoid:GetState() == Enum.HumanoidStateType.PlatformStanding then
+		return false
+	end
+
+	const entry = self.Skills[skillId]
+	if not entry then return true end
+	if entry.Active then return false end
+
+	const module = entry.Module
+	if not module.CanActivate then return true end
+
+	const ctx = self:MakeContext(skillId, self.CheckCleaner)
+	if not ctx then return false end
+
+	return module.CanActivate(module, ctx) ~= false
 end
 
 function ClientSkillService.Activate(self: typeof(ClientSkillService), skillId: string): boolean
@@ -183,6 +222,7 @@ end
 function ClientSkillService.Destroy(self: typeof(ClientSkillService))
 	self:ResetAll()
 	self.Cleaner:Destroy()
+	self.CheckCleaner:Destroy()
 end
 
 return ClientSkillService

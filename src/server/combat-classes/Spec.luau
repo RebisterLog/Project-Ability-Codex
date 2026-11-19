@@ -96,18 +96,26 @@ function Spec.AddSkill(self: types.Spec, skill: types.Skill)
 
 	if not skill.Initialized then skill:Init() end
 
+	-- A fresh outer table is mandatory: Proxy drops SetDictionary when the new
+	-- value is the same reference as the old one, so republishing skill.Proxy()
+	-- directly would silently stop all later Enabled / ReleaseTime / Bind
+	-- updates from ever reaching the spec (and, through it, the client).
 	skill.Proxy:Subscribe("AnyChange", { "Parameters" }, function(data)
 		self.Proxy:Patch({
 			{
 				Name = "SetDictionary",
 				Path = { "Skills" },
-				Args = { skill.Data.Id, skill.Proxy() },
+				Args = { skill.Data.Id, table.clone(skill.Proxy()) },
 			},
 		})
 	end)
 
 	self.Proxy:Patch({
-		{ Name = "SetDictionary", Path = { "Skills" }, Args = { skill.Data.Id, skill.Proxy() } },
+		{
+			Name = "SetDictionary",
+			Path = { "Skills" },
+			Args = { skill.Data.Id, table.clone(skill.Proxy()) },
+		},
 	})
 
 	self.Cleaner:Add(skill)

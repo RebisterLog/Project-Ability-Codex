@@ -75,8 +75,15 @@ function SpecModule.ReplicateSkills(
 	spec: types.Spec
 )
 	const function mirror()
+		-- Clone the outer table: Proxy ignores a SetDictionary whose value is
+		-- the same reference, so publishing spec.Proxy().Skills directly would
+		-- freeze the client's copy at the first snapshot.
 		self.playerProxy:Patch({
-			{ Name = "SetDictionary", Path = { "Skills" }, Args = { slot, spec.Proxy().Skills } },
+			{
+				Name = "SetDictionary",
+				Path = { "Skills" },
+				Args = { slot, table.clone(spec.Proxy().Skills) },
+			},
 		})
 	end
 

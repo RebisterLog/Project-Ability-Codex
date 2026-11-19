@@ -29,6 +29,7 @@ function Skill.new(character: types.Character, spec: types.Spec, data: types.Ski
 				ReleaseTime = 0,
 				Enabled = false,
 				Bind = Enum.KeyCode.Unknown,
+				Hold = false,
 			},
 		}),
 	}, Skill) :: types.Skill
@@ -98,11 +99,13 @@ function Skill.SetCooldown(self: types.Skill, Time: number)
 	Time *= self.Character:GetParameter("CooldownMultiplier")
 	Time = math.max(Time, 0)
 
+	-- Server time is shared with clients via workspace:GetServerTimeNow(), so
+	-- they can compare ReleaseTime locally and skip doomed StartSkill requests.
 	self.Proxy:Patch({
 		{
 			Name = "SetDictionary",
 			Path = { "Parameters" },
-			Args = { "ReleaseTime", os.clock() + Time },
+			Args = { "ReleaseTime", workspace:GetServerTimeNow() + Time },
 		},
 	})
 end
@@ -119,6 +122,13 @@ function Skill.SetBind(self: types.Skill, bind: types.Bind)
 	})
 end
 
+--- Whether BindService should keep requesting this skill while its key is held.
+function Skill.SetHold(self: types.Skill, hold: boolean)
+	self.Proxy:Patch({
+		{ Name = "SetDictionary", Path = { "Parameters" }, Args = { "Hold", hold } },
+	})
+end
+
 function Skill.SetEnabled(self: types.Skill, enabled: boolean)
 	self.Proxy:Patch({
 		{ Name = "SetDictionary", Path = { "Parameters" }, Args = { "Enabled", enabled } },
@@ -126,7 +136,7 @@ function Skill.SetEnabled(self: types.Skill, enabled: boolean)
 end
 
 function Skill.IsOnCooldown(self: types.Skill)
-	return self.Proxy().Parameters.ReleaseTime > os.clock()
+	return self.Proxy().Parameters.ReleaseTime > workspace:GetServerTimeNow()
 end
 
 function Skill.Pause(self: types.Skill)
@@ -144,6 +154,7 @@ function Skill.Validate(self: types.Skill)
 	if not self.Proxy().Parameters.Enabled then return false end
 	if self.Character:GetParameter("Stun").Duration > 0 then return false end
 	if self.Character:GetParameter("Ragdoll") then return false end
+	if self.Character:GetParameter("Restand") then return false end
 	if self.Character.Humanoid.Health <= 0 then return false end
 	if self:IsOnCooldown() then return false end
 	return true
