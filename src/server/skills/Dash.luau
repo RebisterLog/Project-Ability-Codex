@@ -18,6 +18,9 @@
 
    Sounds
       Dash : optional dash whoosh
+
+   Models
+      DashEffect : dust burst effect part, emitted once at the cast position
 ]=]
 
 const Players = game:GetService("Players")
@@ -89,6 +92,16 @@ function Skill:onInit()
 							Sound = dashSound,
 						})
 					end
+
+					-- Dust burst stays in the world at the cast position: a CFrame
+					-- origin makes EmitParticle anchor the clone instead of welding
+					-- it to the character. CFrame.identity is required to trigger
+					-- PivotTo and adds no actual offset.
+					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+						Particle = self:GetAsset("Models/DashEffect"),
+						Origin = RootPart.CFrame,
+						Offset = CFrame.identity,
+					})
 
 					-- Players predict locally; NPCs have no client, so the server
 					-- owns their movers. Registering the handle with "Destroy" in

@@ -57,6 +57,8 @@ const None = {
 		GrabVL = sound(Sounds.GrabVoice),
 	},
 	Models = {
+		-- Dash
+		DashEffect = GlobalAssets.Dash.DashEffect,
 		-- Shell launch
 		Shell = Models.Shell,
 		-- Hammer

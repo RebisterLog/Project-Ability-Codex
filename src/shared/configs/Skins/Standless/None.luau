@@ -80,6 +80,8 @@ const None = {
 		KnifeStabHit = sound(Sounds.KnifeStabHit),
 	},
 	Models = {
+		-- Dash
+		DashEffect = GlobalAssets.Dash.DashEffect,
 		-- Punche
 		ArmPunchTrail = GlobalAssets.ArmPunchTrails,
 		-- Uppercut

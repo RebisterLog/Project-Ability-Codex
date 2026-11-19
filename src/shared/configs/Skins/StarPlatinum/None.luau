@@ -44,6 +44,8 @@ const None = {
 		GrabVL = sound(GlobalAssets.Grab.Sounds.GrabVoice),
 	},
 	Models = {
+		-- Dash
+		DashEffect = GlobalAssets.Dash.DashEffect,
 		-- Stand model
 		Stand = Models.Stand,
 	},

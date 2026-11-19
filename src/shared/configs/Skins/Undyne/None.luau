@@ -61,6 +61,8 @@ const None = {
 		WaitALittleBitHit = sound(Sounds.WaitALittleBitHit),
 	},
 	Models = {
+		-- Dash
+		DashEffect = GlobalAssets.Dash.DashEffect,
 		Spear = Models.Spear,
 		-- Barrage
 		Barrage = Models.Barrage,
