@@ -36,6 +36,10 @@ local ORDER = {
 	"TARGET_PERFECT_BLOCKABLE",
 	"TARGET_IGNORE_BLOCK",
 	"TARGET_BLOCK_BREAKING",
+
+	"OWN_HAMON_LOW",
+	"OWN_HAMON_READY",
+	"OWN_THREATENED",
 }
 
 local BITS: { [string]: number } = {}

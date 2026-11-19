@@ -1,3 +1,22 @@
+--[=[ CHARGE
+
+   Hold-to-cast Hamon charge. Shared skill: any spec can import it from
+   ~/skills/Charge. Assets are resolved from the Hamon SubSpec skin through
+   `BaseSpec`, so the skill itself owns no spec-specific paths.
+
+   ASSETS:
+
+   Animations
+      Charge : Looped clip played for the whole hold (assets/Default/Hamon).
+
+   Sounds
+      Charge : Sound played on press (assets/Default/Hamon).
+
+   Models
+      Charge : Particle VFX attached to the root while charging.
+
+]=]
+
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -9,7 +28,8 @@ const types = require(ServerScriptService.server.types)
 const Skill: types.SkillData = {
 	DisplayName = "Hamon Charge",
 	Cooldown = 2,
-	BaseSpec = "JonathanHamon",
+	BaseSpec = "Hamon",
+	SkillCharacters = { "Buff" },
 
 	-- A spec change or respawn destroys the skill without a key release, so the
 	-- fill has to be closed here: otherwise the character would stay "filling"
@@ -29,6 +49,7 @@ const Skill: types.SkillData = {
 --- only opens and closes the tap.
 function Skill.Activate(self)
 	const character = self.Character
+	const RootPart = character.RootPart
 	const VFXService = Crane:GetService("VFXService")
 	const CombatService = Crane:GetService("CombatService")
 
@@ -43,12 +64,14 @@ function Skill.Activate(self)
 		CombatService:StopHamonFill(character)
 	end)
 
+	-- `Looped` lives on the clip in the skin config; the animation effect and
+	-- the client handler both read it from there.
 	const animation = self:TryGetAsset("Animations/Charge")
 	if animation then
 		VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 			Character = character.instance,
 			Animation = animation,
-			Looped = true,
+			Speed = 1,
 		})
 
 		Collector:Add(function()
@@ -56,6 +79,28 @@ function Skill.Activate(self)
 				Character = character.instance,
 				Animation = animation.Animation,
 			})
+		end)
+	end
+
+	const chargeSound = self:TryGetAsset("Sounds/Charge")
+	if chargeSound then
+		VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+			Origin = RootPart,
+			Sound = chargeSound,
+		})
+	end
+
+	const chargeVFX = self:TryGetAsset("VFXs/Charge")
+	if chargeVFX then
+		const vfxUUID = math.random(1, 0x7FFFFFFF)
+		VFXService:StartEffect(Players:GetPlayers(), "ForgeVFXHold", {
+			UUID = vfxUUID,
+			Template = chargeVFX,
+			Origin = RootPart,
+		})
+
+		Collector:Add(function()
+			VFXService:StopEffect(Players:GetPlayers(), "ForgeVFXHold", { UUID = vfxUUID })
 		end)
 	end
 

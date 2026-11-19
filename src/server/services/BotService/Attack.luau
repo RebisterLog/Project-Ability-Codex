@@ -12,40 +12,54 @@ type Host = {
 	Character: types.Character,
 	Combo: BotsCharacters.SkillCombo,
 	ComboIndex: number,
+	-- Set by the attack layer when it starts a hold skill (Charge), consumed
+	-- by Bot.Tick's release rules.
+	HeldSkill: string?,
+	HeldAt: number,
 	Random: Random,
 }
 
 local CANDIDATES: { types.Skill } = {}
+local OWNERS: { [string]: types.Spec } = {}
 
 local function CollectCandidates(
-	spec: types.Spec,
+	specs: { types.Spec? },
 	config: BotsCharacters.BotCharacterConfig,
 	stand: types.Stand?
 ): { types.Skill }
 	table.clear(CANDIDATES)
+	table.clear(OWNERS)
 
-	for id, skill in spec.Skills do
-		if Defense.IsHeldGuard(skill.Data.SkillCharacters) then continue end
+	for _, spec in specs do
+		if not spec then continue end
 
-		local options = config.Skills[id]
-		if not options then continue end
+		for id, skill in spec.Skills do
+			if OWNERS[id] then continue end
+			if Defense.IsHeldGuard(skill.Data.SkillCharacters) then continue end
 
-		local valid = skill:Validate()
-		local requiredStandState = options.StandSummon
-		local isStandActive = stand ~= nil and stand:IsActive()
-		local standNeedsToggle = requiredStandState ~= nil
-			and isStandActive ~= requiredStandState
-			and stand ~= nil
+			local options = config.Skills[id]
+			if not options then continue end
 
-		if not valid and standNeedsToggle then
-			valid = not skill.Character:GetParameter("NoSkillCast")
-				and skill.Character:GetParameter("Stun").Duration <= 0
-				and not skill.Character:GetParameter("Ragdoll")
-				and skill.Character.Humanoid.Health > 0
-				and not skill:IsOnCooldown()
+			local valid = skill:Validate()
+			local requiredStandState = options.StandSummon
+			local isStandActive = stand ~= nil and stand:IsActive()
+			local standNeedsToggle = requiredStandState ~= nil
+				and isStandActive ~= requiredStandState
+				and stand ~= nil
+
+			if not valid and standNeedsToggle then
+				valid = not skill.Character:GetParameter("NoSkillCast")
+					and skill.Character:GetParameter("Stun").Duration <= 0
+					and not skill.Character:GetParameter("Ragdoll")
+					and skill.Character.Humanoid.Health > 0
+					and not skill:IsOnCooldown()
+			end
+
+			if valid then
+				table.insert(CANDIDATES, skill)
+				OWNERS[id] = spec
+			end
 		end
-
-		if valid then table.insert(CANDIDATES, skill) end
 	end
 
 	return CANDIDATES
@@ -64,16 +78,19 @@ function Attack.RollCombo(
 end
 
 function Attack.Step(host: Host, mask: number, distance: number)
-	local spec = host.Character.Spec
-	if not spec then return end
+	-- Skills can live in either slot: Standless keeps Block/Dash/Punch, Hamon
+	-- keeps the Hamon skills. Both take part in selection.
+	const specs = { host.Character.SubSpec, host.Character.Spec }
+	if not host.Character.Spec and not host.Character.SubSpec then return end
 
-	if spec:CheckActiveSkills() then return end
+	-- The action slot is shared by both specs (Character checks both).
+	if host.Character:CheckActiveSkills() then return end
 
 	local combo = host.Combo
 	local comboSkillId = combo[host.ComboIndex]
 	local stand = Crane:GetService("StandService"):GetStand(host.Character) :: types.Stand?
 
-	local candidates = CollectCandidates(spec, host.Config, stand)
+	const candidates = CollectCandidates(specs, host.Config, stand)
 	if #candidates == 0 then
 		if host.Config.Debug then print("Bot no candidates") end
 		return
@@ -100,7 +117,8 @@ function Attack.Step(host: Host, mask: number, distance: number)
 
 		if isStandActive ~= requiredStandState then
 			if host.Config.Debug then print("Bot summons stand for", best.Id) end
-			spec:ActivateSkill("Summon")
+			const summonSpec = OWNERS.Summon or host.Character.Spec
+			if summonSpec then summonSpec:ActivateSkill("Summon") end
 			return
 		end
 	end
@@ -114,7 +132,22 @@ function Attack.Step(host: Host, mask: number, distance: number)
 		end
 	end
 
-	spec:ActivateSkill(best.Id)
+	-- Hold skills (Charge) yield until DeactivateSkill. Keep the tick free by
+	-- spawning the activation and remembering what Bot.Tick must release.
+	const hold = options
+		and (options.HoldMaxTime ~= nil or (options.HoldWhile and #options.HoldWhile > 0))
+	const owner = OWNERS[best.Id] or host.Character.SubSpec or host.Character.Spec
+
+	if hold then
+		host.HeldSkill = best.Id
+		host.HeldAt = os.clock()
+
+		task.spawn(function()
+			if owner then owner:ActivateSkill(best.Id) end
+		end)
+	else
+		if owner then owner:ActivateSkill(best.Id) end
+	end
 end
 
 return Attack

@@ -64,6 +64,8 @@ type AnimationsPlayProps = {
 	Speed: number?,
 	FadeInTime: number?,
 	Weight: number?,
+	-- Looping is a property of the AnimationTrack, not of the Animation asset.
+	Looped: boolean?,
 }
 Actor:BindToMessage(
 	"Play",
@@ -87,12 +89,10 @@ Actor:BindToMessage(
 			end)
 		end
 
-		if Tracks[animator][animation] then
-			Tracks[animator][animation]:Play(props.FadeInTime, props.Weight, props.Speed)
-		else
-			Tracks[animator][animation] = animator:LoadAnimation(animation)
-			Tracks[animator][animation]:Play(props.FadeInTime, props.Weight, props.Speed)
-		end
+		const track = Tracks[animator][animation] or animator:LoadAnimation(animation)
+		Tracks[animator][animation] = track
+		track.Looped = props.Looped == true
+		track:Play(props.FadeInTime, props.Weight, props.Speed)
 	end
 )
 

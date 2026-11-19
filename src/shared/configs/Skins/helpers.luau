@@ -22,6 +22,15 @@ function helpers.actionAnimation(Animation: Animation)
 	return {
 		Animation = Animation,
 		Priority = Enum.AnimationPriority.Action,
+		Looped = false,
+	}
+end
+
+function helpers.loopedAnimation(Animation: Animation)
+	return {
+		Animation = Animation,
+		Priority = Enum.AnimationPriority.Action,
+		Looped = true,
 	}
 end
 

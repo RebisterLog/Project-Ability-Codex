@@ -49,6 +49,13 @@ const SkillConditions = {
 
 	TARGET_DODGING = "TARGET_DODGING",
 	TARGET_INTERRUPTABLE = "TARGET_INTERRUPTABLE",
+
+	-- Own state of the bot, not of the target. Used by resource skills (Charge):
+	-- the bot only charges while its Hamon is below the target level, and drops
+	-- the hold as soon as it is ready or a hit is incoming.
+	OWN_HAMON_LOW = "OWN_HAMON_LOW",
+	OWN_HAMON_READY = "OWN_HAMON_READY",
+	OWN_THREATENED = "OWN_THREATENED",
 }
 
 export type SkillCharacter = keyof<typeof(SkillCharacters)>
@@ -91,6 +98,10 @@ export type SkillPreference = {
 	-- когда перестаёт быть лучшим кандидатом (см. SkillPriority.ShouldRelease).
 	HoldWhile: { SkillCondition }?,
 
+	-- Жёсткий предел удержания в секундах. Страхует от «забыл отпустить»:
+	-- по истечении бот принудительно вызывает DeactivateSkill.
+	HoldMaxTime: number?,
+
 	-- Сдвиг приоритета, если автору не хватает условий для разведения скиллов.
 	Priority: number?,
 
@@ -101,8 +112,10 @@ export type SkillPreference = {
 }
 
 export type BotCharacterConfig = {
-	-- Characteristics
+	-- Characteristics. `SubSpec` goes to the secondary slot: the bot gets its
+	-- skills from it while the primary `Spec` owns movement/animations.
 	Spec: string,
+	SubSpec: string?,
 	Chaotic: number,
 	Aggressive: number,
 	Reaction: number,

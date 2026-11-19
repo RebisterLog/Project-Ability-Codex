@@ -1,16 +1,35 @@
+--[=[ SENDO_HAMON
+
+   Ground-wave Hamon: repeated small hits while the wave expands, then a
+   ragdolling release. Costs 25 Hamon on cast.
+
+   ASSETS:
+
+   Animations
+      SendoHamon : Wave animation (assets/JonathanHamon).
+
+   Sounds
+      SendoHamon : Wave sound (assets/JonathanHamon).
+
+   Models
+      SendoHamon : Particle VFX part attached to the root.
+
+]=]
+
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Enums = require(ServerScriptService.server.Enums)
-const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const types = require(ServerScriptService.server.types)
+
+const HAMON_COST = 25
 
 const Skill: types.SkillData = {
 	DisplayName = "Sendo Hamon",
 	Cooldown = 2,
 	BaseSpec = "JonathanHamon",
-	SkillCharacters = {"Hit"},
+	SkillCharacters = { "Hit", "Blockable", "Ragdoll", "IgnoreBlock" },
 
 	AttackInfo = {
 		Hitbox = {
@@ -35,19 +54,25 @@ const Skill: types.SkillData = {
 
 	ReleaseInfo = {
 		Damage = 2,
-		
-		Ragdoll = {
+
+		Block = {
+			BlockBreak = true,
+		},
+
+		Restand = {
 			Duration = Enums.Ragdoll.Heavy,
 		},
-	}
+
+		-- Ragdoll = {
+		-- 	Duration = Enums.Ragdoll.Heavy,
+		-- },
+	},
 }
 
 function Skill.onInit(self)
 	const character = self.Character
 	const RootPart = character.RootPart
-	const Humanoid = character.Humanoid
 	const VFXService = Crane:GetService("VFXService")
-
 	const CombatService = Crane:GetService("CombatService")
 
 	const AttackInfo = self.Data.AttackInfo
@@ -61,26 +86,48 @@ function Skill.onInit(self)
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
+					const anim = self:GetAsset("Animations/SendoHamon")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = self:GetAsset("Animations/SendoHamon"),
+						Animation = anim,
 						Speed = seq.Speed,
 					})
-					--
-					-- 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-					-- 						Origin = RootPart,
-					-- 						Sound = self:GetAsset("Sounds/NAME"),
-					-- 					})
 
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = character.instance,
+							Animation = anim.Animation,
+						})
+					end)
+
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/SendoHamon"),
+					})
+
+					const vfxUUID = math.random(1, 0x7FFFFFFF)
+					VFXService:StartEffect(Players:GetPlayers(), "ForgeVFXHold", {
+						UUID = vfxUUID,
+						Template = self:GetAsset("Models/SendoHamon"),
+						Origin = RootPart,
+					})
+
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"ForgeVFXHold",
+							{ UUID = vfxUUID }
+						)
+					end)
 				end,
 			},
 
 			{
 				20,
-				function(seq, frame)
+				function(_, frame)
 					if frame % 10 ~= 0 then return end
 
-					local Targets = CombatService:Hitbox({
+					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = AttackInfo.Hitbox,
@@ -99,11 +146,11 @@ function Skill.onInit(self)
 
 			{
 				125,
-				function(seq)
-					local Targets = CombatService:Hitbox({
+				function()
+					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
-						Info = AttackInfo.Hitbox
+						Info = AttackInfo.Hitbox,
 					})
 
 					for _, Target in Targets do
@@ -122,6 +169,10 @@ function Skill.onInit(self)
 end
 
 function Skill.Activate(self)
+	const CombatService = Crane:GetService("CombatService")
+	const paid = CombatService:ConsumeHamonCharge(self.Character, HAMON_COST)
+	if not paid then return end
+
 	if self.Sequence then
 		self.Sequence:Play()
 		self.Sequence:Await()
@@ -129,15 +180,7 @@ function Skill.Activate(self)
 end
 
 function Skill.Interrupt(self)
-	const character = self.Character
-	const RootPart = character.RootPart
-	const VFXService = Crane:GetService("VFXService")
-
 	if self.Sequence then self.Sequence:Stop() end
-	
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-		Animation = self:GetAsset("Animations/SendoHamon").Animation,
-	})
 end
 
 return Skill

@@ -22,6 +22,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 
 -- Components
 const Button = require(script.Parent.utils.Button)
+const HamonComponent = require(script.Parent.components.HamonComponent)
 const Helix = require(script.Parent.utils.Helix)
 const PlayerHUDComponent = require(script.Parent.components.PlayerHUDComponent)
 const PreloadingComponent = require(script.Parent.components.PreloadingComponent)
@@ -121,6 +122,7 @@ return function(
 		[Children] = {
 			RootRouter = router:Render("PlayerHUD"),
 			PreloadingComponent = PreloadingComponent(scope, proxies, router),
+			HamonDebug = HamonComponent(scope, playerProxy, gameProxy),
 		},
 	})
 end

@@ -1,8 +1,10 @@
 --!native
 --!optimize 2
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Conditions = require(script.Parent.Conditions)
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
 local Enums = require(ServerScriptService.server.Enums)
 local types = require(ServerScriptService.server.types)
 
@@ -17,6 +19,10 @@ local types = require(ServerScriptService.server.types)
 -- Boundaries of `TARGET_SHORT_RANGE` / `TARGET_MIDDLE_RANGE` / `TARGET_LARGE_RANGE`.
 local RANGE_SHORT = 10
 local RANGE_MIDDLE = 20
+
+-- Charge target: Pluck&Luck spends 50 to apply its Burn, so the bot only
+-- considers itself "ready" once that threshold is reached.
+local HAMON_READY = 50
 
 -- Bitwise operations come from `bit32`: the formatter version used here chokes on
 -- the `&` and `|` operators, while `band`/`bor` compile to the same instructions.
@@ -38,6 +44,11 @@ local BITS = {
 	BLOCKABLE = Conditions.Bit("TARGET_BLOCKABLE"),
 	PERFECT_BLOCKABLE = Conditions.Bit("TARGET_PERFECT_BLOCKABLE"),
 	IGNORE_BLOCK = Conditions.Bit("TARGET_IGNORE_BLOCK"),
+	BLOCK_BREAKING = Conditions.Bit("TARGET_BLOCK_BREAKING"),
+
+	OWN_HAMON_LOW = Conditions.Bit("OWN_HAMON_LOW"),
+	OWN_HAMON_READY = Conditions.Bit("OWN_HAMON_READY"),
+	OWN_THREATENED = Conditions.Bit("OWN_THREATENED"),
 }
 
 export type SenseProperties = {
@@ -87,6 +98,12 @@ local function TagMask(tags: { string }?): number
 	if table.find(tags, "Blockable") then mask = bor(mask, BITS.BLOCKABLE) end
 	if table.find(tags, "IgnoreBlock") then mask = bor(mask, BITS.IGNORE_BLOCK) end
 
+	-- Skills spell this tag both ways in the repo (the vocabulary key and its
+	-- value); guarding against a breaker is pointless.
+	if table.find(tags, "BlockBreak") or table.find(tags, "BlockBreaker") then
+		mask = bor(mask, BITS.BLOCK_BREAKING)
+	end
+
 	if table.find(tags, "PerfectBlockable") or table.find(tags, "PerfectBlock") then
 		mask = bor(mask, BITS.PERFECT_BLOCKABLE)
 	end
@@ -106,7 +123,7 @@ end
 function Sense.Refresh(self: Sense)
 	local target = self.Target
 
-	if not target or not target.Spec or not target.RootPart or not self.Character.RootPart then
+	if not target or not target.RootPart or not self.Character.RootPart then
 		self.Mask = 0
 		self.Distance = 0
 
@@ -114,6 +131,15 @@ function Sense.Refresh(self: Sense)
 	end
 
 	local mask = 0
+
+	-- Own state shares the mask with the target conditions: a skill config can
+	-- gate a resource skill on "my Hamon is low" as well as on the enemy.
+	const charge = Crane:GetService("CombatService"):GetHamonCharge(self.Character)
+	if charge < HAMON_READY then
+		mask = bor(mask, BITS.OWN_HAMON_LOW)
+	else
+		mask = bor(mask, BITS.OWN_HAMON_READY)
+	end
 
 	local distance = (target.RootPart.Position - self.Character.RootPart.Position).Magnitude
 	self.Distance = distance
@@ -145,11 +171,15 @@ function Sense.Refresh(self: Sense)
 	end
 
 	-- Single pass over the active skills: `TARGET_ATTACKING` is set by the `Hit` tag.
-	local spec = target.Spec
-	local _, activeSkills = spec:CheckActiveSkills()
+	-- A player can keep all combat skills in a SubSpec, so both slots matter.
+	for _, spec in { target.Spec, target.SubSpec } do
+		if not spec then continue end
 
-	for _, skill in activeSkills do
-		mask = bor(mask, TagMask(skill.Data.SkillCharacters))
+		const _, activeSkills = spec:CheckActiveSkills()
+
+		for _, skill in activeSkills do
+			mask = bor(mask, TagMask(skill.Data.SkillCharacters))
+		end
 	end
 
 	self.Mask = mask

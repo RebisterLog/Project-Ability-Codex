@@ -1,15 +1,42 @@
+--[=[ YELLOW_OVERDRIVE
+
+   Portable Hamon barrage. Needs at least 5 Hamon to start, then drains 5 per
+   second (in small per-frame chunks) until the resource runs out or the
+   animation reaches its last frame.
+
+   ASSETS:
+
+   Animations
+      YellowOverdrive : Barrage clip (assets/JonathanHamon).
+
+   Sounds
+      YellowOverdrive : Barrage sound (assets/JonathanHamon).
+
+   Models
+      YellowOverdrive : Particle VFX attached to the root for the duration.
+
+]=]
+
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Enums = require(ServerScriptService.server.Enums)
-const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const types = require(ServerScriptService.server.types)
+
+const MIN_HAMON = 5
+const DRAIN_PER_SECOND = 5
 
 const Skill: types.SkillData = {
 	DisplayName = "Yellow Overdrive",
-	Cooldown = 2,
+	Cooldown = 10,
 	BaseSpec = "JonathanHamon",
+	SkillCharacters = {
+		"Hit",
+		"Blockable",
+		"Stun",
+		"ComboExtender",
+	},
 
 	AttackInfo = {
 		Hitbox = {
@@ -18,7 +45,7 @@ const Skill: types.SkillData = {
 			Debug = true,
 		},
 
-		Damage = 15,
+		Damage = 0.6,
 
 		Block = {
 			Blockable = true,
@@ -27,19 +54,14 @@ const Skill: types.SkillData = {
 		},
 
 		Stun = {
-			Priority = Enums.Stun.Medium,
-			Duration = 0.7,
-		},
-
-		Ragdoll = {
-			Duration = 2,
+			Priority = Enums.Stun.Light,
+			Duration = Enums.StunTime.Light,
 		},
 
 		Knockback = {
-			RelativePart = "Attacker",
-			Duration = 0.1,
-			Velocity = Vector3.new(0, 50, 0),
-			Speed = 40,
+			Direction = { Mode = "AwayFromAttacker" },
+			Push = 5,
+			Hold = 0.1,
 		},
 	},
 }
@@ -47,87 +69,132 @@ const Skill: types.SkillData = {
 function Skill.onInit(self)
 	const character = self.Character
 	const RootPart = character.RootPart
-	const Humanoid = character.Humanoid
 	const VFXService = Crane:GetService("VFXService")
-
 	const CombatService = Crane:GetService("CombatService")
 
 	const AttackInfo = self.Data.AttackInfo
 
-	self.AlreadyHit = {}
+	self.LastDrain = 0
+	self.VFXUUID = math.random(1, 0x7FFFFFFF)
+	self.VFXStarted = false
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
+		-- Sequencer reads `Validator` — `Validate` would be silently ignored.
+		Validator = function()
+			-- Stopping the sequence runs its Cleaner, which removes the clip,
+			-- the sound and the particle VFX in one place.
+			return CombatService:GetHamonCharge(character) > 0
+		end,
+
 		Frames = {
 			{
 				0,
 				function(seq)
-					--seq.Cleaner:Add(CombatService:AddArmor(character, true))
-					--seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
-					--seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+					const anim = self:GetAsset("Animations/YellowOverdrive")
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = character.instance,
+						Animation = anim,
+						Speed = seq.Speed,
+					})
 
-					--table.clear(self.AlreadyHit)
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = character.instance,
+							Animation = anim.Animation,
+						})
+					end)
 
-					--local anim = self:GetAsset("Animations/NAME")
-					--VFXService:StartEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--	Animation = anim,
-					--	Speed = seq.Speed,
-					--})
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/YellowOverdrive"),
+					})
 
-					--VFXService:StartEffect(Players:GetPlayers(), "Sound", { Origin = RootPart, Sound = self:GetAsset("Sounds/NAME") })
-
-					--seq.Cleaner:Add(function()
-					--	VFXService:StopEffect(Players:GetPlayers(), "Animation", { Character = character.instance,
-					--		Animation = anim.Animation,
-					--	})
-					--end)
+					-- The VFX itself starts right before the first hitbox (frame 25).
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(
+							Players:GetPlayers(),
+							"ForgeVFXHold",
+							{ UUID = self.VFXUUID }
+						)
+					end)
 				end,
 			},
 
 			{
-				30,
-				function(seq)
-					--local Targets = CombatService:Hitbox({
-					--	Skill = self,
-					--	Caster = character,
-					--	Info = AttackInfo.Hitbox
-					--})
+				25,
+				function(_, currentFrame)
+					if not self.VFXStarted then
+						self.VFXStarted = true
+						VFXService:StartEffect(Players:GetPlayers(), "ForgeVFXHold", {
+							UUID = self.VFXUUID,
+							Template = self:GetAsset("Models/YellowOverdrive"),
+							Origin = RootPart,
+						})
+					end
 
-					--for _, Target in Targets do
-					--	if table.find(self.AlreadyHit, Target) then
-					--		continue
-					--	end
+					-- Drain by elapsed wall time, not by frame count: Timescale
+					-- changes frame pacing but must not change the Hamon cost.
+					const now = workspace:GetServerTimeNow()
+					const elapsed = now - self.LastDrain
+					self.LastDrain = now
 
-					--	CombatService:Attack({
-					--		Attacker = character,
-					--		Victim = Target,
-					--		Info = AttackInfo,
-					--	}):andThen(function(Data: types.AttackData)
-					--		if not Data.State.Success then return end
-					--		table.insert(self.AlreadyHit, Target)
+					if elapsed > 0 then
+						const spent =
+							CombatService:ConsumeHamonCharge(character, DRAIN_PER_SECOND * elapsed)
+						if not spent then
+							self.Sequence:Stop()
+							return
+						end
+					end
 
-					--	end)
-					--end
+					if currentFrame % 5 ~= 0 then return end
+
+					const Targets = CombatService:Hitbox({
+						Skill = self,
+						Caster = character,
+						Info = AttackInfo.Hitbox,
+					})
+
+					for _, Target in Targets do
+						CombatService:Attack({
+							Attacker = character,
+							Victim = Target,
+							Info = AttackInfo,
+						})
+					end
 				end,
-				35,
+				150,
 			},
 
-			{ 45 },
+			{ 155 },
 		},
 	}))
 end
 
 function Skill.Activate(self)
+	const CombatService = Crane:GetService("CombatService")
+	if CombatService:GetHamonCharge(self.Character) < MIN_HAMON then return end
+
+	-- The clock starts at the cast, so the wind-up frames count toward the drain.
+	self.LastDrain = workspace:GetServerTimeNow()
+	-- The skill instance lives as long as the character; the frame-25 VFX latch
+	-- has to be rearmed for every cast, otherwise bots (which recast from combos)
+	-- stop showing the effect after the very first use.
+	self.VFXStarted = false
+
 	if self.Sequence then
+		-- Hold-to-cast, like StandBarrage: releasing the bind fires Deactivated
+		-- and ends the barrage before its animation/hamon budget runs out.
+		self.Sequence.Cleaner:Add(self.Deactivated:Once(function()
+			self.Sequence:Stop()
+		end))
+
 		self.Sequence:Play()
 		self.Sequence:Await()
 	end
 end
 
 function Skill.Interrupt(self)
-	const character = self.Character
-	const RootPart = character.RootPart
-	const VFXService = Crane:GetService("VFXService")
-
 	if self.Sequence then self.Sequence:Stop() end
 end
 

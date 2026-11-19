@@ -8,6 +8,7 @@ type AnimationClip = {
 	Priority: Enum.AnimationPriority?,
 	FadeInTime: number?,
 	Weight: number?,
+	Looped: boolean?,
 	Overlay: boolean?,
 }
 
@@ -22,7 +23,6 @@ type AnimationData = {
 	Animation: AnimationClip?,
 	Speed: number?,
 	-- Roblox keeps looping on the track, not on the Animation asset.
-	Looped: boolean?,
 	AdjustSpeed: number?,
 	-- PauseAll / ResumeAll only.
 	Characters: { Model }?,
@@ -73,7 +73,7 @@ function Animation:onStart(data: AnimationData)
 		Priority = clip.Priority,
 		FadeInTime = clip.FadeInTime,
 		Weight = clip.Weight,
-		Looped = data.Looped,
+		Looped = clip.Looped,
 		Overlay = clip.Overlay,
 	})
 end

@@ -11,10 +11,14 @@ local Crane = require(ReplicatedStorage.shared.packages.Crane)
 local NavigationController = require(script.Parent.NavigationController)
 
 local Attack = require(script.Parent.Attack)
+local Conditions = require(script.Parent.Conditions)
 local Defense = require(script.Parent.Defense)
 local Posture = require(script.Parent.Posture)
 local Sense = require(script.Parent.Sense)
+local SkillPriority = require(script.Parent.SkillPriority)
 local Threat = require(script.Parent.Threat)
+
+local bor = bit32.bor
 
 --- The bot: target, navigation, spec.
 ---
@@ -61,6 +65,11 @@ type BotProperities = {
 	Combo: BotsCharacters.SkillCombo,
 	ComboIndex: number,
 
+	-- A skill held by the bot (Charge) and the time it was pressed. The timeout
+	-- is the guard against "forgot to release" when no condition fires.
+	HeldSkill: string?,
+	HeldAt: number,
+
 	Random: Random,
 	Accumulator: number,
 }
@@ -77,6 +86,9 @@ type BotMethods = {
 	IsGuardOnCooldown: (self: Bot) -> boolean,
 	ReleaseGuard: (self: Bot) -> (),
 
+	ReleaseHeld: (self: Bot) -> (),
+	UpdateHeld: (self: Bot, mask: number) -> (),
+
 	Destroy: (self: Bot) -> (),
 }
 
@@ -85,23 +97,44 @@ export type Bot = BotProperities & BotMethods
 local Bot = {}
 Bot.__index = Bot
 
---- Defense roles come from the tags of the skills of the spec and not from the
+--- Defense roles come from the tags of the skills of the specs and not from the
 --- config: the skill itself decides what it is, the guard or the retreat.
-local function CollectRoles(spec: types.Spec): { Defense.RoleSkill }
+local function CollectRoles(specs: { types.Spec? }): { Defense.RoleSkill }
 	local roles: { Defense.RoleSkill } = {}
 
-	for id, skill in spec.Skills do
-		table.insert(roles, { Id = id, Tags = skill.Data.SkillCharacters })
+	for _, spec in specs do
+		if not spec then continue end
+
+		for id, skill in spec.Skills do
+			table.insert(roles, { Id = id, Tags = skill.Data.SkillCharacters })
+		end
 	end
 
 	return roles
+end
+
+--- Skills may live in either slot: Standless owns Block/Dash/Punch, Hamon owns
+--- the Hamon skills. Helpers below always look in both.
+local function Specs(self: Bot): { types.Spec? }
+	return { self.Character.SubSpec, self.Character.Spec }
+end
+
+local function FindSkill(self: Bot, id: string): (types.Skill?, types.Spec?)
+	for _, spec in Specs(self) do
+		if not spec then continue end
+
+		const skill = spec.Skills[id]
+		if skill then return skill, spec end
+	end
+
+	return nil, nil
 end
 
 function Bot.IsGuardHeld(self: Bot): boolean
 	local guardId = self.Roles.Guard
 	if not guardId then return false end
 
-	local guard = self.Character.Spec.Skills[guardId]
+	const guard, _ = FindSkill(self, guardId)
 
 	return guard ~= nil and guard.Active
 end
@@ -111,7 +144,7 @@ function Bot.IsGuardOnCooldown(self: Bot): boolean
 	local guardId = self.Roles.Guard
 	if not guardId then return true end
 
-	local guard = self.Character.Spec.Skills[guardId]
+	const guard, _ = FindSkill(self, guardId)
 	if not guard then return true end
 
 	return guard:IsOnCooldown()
@@ -121,7 +154,43 @@ function Bot.ReleaseGuard(self: Bot)
 	local guardId = self.Roles.Guard
 	if not guardId then return end
 
-	self.Character.Spec:DeactivateSkill(guardId)
+	const _, spec = FindSkill(self, guardId)
+	if spec then spec:DeactivateSkill(guardId) end
+end
+
+--- Drop a held resource skill right now: used by incoming hits and by
+--- `UpdateHeld` once any release rule fires.
+function Bot.ReleaseHeld(self: Bot)
+	const skillId = self.HeldSkill
+	if not skillId then return end
+
+	self.HeldSkill = nil
+
+	const _, spec = FindSkill(self, skillId)
+	if spec then spec:DeactivateSkill(skillId) end
+end
+
+function Bot.UpdateHeld(self: Bot, mask: number)
+	const skillId = self.HeldSkill
+	if not skillId then return end
+
+	-- An interrupt (stun, ragdoll, death) can end the skill without going
+	-- through our release rules: forget it instead of holding a stale id.
+	const skill, _ = FindSkill(self, skillId)
+	if not skill or not skill.Active then
+		self.HeldSkill = nil
+		return
+	end
+
+	const options = self.Config.Skills[skillId]
+	const holdMax = options and options.HoldMaxTime
+
+	if holdMax and os.clock() - self.HeldAt >= holdMax then
+		self:ReleaseHeld()
+		return
+	end
+
+	if SkillPriority.ShouldRelease(self.Config, skillId, mask, nil) then self:ReleaseHeld() end
 end
 
 function Bot.SetPosture(self: Bot, posture: Posture.Posture)
@@ -152,6 +221,9 @@ function Bot.OnIncoming(self: Bot, data: types.HitboxData)
 
 	if not self.Threat:Track(data, target) then return end
 
+	-- A charge in progress must never survive the start of an enemy attack.
+	self:ReleaseHeld()
+
 	self:SetPosture("Defend")
 
 	local decision = Defense.React(data, {
@@ -171,7 +243,8 @@ function Bot.OnIncoming(self: Bot, data: types.HitboxData)
 	-- (`PerfectBlockTime`) has to settle before the states of the victim are
 	-- computed.
 	task.spawn(function()
-		self.Character.Spec:ActivateSkill(skillId)
+		const _, spec = FindSkill(self, skillId)
+		if spec then spec:ActivateSkill(skillId) end
 	end)
 end
 
@@ -189,7 +262,11 @@ function Bot.Tick(self: Bot, dt: number)
 	self.Sense:Refresh()
 
 	local mask = self.Sense.Mask
-	local guardId = self.Roles.Guard
+	if self.Threat:IsRecent() then mask = bor(mask, Conditions.Bit("OWN_THREATENED")) end
+
+	self:UpdateHeld(mask)
+
+	const guardId = self.Roles.Guard
 
 	if
 		guardId
@@ -221,7 +298,7 @@ function Bot.SetTarget(self: Bot, character: types.Character?)
 	end
 
 	if self.Target == character then return end
-	if not character.Spec then return end
+	if not (character.Spec or character.SubSpec) then return end
 
 	self.TargetCleaner:Clean()
 
@@ -249,6 +326,7 @@ function Bot.ClearTarget(self: Bot)
 	self.TargetCleaner:Clean()
 
 	self:ReleaseGuard()
+	self:ReleaseHeld()
 
 	self.Target = nil
 	self.Sense:ClearTarget()
@@ -267,9 +345,12 @@ end
 
 return {
 	new = function(character: types.Character, config: BotsCharacters.BotCharacterConfig)
+		-- The primary spec owns movement/animations; the optional SubSpec owns
+		-- the combat skills (SetSpec routes by the spec's configured type).
 		character:SetSpec(config.Spec)
+		if config.SubSpec then character:SetSpec(config.SubSpec) end
 
-		local spec = character.Spec
+		const primarySpec = character.Spec
 		local random = Random.new()
 
 		local navigator = NavigationController.new(character.instance, {
@@ -301,18 +382,24 @@ return {
 			CombatService = Crane:GetService("CombatService"),
 
 			Posture = "Idle",
-			Roles = Defense.ResolveRoles(CollectRoles(spec), config.Skills),
+			Roles = Defense.ResolveRoles(
+				CollectRoles({ character.SubSpec, character.Spec }),
+				config.Skills
+			),
 			Sense = Sense.new(character),
 			Threat = Threat.new(character),
 
 			Combo = Attack.RollCombo(config, random),
 			ComboIndex = 1,
 
+			HeldSkill = nil,
+			HeldAt = 0,
+
 			Random = random,
 			Accumulator = 0,
 		}, Bot)
 
-		spec:ActivateSkill("Run")
+		if primarySpec then primarySpec:ActivateSkill("Run") end
 
 		cleaner:Add(character.OnTakeDamage:Connect(function(attacker)
 			if not attacker then return end
