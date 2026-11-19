@@ -115,13 +115,10 @@ function Skill:onInit()
 									--BlockCancel = self.PunchCount == self.Data.MaxCombo
 								},
 								Knockback = {
-									RelativePart = "Attacker",
-									-- ToFront = if self.PunchCount ~= self.Data.MaxCombo
-									-- 	then 5
-									-- 	else false,
-									Speed = self.PunchCount == self.Data.MaxCombo and 75 or 8,
-									Duration = 0.2, --self.PunchCount == self.Data.MaxCombo and 0.05
-									--or 0.05,
+									Direction = { Mode = "AwayFromAttacker" },
+									-- Add = { { Mode = "ToFront", Distance = 5 } }, -- только для не-финального удара
+									Push = self.PunchCount == self.Data.MaxCombo and 75 or 8,
+									Hold = 0.2,
 									MaxForce = Vector3.new(20_000, 0, 20_000),
 								},
 								Stun = {

@@ -4,6 +4,7 @@ const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 const PlayerComponent = require(ServerScriptService.server.components.Player)
 const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
 const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
+const KnockbackLib = require(ReplicatedStorage.shared.combat.Knockback)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const Signal = require(ReplicatedStorage.shared.packages.Signal)
 const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
@@ -90,20 +91,8 @@ export type AttackInfo = {
 		BlockIgnore: boolean,
 	}?,
 
-	Knockback: {
-		RelativePart: "Attacker" | "Target",
-		RelativeTowards: "Attacker" | "Target",
-		Origin: CFrame,
-		ToFront: boolean,
-		LookVector: Vector3,
-		Speed: number,
-		Duration: number,
-		Velocity: Vector3,
-		MaxForce: Vector3,
-		P: number,
-
-		FindCrashObject: boolean,
-	}?,
+	-- Канонические типы лежат рядом с резолвером; здесь только реэкспорт.
+	Knockback: KnockbackLib.KnockbackConfig?,
 
 	Angular: {
 		Velocity: Vector3,
@@ -114,6 +103,12 @@ export type AttackInfo = {
 
 	Ragdoll: {
 		Duration: number,
+	}?,
+
+	-- Same as Ragdoll, but without IFrames: any attack priority can land.
+	-- The first damaging hit removes it while keeping that hit's own effects.
+	Restand: {
+		Duration: number?,
 	}?,
 
 	Bleed: {
@@ -527,6 +522,7 @@ type SkillMethods = {
 	SetDisplayName: (self: Skill, name: string) -> (),
 	SetEnabled: (self: Skill, enabled: boolean) -> (),
 	SetBind: (self: Skill, bind: Bind) -> (),
+	SetHold: (self: Skill, hold: boolean) -> (),
 	IsOnCooldown: (self: Skill) -> boolean,
 	Validate: (self: Skill) -> (boolean, string?),
 	Init: (self: Skill) -> (),
@@ -538,7 +534,9 @@ export type Skill = SkillProperties & SkillMethods
 export type SkillReplicationData = {
 	Parameters: {
 		Bind: Bind,
+		Hold: boolean,
 		Enabled: boolean,
+		-- Server time (workspace:GetServerTimeNow()), comparable on the client.
 		ReleaseTime: number,
 	},
 }
@@ -566,7 +564,7 @@ export type SpecData = {
 	-- either the spec or the subspec slot is enough.
 	TimeStopVision: boolean?,
 
-	Binds: { [string]: Enum.KeyCode & Enum.UserInputType },
+	Binds: { [string]: Bind | { Key: Bind, Hold: boolean? } },
 
 	Assets: {
 		Animations: {

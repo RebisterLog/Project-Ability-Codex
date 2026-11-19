@@ -40,11 +40,13 @@ const Skill: types.SkillData = {
 		},
 
 		Knockback = {
-			RelativePart = "Attacker",
-			ToFront = 5,
-			Speed = 6,
-			Duration = 0.05,
-			Velocity = Vector3.new(0, 0.75, 0),
+			Direction = {
+				Mode = "AwayFromAttacker",
+				Add = { { Mode = "ToFront", Distance = 5 } },
+			},
+			Push = 6,
+			Lift = 0.75,
+			Hold = 0.05,
 		},
 	} :: types.AttackInfo,
 
@@ -69,9 +71,9 @@ const Skill: types.SkillData = {
 		},
 
 		Knockback = {
-			RelativePart = "Attacker",
-			Speed = 100,
-			Duration = 0.25,
+			Direction = { Mode = "AwayFromAttacker" },
+			Push = 100,
+			Hold = 0.25,
 			MaxForce = Vector3.new(100_000, 0, 100_000),
 		},
 	},

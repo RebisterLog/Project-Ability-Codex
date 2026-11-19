@@ -32,10 +32,10 @@ const Skill: types.SkillData = {
 		},
 
 		Knockback = {
-			RelativePart = "Attacker",
-			Duration = 0.1,
-			Velocity = Vector3.new(0, 10, 0),
-			Speed = 40,
+			Direction = { Mode = "AwayFromAttacker" },
+			Push = 40,
+			Lift = 10,
+			Hold = 0.1,
 		},
 	},
 }

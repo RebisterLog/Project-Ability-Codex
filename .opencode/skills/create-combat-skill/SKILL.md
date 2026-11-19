@@ -323,12 +323,12 @@ CombatService:Attack({
             Priority = Enums.Stun.Medium,  -- Light=10, Medium=20, Heavy=30
         },
         Knockback = {
-            RelativePart = "Attacker" | "Target",
-            ToFront = number? | false?,
-            Speed = 40,
-            Duration = 0.1,
-            Velocity = Vector3.new(0, 50, 0)?,
-            FindCrashObject = false?,
+            Direction = { Mode = "AwayFromAttacker" }, -- or TowardsAttacker/FromPoint/Custom
+            Push = 40,      -- horizontal studs/s along Direction
+            Lift = 50,      -- vertical studs/s
+            Hold = 0.1,     -- mover lifetime, NOT damping
+            -- Preset = "Launch" is a shortcut for Push/Lift/Hold;
+            -- MaxForce = "Auto" (default) unlocks Y only when Lift ~= 0.
         },
         Ragdoll = {
             Duration = 2,
@@ -521,7 +521,7 @@ AttackInfo = {
 Throw = {
     Damage = 10,
     Block = { PerfectBlockable = false, BlockCancel = true },
-    Knockback = { Duration, Velocity, Speed, RelativePart, FindCrashObject },
+    Knockback = { Preset?, Direction { Mode, Point?/Vector?, Add? }, Push?, Lift?, Hold?, Stiffness?, MaxForce? },
     Ragdoll = { Duration },
     Stun = { Priority, Duration },
     Angular = { Velocity, Duration },

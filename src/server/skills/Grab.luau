@@ -40,12 +40,11 @@ const Skill: types.SkillData = {
 		},
 
 		Knockback = {
-			Duration = 0.1,
-			Velocity = Vector3.new(0, 30, 0),
-			Speed = 100,
-			RelativePart = "Attacker",
+			Direction = { Mode = "AwayFromAttacker" },
+			Push = 100,
+			Lift = 30,
+			Hold = 0.1,
 			MaxForce = Vector3.new(5_000, 10_000, 5_000),
-			--FindCrashObject = true,
 		},
 
 		Angular = {

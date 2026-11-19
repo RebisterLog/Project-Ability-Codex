@@ -3,7 +3,7 @@ type KnockbackData = {
 	Velocity: Vector3?,
 	MaxForce: Vector3?,
 	Duration: number?,
-	P: number?,
+	Stiffness: number?,
 	ClearMovers: boolean?,
 }
 
@@ -22,7 +22,7 @@ return {
 		end
 
 		const BodyVelocity = Instance.new("BodyVelocity")
-		BodyVelocity.P = data.P or math.huge
+		BodyVelocity.P = data.Stiffness or math.huge
 		BodyVelocity.Velocity = data.Velocity
 		BodyVelocity.MaxForce = data.MaxForce or Vector3.new(100_000, 100_000, 100_000)
 

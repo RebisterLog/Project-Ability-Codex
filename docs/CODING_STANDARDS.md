@@ -348,17 +348,23 @@ AttackInfo = {
         Duration = number,        -- Seconds of stun
         Priority = Enums.Stun.*,  -- Light=10, Medium=20, Heavy=30
     },
+    -- Canonical types live in src/shared/combat/Knockback.luau; the resolver
+    -- turns this declarative config into Velocity/MaxForce/Hold/Stiffness.
     Knockback = {
-        RelativePart = "Attacker" | "Target",  -- Knockback relative to who
-        RelativeTowards = "Attacker" | "Target"?,
-        ToFront = number? | false?,             -- Pull target toward attacker
-        Origin = CFrame?,
-        Speed = number,
-        Duration = number,
-        Velocity = Vector3?,
-        MaxForce = Vector3?,
-        FindCrashObject = false?,              -- Calculate crash trajectory
+        Preset = "Tap" | "Shove" | "Launch" | "Slam"?,  -- numbers only
+        Direction = (                                    -- mutually exclusive
+            | { Mode = "AwayFromAttacker" | "TowardsAttacker", Add = { KnockbackAdd }? }
+            | { Mode = "FromPoint", Point: CFrame, Add = { KnockbackAdd }? }
+            | { Mode = "Custom", Vector: Vector3, Add = { KnockbackAdd }? }
+        )?,
+        Push = number?,       -- horizontal speed along Direction (studs/s)
+        Lift = number?,       -- vertical speed (studs/s)
+        Hold = number?,       -- lifetime of the constant-velocity mover; NOT damping
+        Stiffness = number?,  -- BodyVelocity.P; one value for players and NPCs
+        MaxForce = Vector3 | "Auto"?, -- "Auto" unlocks Y only when Lift ~= 0
     },
+    -- KnockbackAdd = { Mode = "ToFront", Distance: number } | { Mode = "Custom", Vector: Vector3 }
+    -- Add entries are raw vectors on top of Direction * Push, not scaled by Push.
     Angular = {
         Velocity = Vector3,       -- Angular velocity
         Speed = number?,
@@ -375,6 +381,47 @@ AttackInfo = {
     -- No feedback on blocked hits; under DamageHold it plays on payout.
 }
 ```
+
+### Writing a Knockback config
+
+Pick a `Direction.Mode` first — it is the only source of the horizontal vector,
+and it is normalised, so `Push` is an honest speed in studs/s:
+
+```luau
+Knockback = {
+    Direction = { Mode = "AwayFromAttacker" }, -- or TowardsAttacker / FromPoint / Custom
+    Push = 40,
+    Lift = 50,     -- vertical only; 0 locks Y under "Auto"
+    Hold = 0.1,
+}
+
+-- Preset + one override is enough for the common cases:
+Knockback = { Preset = "Launch", Hold = 0.15 }
+
+-- Explosion from a point, plus an explicit upward contribution:
+Knockback = {
+    Direction = {
+        Mode = "FromPoint",
+        Point = explosionCFrame,
+        Add = { { Mode = "Custom", Vector = Vector3.new(0, 10, 0) } },
+    },
+    Push = 60,
+}
+```
+
+Rules worth remembering:
+
+- Direction modes are mutually exclusive; `Add` is the only way to combine
+  directions, and its vectors are added raw (they are **not** multiplied by `Push`).
+- `Push` never affects `Lift`. Use `Lift` for vertical knockback.
+- `Hold` is the lifetime of a constant-velocity `BodyVelocity`. There is no
+  deceleration; multiple fast hits stack separate movers.
+- `MaxForce = "Auto"` (default) sets `MaxForce.Y = 0` when `Lift == 0`, which
+  deliberately suppresses vertical drift. Pass an explicit `Vector3` to override.
+- `Stiffness` is sent to both the client VFX and the server fallback, so players
+  and NPCs get the same response. Default is `math.huge`.
+- A blocked/armored hit or IFrames removes the whole `Knockback` section before
+  this hook runs; under `DamageHold`, only the first queued hit keeps its push.
 
 ---
 

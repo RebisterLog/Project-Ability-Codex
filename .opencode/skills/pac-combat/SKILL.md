@@ -38,7 +38,7 @@ Callback returns true to continue, false/nil to abort.
 - Priority, Damage
 - Block { Blockable, PerfectBlockable, BlockBreak, BlockCancel, BlockIgnore }
 - Stun { Duration, Priority (Enums.Stun.*) }
-- Knockback { RelativePart/RelativeTowards, ToFront, Origin, Speed, Duration, Velocity, MaxForce, FindCrashObject }
+- Knockback { Preset?, Direction { Mode, Point?/Vector?, Add? }, Push?, Lift?, Hold?, Stiffness?, MaxForce? } — `shared/combat/Knockback.luau`
 - Angular { Velocity, Speed, Duration, MaxTorque }
 - Ragdoll { Duration }
 
