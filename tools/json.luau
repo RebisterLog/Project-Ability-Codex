@@ -1,18 +1,16 @@
 --!strict
 --- JSON without a dependency on the runtime version.
 ---
---- Needed by `tools/generate-skill.luau` and by the skill constructor app, which
---- lives in a separate repository and receives this file through `sync-core.ps1`.
+--- Needed by the command-line tools that emit machine-readable reports.
 ---
 --- The parser is written here on purpose: `@lune/json` was removed from Lune in
 --- 0.9, and `@lune/serde` only knows its own format, so the CLI must not depend
 --- on the runtime version. The encoder is hand-written for the same reason — it is
 --- emitted wherever it is also parsed, not brought in from outside.
 ---
---- `decode` folds `null` into an absent object key — exactly like `codec.encode`
---- drops `nil` fields, so `{"FadeTime": null}` and `{"FadeTime": <nil>}` yield the
---- same blueprint. Inside arrays `null` is kept in place, so that `Blocks` indices
---- never shift.
+--- `decode` folds `null` into an absent object key, so `{"FadeTime": null}` and
+--- `{"FadeTime": <nil>}` yield the same table. Inside arrays `null` is kept in
+--- place, so array indices never shift.
 ---
 --- Object keys are sorted on the way out of `encode`: insertion order in a Luau
 --- table is undefined, and deterministic output is needed both for snapshot
@@ -63,8 +61,8 @@ local ESCAPES = {
 	t = "\t",
 }
 
---- `\uXXXX` → UTF-8. Surrogate pairs are not joined: blueprints never contain
---- them, and a silently mangled character is worse than an explicit error.
+--- `\uXXXX` → UTF-8. Surrogate pairs are not joined: a silently mangled
+--- character is worse than an explicit error.
 local function utf8(code: number): string
 	if code < 0x80 then return string.char(code) end
 	if code < 0x800 then return string.char(0xC0 + math.floor(code / 64), 0x80 + code % 64) end
@@ -316,8 +314,8 @@ end
 
 local encodeValue: (any, number, { [any]: true }, number?, number?) -> string
 
---- A cycle in blueprint data is impossible, but walking without a guard would
---- hang on it silently — the sentinel ends the recursion with an explicit error.
+--- A cycle in the data is unlikely, but walking without a guard would hang on
+--- it silently — the sentinel ends the recursion with an explicit error.
 local function encodeTable(
 	value: { [any]: any },
 	depth: number,

@@ -31,7 +31,7 @@ lune run tools/check.luau                 # syntax, format, lint, analyze
 lune run tools/check.luau --only=lint
 lune run tools/check.luau --update-baseline
 ```
-Gates: syntax (luau-compile), format (stylua), lint (selene), analyze (luau-lsp). Style in StyLua, lint in Selene; do not overlap. `selene.toml` disables multiple_statements because StyLua collapses `if x then return end`. `Toolchain.VENDORED` and selene exclude list must stay in sync (11 paths).
+Gates: syntax (luau-compile), format (stylua), lint (selene), analyze (luau-lsp). Style in StyLua, lint in Selene; do not overlap. `selene.toml` disables multiple_statements because StyLua collapses `if x then return end`. `Toolchain.VENDORED` and selene exclude list must stay in sync (10 paths).
 
 ## Project standards & structure
 - `docs/CODING_STANDARDS.md` — full conventions, architecture, patterns.

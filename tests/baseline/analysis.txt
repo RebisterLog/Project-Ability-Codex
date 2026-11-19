@@ -52,13 +52,6 @@ src/client/ui/components/Sample.luau LocalUnused: Variable 'TweenService' is nev
 src/client/ui/components/Sample.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
 src/client/ui/components/Settings.luau LocalUnused: Variable 'LocalPlayer' is never used; prefix with '_' to silence
 src/client/ui/components/Settings.luau TypeError: Expected this to be
-src/client/ui/components/SkillConstructor/BlockInstance.luau TypeError: Cyclic module dependency: c:\Users\RebisterLog\Desktop\Project-Ability-Codex\src\client\ui\components\SkillConstructor\BlockInstance.luau [game/StarterPlayer/StarterPlayerScripts/client/ui/components/SkillConstructor/BlockInstance]
-src/client/ui/components/SkillConstructor/BlockPalette.luau FormatString: Invalid match replacement: invalid capture index, must refer to pattern capture
-src/client/ui/components/SkillConstructor/PreviewTab.luau TypeError: Expected this to be 'Frame', but got 'Instance'
-src/client/ui/components/SkillConstructor/Store.luau TypeError: Unknown global 'importJson'; consider assigning to it first
-src/client/ui/components/SkillConstructor/Timeline.luau TypeError: Argument count mismatch. Function 'UDim2.fromScale' expects 2 arguments, but 4 are specified
-src/client/ui/components/SkillConstructor/Timeline.luau TypeError: Expected this to be 'Frame', but got 'Instance'
-src/client/ui/components/SkillConstructor/Timeline.luau TypeError: Expected this to be 'ScrollingFrame', but got 'Instance'
 src/client/ui/main.luau LocalUnused: Variable 'RunService' is never used; prefix with '_' to silence
 src/client/ui/main.luau LocalUnused: Variable 'peek' is never used; prefix with '_' to silence
 src/client/ui/utils/Helix.luau TypeError: Expected this to be 'Frame', but got 'Instance'
@@ -190,7 +183,6 @@ src/server/services/CombatService/Hooks/Block.luau LocalUnused: Variable 'Combat
 src/server/services/CombatService/Hooks/Damage.luau TypeError: Type *error-type* & number cannot be compared with > because it has no metatable
 src/server/services/CombatService/Hooks/IFrames.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
 src/server/services/CombatService/Hooks/IFrames.luau TypeError: Expected this to be 'number', but got 'nil'
-src/server/services/CombatService/Hooks/Knockback.luau LocalUnused: Variable 'CombatService' is never used; prefix with '_' to silence
 src/server/services/CombatService/init.luau TypeError: Cannot add property 'OriginalInfo' to table 'AttackData'
 src/server/services/CombatService/init.luau TypeError: Value of type 'Instance?' could be nil
 src/server/services/ConfigsService.luau ImportUnused: Import 'SpecClass' is never used; prefix with '_' to silence
@@ -220,7 +212,7 @@ src/server/skills/Barrage.luau LocalUnused: Variable 'Anims' is never used; pref
 src/server/skills/Barrage.luau LocalUnused: Variable 'RootPart' is never used; prefix with '_' to silence
 src/server/skills/Barrage.luau LocalUnused: Variable 'Sounds' is never used; prefix with '_' to silence
 src/server/skills/Barrage.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
-src/server/skills/Barrage.luau TypeError: Cannot cast '{| Block: {| BlockBreaker: any, Blockable: any, PerfectBlockable: any |}, Damage: number?, Hitbox: {| Debug: any, Offset: any, Size: any |}, Knockback: {| [number]: any, Duration: any, RelativePart: any, Speed: any, ToFront: any |}, Stun: { Duration: number, Priority: number }? |}' into 'AttackInfo' because the types are unrelated
+src/server/skills/Barrage.luau TypeError: Cannot cast '{| Block: {| BlockBreaker: any, Blockable: any, PerfectBlockable: any |}, Damage: number?, Hitbox: {| Debug: any, Offset: any, Size: any |}, Knockback: KnockbackConfig?, Stun: { Duration: number, Priority: number }? |}' into 'AttackInfo' because the types are unrelated
 src/server/skills/Barrage.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
 src/server/skills/Barrage.luau TypeError: Type 'SkillMethods & SkillProperties' does not have key 'Sequence'
 src/server/skills/Block.luau ImplicitReturn: Function can implicitly return no values even though there's an explicit return at line 52; add explicit return to silence
@@ -259,7 +251,7 @@ src/server/skills/StandBarrage.luau LocalUnused: Variable 'Sounds' is never used
 src/server/skills/StandBarrage.luau LocalUnused: Variable 'VFXService' is never used; prefix with '_' to silence
 src/server/skills/StandBarrage.luau LocalUnused: Variable 'isStandActive' is never used; prefix with '_' to silence
 src/server/skills/StandBarrage.luau TypeError: Cannot add property 'Caster' to table 'SkillMethods & SkillProperties'
-src/server/skills/StandBarrage.luau TypeError: Cannot cast '{| Block: {| BlockBreaker: any, Blockable: any, PerfectBlockable: any |}, Damage: number?, Hitbox: {| Debug: any, MovementCorrection: any, Offset: any, Size: any |}, Knockback: {| Duration: any, RelativePart: any, Speed: any, ToFront: any, Velocity: any |}, Stun: { Duration: number, Priority: number }? |}' into 'AttackInfo' because the types are unrelated
+src/server/skills/StandBarrage.luau TypeError: Cannot cast '{| Block: {| BlockBreaker: any, Blockable: any, PerfectBlockable: any |}, Damage: number?, Hitbox: {| Debug: any, MovementCorrection: any, Offset: any, Size: any |}, Knockback: KnockbackConfig?, Stun: { Duration: number, Priority: number }? |}' into 'AttackInfo' because the types are unrelated
 src/server/skills/StandBarrage.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'AttackInfo', 'Id', 'Interrupt', 'onDestroy', and 'onInit'
 src/server/skills/StandBarrage.luau TypeError: Type 'SkillMethods & SkillProperties' does not have key 'Sequence'
 src/server/skills/Standless/CircularKick.luau TypeError: Table type 'Skill' not compatible with type 'SkillData' because the former is missing fields 'Activate', 'Id', 'Interrupt', 'onDestroy', and 'onInit'

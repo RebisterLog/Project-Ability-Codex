@@ -5,7 +5,10 @@ Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune 
 ## src/server/types.luau
 - export type PlayerModule = {
 - export type Bind = Enum.KeyCode | Enum.UserInputType
+- export type SpecSlot = "Spec" | "SubSpec"
+- export type SpecInitOptions = {
 - export type CleanUp = () -> ()
+- export type EffectData = { [string]: any }
 - export type Parameters = typeof(Parameters)
 - export type ParameterName = keyof<Parameters>
 - export type ParameterValue<K = ParameterName> = index<index<Parameters, K>, "Default">
@@ -29,6 +32,8 @@ Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune 
 - export type SpecData = {
 - export type Spec = SpecProperities & SpecMethods
 - export type PlayerComponent = Crane.Component<Player> & PlayerProperties & PlayerMethods
+- export type HealData = {
+- export type NoDeathEntry =
 - export type Character = Crane.Component<Model> & CharacterMethods & CharacterProperities
 
 ## shared/schemas
@@ -39,6 +44,8 @@ Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune 
 - export type PlayerData = PlayerDynamicData.PlayerDynamicData & PlayerSaveData.PlayerSaveData
 
 ### PlayerDynamicData.luau
+- export type SpecSlot = "Spec" | "SubSpec"
+- export type CharacterParameters = {
 - export type PlayerDynamicData = {
 
 ### PlayerSaveData.luau
