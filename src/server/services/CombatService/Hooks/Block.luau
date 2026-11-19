@@ -49,6 +49,7 @@ return {
 		if Data.State.Blocked or Data.State.PerfectBlocked then
 			Data.Info.Damage = nil
 			Data.Info.Ragdoll = nil
+			Data.Info.Restand = nil
 			Data.Info.Stun = nil
 			Data.Info.Bleed = nil
 

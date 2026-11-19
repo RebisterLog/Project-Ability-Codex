@@ -5,6 +5,9 @@ type SkillData = {
 		DisplayName: string,
 		ReleaseTime: number,
 		Bind: Enum.KeyCode | Enum.UserInputType,
+		-- Replicated from the spec config: the skill should be re-requested
+		-- while its key stays down. See BindService.
+		Hold: boolean,
 		Enabled: boolean,
 	},
 }
@@ -31,6 +34,7 @@ export type CharacterParameters = {
 		FillRate: number,
 		DecayRate: number,
 		HoldSeconds: number,
+		DamageMultiplier: number,
 		ExpiresAt: number,
 	},
 }
@@ -70,6 +74,7 @@ return {
 				FillRate = 20,
 				DecayRate = 10,
 				HoldSeconds = 5,
+				DamageMultiplier = 1.25,
 				ExpiresAt = 0,
 			},
 		},

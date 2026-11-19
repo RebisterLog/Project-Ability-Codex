@@ -83,7 +83,7 @@ function Block:Activate()
 				})
 			elseif Data.State.BlockBroken then
 				const stun = Data.Victim:AddParameter("Stun", {
-					Duration = 2,
+					Duration = Enums.StunTime.Heavy,
 					Priority = Enums.Stun.Heavy,
 				})
 				task.delay(1.5, stun.Destroy, stun)

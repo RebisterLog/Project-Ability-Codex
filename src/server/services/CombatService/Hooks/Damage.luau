@@ -81,6 +81,20 @@ const function showIndicator(Data: types.AttackData, amount: number)
 	end
 end
 
+-- A live Hamon charge adds its own outgoing multiplier on top of the ordinary
+-- attacker/victim ones. The value lives on the Hamon parameter so it can be
+-- tuned in one place; the effective (fill/decay-aware) charge decides whether
+-- it applies, so a stale `Amount` mid-decay cannot keep granting the bonus.
+const function hamonDamageMultiplier(attacker: types.Character): number
+	const state = attacker:GetParameter("HamonCharge")
+	if not state then return 1 end
+
+	const CombatService = Crane:GetService("CombatService")
+	if CombatService:GetHamonCharge(attacker) <= 0 then return 1 end
+
+	return state.DamageMultiplier or 1
+end
+
 return {
 	Apply = applyDamage,
 	Name = "Damage",
@@ -126,6 +140,7 @@ return {
 		if Data.State.Success and Data.Info.Damage and Data.Victim.Humanoid.Health > 0 then
 			Data.Info.Damage *= Data.Attacker:GetParameter("DamageMultiplier")
 			Data.Info.Damage *= Data.Victim:GetParameter("DamageReceivalMultiplier")
+			Data.Info.Damage *= hamonDamageMultiplier(Data.Attacker)
 
 			-- God mode takes the damage out of the humanoid and nothing else: the
 			-- multipliers, the indicator and OnTakeDamage still run, so the skills,

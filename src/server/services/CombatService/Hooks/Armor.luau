@@ -17,6 +17,7 @@ return {
 
 		if State.Armored then
 			Info.Ragdoll = nil
+			Info.Restand = nil
 			Info.Stun = nil
 			Info.Knockback = nil
 			Info.Angular = nil

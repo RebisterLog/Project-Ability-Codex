@@ -379,7 +379,9 @@ function CombatService.GetStates(self: typeof(CombatService), Character: types.C
 
 	if Character:GetParameter("Armor") == true then States.Armored = true end
 
-	if Character:GetParameter("Ragdoll") == true then States.Ragdolled = true end
+	if Character:GetParameter("Ragdoll") == true or Character:GetParameter("Restand") == true then
+		States.Ragdolled = true
+	end
 
 	const IFrames = Character:GetParameter("IFrames")
 	if IFrames > 0 then States.IFrames = IFrames end
@@ -454,9 +456,11 @@ function CombatService:Equip(character: types.Character, model: Model): (Model, 
 	const Motor = Instance.new("Motor6D")
 	Motor.Name = Handle:GetAttribute("MotorName") or "Handle"
 	Motor.Part0 = Bone
-	Motor.C0 = Handle:GetAttribute("Offset") or CFrame.identity
+	
+	Motor.C0 = Handle:GetAttribute("C0") or CFrame.identity
+	Motor.C1 = Handle:GetAttribute("C1") or CFrame.identity
 	Motor.Part1 = WeaponHandle
-
+	
 	-- The motor lives inside the model, so destroying the model takes it away
 	-- with the prop. Parenting comes last: clients never see a half-assembled
 	-- weapon, and an unparented model neither replicates nor renders.

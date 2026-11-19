@@ -1,3 +1,10 @@
+const Stun = {
+	None = 0,
+	Light = 10,
+	Medium = 20,
+	Heavy = 30,
+}
+
 return {
 	IFrames = {
 		Ragdoll = 10,
@@ -6,11 +13,21 @@ return {
 		True = 10000,
 	},
 
-	Stun = {
-		None = 0,
-		Light = 10,
-		Medium = 20,
-		Heavy = 30,
+	Stun = Stun,
+
+	StunTime = {
+		Light = 0.5,
+		Medium = 1,
+		Heavy = 1.5,
+		VeryHeavy = 2,
+	},
+
+	-- Keyed by the numeric Stun priorities so watchers can index it with
+	-- `Enums.StunSpeed[value.Priority]` directly.
+	StunSpeed = {
+		[Stun.Light] = 8,
+		[Stun.Medium] = 3,
+		[Stun.Heavy] = 0,
 	},
 
 	Ragdoll = {

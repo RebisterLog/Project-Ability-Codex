@@ -158,11 +158,10 @@ return {
 
 		object.Cleaner:Add(self:AddParameter("MaxJumpPower", 0))
 
-		if Priority == Enums.Stun.Heavy then
-			object.Cleaner:Add(self:AddParameter("MaxWalkSpeed", 0))
-		elseif Priority == Enums.Stun.Medium then
-			object.Cleaner:Add(self:AddParameter("MaxWalkSpeed", 3))
-		end
+		-- StunSpeed is keyed by the numeric Enums.Stun priorities.
+		const speed = Enums.StunSpeed[Priority]
+
+		if speed then object.Cleaner:Add(self:AddParameter("MaxWalkSpeed", speed)) end
 	end,
 
 	["Bleeding"] = function(self: types.Character, value, object)
@@ -225,6 +224,12 @@ return {
 				end)
 			end)
 		end
+	end,
+
+	-- Restand is a ragdoll without IFrames: any attack priority can land.
+	-- On release it keeps the body down if the hit also brought its own Ragdoll.
+	["Restand"] = function(self: types.Character, value: boolean?)
+		self:Ragdoll((value or false) or self:GetParameter("Ragdoll"))
 	end,
 
 	["NoCollision"] = function(

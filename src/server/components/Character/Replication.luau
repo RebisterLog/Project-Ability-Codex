@@ -12,6 +12,7 @@ const Replication = {}
 const parameterNames: { types.ParameterName } = {
 	"Stun",
 	"Ragdoll",
+	"Restand",
 	"Restrain",
 	"MinWalkSpeed",
 	"MaxWalkSpeed",
@@ -48,6 +49,7 @@ const function serializeParameter(name: types.ParameterName, value: any): any
 			FillRate = value.FillRate,
 			DecayRate = value.DecayRate,
 			HoldSeconds = value.HoldSeconds,
+			DamageMultiplier = value.DamageMultiplier,
 			ExpiresAt = expiresAt,
 		}
 	end

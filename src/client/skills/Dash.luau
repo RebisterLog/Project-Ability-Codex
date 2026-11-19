@@ -21,9 +21,9 @@ type Context = ClientSkillService.ClientSkillContext
    the server never starts or stops an animation for the local player.
 ]=]
 
--- Replicated ReleaseTime uses the server's os.clock(), which is not comparable
--- on the client. Predict the cooldown locally instead; the server is still the
--- final validator.
+-- ReleaseTime is now server time and is directly comparable on the client.
+-- The local timer still drives prediction on the same frame as the press;
+-- the server remains the final validator.
 local LastActivateAt = -math.huge
 
 local function canActivate(_self: ClientSkillService.ClientSkill, ctx: Context): boolean
@@ -36,7 +36,14 @@ local function canActivate(_self: ClientSkillService.ClientSkill, ctx: Context):
 	if ctx.Humanoid.Health <= 0 then return false end
 	if parameters.Stun and parameters.Stun.ExpiresAt > now then return false end
 	if parameters.Ragdoll then return false end
+	if parameters.Restand then return false end
 	if parameters.Restrain then return false end
+	if
+		ctx.Humanoid.PlatformStand
+		or ctx.Humanoid:GetState() == Enum.HumanoidStateType.PlatformStanding
+	then
+		return false
+	end
 	if now - LastActivateAt < DashMovement.Config.Cooldown then return false end
 
 	return true
@@ -96,7 +103,10 @@ local function activate(_self: ClientSkillService.ClientSkill, ctx: Context)
 			const parameters = state.Parameters
 			if
 				parameters.Ragdoll
+				or parameters.Restand
 				or parameters.Restrain
+				or ctx.Humanoid.PlatformStand
+				or ctx.Humanoid:GetState() == Enum.HumanoidStateType.PlatformStanding
 				or ctx.Humanoid.Health <= 0
 				or (parameters.Stun and parameters.Stun.ExpiresAt > workspace:GetServerTimeNow())
 			then

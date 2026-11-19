@@ -80,6 +80,7 @@ return {
 
 	Armor = { Default = false, Parser = ORParser },
 	Ragdoll = { Default = false, Parser = ORParser },
+	Restand = { Default = false, Parser = ORParser },
 	GodMode = { Default = false, Parser = ORParser },
 	NoCollision = { Default = false, Parser = ORParser },
 	Restrain = { Default = false, Parser = ORParser },
@@ -109,6 +110,8 @@ return {
 			FillRate = 20,
 			DecayRate = 10,
 			HoldSeconds = 5,
+			-- Applied to outgoing damage while the charge is live (CombatService hooks).
+			DamageMultiplier = 1.25,
 		},
 
 		Parser = LastParser,
