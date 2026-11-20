@@ -57,7 +57,7 @@ return {
 			})
 		end
 
-		if CombatService:GetHamonCharge(Data.Attacker) > 0 then
+		if CombatService:GetCharge(Data.Attacker, "HamonCharge") > 0 then
 			if HamonHitVFX and HamonHitVFX:IsA("BasePart") then
 				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 					Particle = HamonHitVFX,

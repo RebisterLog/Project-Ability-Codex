@@ -17,7 +17,7 @@
   "lunaut.ignoreGlobs": [],
   "lunaut.completion.autoImports": true,
   "lunaut.completion.importKeyword": "const",
-  "lunaut.completion.autocompleteEnd": false,
+  "lunaut.completion.autocompleteEnd": true,
   "lunaut.hover.documentation": true,
   "lunaut.inlayHints.parameterNames": "literals",
   "lunaut.inlayHints.variableTypes": false,

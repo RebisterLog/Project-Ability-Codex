@@ -145,9 +145,6 @@ function Character.onStart(self: typeof(Character))
 	self.Parameters.DamageHold.Generation = 0
 	self.Parameters.DamageHold.Draining = false
 
-	-- Hamon Charge owns a single object for its whole lifetime; CombatService
-	-- writes snapshots through SetParameterValue and reschedules the expiry.
-	self.Parameters.HamonCharge.Generation = 0
 	self:AddParameter("HamonCharge", table.clone(Parameters.HamonCharge.Default))
 
 	for name, watcher in ParametersWatchers do
@@ -526,9 +523,6 @@ function Character.Destroy(self: typeof(Character))
 	const damageHold = self.Parameters.DamageHold
 	damageHold.Generation += 1
 	table.clear(damageHold.Queue)
-
-	-- Pending Hamon expiry callbacks check this generation before writing.
-	self.Parameters.HamonCharge.Generation += 1
 
 	self.Cleaner:Destroy()
 end

@@ -3,7 +3,8 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Enums = require(ServerScriptService.server.Enums)
-const Hamon = require(ReplicatedStorage.shared.schemas.Hamon)
+const ChargeConfigs = require(ReplicatedStorage.shared.configs.Charges)
+const ChargeState = require(ReplicatedStorage.shared.combat.ChargeState)
 
 type StunState = { Priority: number, Duration: number }
 
@@ -110,8 +111,8 @@ return {
 	DamageHold = { Default = false, Parser = ORParser },
 
 	HamonCharge = {
-		Default = table.clone(Hamon.Default),
+		Default = table.clone(ChargeConfigs.HamonCharge.Default),
 		Parser = LastParser,
-		Replicate = Hamon.snapshot,
+		Replicate = ChargeState.Snapshot,
 	},
 }

@@ -170,7 +170,7 @@ end
 
 function Skill.Activate(self)
 	const CombatService = Crane:GetService("CombatService")
-	const paid = CombatService:ConsumeHamonCharge(self.Character, HAMON_COST)
+	const paid = CombatService:ConsumeCharge(self.Character, "HamonCharge", HAMON_COST)
 	if not paid then return end
 
 	if self.Sequence then

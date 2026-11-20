@@ -10,89 +10,12 @@ const Promise = require(ReplicatedStorage.shared.packages.Promise)
 const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const Signal = Crane.Signal
 const Enums = require(ServerScriptService.server.Enums)
-const CharacterParameters = require(ServerScriptService.server.components.Character.Parameters)
+const Charges = require(ServerScriptService.server["combat-classes"].Charges)
 const types = require(ServerScriptService.server.types)
-
-const hamonExpiryThreads: any = setmetatable({}, { __mode = "k" })
 
 const CombatService = Crane:CreateService({
 	Name = "CombatService",
 })
-
-const function hamonState(character: types.Character, ensure: boolean?)
-	const entry = character.Parameters.HamonCharge
-	const object = entry and entry.Objects[1]
-	if object then return object.Value end
-
-	if not ensure then return nil end
-
-	const state = table.clone(CharacterParameters.HamonCharge.Default)
-	if not character.TornDown then character:AddParameter("HamonCharge", state) end
-	return state
-end
-
-const function hamonEffective(state, now: number): number
-	if state.Filling then
-		return math.clamp(
-			state.FillStartAmount + state.FillRate * (now - state.FillStartedAt),
-			0,
-			state.Max
-		)
-	end
-
-	const holdEnd = state.LastGainAt + state.HoldSeconds
-	if now <= holdEnd then return math.clamp(state.Amount, 0, state.Max) end
-
-	return math.clamp(state.Amount - state.DecayRate * (now - holdEnd), 0, state.Max)
-end
-
-const function hamonScheduleExpiry(character: types.Character)
-	const entry = character.Parameters.HamonCharge
-	if not entry or character.TornDown then return end
-
-	const previous = hamonExpiryThreads[character]
-	if previous then
-		task.cancel(previous)
-		hamonExpiryThreads[character] = nil
-	end
-
-	const state = hamonState(character)
-	if not state or state.Filling or state.Amount <= 0 or state.DecayRate <= 0 then return end
-
-	const generation = entry.Generation
-	const now = workspace:GetServerTimeNow()
-	const delay = state.LastGainAt + state.HoldSeconds + state.Amount / state.DecayRate - now
-
-	const function expire()
-		hamonExpiryThreads[character] = nil
-		if character.TornDown or entry.Generation ~= generation then return end
-
-		const current = hamonState(character)
-		if not current or current.Filling then return end
-
-		const currentNow = workspace:GetServerTimeNow()
-		if hamonEffective(current, currentNow) > 0 then
-			hamonScheduleExpiry(character)
-			return
-		end
-
-		const next = table.clone(current)
-		next.Amount = 0
-		next.LastGainAt = currentNow
-		character:SetParameterValue("HamonCharge", next)
-	end
-
-	hamonExpiryThreads[character] = if delay <= 0
-		then task.defer(expire)
-		else task.delay(delay, expire)
-end
-
-const function hamonPublish(character: types.Character, state)
-	if character.TornDown then return end
-
-	character:SetParameterValue("HamonCharge", state)
-	hamonScheduleExpiry(character)
-end
 
 function CombatService:onStart()
 	self.VFXService = Crane:GetService("VFXService")
@@ -236,90 +159,32 @@ function CombatService:Heal(data: types.HealData)
 	return self.HealHook:Apply(data)
 end
 
-function CombatService:GetHamonCharge(character: types.Character): number
-	const state = hamonState(character, true)
-	return hamonEffective(state, workspace:GetServerTimeNow())
+function CombatService:GetCharge(character: types.Character, id: Charges.ChargeId): number
+	return Charges.Get(id):Get(character)
 end
 
-function CombatService:AddHamonCharge(character: types.Character, amount: number): number
-	if amount <= 0 then return self:GetHamonCharge(character) end
-
-	const now = workspace:GetServerTimeNow()
-	const state = hamonState(character, true)
-	const next = table.clone(state)
-
-	next.Amount = math.clamp(hamonEffective(state, now) + amount, 0, next.Max)
-
-	if next.Filling then
-		next.FillStartAmount = next.Amount
-		next.FillStartedAt = now
-	else
-		next.LastGainAt = now
-	end
-
-	hamonPublish(character, next)
-	return next.Amount
-end
-
-function CombatService:ConsumeHamonCharge(
+function CombatService:AddCharge(
 	character: types.Character,
+	id: Charges.ChargeId,
+	amount: number
+): number
+	return Charges.Get(id):Add(character, amount)
+end
+
+function CombatService:ConsumeCharge(
+	character: types.Character,
+	id: Charges.ChargeId,
 	cost: number
 ): (boolean, number)
-	const now = workspace:GetServerTimeNow()
-	const state = hamonState(character, true)
-	const current = hamonEffective(state, now)
-
-	if cost <= 0 then return true, current end
-	if cost > current then return false, current end
-
-	const remaining = math.max(0, current - cost)
-	const next = table.clone(state)
-	next.Amount = remaining
-
-	if next.Filling then
-		next.FillStartAmount = remaining
-		next.FillStartedAt = now
-	elseif now > next.LastGainAt + next.HoldSeconds then
-		next.LastGainAt = now - next.HoldSeconds
-	end
-
-	hamonPublish(character, next)
-	return true, remaining
+	return Charges.Get(id):Consume(character, cost)
 end
 
-function CombatService:StartHamonFill(character: types.Character): number
-	const now = workspace:GetServerTimeNow()
-	const state = hamonState(character, true)
-	const current = hamonEffective(state, now)
-	const next = table.clone(state)
-
-	next.Filling = true
-	next.FillStartedAt = now
-	next.FillStartAmount = current
-	next.Amount = current
-	next.LastGainAt = now
-
-	hamonPublish(character, next)
-	return current
+function CombatService:StartChargeFill(character: types.Character, id: Charges.ChargeId): number
+	return Charges.Get(id):StartFill(character)
 end
 
-function CombatService:StopHamonFill(character: types.Character): number
-	const now = workspace:GetServerTimeNow()
-	const state = hamonState(character, true)
-	const current = hamonEffective(state, now)
-
-	if not state.Filling then return current end
-
-	const next = table.clone(state)
-
-	next.Filling = false
-	next.FillStartedAt = 0
-	next.FillStartAmount = current
-	next.Amount = current
-	next.LastGainAt = now
-
-	hamonPublish(character, next)
-	return current
+function CombatService:StopChargeFill(character: types.Character, id: Charges.ChargeId): number
+	return Charges.Get(id):StopFill(character)
 end
 
 function CombatService.CreateSequence(Character: types.Character, data)

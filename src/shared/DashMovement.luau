@@ -7,12 +7,11 @@
 
      * the client skill predicts the dash for the local player (the client owns
        its own character physics, so the local mover replicates);
-     * the server skill applies the very same mover to NPCs, which have no
-       client to predict for them.
+     * the server skill drives the very same mover on Heartbeat for NPCs, which
+       have no client to predict for them. Both paths call Apply() + Update()
+       with the same Config, so their trajectories are identical.
 
    Physics notes:
-     * VectorVelocity.Y and MaxAxesForce.Y are always zero, so gravity is never
-       fought and the character cannot be launched into the air;
      * LinearVelocity is a constraint: it enforces the requested velocity
        directly instead of pulling it in with a spring (the old BodyVelocity
        P coefficient made the character vibrate against ground friction);
@@ -20,10 +19,17 @@
        direction in the character's local space and follows RootPart rotation
        (shift-lock camera), so an orientation mover would feed back into that
        reference and make the character spiral. Camera/Humanoid owns rotation;
+     * a ground dash keeps MaxAxesForce.Y at zero, so gravity is never fought;
+     * an air dash (started while FloorMaterial is Air) gives Y the full force
+       budget and targets zero vertical speed. The constraint then cancels
+       gravity for the whole dash: the character moves strictly horizontally
+       (the flat "hover" segment). At the end of the dash the Y budget is
+       released again, so gravity immediately produces the falling arc.
+       The mode is picked once at cast time so players and NPCs follow exactly
+       the same path, even if the character lands mid-dash;
      * Update() steers with a capped turn rate and controls the tail of the
-       dash: a short decaying slide on the ground (where the Humanoid would
-       otherwise stop the character almost instantly) and a soft distance cap
-       in the air (where inertia alone would carry the character 2-3x farther).
+       dash: a short decaying slide on the ground and a soft distance cap in
+       the air, with separate tunings for the two modes.
 ]=]
 
 const DashMovement = {}
@@ -38,10 +44,22 @@ export type Config = {
 	MinForce: number,
 	MaxForce: number,
 	TurnRate: number,
-	AirCapDistance: number,
-	AirBrakeDistance: number,
 	ExitSpeed: number,
 	TailFrames: number,
+	AirHover: boolean,
+	AirVerticalSpeed: number,
+	AirMoveFrames: number,
+	AirCapDistance: number,
+	AirBrakeDistance: number,
+	AirExitSpeed: number,
+	AirTailFrames: number,
+}
+
+--- Plain-number description of what the constraint should request. No Roblox
+--- globals here so the ground/air/end decisions can be unit-tested directly.
+export type Motion = {
+	Velocity: { x: number, y: number, z: number },
+	Force: { x: number, y: number, z: number },
 }
 
 export type DashMover = {
@@ -55,6 +73,8 @@ export type DashMover = {
 	Elapsed: number,
 	Distance: number,
 	TailElapsed: number,
+	Force: number,
+	Hovering: boolean,
 	Destroyed: boolean,
 	Destroy: (self: DashMover) -> (),
 }
@@ -69,14 +89,48 @@ DashMovement.Config = {
 	MinForce = 60_000,
 	MaxForce = 120_000,
 	TurnRate = 720,
-	AirCapDistance = 22,
-	AirBrakeDistance = 6,
+
 	ExitSpeed = 40,
 	TailFrames = 20,
+
+	-- Air dash: a flat, gravity-free hover for the powered part of the dash,
+	-- followed by the normal falling arc once the mover releases Y.
+	AirHover = true,
+	AirVerticalSpeed = 0,
+	AirMoveFrames = 18,
+	AirCapDistance = 34,
+	AirBrakeDistance = 8,
+	AirExitSpeed = 45,
+	AirTailFrames = 8,
 } :: Config
 
 function DashMovement.FramesToSeconds(frames: number): number
 	return frames / 60
+end
+
+--- Pure resolver for the constraint request. `hovering` decides whether the
+--- Y axis gets a force budget (air dash) or is left to gravity (ground dash /
+--- released tail). Speeds and forces are plain scalars for testability.
+function DashMovement.ResolveMotion(
+	directionX: number,
+	directionZ: number,
+	speed: number,
+	force: number,
+	hovering: boolean,
+	verticalSpeed: number
+): Motion
+	return {
+		Velocity = {
+			x = directionX * speed,
+			y = if hovering then verticalSpeed else 0,
+			z = directionZ * speed,
+		},
+		Force = {
+			x = force,
+			y = if hovering then force else 0,
+			z = force,
+		},
+	}
 end
 
 --- World-space horizontal unit vector. Falls back to the CFrame's LookVector
@@ -150,6 +204,9 @@ function DashMovement.Apply(
 	const Config = DashMovement.Config
 
 	const direction = DashMovement.GetDirection(moveDirection, rootPart.CFrame)
+	const hovering: boolean = Config.AirHover
+		and humanoid ~= nil
+		and humanoid.FloorMaterial == Enum.Material.Air
 
 	-- A stale dash (previous activation / interrupted cast) must never leave a
 	-- second mover fighting the new one. The old names are cleaned up too.
@@ -177,27 +234,39 @@ function DashMovement.Apply(
 
 	const force =
 		math.clamp(rootPart.AssemblyMass * Config.Acceleration, Config.MinForce, Config.MaxForce)
+	const motion = DashMovement.ResolveMotion(
+		direction.X,
+		direction.Z,
+		Config.Speed,
+		force,
+		hovering,
+		Config.AirVerticalSpeed
+	)
 
 	const velocity = Instance.new("LinearVelocity")
 	velocity.Name = "DashLinearVelocity"
 	velocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
 	velocity.RelativeTo = Enum.ActuatorRelativeTo.World
 	velocity.Attachment0 = attachment
-	velocity.VectorVelocity = direction * Config.Speed
+	velocity.VectorVelocity = Vector3.new(motion.Velocity.x, motion.Velocity.y, motion.Velocity.z)
 
-	-- Per-axis limits: X/Z get the full budget, Y gets zero so the constraint
-	-- never counteracts gravity (a scalar MaxForce could not express this).
+	-- X/Z get the full budget. Y gets it too only for an air dash, where the
+	-- constraint has to cancel gravity to hold the flat hover segment.
 	velocity.ForceLimitsEnabled = true
 	velocity.ForceLimitMode = Enum.ForceLimitMode.PerAxis
-	velocity.MaxAxesForce = Vector3.new(force, 0, force)
+	velocity.MaxAxesForce = Vector3.new(motion.Force.x, motion.Force.y, motion.Force.z)
 	velocity.Parent = rootPart
 
-	-- Instant horizontal speed on top of the constraint: the dash reacts on the
-	-- same frame instead of waiting for the mover to ramp up. Y is preserved so
-	-- jumping/falling stays untouched.
+	-- Instant horizontal speed on the same frame instead of waiting for the
+	-- mover to ramp up. An air dash also zeroes vertical speed so the flat
+	-- segment starts immediately (a dash started in a fall is caught at its
+	-- current height); a ground dash preserves Y so jumping/falling stays put.
 	const current = rootPart.AssemblyLinearVelocity
-	rootPart.AssemblyLinearVelocity =
-		Vector3.new(direction.X * Config.Speed, current.Y, direction.Z * Config.Speed)
+	rootPart.AssemblyLinearVelocity = Vector3.new(
+		motion.Velocity.x,
+		if hovering then motion.Velocity.y else current.Y,
+		motion.Velocity.z
+	)
 
 	return {
 		RootPart = rootPart,
@@ -210,13 +279,16 @@ function DashMovement.Apply(
 		Elapsed = 0,
 		Distance = 0,
 		TailElapsed = 0,
+		Force = force,
+		Hovering = hovering,
 		Destroyed = false,
 		Destroy = DestroyMover,
 	}
 end
 
---- Advances the dash by one client frame: steering, ground slide and air cap.
---- Returns false when the dash has finished and the mover can be destroyed.
+--- Advances the dash by one frame: steering, mode-specific distance control
+--- and the tail. Returns false when the dash has finished and the mover can be
+--- destroyed. Both the client and the NPC server loop call this same function.
 function DashMovement.Update(handle: DashMover, deltaTime: number): boolean
 	if handle.Destroyed or not handle.Velocity then return false end
 
@@ -237,17 +309,38 @@ function DashMovement.Update(handle: DashMover, deltaTime: number): boolean
 	const offset = handle.RootPart.Position - handle.StartPosition
 	handle.Distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
 
-	const moveSeconds = DashMovement.FramesToSeconds(Config.MoveFrames)
-	const onGround = handle.Humanoid ~= nil and handle.Humanoid.FloorMaterial ~= Enum.Material.Air
+	-- The mode is fixed at cast time (see Apply), so a ground dash never
+	-- suddenly starts hovering over a ledge and an air dash keeps its flat
+	-- trajectory if it happens to land early.
+	const hovering = handle.Hovering
+	const moveSeconds =
+		DashMovement.FramesToSeconds(if hovering then Config.AirMoveFrames else Config.MoveFrames)
 
-	-- Safety net: a character stuck against geometry may never reach the air
-	-- cap, so the dash cannot stay alive forever.
-	const maxSeconds = DashMovement.FramesToSeconds(Config.MoveFrames + Config.SlideFrames + 36)
+	-- Safety net: a character stuck against geometry may never reach the cap,
+	-- so the dash cannot stay alive forever.
+	const maxFrames = if hovering
+		then Config.AirMoveFrames + Config.AirTailFrames + 36
+		else Config.MoveFrames + Config.SlideFrames + 36
 	local speedFactor = 1
-	local alive = handle.Elapsed < maxSeconds
+	local alive = handle.Elapsed < DashMovement.FramesToSeconds(maxFrames)
 
 	if handle.Elapsed > moveSeconds then
-		if onGround then
+		if hovering then
+			-- In the air there is no friction; brake smoothly before the cap so
+			-- the dash stays longer than on ground without flying away.
+			if handle.Distance >= Config.AirCapDistance then
+				alive = false
+			else
+				-- Never brake all the way to zero: reaching the cap with ~0
+				-- speed reads as a dead stop followed by a vertical drop.
+				const minFactor = Config.AirExitSpeed / Config.Speed
+				speedFactor = math.clamp(
+					(Config.AirCapDistance - handle.Distance) / Config.AirBrakeDistance,
+					minFactor,
+					1
+				)
+			end
+		else
 			-- Humanoid friction stops the character dead the moment the dash
 			-- ends, so keep a short decaying slide to reach a usable distance.
 			const slideSeconds = DashMovement.FramesToSeconds(Config.SlideFrames)
@@ -256,21 +349,6 @@ function DashMovement.Update(handle: DashMover, deltaTime: number): boolean
 				alive = false
 			else
 				speedFactor = 1 - slideTime / slideSeconds
-			end
-		else
-			-- In the air there is no friction; brake smoothly before the cap so
-			-- the dash stays longer than on ground without flying away.
-			if handle.Distance >= Config.AirCapDistance then
-				alive = false
-			else
-				-- Never brake all the way to zero: reaching the cap with ~0
-				-- speed reads as a dead stop followed by a vertical drop.
-				const minFactor = Config.ExitSpeed / Config.Speed
-				speedFactor = math.clamp(
-					(Config.AirCapDistance - handle.Distance) / Config.AirBrakeDistance,
-					minFactor,
-					1
-				)
 			end
 		end
 	end
@@ -284,15 +362,43 @@ function DashMovement.Update(handle: DashMover, deltaTime: number): boolean
 		const tailDirection = if horizontal.Magnitude > 0.001
 			then horizontal.Unit
 			else handle.CurrentDirection
-		const tail = tailDirection * Config.ExitSpeed
+		const exitSpeed = if hovering then Config.AirExitSpeed else Config.ExitSpeed
+		const tail = tailDirection * exitSpeed
+
+		-- Releasing the Y force budget is what starts the falling arc. It
+		-- happens here, at the end of the flat segment, not later when the
+		-- mover is finally destroyed after the tail.
+		const motion = DashMovement.ResolveMotion(
+			tailDirection.X,
+			tailDirection.Z,
+			exitSpeed,
+			handle.Force,
+			false,
+			0
+		)
+		handle.Velocity.MaxAxesForce = Vector3.new(motion.Force.x, motion.Force.y, motion.Force.z)
+		handle.Velocity.VectorVelocity = Vector3.new(motion.Velocity.x, 0, motion.Velocity.z)
 
 		handle.TailElapsed += deltaTime
-		handle.Velocity.VectorVelocity = tail
 		handle.RootPart.AssemblyLinearVelocity = Vector3.new(tail.X, currentVelocity.Y, tail.Z)
-		return handle.TailElapsed >= DashMovement.FramesToSeconds(Config.TailFrames)
+		const tailSeconds = DashMovement.FramesToSeconds(
+			if hovering then Config.AirTailFrames else Config.TailFrames
+		)
+		return handle.TailElapsed >= tailSeconds
 	end
 
-	handle.Velocity.VectorVelocity = handle.CurrentDirection * Config.Speed * speedFactor
+	-- Keep writing the Y target every frame so steering and braking never
+	-- drop the hover; ground dashes keep the constraint's Y at zero.
+	const motion = DashMovement.ResolveMotion(
+		handle.CurrentDirection.X,
+		handle.CurrentDirection.Z,
+		Config.Speed * speedFactor,
+		handle.Force,
+		hovering,
+		Config.AirVerticalSpeed
+	)
+	handle.Velocity.VectorVelocity =
+		Vector3.new(motion.Velocity.x, motion.Velocity.y, motion.Velocity.z)
 	return true
 end
 

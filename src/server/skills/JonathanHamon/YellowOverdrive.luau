@@ -83,7 +83,7 @@ function Skill.onInit(self)
 		Validator = function()
 			-- Stopping the sequence runs its Cleaner, which removes the clip,
 			-- the sound and the particle VFX in one place.
-			return CombatService:GetHamonCharge(character) > 0
+			return CombatService:GetCharge(character, "HamonCharge") > 0
 		end,
 
 		Frames = {
@@ -139,8 +139,11 @@ function Skill.onInit(self)
 					self.LastDrain = now
 
 					if elapsed > 0 then
-						const spent =
-							CombatService:ConsumeHamonCharge(character, DRAIN_PER_SECOND * elapsed)
+						const spent = CombatService:ConsumeCharge(
+							character,
+							"HamonCharge",
+							DRAIN_PER_SECOND * elapsed
+						)
 						if not spent then
 							self.Sequence:Stop()
 							return
@@ -173,7 +176,7 @@ end
 
 function Skill.Activate(self)
 	const CombatService = Crane:GetService("CombatService")
-	if CombatService:GetHamonCharge(self.Character) < MIN_HAMON then return end
+	if CombatService:GetCharge(self.Character, "HamonCharge") < MIN_HAMON then return end
 
 	-- The clock starts at the cast, so the wind-up frames count toward the drain.
 	self.LastDrain = workspace:GetServerTimeNow()

@@ -85,7 +85,7 @@ end
 const function hamonDamageMultiplier(attacker: types.Character): number
 	const state = attacker:GetParameter("HamonCharge")
 	if not state or state.DamageMultiplier == nil then return 1 end
-	if CombatService:GetHamonCharge(attacker) <= 0 then return 1 end
+	if CombatService:GetCharge(attacker, "HamonCharge") <= 0 then return 1 end
 
 	return state.DamageMultiplier
 end

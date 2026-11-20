@@ -153,7 +153,6 @@ function Skill.onInit(self)
 			{
 				40,
 				function(_, currentFrame)
-					print(currentFrame, currentFrame % 6 == 4)
 					local attackInfo = ChopInfo
 
 					if currentFrame == 40 then
@@ -191,7 +190,7 @@ end
 
 function Skill.Activate(self)
 	const CombatService = Crane:GetService("CombatService")
-	const charged, _ = CombatService:ConsumeHamonCharge(self.Character, BURN_COST)
+	const charged, _ = CombatService:ConsumeCharge(self.Character, "HamonCharge", BURN_COST)
 	self.Burn = if charged then BurnInfo else nil
 
 	if self.Sequence then

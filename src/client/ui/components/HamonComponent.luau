@@ -5,28 +5,13 @@ const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
 const GameData = require(ReplicatedStorage.shared.schemas.GameData)
-const Hamon = require(ReplicatedStorage.shared.schemas.Hamon)
+const ChargeState = require(ReplicatedStorage.shared.combat.ChargeState)
 
 const peek = Fusion.peek
 
 const HamonView = require(script.Parent.Parent.views.HamonView)
 
-type HamonSnapshot = Hamon.HamonSnapshot
-
-const function getEffective(state: HamonSnapshot, now: number): number
-	if state.Filling then
-		return math.clamp(
-			state.FillStartAmount + state.FillRate * (now - state.FillStartedAt),
-			0,
-			state.Max
-		)
-	end
-
-	const holdEnd = state.LastGainAt + state.HoldSeconds
-	if now <= holdEnd then return math.clamp(state.Amount, 0, state.Max) end
-
-	return math.clamp(state.Amount - state.DecayRate * (now - holdEnd), 0, state.Max)
-end
+type HamonSnapshot = ChargeState.Snapshot
 
 return function(
 	scope: Fusion.Scope,
@@ -48,7 +33,9 @@ return function(
 
 	const updateLive = function()
 		const state = peek(snapshot)
-		liveAmount:set(if state then getEffective(state, workspace:GetServerTimeNow()) else 0)
+		liveAmount:set(
+			if state then ChargeState.Effective(state, workspace:GetServerTimeNow()) else 0
+		)
 	end
 
 	updateLive()

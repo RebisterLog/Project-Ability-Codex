@@ -1,5 +1,6 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const Hamon = require(ReplicatedStorage.shared.schemas.Hamon)
+const ChargeConfigs = require(ReplicatedStorage.shared.configs.Charges)
+const ChargeState = require(ReplicatedStorage.shared.combat.ChargeState)
 
 export type SpecSlot = "Spec" | "SubSpec"
 
@@ -26,7 +27,7 @@ export type CharacterParameters = {
 	MinWalkSpeed: number,
 	MaxWalkSpeed: number,
 	MaxJumpPower: number,
-	HamonCharge: Hamon.HamonSnapshot,
+	HamonCharge: ChargeState.Snapshot,
 }
 
 export type PlayerDynamicData = {
@@ -54,7 +55,7 @@ return {
 			MinWalkSpeed = 0,
 			MaxWalkSpeed = 2048,
 			MaxJumpPower = 4096,
-			HamonCharge = Hamon.snapshot(Hamon.Default),
+			HamonCharge = ChargeState.Snapshot(ChargeConfigs.HamonCharge.Default),
 		},
 		Blocking = false,
 	},

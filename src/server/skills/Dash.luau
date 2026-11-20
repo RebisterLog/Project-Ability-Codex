@@ -4,8 +4,14 @@
    Dodge-level i-frame window and plays the VFX for everyone; movement is
    handled by the shared DashMovement tuning:
 
-     * players run the movers client-side (client owns its own physics),
-     * NPCs get the identical movers here on the server.
+     * players run Apply() + Update() client-side (the client owns its own
+       character physics),
+     * NPCs run the very same Apply() + Update() loop here on the server,
+       because they have no client to predict for them.
+
+   An air dash holds the character at a constant height for the whole dash
+   (no falling) and releases gravity on the last frame, producing the falling
+   arc. Ground dashes keep their old slide feel.
 
    `Activate` deliberately does not await the sequence, so the global
    single-skill lock (Spec.ActivateSkill / Character.CheckActiveSkills) is
@@ -25,6 +31,7 @@
 
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const RunService = game:GetService("RunService")
 const ServerScriptService = game:GetService("ServerScriptService")
 
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
@@ -32,6 +39,13 @@ const Enums = require(ServerScriptService.server.Enums)
 const DashMovement = require(ReplicatedStorage.shared.DashMovement)
 
 const Config = DashMovement.Config
+
+--- The mover and its driver outlive the short i-frame sequence, so they live
+--- in the skill's own cleaner instead of the sequence cleaner.
+local function stopDash(self)
+	self.Cleaner:Remove("DashHeartbeat")
+	self.Cleaner:Remove("DashMover")
+end
 
 local Skill = {
 	DisplayName = "Dash",
@@ -104,25 +118,25 @@ function Skill:onInit()
 					})
 
 					-- Players predict locally; NPCs have no client, so the server
-					-- owns their movers. Registering the handle with "Destroy" in
-					-- the sequence cleaner covers interrupt and respawn too.
+					-- drives their mover with the same Update() loop the local
+					-- player uses. The mover lives in the skill cleaner (not the
+					-- sequence cleaner) so the longer air dash is not cut short
+					-- by the 8-frame i-frame sequence.
 					if not isPlayer then
-						seq.Cleaner:Set(
-							"DashMover",
-							DashMovement.Apply(RootPart, moveDirection, Humanoid),
-							"Destroy"
+						stopDash(self)
+						const mover = DashMovement.Apply(RootPart, moveDirection, Humanoid)
+						self.Cleaner:Set("DashMover", mover, "Destroy")
+						self.Cleaner:Set(
+							"DashHeartbeat",
+							RunService.Heartbeat:Connect(function(deltaTime)
+								-- A newer dash may have replaced this mover on the
+								-- same frame; its stale callback must not tear down
+								-- the new one.
+								if mover.Destroyed then return end
+								if not DashMovement.Update(mover, deltaTime) then stopDash(self) end
+							end)
 						)
 					end
-				end,
-			},
-
-			{
-				Config.MoveFrames,
-				function(seq)
-					-- NPC dash ends cleanly at MoveFrames; no tween tail pushing
-					-- into walls after the character has already stopped.
-					seq.Cleaner:Remove("DashMover")
-					seq.MoveDirection = nil
 				end,
 			},
 
@@ -132,9 +146,12 @@ function Skill:onInit()
 
 	-- Activate() returns immediately, so `Skill.Active` is already false by the
 	-- time a stun/ragdoll arrives and the base class' Interrupt guard would
-	-- skip us. Stop the sequence directly to guarantee mover/parameter cleanup.
+	-- skip us. Stop the sequence and the mover directly to guarantee cleanup.
 	self.Cleaner:Add(CombatService.Interrupted:Connect(function(Target)
-		if Target == character and self.Sequence then self.Sequence:Stop() end
+		if Target == character and self.Sequence then
+			self.Sequence:Stop()
+			stopDash(self)
+		end
 	end))
 end
 
@@ -146,6 +163,7 @@ end
 function Skill:Interrupt()
 	const Sequence = self.Sequence
 	if Sequence then Sequence:Stop() end
+	stopDash(self)
 end
 
 return Skill

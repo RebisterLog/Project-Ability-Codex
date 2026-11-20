@@ -37,7 +37,7 @@ const Skill: types.SkillData = {
 	onDestroy = function(self)
 		const CombatService = Crane:GetService("CombatService")
 
-		CombatService:StopHamonFill(self.Character)
+		CombatService:StopChargeFill(self.Character, "HamonCharge")
 		-- Route through the class so it owns `Holding` and the signal: firing
 		-- `Deactivated` by hand would desync both.
 		self:Deactivate()
@@ -58,10 +58,10 @@ function Skill.Activate(self)
 	Collector:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Walk))
 	Collector:Add(character:AddParameter("MaxJumpPower", 0))
 
-	CombatService:StartHamonFill(character)
+	CombatService:StartChargeFill(character, "HamonCharge")
 
 	Collector:Add(function()
-		CombatService:StopHamonFill(character)
+		CombatService:StopChargeFill(character, "HamonCharge")
 	end)
 
 	-- `Looped` lives on the clip in the skin config; the animation effect and
@@ -120,7 +120,7 @@ end
 
 function Skill.Interrupt(self)
 	const CombatService = Crane:GetService("CombatService")
-	CombatService:StopHamonFill(self.Character)
+	CombatService:StopChargeFill(self.Character, "HamonCharge")
 	self:Deactivate()
 end
 

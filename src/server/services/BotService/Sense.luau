@@ -134,7 +134,7 @@ function Sense.Refresh(self: Sense)
 
 	-- Own state shares the mask with the target conditions: a skill config can
 	-- gate a resource skill on "my Hamon is low" as well as on the enemy.
-	const charge = Crane:GetService("CombatService"):GetHamonCharge(self.Character)
+	const charge = Crane:GetService("CombatService"):GetCharge(self.Character, "HamonCharge")
 	if charge < HAMON_READY then
 		mask = bor(mask, BITS.OWN_HAMON_LOW)
 	else
