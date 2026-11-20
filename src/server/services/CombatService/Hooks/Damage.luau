@@ -5,6 +5,7 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const types = require(ServerScriptService.server.types)
 
 const VFXService = Crane:GetService("VFXService")
+const CombatService = Crane:GetService("CombatService")
 
 -- Deals damage respecting the two hold parameters:
 --   DamageHold : the health bar does not move at all; the full amount is queued
@@ -81,18 +82,12 @@ const function showIndicator(Data: types.AttackData, amount: number)
 	end
 end
 
--- A live Hamon charge adds its own outgoing multiplier on top of the ordinary
--- attacker/victim ones. The value lives on the Hamon parameter so it can be
--- tuned in one place; the effective (fill/decay-aware) charge decides whether
--- it applies, so a stale `Amount` mid-decay cannot keep granting the bonus.
 const function hamonDamageMultiplier(attacker: types.Character): number
 	const state = attacker:GetParameter("HamonCharge")
-	if not state then return 1 end
-
-	const CombatService = Crane:GetService("CombatService")
+	if not state or state.DamageMultiplier == nil then return 1 end
 	if CombatService:GetHamonCharge(attacker) <= 0 then return 1 end
 
-	return state.DamageMultiplier or 1
+	return state.DamageMultiplier
 end
 
 return {

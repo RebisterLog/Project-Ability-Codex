@@ -1,7 +1,21 @@
 --!native
 
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Enums = require(ServerScriptService.server.Enums)
+const Hamon = require(ReplicatedStorage.shared.schemas.Hamon)
+
+type StunState = { Priority: number, Duration: number }
+
+const Mirror = function(value: any): any
+	return value
+end
+
+const serializeStun = function(value: StunState): { Priority: number, ExpiresAt: number }
+	local expiresAt = 0
+	if value.Duration > 0 then expiresAt = workspace:GetServerTimeNow() + value.Duration end
+	return { Priority = value.Priority, ExpiresAt = expiresAt }
+end
 
 const HighestParser = function(a, b)
 	if a < b then return b end
@@ -27,8 +41,6 @@ end
 const ORParser = function(a, b)
 	return a or b
 end
--- Hamon Charge is a single resource, not a stack of modifiers: the owner object
--- always carries the current snapshot, so the last one wins.
 const LastParser = function(a, b)
 	return b
 end
@@ -41,9 +53,9 @@ return {
 	HealMultiplier = { Default = 1, Parser = MultParser },
 	HealReceivalMultiplier = { Default = 1, Parser = MultParser },
 	CooldownMultiplier = { Default = 1, Parser = MultParser },
-	MaxWalkSpeed = { Default = 2048, Parser = LowestParser },
-	MinWalkSpeed = { Default = 0, Parser = HighestParser },
-	MaxJumpPower = { Default = 4096, Parser = LowestParser },
+	MaxWalkSpeed = { Default = 2048, Parser = LowestParser, Replicate = Mirror },
+	MinWalkSpeed = { Default = 0, Parser = HighestParser, Replicate = Mirror },
+	MaxJumpPower = { Default = 4096, Parser = LowestParser, Replicate = Mirror },
 
 	Stun = {
 		Default = {
@@ -52,6 +64,7 @@ return {
 		},
 
 		Parser = StunParser,
+		Replicate = serializeStun,
 	},
 
 	Bleeding = {
@@ -79,11 +92,11 @@ return {
 	},
 
 	Armor = { Default = false, Parser = ORParser },
-	Ragdoll = { Default = false, Parser = ORParser },
-	Restand = { Default = false, Parser = ORParser },
+	Ragdoll = { Default = false, Parser = ORParser, Replicate = Mirror },
+	Restand = { Default = false, Parser = ORParser, Replicate = Mirror },
 	GodMode = { Default = false, Parser = ORParser },
 	NoCollision = { Default = false, Parser = ORParser },
-	Restrain = { Default = false, Parser = ORParser },
+	Restrain = { Default = false, Parser = ORParser, Replicate = Mirror },
 	NoSkillCast = { Default = false, Parser = ORParser },
 
 	-- Health cannot drop below one while active. The beat lands as usual (knockback,
@@ -96,24 +109,9 @@ return {
 	-- is released. Healing keeps its order in the same queue.
 	DamageHold = { Default = false, Parser = ORParser },
 
-	-- Hamon Charge is a time-based resource. `Amount` is the value at the end of
-	-- the hold window; the live value is derived from the timestamps (see
-	-- CombatService), so the server never needs a ticking loop.
 	HamonCharge = {
-		Default = {
-			Amount = 0,
-			LastGainAt = 0,
-			Filling = false,
-			FillStartedAt = 0,
-			FillStartAmount = 0,
-			Max = 100,
-			FillRate = 20,
-			DecayRate = 10,
-			HoldSeconds = 5,
-			-- Applied to outgoing damage while the charge is live (CombatService hooks).
-			DamageMultiplier = 1.25,
-		},
-
+		Default = table.clone(Hamon.Default),
 		Parser = LastParser,
+		Replicate = Hamon.snapshot,
 	},
 }

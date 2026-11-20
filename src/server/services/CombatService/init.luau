@@ -13,37 +13,22 @@ const Enums = require(ServerScriptService.server.Enums)
 const CharacterParameters = require(ServerScriptService.server.components.Character.Parameters)
 const types = require(ServerScriptService.server.types)
 
+const hamonExpiryThreads: any = setmetatable({}, { __mode = "k" })
+
 const CombatService = Crane:CreateService({
 	Name = "CombatService",
 })
 
---[=[
-	Hamon Charge
-
-	A time-based resource: `Amount` is the value at the end of the hold window,
-	and the live value is always derived from the timestamps. That keeps the
-	server tick-free — it only schedules one delayed callback for the moment the
-	charge reaches zero (or leaves that to the current mode) and reschedules it
-	whenever the state changes.
-
-	While `Filling` (the held Charge skill) the value grows at `FillRate`; the
-	5 second hold starts when the fill stops. Afterwards the value decays at
-	`DecayRate`. Consuming never extends the hold, it only lowers the base.
-]=]
-
-const function hamonState(character: types.Character)
+const function hamonState(character: types.Character, ensure: boolean?)
 	const entry = character.Parameters.HamonCharge
 	const object = entry and entry.Objects[1]
-	return object and object.Value
-end
+	if object then return object.Value end
 
-const function hamonEnsureState(character: types.Character)
-	const state = hamonState(character)
-	if state then return state end
+	if not ensure then return nil end
 
-	const default = table.clone(CharacterParameters.HamonCharge.Default)
-	if not character.TornDown then character:AddParameter("HamonCharge", default) end
-	return default
+	const state = table.clone(CharacterParameters.HamonCharge.Default)
+	if not character.TornDown then character:AddParameter("HamonCharge", state) end
+	return state
 end
 
 const function hamonEffective(state, now: number): number
@@ -55,8 +40,6 @@ const function hamonEffective(state, now: number): number
 		)
 	end
 
-	-- `Amount` describes the value at the end of the hold window, so the value
-	-- is flat until then and linear afterwards.
 	const holdEnd = state.LastGainAt + state.HoldSeconds
 	if now <= holdEnd then return math.clamp(state.Amount, 0, state.Max) end
 
@@ -65,39 +48,43 @@ end
 
 const function hamonScheduleExpiry(character: types.Character)
 	const entry = character.Parameters.HamonCharge
-	if not entry then return end
+	if not entry or character.TornDown then return end
 
-	entry.Generation = (entry.Generation or 0) + 1
-	const generation = entry.Generation
-
-	if character.TornDown then return end
+	const previous = hamonExpiryThreads[character]
+	if previous then
+		task.cancel(previous)
+		hamonExpiryThreads[character] = nil
+	end
 
 	const state = hamonState(character)
-	if not state or state.Filling or state.Amount <= 0 then return end
+	if not state or state.Filling or state.Amount <= 0 or state.DecayRate <= 0 then return end
 
+	const generation = entry.Generation
 	const now = workspace:GetServerTimeNow()
-	const expiresAt = state.LastGainAt + state.HoldSeconds + state.Amount / state.DecayRate
-	const delay = expiresAt - now
+	const delay = state.LastGainAt + state.HoldSeconds + state.Amount / state.DecayRate - now
 
 	const function expire()
+		hamonExpiryThreads[character] = nil
 		if character.TornDown or entry.Generation ~= generation then return end
 
 		const current = hamonState(character)
 		if not current or current.Filling then return end
 
+		const currentNow = workspace:GetServerTimeNow()
+		if hamonEffective(current, currentNow) > 0 then
+			hamonScheduleExpiry(character)
+			return
+		end
+
 		const next = table.clone(current)
 		next.Amount = 0
-		next.LastGainAt = workspace:GetServerTimeNow()
+		next.LastGainAt = currentNow
 		character:SetParameterValue("HamonCharge", next)
 	end
 
-	-- Deferring the zero-delay case keeps the publish path out of the caller's
-	-- stack, which matters when the write itself triggered this schedule.
-	if delay <= 0 then
-		task.defer(expire)
-	else
-		task.delay(delay, expire)
-	end
+	hamonExpiryThreads[character] = if delay <= 0
+		then task.defer(expire)
+		else task.delay(delay, expire)
 end
 
 const function hamonPublish(character: types.Character, state)
@@ -249,26 +236,21 @@ function CombatService:Heal(data: types.HealData)
 	return self.HealHook:Apply(data)
 end
 
---- The current Hamon Charge, including the in-progress fill and decay.
 function CombatService:GetHamonCharge(character: types.Character): number
-	const state = hamonEnsureState(character)
+	const state = hamonState(character, true)
 	return hamonEffective(state, workspace:GetServerTimeNow())
 end
 
---- Adds a flat amount (a manual source, not the held skill). The 5 second hold
---- restarts at this moment, unless the held Charge skill is running — the hold
---- then starts when that fill stops.
 function CombatService:AddHamonCharge(character: types.Character, amount: number): number
 	if amount <= 0 then return self:GetHamonCharge(character) end
 
 	const now = workspace:GetServerTimeNow()
-	const state = hamonEnsureState(character)
+	const state = hamonState(character, true)
 	const next = table.clone(state)
 
 	next.Amount = math.clamp(hamonEffective(state, now) + amount, 0, next.Max)
 
 	if next.Filling then
-		-- Materialize the jump and keep growing from it toward the cap.
 		next.FillStartAmount = next.Amount
 		next.FillStartedAt = now
 	else
@@ -279,15 +261,12 @@ function CombatService:AddHamonCharge(character: types.Character, amount: number
 	return next.Amount
 end
 
---- Spends charge. Returns `false, current` when there is not enough. The hold is
---- not extended: consuming is not an increase. A running fill keeps running
---- from the reduced value.
 function CombatService:ConsumeHamonCharge(
 	character: types.Character,
 	cost: number
 ): (boolean, number)
 	const now = workspace:GetServerTimeNow()
-	const state = hamonEnsureState(character)
+	const state = hamonState(character, true)
 	const current = hamonEffective(state, now)
 
 	if cost <= 0 then return true, current end
@@ -301,10 +280,6 @@ function CombatService:ConsumeHamonCharge(
 		next.FillStartAmount = remaining
 		next.FillStartedAt = now
 	elseif now > next.LastGainAt + next.HoldSeconds then
-		-- The hold is already over and the value is mid-decay. `Amount` is the
-		-- value at the end of the hold, so the old window would decay the
-		-- remaining value a second time; rebasing it onto `now` keeps the
-		-- spend continuous without starting a fresh hold.
 		next.LastGainAt = now - next.HoldSeconds
 	end
 
@@ -312,10 +287,9 @@ function CombatService:ConsumeHamonCharge(
 	return true, remaining
 end
 
---- Starts the held Charge: the value grows at `FillRate` until released or capped.
 function CombatService:StartHamonFill(character: types.Character): number
 	const now = workspace:GetServerTimeNow()
-	const state = hamonEnsureState(character)
+	const state = hamonState(character, true)
 	const current = hamonEffective(state, now)
 	const next = table.clone(state)
 
@@ -329,11 +303,9 @@ function CombatService:StartHamonFill(character: types.Character): number
 	return current
 end
 
---- Stops the held Charge. The 5 second hold starts now, then the value decays.
---- Stopping twice is a no-op: a second call must not restart the hold.
 function CombatService:StopHamonFill(character: types.Character): number
 	const now = workspace:GetServerTimeNow()
-	const state = hamonEnsureState(character)
+	const state = hamonState(character, true)
 	const current = hamonEffective(state, now)
 
 	if not state.Filling then return current end
@@ -456,11 +428,11 @@ function CombatService:Equip(character: types.Character, model: Model): (Model, 
 	const Motor = Instance.new("Motor6D")
 	Motor.Name = Handle:GetAttribute("MotorName") or "Handle"
 	Motor.Part0 = Bone
-	
+
 	Motor.C0 = Handle:GetAttribute("C0") or CFrame.identity
 	Motor.C1 = Handle:GetAttribute("C1") or CFrame.identity
 	Motor.Part1 = WeaponHandle
-	
+
 	-- The motor lives inside the model, so destroying the model takes it away
 	-- with the prop. Parenting comes last: clients never see a half-assembled
 	-- weapon, and an unparented model neither replicates nor renders.

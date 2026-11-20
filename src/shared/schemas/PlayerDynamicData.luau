@@ -1,3 +1,6 @@
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const Hamon = require(ReplicatedStorage.shared.schemas.Hamon)
+
 export type SpecSlot = "Spec" | "SubSpec"
 
 type SkillData = {
@@ -18,25 +21,12 @@ export type CharacterParameters = {
 		ExpiresAt: number,
 	},
 	Ragdoll: boolean,
+	Restand: boolean,
 	Restrain: boolean,
 	MinWalkSpeed: number,
 	MaxWalkSpeed: number,
 	MaxJumpPower: number,
-
-	-- Time-based snapshot: clients derive the smooth value from these fields.
-	HamonCharge: {
-		Amount: number,
-		LastGainAt: number,
-		Filling: boolean,
-		FillStartedAt: number,
-		FillStartAmount: number,
-		Max: number,
-		FillRate: number,
-		DecayRate: number,
-		HoldSeconds: number,
-		DamageMultiplier: number,
-		ExpiresAt: number,
-	},
+	HamonCharge: Hamon.HamonSnapshot,
 }
 
 export type PlayerDynamicData = {
@@ -59,24 +49,12 @@ return {
 				ExpiresAt = 0,
 			},
 			Ragdoll = false,
+			Restand = false,
 			Restrain = false,
 			MinWalkSpeed = 0,
 			MaxWalkSpeed = 2048,
 			MaxJumpPower = 4096,
-
-			HamonCharge = {
-				Amount = 0,
-				LastGainAt = 0,
-				Filling = false,
-				FillStartedAt = 0,
-				FillStartAmount = 0,
-				Max = 100,
-				FillRate = 20,
-				DecayRate = 10,
-				HoldSeconds = 5,
-				DamageMultiplier = 1.25,
-				ExpiresAt = 0,
-			},
+			HamonCharge = Hamon.snapshot(Hamon.Default),
 		},
 		Blocking = false,
 	},

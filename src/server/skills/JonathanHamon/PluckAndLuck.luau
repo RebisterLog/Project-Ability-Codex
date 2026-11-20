@@ -26,9 +26,9 @@ const types = require(ServerScriptService.server.types)
 
 const BURN_COST = 50
 const BurnInfo = {
-	Damage = 1,
+	Damage = 0.2,
 	Duration = 5,
-	Interval = 1,
+	Interval = 0.5,
 }
 
 const Skill: types.SkillData = {
@@ -53,11 +53,14 @@ const Skill: types.SkillData = {
 		Damage = 4,
 
 		Block = {
-			-- The Block hook only sets State.BlockBroken inside its
-			-- `Blockable` branch, so the break needs Blockable = true.
 			Blockable = true,
 			PerfectBlockable = false,
 			BlockBreak = true,
+		},
+
+		Stun = {
+			Duration = Enums.StunTime.Heavy,
+			Priority = Enums.Stun.Heavy,
 		},
 	},
 
@@ -74,6 +77,11 @@ const Skill: types.SkillData = {
 			Blockable = true,
 			PerfectBlockable = false,
 			BlockBreak = false,
+		},
+
+		Stun = {
+			Duration = Enums.StunTime.Heavy,
+			Priority = Enums.Stun.Heavy,
 		},
 	},
 
@@ -145,19 +153,19 @@ function Skill.onInit(self)
 			{
 				40,
 				function(_, currentFrame)
+					print(currentFrame, currentFrame % 6 == 4)
 					local attackInfo = ChopInfo
 
-					if currentFrame <= 40 then
+					if currentFrame == 40 then
 						attackInfo = FirstInfo
 					elseif currentFrame == 60 then
 						attackInfo = LastInfo
+					else
+						if currentFrame % 6 ~= 4 then return end -- filter to every 6 frame
 					end
 
-					-- The Burn hook reads Info.Burn. Clone the configured info so
-					-- the shared AttackInfo table stays untouched when only this
-					-- cast has the charge to afford it.
-					const info = table.clone(attackInfo)
-					if self.Burn then info.Burn = self.Burn end
+					const info = Crane.Utils.DeepClone(attackInfo)
+					info.Burn = self.Burn
 
 					const Targets = CombatService:Hitbox({
 						Skill = self,
@@ -166,16 +174,11 @@ function Skill.onInit(self)
 					})
 
 					for _, Target in Targets do
-						if table.find(self.AlreadyHit, Target) then continue end
-
 						CombatService:Attack({
 							Attacker = character,
 							Victim = Target,
 							Info = info,
-						}):andThen(function(Data: types.AttackData)
-							if not Data.State.Success then return end
-							table.insert(self.AlreadyHit, Target)
-						end)
+						})
 					end
 				end,
 				60,

@@ -5,24 +5,13 @@ const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
 const GameData = require(ReplicatedStorage.shared.schemas.GameData)
+const Hamon = require(ReplicatedStorage.shared.schemas.Hamon)
 
 const peek = Fusion.peek
 
 const HamonView = require(script.Parent.Parent.views.HamonView)
 
-type HamonSnapshot = {
-	Amount: number,
-	LastGainAt: number,
-	Filling: boolean,
-	FillStartedAt: number,
-	FillStartAmount: number,
-	Max: number,
-	FillRate: number,
-	DecayRate: number,
-	HoldSeconds: number,
-	DamageMultiplier: number,
-	ExpiresAt: number,
-}
+type HamonSnapshot = Hamon.HamonSnapshot
 
 const function getEffective(state: HamonSnapshot, now: number): number
 	if state.Filling then

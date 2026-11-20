@@ -5,8 +5,11 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const types = require(ServerScriptService.server.types)
 
 const VFXService = Crane:GetService("VFXService")
+const CombatService = Crane:GetService("CombatService")
 const DefaultHits = ReplicatedStorage.assets.Default.Hits
 const Hamon = ReplicatedStorage.assets.Default.Hamon
+const HamonHitVFX = Hamon.VFXs and Hamon.VFXs:FindFirstChild("Hit")
+const HamonHitSound = Hamon.Sounds and Hamon.Sounds:FindFirstChild("Hit")
 
 const function pickRandom(folder: Folder, className: string): Instance?
 	const pool = {}
@@ -54,24 +57,19 @@ return {
 			})
 		end
 
-		-- A live Hamon charge layers its own hit feedback over the default one.
-		const CombatService = Crane:GetService("CombatService")
 		if CombatService:GetHamonCharge(Data.Attacker) > 0 then
-			const hitVfx = Hamon.VFXs:FindFirstChild("Hit")
-			const hitSound = Hamon.Sounds:FindFirstChild("Hit")
-
-			if hitVfx and hitVfx:IsA("BasePart") then
+			if HamonHitVFX and HamonHitVFX:IsA("BasePart") then
 				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-					Particle = hitVfx,
+					Particle = HamonHitVFX,
 					Origin = Data.Victim.RootPart,
 					UseForge = true,
 				})
 			end
 
-			if hitSound and hitSound:IsA("Sound") then
+			if HamonHitSound and HamonHitSound:IsA("Sound") then
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 					Origin = Data.Victim.RootPart,
-					Sound = hitSound,
+					Sound = HamonHitSound,
 				})
 			end
 		end

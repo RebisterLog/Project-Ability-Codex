@@ -4,58 +4,11 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 
 const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
+const Parameters = require(ServerScriptService.server.components.Character.Parameters)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const types = require(ServerScriptService.server.types)
 
 const Replication = {}
-
-const parameterNames: { types.ParameterName } = {
-	"Stun",
-	"Ragdoll",
-	"Restand",
-	"Restrain",
-	"MinWalkSpeed",
-	"MaxWalkSpeed",
-	"MaxJumpPower",
-	"HamonCharge",
-}
-
-const function serializeParameter(name: types.ParameterName, value: any): any
-	if name == "Stun" then
-		local expiresAt = 0
-		if value.Duration > 0 then expiresAt = workspace:GetServerTimeNow() + value.Duration end
-
-		return {
-			Priority = value.Priority,
-			ExpiresAt = expiresAt,
-		}
-	end
-
-	if name == "HamonCharge" then
-		-- Ship the timestamps, not a snapshot: the client derives the smooth
-		-- value itself (fill/hold/decay) and never needs server ticks.
-		local expiresAt = 0
-		if value.Amount > 0 and not value.Filling then
-			expiresAt = value.LastGainAt + value.HoldSeconds + value.Amount / value.DecayRate
-		end
-
-		return {
-			Amount = value.Amount,
-			LastGainAt = value.LastGainAt,
-			Filling = value.Filling,
-			FillStartedAt = value.FillStartedAt,
-			FillStartAmount = value.FillStartAmount,
-			Max = value.Max,
-			FillRate = value.FillRate,
-			DecayRate = value.DecayRate,
-			HoldSeconds = value.HoldSeconds,
-			DamageMultiplier = value.DamageMultiplier,
-			ExpiresAt = expiresAt,
-		}
-	end
-
-	return value
-end
 
 --[=[
 	Mirrors the character parameters and the block state into the player proxy.
@@ -86,7 +39,7 @@ function Replication.Bind(character: types.Character, proxy: Proxy.ProxyTab<Play
 		return character.Cleaner:IsAlive()
 	end
 
-	const function publishParameter(name: types.ParameterName)
+	const function publishParameter(name: types.ParameterName, serialize: (value: any) -> any)
 		if not canPublish() then return end
 
 		const value = character:GetParameter(name)
@@ -97,22 +50,26 @@ function Replication.Bind(character: types.Character, proxy: Proxy.ProxyTab<Play
 			{
 				Name = "SetDictionary",
 				Path = { "CharacterState", "Parameters" },
-				Args = { name, serializeParameter(name, value) },
+				Args = { name, serialize(value) },
 			},
 		})
 	end
 
-	for _, name in parameterNames do
+	for name, config in Parameters do
 		if not alive then break end
 
-		const detach = character:WatchParameter(name, function()
-			publishParameter(name)
-		end)
+		const parameterName = name :: types.ParameterName
+		const serialize = (config :: { Replicate: ((value: any) -> any)? }).Replicate
+		if not serialize then continue end
 
 		-- The cleaner must hold the unsubscribe, not the watcher itself: a
 		-- watcher that outlives the component would publish stale values.
+		const detach = character:WatchParameter(parameterName, function()
+			publishParameter(parameterName, serialize)
+		end)
+
 		character.Cleaner:Add(detach)
-		publishParameter(name)
+		publishParameter(parameterName, serialize)
 	end
 
 	const function publishBlocking()
