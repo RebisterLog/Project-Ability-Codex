@@ -1,5 +1,5 @@
 --!strict
---- Generate compact type reference from src/server/types.luau and shared schemas.
+--- Generate compact type reference from src/server/types.luau, src/client/types.luau and shared schemas.
 ---
 ---   lune run tools/gen-types-doc.luau
 --- writes docs/API_TYPES.md
@@ -26,11 +26,17 @@ table.insert(lines, "# PAC API Types (generated)")
 table.insert(lines, "")
 table.insert(
 	lines,
-	"Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune run tools/gen-types-doc.luau`."
+	"Source: `src/server/types.luau`, `src/client/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune run tools/gen-types-doc.luau`."
 )
 table.insert(lines, "")
 table.insert(lines, "## src/server/types.luau")
 for _, e in exportsFromFile(`{root}/src/server/types.luau`) do
+	table.insert(lines, "- " .. e)
+end
+
+table.insert(lines, "")
+table.insert(lines, "## src/client/types.luau")
+for _, e in exportsFromFile(`{root}/src/client/types.luau`) do
 	table.insert(lines, "- " .. e)
 end
 

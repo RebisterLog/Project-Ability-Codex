@@ -511,7 +511,9 @@ src/
 ├── client/                     # Runs on player devices
 │   ├── components/             # Client-side components (Character, Player)
 │   ├── controls/               # Input handling (Keyboard, Mobile, JoystickBinds)
+│   ├── player-modules/         # Per-LocalPlayer modules (Sample; auto-loaded by Player component)
 │   ├── services/               # Client services (Bind, Chrono, Player, TargetLock, UI, VFX)
+│   ├── types.luau              # Client public type definitions (ClientPlayerModule)
 │   └── ui/                     # UI components
 │
 ├── server/                     # Runs on game server
@@ -534,7 +536,40 @@ src/
 
 ---
 
-## 15. Performance Principles
+## 15. Player Modules
+
+Both sides keep a per-player module registry in their `Player` component. Modules are plain `ModuleScript`s that live in a `player-modules` folder, are deep-cloned for each player, and receive an injected context.
+
+| | Server | Client |
+|---|---|---|
+| Folder | `ServerScriptService.server.player-modules` | `PlayerScripts.client.player-modules` |
+| Host | `src/server/components/Player.luau` | `src/client/components/Player.luau` |
+| Injected | `Name`, `player`, `playerProxy` | `Name`, `player`, `playerProxy`, `gameProxy`, `Cleaner` |
+| Lifecycle | `onInit` → `onStart` | `onInit` → `onStart` → `onCharacter` → `onDestroy` |
+| Init trigger | `LoadDocumentData()` (after data loads) | `PlayerService.onInit` (after proxies arrive) |
+| Public type | `src/server/types.luau` → `PlayerModule` | `src/client/types.luau` → `ClientPlayerModule` |
+
+Client module template (`src/client/player-modules/Sample.luau`):
+
+```luau
+const LocalPlayer = game:GetService("Players").LocalPlayer
+const types = require(LocalPlayer.PlayerScripts.client.types)
+
+const Module = {} :: types.ClientPlayerModule
+
+function Module:onInit() end
+function Module:onStart() end
+function Module:onCharacter(character: Model) end
+function Module:onDestroy() end
+
+return Module
+```
+
+All callbacks are optional and wrapped in `pcall` by the host, so one faulty module cannot break the rest. Use `self.Cleaner` (a scoped Crane `Buttler`) for connections and spawned objects; call `self.Cleaner:Clean()` at the start of `onCharacter` to drop resources from the previous character. Read modules with `Player:GetModule(name)`.
+
+---
+
+## 16. Performance Principles
 
 1. **Combat logic is server-authoritative** — all damage, hit detection, and state changes happen on the server
 2. **Client-side prediction** for responsive feel, with server reconciliation

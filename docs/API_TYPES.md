@@ -1,6 +1,6 @@
 # PAC API Types (generated)
 
-Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune run tools/gen-types-doc.luau`.
+Source: `src/server/types.luau`, `src/client/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune run tools/gen-types-doc.luau`.
 
 ## src/server/types.luau
 - export type PlayerModule = {
@@ -35,6 +35,9 @@ Source: `src/server/types.luau`, `src/shared/schemas/*.luau`. Regenerate: `lune 
 - export type HealData = {
 - export type NoDeathEntry =
 - export type Character = Crane.Component<Model> & CharacterMethods & CharacterProperities
+
+## src/client/types.luau
+- export type ClientPlayerModule = {
 
 ## shared/schemas
 ### GameData.luau

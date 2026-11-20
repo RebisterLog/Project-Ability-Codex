@@ -33,6 +33,8 @@ function PlayerService.onInit(self: typeof(PlayerService))
 		self.Proxy:Patch(data[1])
 		self.GameProxy:Patch(data[2])
 	end)
+
+	self.Player:InitModules(self.Proxy, self.GameProxy)
 end
 
 function PlayerService.onStart(self: typeof(PlayerService)) end

@@ -16,6 +16,8 @@ PAC/
 │   │   │   ├── JoystickBinds.luau
 │   │   │   ├── Keyboard.luau
 │   │   │   └── Mobile.luau
+│   │   ├── player-modules/ # Player-specific client modules (per LocalPlayer)
+│   │   │   └── Sample.luau   # Template module
 │   │   ├── services/     # Client-side services
 │   │   │   ├── BindService.luau      # Input binding
 │   │   │   ├── ChronoService.luau    # Time management
@@ -28,6 +30,7 @@ PAC/
 │   │       ├── utils/
 │   │       ├── view/
 │   │       └── main.luau
+│   │   └── types.luau    # Client-side public type definitions
 │   │
 │   ├── server/           # Server-side code (runs on game server)
 │   │   ├── combat-classes/ # CORE COMBAT SYSTEM
@@ -185,6 +188,12 @@ PAC/
    - `src/server/components/Character` manages server character state
    - `CharacterAdder.luau` in player-modules attaches characters to players
    - Combat modifications applied through character components
+
+5. **Player Modules (client and server)**
+   - Server: `ServerScriptService.server.player-modules` is scanned by `Player.InitModules()` in `src/server/components/Player.luau` after the player's data document loads.
+   - Client: `PlayerScripts.client.player-modules` is scanned by `Player.InitModules()` in `src/client/components/Player.luau`, called from `PlayerService.onInit` after both proxies are received.
+   - Every `ModuleScript` is deep-cloned per player and injected with `Name`, `player`, `playerProxy` and `gameProxy` (client only); the `ClientPlayerModule` contract is defined in `src/client/types.luau`.
+   - Lifecycle: all `onInit` callbacks run first, then all `onStart`; the client additionally calls `onCharacter(character)` on spawn/respawn and `onDestroy` when the local player's component is removed. Modules get a scoped `Cleaner` (Crane Buttler) for connections and tasks.
 
 ## Recommendations for Combat Development
 1. Keep combat logic primarily server-side for security
