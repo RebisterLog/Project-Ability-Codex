@@ -45,6 +45,7 @@ const VENDORED = {
 	"src/shared/packages/Sequencer",
 	"src/shared/packages/Signal.luau",
 	"src/shared/packages/Crane/packages",
+	"src/shared/packages/Chrono",
 }
 
 --- Directories holding the sources every gate checks. Exported rather than kept

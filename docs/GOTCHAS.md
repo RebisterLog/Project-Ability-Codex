@@ -12,7 +12,7 @@ After several respawns, `crane.component.list` reports many `Character` componen
 Index stores 820 files as LF; `core.autocrlf=on` and no `.gitattributes` makes git hand 208 back as CRLF. Forcing LF makes `git status` show ` M` while `git diff` stays empty. Editor line endings stay at `detect`. Normalizing requires its own commit (`.gitattributes` + `core.autocrlf=false`).
 
 ## 4. Vendored packages are read-only in Zed
-StyLua cannot skip paths in stdin mode, so `read_only_files` is the only lever. Editing Roact/Fusion/Crane means removing the glob. `Toolchain.VENDORED` and `selene.toml` exclude list (10 paths) must stay in sync.
+StyLua cannot skip paths in stdin mode, so `read_only_files` is the only lever. Editing Roact/Fusion/Crane means removing the glob. `Toolchain.VENDORED` and `selene.toml` exclude list (11 paths) must stay in sync.
 
 ## 5. Formatting gate nuances
 - `stylua.toml` Unix line endings; Windows checkout has mixed. Two-pass format check: a file differing only in endings is NOT unformatted.

@@ -12,13 +12,25 @@ const Signal = Crane.Signal
 const Enums = require(ServerScriptService.server.Enums)
 const Charges = require(ServerScriptService.server["combat-classes"].Charges)
 const types = require(ServerScriptService.server.types)
+const LagCompensation = require(ReplicatedStorage.shared.combat.LagCompensation)
 
 const CombatService = Crane:CreateService({
 	Name = "CombatService",
 })
 
+--- Opt-in measurement of the accuracy gained from rewinding. When enabled,
+--- every candidate is also tested against its live pose, so `LiveHits` vs
+--- `RewindHits` is the before/after delta under the current ping.
+CombatService.RewindStats = {
+	Checks = 0,
+	RewindHits = 0,
+	LiveHits = 0,
+}
+CombatService.TrackRewind = false
+
 function CombatService:onStart()
 	self.VFXService = Crane:GetService("VFXService")
+	self.ChronoService = Crane:GetService("ChronoService")
 
 	self.AttackHook = Hook.new("Attack", { "Precast", "Cast", "Postcast" })
 	self.HealHook = Hook.new("Heal", { "Cast" })
@@ -55,7 +67,7 @@ function CombatService:Hitbox(Data: types.HitboxData)
 	const Info = Data.Info
 	const Skill = Data.Skill
 	const RootPart = Caster.RootPart
-	local Origin = Info.Origin or Caster.RootPart.CFrame
+	local Origin = Info.Origin or RootPart.CFrame
 	const Size = Info.Size
 	local Offset = Info.Offset or CFrame.identity
 	const MovementCorrection = Info.MovementCorrection
@@ -94,39 +106,143 @@ function CombatService:Hitbox(Data: types.HitboxData)
 		Origin *= Offset
 	end
 
+	-- Lag compensation. Both attacker and targets are moved to the server-timeline
+	-- instant the client was rendering when it pressed the key. The workspace
+	-- query is only a broadphase: parts are still queried at their live poses,
+	-- so it is inflated by the maximum distance anything can travel in the
+	-- rewind window. The narrowphase below tests historical poses instead.
+	const chrono = self.ChronoService
+	const now = os.clock()
+	local aimSample: LagCompensation.AimSample? = nil
+	local rewindActive = false
+	local aimOrigin = Origin
+
+	if Info.Rewind ~= false and chrono then
+		aimSample = chrono:GetAimSample(Caster.Player)
+		if aimSample then
+			const casterTime =
+				LagCompensation.ChooseTime(aimSample, false, now, LagCompensation.MaxRewind)
+			const casterThen = if casterTime
+				then chrono:GetCFrameAt(Caster.instance, casterTime)
+				else nil
+			if casterThen then
+				aimOrigin = (casterThen * RootPart.CFrame:inverse()) * Origin
+				rewindActive = true
+			end
+		end
+	end
+
+	const inflation = if rewindActive
+		then LagCompensation.BroadphaseInflation(LagCompensation.MaxRewind)
+		else 0
 	local Query: { Instance } = {}
 
 	if typeof(Size) == "number" then
-		Query = workspace:GetPartBoundsInRadius(Origin.Position, Size, Params)
+		Query = workspace:GetPartBoundsInRadius(aimOrigin.Position, Size + inflation, Params)
 	elseif typeof(Size) == "Vector3" then
-		Query = workspace:GetPartBoundsInBox(Origin, Size, Params)
+		Query = workspace:GetPartBoundsInBox(aimOrigin, Size + Vector3.one * inflation, Params)
 	end
 
 	const Hit: { types.Character } = {}
 
 	for _, Part: Instance in Query do
-		if Part.Parent:FindFirstChildOfClass("Humanoid") then
-			const TargetComponent = Crane:GetComponent("Character", Part.Parent) :: types.Character
+		if not Part:IsA("BasePart") then continue end
+		const parent = Part.Parent
+		if not parent or not parent:FindFirstChildOfClass("Humanoid") then continue end
 
-			if TargetComponent and not TargetComponent.Player and not Caster.Player then
-				continue
+		const TargetComponent = Crane:GetComponent("Character", parent) :: types.Character
+		if not TargetComponent then continue end
+		if not TargetComponent.Player and not Caster.Player then continue end
+		if TargetComponent == Caster and not Info.CanQueryCaster then continue end
+		if table.find(Hit, TargetComponent) then continue end
+
+		if not rewindActive then
+			table.insert(Hit, TargetComponent)
+			continue
+		end
+
+		-- Chrono stores root history only. Carrying each limb's current pose by
+		-- the target's root delta is enough for melee-sized hitboxes and avoids
+		-- replicating a separate history per limb.
+		const targetTime = LagCompensation.ChooseTime(
+			aimSample,
+			chrono:IsHalfTicked(TargetComponent.instance),
+			now,
+			LagCompensation.MaxRewind
+		)
+		const rootThen = if targetTime
+			then chrono:GetCFrameAt(TargetComponent.instance, targetTime)
+			else nil
+		const limbCFrame = if rootThen
+			then (rootThen * TargetComponent.RootPart.CFrame:inverse()) * Part.CFrame
+			else Part.CFrame
+		const limbRadius = Part.Size.Magnitude * 0.5
+		local landed = false
+
+		if typeof(Size) == "number" then
+			landed = LagCompensation.SphereOverlapsSphere(
+				(aimOrigin.Position - limbCFrame.Position).Magnitude,
+				Size,
+				limbRadius
+			)
+		else
+			const localPos = aimOrigin:PointToObjectSpace(limbCFrame.Position)
+			landed = LagCompensation.LocalSphereOverlapsBox(
+				localPos.X,
+				localPos.Y,
+				localPos.Z,
+				limbRadius,
+				Size.X * 0.5,
+				Size.Y * 0.5,
+				Size.Z * 0.5
+			)
+		end
+
+		if self.TrackRewind then
+			self.RewindStats.Checks += 1
+			-- Same geometry, live poses: the "before" side of the comparison.
+			local liveLanded: boolean
+			if typeof(Size) == "number" then
+				liveLanded = LagCompensation.SphereOverlapsSphere(
+					(Origin.Position - Part.CFrame.Position).Magnitude,
+					Size,
+					limbRadius
+				)
+			else
+				const liveLocal = Origin:PointToObjectSpace(Part.CFrame.Position)
+				liveLanded = LagCompensation.LocalSphereOverlapsBox(
+					liveLocal.X,
+					liveLocal.Y,
+					liveLocal.Z,
+					limbRadius,
+					Size.X * 0.5,
+					Size.Y * 0.5,
+					Size.Z * 0.5
+				)
 			end
-			if not (TargetComponent and not table.find(Hit, TargetComponent)) then continue end
-			if TargetComponent == Caster and not Info.CanQueryCaster then continue end
+			if liveLanded then
+				self.RewindStats.LiveHits += 1
+			end
+		end
+
+		if landed then
+			if self.TrackRewind then
+				self.RewindStats.RewindHits += 1
+			end
 			table.insert(Hit, TargetComponent)
 		end
 	end
 
 	if Info.SortByDistance then
 		table.sort(Hit, function(a: types.Character, b: types.Character)
-			return (a.RootPart.Position - Caster.RootPart.Position).Magnitude
-				< (b.RootPart.Position - Caster.RootPart.Position).Magnitude
+			return (a.RootPart.Position - aimOrigin.Position).Magnitude
+				< (b.RootPart.Position - aimOrigin.Position).Magnitude
 		end)
 	end
 
 	if Info.Debug then
 		self.VFXService:StartEffect({ Caster.instance }, "Hitbox", {
-			Origin = Origin,
+			Origin = aimOrigin,
 			Size = Size,
 		})
 	end

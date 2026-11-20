@@ -1,0 +1,209 @@
+const Players = game:GetService("Players")
+const RunService = game:GetService("RunService")
+
+const Config = require(script.Parent.Config)
+const Entity = require(script.Parent.Entity)
+const Holder = require(script.Parent.Holder)
+const Types = require(script.Parent.Types)
+
+const HasDebuggerOpened = {}
+const Stats = {
+	REPLICATE_PERMISSIONS = {
+		--[123456789] = true,
+	} :: { [number]: boolean },
+
+	--// Client
+	CLIENT = {
+		_PAUSE = false,
+		TOTAL_ENTITIES_CULLED = 0,
+		ENTITIES_MOVED_THIS_FRAME = 0,
+		TOTAL_CLIENT_ENTITIES_CHECKED_THIS_FRAME = 0,
+		TOTAL_CLIENT_ENTITIES = 0,
+		AVG_INTERPOLATION_TIME_MS = 0,
+
+		BYTES_RECEIVED_PER_SEC = 0,
+		NEW_ENTITIES_PER_SEC = 0,
+		ENTITY_CHANGES_PER_SEC = 0,
+		ENTITY_REMOVALS_PER_SEC = 0,
+
+		CLIENT_ENTITIES = {} :: { [number]: Types.ClientEntitiesStats },
+	},
+	--// Server
+	SERVER = {
+		_FORCE = false,
+		_SHOULD_REPLICATE = false,
+		AVG_TICKER_TIME_MS = 0,
+		ENTITY_GRID_UPDATE_TIME_MS = 0,
+		GRID_UPDATE_SECTIONS = 0,
+		NUMBER_OF_ENTITIES = 0,
+		NON_TICKED = 0,
+		ENTITIES_FULL_TICKED = 0,
+		ENTITIES_HALF_TICKED = 0,
+
+		REPLICATE_PLAYER_TIME_MS = 0,
+		BYTES_RECEIVED_PER_SEC = 0,
+		BYTES_SENT_PER_SEC = 0,
+		PACKETS_SENT_PER_SEC = 0,
+
+		SERVER_ENTITIES = {} :: { [number]: Types.ServerEntitiesStats },
+		GRID_STATS = {} :: { [string]: { HALF: { number }, NORMAL: { number } } },
+	},
+}
+
+const function processID(id: number, replicate)
+	script:SetAttribute(tostring(id), replicate)
+end
+
+const function ToUserId(user: number | Player): number
+	return if typeof(user) == "Instance" then user.UserId else user
+end
+
+function Stats.HasPermissionToReplicate(user: number | Player)
+	return script:GetAttribute(tostring(ToUserId(user))) == true
+end
+
+function Stats.ReplicateStatsForPlayer(user: number | Player)
+	if RunService:IsClient() then
+		warn("Stats.ReplicateStatsForPlayer should only be called on the server.")
+		return
+	end
+	const userId = ToUserId(user)
+	Stats.REPLICATE_PERMISSIONS[userId] = true
+	processID(userId, true)
+end
+
+function Stats.StopReplicatingStatsForPlayer(user: number | Player)
+	if RunService:IsClient() then
+		warn("Stats.StopReplicatingStatsForPlayer should only be called on the server.")
+		return
+	end
+	const userId = ToUserId(user)
+	Stats.REPLICATE_PERMISSIONS[userId] = nil
+	processID(userId, false)
+end
+
+for i, v in Stats.REPLICATE_PERMISSIONS do
+	processID(i, v)
+end
+
+const function updateStat(type: string, name: string, value: any)
+	if name == "WARNING_SEVERITY" then Config.SetWarningSeverity(value) end
+	if type == "FFLAG" then (Config.FLAGS :: any)[name] = value end
+end
+
+const StatsRemoteHeaders = {
+	REPLICATE_SERVER_STATS = "REPLICATE_SERVER_STATS",
+	UPDATE_STAT = "UPDATE_STAT",
+	DEBUGGER_OPENED = "DEBUGGER_OPENED",
+	CLIENT_STATS_ACTION = "CLIENT_STATS_ACTION",
+}
+
+function Stats.SetForced(value: boolean)
+	Stats.SERVER._FORCE = value
+	Stats.SERVER._SHOULD_REPLICATE = value
+end
+
+if RunService:IsServer() then
+	const statsRemote = Instance.new("RemoteEvent", script)
+	statsRemote.Name = "Stats"
+
+	RunService.Heartbeat:Connect(function()
+		local should = false
+		if next(Stats.REPLICATE_PERMISSIONS) then
+			for i, v in Players:GetPlayers() do
+				if Stats.REPLICATE_PERMISSIONS[v.UserId] and HasDebuggerOpened[v.UserId] then
+					should = true
+					statsRemote:FireClient(
+						v,
+						StatsRemoteHeaders.REPLICATE_SERVER_STATS,
+						Stats.SERVER
+					)
+				end
+			end
+		end
+
+		Stats.SERVER._SHOULD_REPLICATE = Stats.SERVER._FORCE or should
+	end)
+
+	Players.PlayerRemoving:Connect(function(player)
+		HasDebuggerOpened[player.UserId] = nil
+	end)
+
+	statsRemote.OnServerEvent:Connect(function(plr: Player, header: string, ...)
+		if header == StatsRemoteHeaders.DEBUGGER_OPENED then
+			const opened = ...
+			HasDebuggerOpened[plr.UserId] = opened
+			return
+		end
+
+		if Stats.REPLICATE_PERMISSIONS and not Stats.REPLICATE_PERMISSIONS[plr.UserId] then
+			return
+		end
+
+		if header == StatsRemoteHeaders.UPDATE_STAT then
+			const type, name, value = ...
+			updateStat(type, name, value)
+			statsRemote:FireAllClients(StatsRemoteHeaders.UPDATE_STAT, type, name, value)
+		elseif header == StatsRemoteHeaders.CLIENT_STATS_ACTION then
+			const actionType, id = ...
+			const entity = Holder.GetEntityFromId(id)
+			if not entity then return end
+			if actionType == "CHANGE_NATIVE" then
+				const mode = Entity.GetModelReplicationType(entity)
+				if mode == "NATIVE" then
+					Entity.LockNativeServerCFrameReplication(entity)
+				elseif mode == "NATIVE_WITH_LOCK" then
+					Entity.UnlockNativeServerCFrameReplication(entity)
+				end
+			elseif actionType == "TOGGLE_PAUSE" then
+				if entity.paused then
+					Entity.ResumeReplication(entity)
+				else
+					Entity.PauseReplication(entity)
+				end
+			elseif actionType == "CHANGE_CONFIG" then
+				const configName = select(3, ...)
+				Entity.SetConfig(entity, configName)
+			elseif actionType == "SET_INTERPOLATION_MODE" then
+				const mode = select(3, ...)
+				Entity.SetInterpolationMode(entity, mode)
+			end
+		end
+	end)
+else
+	const statsRemote = script:WaitForChild("Stats") :: RemoteEvent
+
+	const function handleServerEvent(header: string, ...)
+		if header == StatsRemoteHeaders.REPLICATE_SERVER_STATS then
+			const serverStats = ...
+			if Stats.CLIENT._PAUSE then return end
+			for statName, value in serverStats do
+				Stats.SERVER[statName] = value
+			end
+		elseif header == StatsRemoteHeaders.UPDATE_STAT then
+			const type, name, value = ...
+			updateStat(type, name, value)
+		end
+	end
+
+	statsRemote.OnClientEvent:Connect(handleServerEvent)
+
+	Stats._openedDebugger = function()
+		Stats.SERVER._SHOULD_REPLICATE = true
+		statsRemote:FireServer(StatsRemoteHeaders.DEBUGGER_OPENED, true)
+	end
+	Stats._closedDebugger = function()
+		Stats.SERVER._SHOULD_REPLICATE = false
+		statsRemote:FireServer(StatsRemoteHeaders.DEBUGGER_OPENED, false)
+	end
+
+	Stats._updateStat = function(type: string, name: string, value: any)
+		statsRemote:FireServer(StatsRemoteHeaders.UPDATE_STAT, type, name, value)
+	end
+
+	Stats._fireClientStatsEvent = function(...)
+		statsRemote:FireServer(StatsRemoteHeaders.CLIENT_STATS_ACTION, ...)
+	end
+end
+
+return Stats

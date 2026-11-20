@@ -71,6 +71,9 @@ export type HitboxData = {
 		CanQueryCaster: boolean?,
 		Parameters: OverlapParams?,
 		MovementCorrection: boolean?,
+		-- Opt out of Chrono lag compensation (e.g. self-simulated projectiles).
+		-- Default nil means "rewind when a fresh aim sample exists".
+		Rewind: boolean?,
 		Debug: boolean?,
 	},
 }

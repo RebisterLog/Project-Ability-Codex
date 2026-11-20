@@ -27,7 +27,54 @@ const HandleWatchHome = function(homePoint: Vector3, character: Model)
 	end)
 end
 
+--- A stationary, invincible target for hit-validation playtests. Everything
+--- that moves on its own starts attacking as soon as the bots wake up, so this
+--- one is kept deliberately inert: no AI, no HealthChanged reset, WalkSpeed 0.
+--- It must stay unanchored — Chrono only records snapshots for unanchored
+--- entities, and without history there is nothing to rewind to.
+const EnsureDummy = function()
+	const live = workspace.Live
+	const existing = live:FindFirstChild("Dummy")
+	local dummy: Model?
+	if existing and existing:IsA("Model") then
+		dummy = existing
+	else
+		const source = live:FindFirstChild("Dummy1")
+		if not source or not source:IsA("Model") then
+			warn("TestService: no source rig available for the test Dummy")
+			return
+		end
+
+		const clone = source:Clone()
+		clone.Name = "Dummy"
+		clone.Parent = live
+		dummy = clone :: Model
+	end
+	if not dummy then return end
+	const model = dummy :: Model
+
+	const humanoid = model:FindFirstChildOfClass("Humanoid")
+	const root = model:FindFirstChild("HumanoidRootPart")
+	if not humanoid or not root then
+		warn("TestService: test Dummy is missing a Humanoid or HumanoidRootPart")
+		return
+	end
+
+	model.PrimaryPart = root
+	model:PivotTo(CFrame.new(20, 3, 20))
+	root.Anchored = false
+	humanoid.MaxHealth = 1e9
+	humanoid.Health = 1e9
+	humanoid.WalkSpeed = 0
+	humanoid.AutoRotate = false
+
+	if not Crane:GetComponent("Character", model) then Crane:AddComponent(model, "Character") end
+	Crane:GetService("ChronoService"):RegisterNPC(model)
+end
+
 function TestService:onStart()
+	EnsureDummy()
+
 	task.delay(3, function()
 		local ATTACKING_DUMMY
 		do
@@ -46,7 +93,8 @@ function TestService:onStart()
 			HandleHealth(char.Humanoid)
 			HandleWatchHome(char.RootPart.Position, char.instance)
 
-			--self.ChronoService:RegisterNPC("NPC", char)
+			-- Give the dummy a Chrono entity so server-side hits can rewind it.
+			Crane:GetService("ChronoService"):RegisterNPC(char.instance)
 		end
 
 		local PB_DUMMY

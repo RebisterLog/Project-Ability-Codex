@@ -20,7 +20,7 @@ PAC/
 │   │   │   └── Sample.luau   # Template module
 │   │   ├── services/     # Client-side services
 │   │   │   ├── BindService.luau      # Input binding
-│   │   │   ├── ChronoService.luau    # Time management
+│   │   │   ├── ChronoService.luau    # Chrono bootstrap + client aim timestamps
 │   │   │   ├── PlayerService.luau    # Player data management
 │   │   │   ├── TargetLockService.luau# Target locking system (COMBAT)
 │   │   │   ├── UIService.luau        # User interface
@@ -51,7 +51,7 @@ PAC/
 │   │   ├── services/       # Server-side services
 │   │   │   ├── BotService          # Bot/NPC management
 │   │   │   ├── CombatService       # MAIN COMBAT LOGIC SERVICE
-│   │   │   ├── ChronoService.luau  # Server time management
+│   │   │   ├── ChronoService.luau  # Chrono bootstrap, NPC entities, aim samples
 │   │   │   ├── CollisionService.luau# Collision detection (COMBAT)
 │   │   │   ├── ConfigsService.luau # Configuration management
 │   │   │   ├── GameDataService.luau# Game data persistence
@@ -102,7 +102,7 @@ PAC/
 │       │   └── Sound.luau        # Sound effects
 │       │
 │       ├── packages/       # External libraries
-│       │   ├── chrono/     # Time management library
+│       │   ├── Chrono/     # Replication + snapshot history library
 │       │   ├── Crane/      # Unknown library
 │       │   ├── Fusion/     # Reactive programming library
 │       │   ├── Janitor/    # Cleanup utility
