@@ -62,7 +62,7 @@ local function activate(_self: ClientSkillService.ClientSkill, ctx: Context)
 	const vfxService = Crane:GetService("VFXService")
 
 	const moveDirection = DashMovement.GetDirection(ctx.Humanoid.MoveDirection, rootPart.CFrame)
-	const mover = DashMovement.Apply(rootPart, moveDirection, ctx.Humanoid)
+	const mover = DashMovement.Apply(rootPart, moveDirection)
 	ctx.Cleaner:Set("DashMover", mover, "Destroy")
 
 	-- The shared Dash effect derives the animation direction from the vector
@@ -82,14 +82,13 @@ local function activate(_self: ClientSkillService.ClientSkill, ctx: Context)
 			SpecData = { SpecId = specName, SkinId = "None" },
 			-- The effect picks the animation from the object-space normal; a
 			-- world vector would select the wrong Dash side.
-			Normal = mover.LocalDirection,
+			Normal = mover.Normal,
 		})
 	end
 
 	ctx.Cleaner:Add(RunService.Heartbeat:Connect(function(deltaTime)
-		-- Finish only when the shared tick says the slide / air cap is done.
-		-- A fixed timer would drop the mover before the cap is reached and the
-		-- leftover inertia would still carry the player too far in the air.
+		-- The shared mover holds one world-fixed direction and eases down to a
+		-- fixed exit speed; deactivating only removes the constraint.
 		if not DashMovement.Update(mover, deltaTime) then ctx.Deactivate() end
 	end))
 

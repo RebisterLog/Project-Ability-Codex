@@ -11,25 +11,28 @@
        have no client to predict for them. Both paths call Apply() + Update()
        with the same Config, so their trajectories are identical.
 
-   Physics notes:
-     * LinearVelocity is a constraint: it enforces the requested velocity
-       directly instead of pulling it in with a spring (the old BodyVelocity
-       P coefficient made the character vibrate against ground friction);
-     * there is deliberately NO AlignOrientation. The dash remembers its
-       direction in the character's local space and follows RootPart rotation
-       (shift-lock camera), so an orientation mover would feed back into that
-       reference and make the character spiral. Camera/Humanoid owns rotation;
-     * a ground dash keeps MaxAxesForce.Y at zero, so gravity is never fought;
-     * an air dash (started while FloorMaterial is Air) gives Y the full force
-       budget and targets zero vertical speed. The constraint then cancels
-       gravity for the whole dash: the character moves strictly horizontally
-       (the flat "hover" segment). At the end of the dash the Y budget is
-       released again, so gravity immediately produces the falling arc.
-       The mode is picked once at cast time so players and NPCs follow exactly
-       the same path, even if the character lands mid-dash;
-     * Update() steers with a capped turn rate and controls the tail of the
-       dash: a short decaying slide on the ground and a soft distance cap in
-       the air, with separate tunings for the two modes.
+   The whole dash is one LinearVelocity constraint. Its VectorVelocity is
+   sampled once at cast time from the world-space movement direction, flattened
+   to the horizontal plane, and never steered afterwards:
+
+     * RelativeTo.World keeps that vector independent of RootPart rotation, so
+       shift-lock can turn the character without bending the trajectory;
+     * the Y target is zero and the Y force budget stays enabled for the whole
+       dash, so gravity cannot tilt the path on ground or in the air;
+     * the dash holds one constant speed for most of its life, then eases the
+       constraint's target down to a fixed, lower exit speed along the same
+       world direction. The direction is never steered; only the magnitude
+       tapers, and the character leaves with that exact speed on ground and in
+        the air. No ramp-up and no mode switch.
+
+   Nothing writes AssemblyLinearVelocity by hand. Both phases only change
+   LinearVelocity properties; callers just create it, tick a timer and destroy
+   it when the exit phase ends.
+
+   The force budget is intentionally moderate. A huge LinearVelocity budget
+   keeps ramming the rig into a wall after contact, which can tip the Humanoid
+   into Ragdoll; the smaller budget still holds the requested speed on flat
+   ground and in the air but gives way on impact.
 ]=]
 
 const DashMovement = {}
@@ -37,104 +40,107 @@ const DashMovement = {}
 export type Config = {
 	Speed: number,
 	MoveFrames: number,
-	SlideFrames: number,
+	BrakeFrames: number,
+	ExitFrames: number,
+	ExitSpeed: number,
 	IFrameFrames: number,
 	Cooldown: number,
-	Acceleration: number,
-	MinForce: number,
-	MaxForce: number,
-	TurnRate: number,
-	ExitSpeed: number,
-	TailFrames: number,
-	AirHover: boolean,
-	AirVerticalSpeed: number,
-	AirMoveFrames: number,
-	AirCapDistance: number,
-	AirBrakeDistance: number,
-	AirExitSpeed: number,
-	AirTailFrames: number,
+	Force: number,
 }
 
 --- Plain-number description of what the constraint should request. No Roblox
---- globals here so the ground/air/end decisions can be unit-tested directly.
+--- globals here so the resolver can be unit-tested directly.
 export type Motion = {
 	Velocity: { x: number, y: number, z: number },
 	Force: { x: number, y: number, z: number },
 }
 
 export type DashMover = {
-	RootPart: BasePart,
-	Humanoid: Humanoid?,
-	StartPosition: Vector3,
-	LocalDirection: Vector3,
+	WorldDirection: Vector3,
+	--- Object-space snapshot used only to pick the dash animation. It is never
+	--- fed back into movement.
+	Normal: Vector3,
 	Velocity: LinearVelocity?,
 	Attachment: Attachment?,
-	CurrentDirection: Vector3,
 	Elapsed: number,
-	Distance: number,
-	TailElapsed: number,
-	Force: number,
-	Hovering: boolean,
+	ExitElapsed: number,
 	Destroyed: boolean,
 	Destroy: (self: DashMover) -> (),
 }
 
 DashMovement.Config = {
+	-- One constant speed for the whole powered part of the dash.
 	Speed = 100,
-	MoveFrames = 8,
-	SlideFrames = 5,
+	MoveFrames = 12,
+
+	-- Last part of the dash eases the target from Speed down to ExitSpeed.
+	-- Ease-out spends the drop early and settles softly onto the exit speed.
+	BrakeFrames = 6,
+
+	-- Then the same constraint holds this fixed residual speed for a few frames.
+	-- It is a fraction of the dash speed: enough to feel like momentum rather
+	-- than a dead stop, small enough not to stretch the falling arc too much.
+	ExitFrames = 2,
+	ExitSpeed = 32,
 	IFrameFrames = 8,
 	Cooldown = 1.5,
-	Acceleration = 20_000,
-	MinForce = 60_000,
-	MaxForce = 120_000,
-	TurnRate = 720,
 
-	ExitSpeed = 40,
-	TailFrames = 20,
-
-	-- Air dash: a flat, gravity-free hover for the powered part of the dash,
-	-- followed by the normal falling arc once the mover releases Y.
-	AirHover = true,
-	AirVerticalSpeed = 0,
-	AirMoveFrames = 18,
-	AirCapDistance = 34,
-	AirBrakeDistance = 8,
-	AirExitSpeed = 45,
-	AirTailFrames = 8,
+	-- Authority of the constraint per axis, not an acceleration: the requested
+	-- velocity is constant, so the budget only decides how firmly the solver
+	-- holds it. Kept moderate so a wall hit does not keep ramming the rig into
+	-- the surface and tip the Humanoid into Ragdoll. Y stays enabled to cancel
+	-- gravity and keep the path flat in the air as well as on the ground.
+	Force = 45_000,
 } :: Config
 
 function DashMovement.FramesToSeconds(frames: number): number
 	return frames / 60
 end
 
---- Pure resolver for the constraint request. `hovering` decides whether the
---- Y axis gets a force budget (air dash) or is left to gravity (ground dash /
---- released tail). Speeds and forces are plain scalars for testability.
+--- Speed target for the current frame. Flat until the brake window, then an
+--- ease-out drop (fast at first, soft landing) to the fixed exit speed. Pure
+--- numbers only so the whole curve can be unit-tested without Roblox globals.
+function DashMovement.ResolveSpeed(
+	elapsed: number,
+	moveSeconds: number,
+	brakeSeconds: number,
+	speed: number,
+	exitSpeed: number
+): number
+	const brakeStart = moveSeconds - brakeSeconds
+	if elapsed <= brakeStart then return speed end
+	if elapsed >= moveSeconds then return exitSpeed end
+
+	const t = (elapsed - brakeStart) / brakeSeconds
+	const progress = 1 - (1 - t) * (1 - t)
+	return speed + (exitSpeed - speed) * progress
+end
+
+--- Resolves the constraint request for one frame. The Y velocity is always zero
+--- and the Y force budget is always on: no mode switch between ground and air.
+--- The speed argument comes from ResolveSpeed, including the brake tail.
 function DashMovement.ResolveMotion(
 	directionX: number,
 	directionZ: number,
 	speed: number,
-	force: number,
-	hovering: boolean,
-	verticalSpeed: number
+	force: number
 ): Motion
 	return {
 		Velocity = {
 			x = directionX * speed,
-			y = if hovering then verticalSpeed else 0,
+			y = 0,
 			z = directionZ * speed,
 		},
 		Force = {
 			x = force,
-			y = if hovering then force else 0,
+			y = force,
 			z = force,
 		},
 	}
 end
 
---- World-space horizontal unit vector. Falls back to the CFrame's LookVector
---- (also flattened) when the humanoid reports no movement input.
+--- World-space horizontal unit vector, sampled once. Falls back to the
+--- CFrame's LookVector (also flattened) when there is no movement input.
 function DashMovement.GetDirection(moveDirection: Vector3, fallback: CFrame): Vector3
 	local direction = Vector3.new(moveDirection.X, 0, moveDirection.Z)
 	if direction.Magnitude < 0.001 then
@@ -144,24 +150,6 @@ function DashMovement.GetDirection(moveDirection: Vector3, fallback: CFrame): Ve
 	if direction.Magnitude < 0.001 then direction = Vector3.new(0, 0, -1) end
 
 	return direction.Unit
-end
-
---- Remembers a world-space direction in the character's local space. Used at
---- dash start so the dash keeps its heading relative to the player while the
---- RootPart turns (shift-lock camera), instead of staying fixed in world space.
-function DashMovement.GetLocalDirection(rootPart: BasePart, worldDirection: Vector3): Vector3
-	const localDir = rootPart.CFrame:VectorToObjectSpace(worldDirection)
-	const flat = Vector3.new(localDir.X, 0, localDir.Z)
-	if flat.Magnitude < 0.001 then return Vector3.new(0, 0, -1) end
-	return flat.Unit
-end
-
---- Rebuilds that heading in world space from the current character rotation.
-function DashMovement.GetWorldDirection(rootPart: BasePart, localDirection: Vector3): Vector3
-	const world = rootPart.CFrame:VectorToWorldSpace(localDirection)
-	const flat = Vector3.new(world.X, 0, world.Z)
-	if flat.Magnitude < 0.001 then return Vector3.new(0, 0, -1) end
-	return flat.Unit
 end
 
 --- Object-space direction, used only to pick DashForward/Back/Left/Right.
@@ -193,20 +181,16 @@ local function DestroyMover(self: DashMover)
 	end
 end
 
---- Creates the mover on `rootPart` and returns an idempotent handle.
---- Register the handle in a Janitor/Buttler with the "Destroy" method so any
---- interrupt, respawn or sequence stop tears it down.
-function DashMovement.Apply(
-	rootPart: BasePart,
-	moveDirection: Vector3,
-	humanoid: Humanoid?
-): DashMover
+--- Creates the mover on `rootPart` and returns an idempotent handle. Register
+--- it in a Janitor/Buttler with the "Destroy" method so any interrupt, respawn
+--- or sequence stop tears the constraint down.
+function DashMovement.Apply(rootPart: BasePart, moveDirection: Vector3): DashMover
 	const Config = DashMovement.Config
 
+	-- Sampled once, in world space. Nothing in Update() reads the character
+	-- rotation again, so turning the camera/body cannot steer the dash.
 	const direction = DashMovement.GetDirection(moveDirection, rootPart.CFrame)
-	const hovering: boolean = Config.AirHover
-		and humanoid ~= nil
-		and humanoid.FloorMaterial == Enum.Material.Air
+	const motion = DashMovement.ResolveMotion(direction.X, direction.Z, Config.Speed, Config.Force)
 
 	-- A stale dash (previous activation / interrupted cast) must never leave a
 	-- second mover fighting the new one. The old names are cleaned up too.
@@ -214,7 +198,6 @@ function DashMovement.Apply(
 		{
 			"DashLinearVelocity",
 			"DashVelocity",
-			"DashAlignOrientation",
 			"DashAttachment",
 		}
 	do
@@ -232,17 +215,6 @@ function DashMovement.Apply(
 		createdAttachment = true
 	end
 
-	const force =
-		math.clamp(rootPart.AssemblyMass * Config.Acceleration, Config.MinForce, Config.MaxForce)
-	const motion = DashMovement.ResolveMotion(
-		direction.X,
-		direction.Z,
-		Config.Speed,
-		force,
-		hovering,
-		Config.AirVerticalSpeed
-	)
-
 	const velocity = Instance.new("LinearVelocity")
 	velocity.Name = "DashLinearVelocity"
 	velocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
@@ -250,156 +222,63 @@ function DashMovement.Apply(
 	velocity.Attachment0 = attachment
 	velocity.VectorVelocity = Vector3.new(motion.Velocity.x, motion.Velocity.y, motion.Velocity.z)
 
-	-- X/Z get the full budget. Y gets it too only for an air dash, where the
-	-- constraint has to cancel gravity to hold the flat hover segment.
+	-- Per-axis budget with Y enabled: the constraint cancels gravity for the
+	-- whole dash, so the path is horizontal whatever the surface underneath.
 	velocity.ForceLimitsEnabled = true
 	velocity.ForceLimitMode = Enum.ForceLimitMode.PerAxis
 	velocity.MaxAxesForce = Vector3.new(motion.Force.x, motion.Force.y, motion.Force.z)
 	velocity.Parent = rootPart
 
-	-- Instant horizontal speed on the same frame instead of waiting for the
-	-- mover to ramp up. An air dash also zeroes vertical speed so the flat
-	-- segment starts immediately (a dash started in a fall is caught at its
-	-- current height); a ground dash preserves Y so jumping/falling stays put.
-	const current = rootPart.AssemblyLinearVelocity
-	rootPart.AssemblyLinearVelocity = Vector3.new(
-		motion.Velocity.x,
-		if hovering then motion.Velocity.y else current.Y,
-		motion.Velocity.z
-	)
+	-- Animation only. Snapshot at cast time; it is not used for steering.
+	const localDir = rootPart.CFrame:VectorToObjectSpace(direction)
+	const flat = Vector3.new(localDir.X, 0, localDir.Z)
+	const normal = if flat.Magnitude > 0.001 then flat.Unit else Vector3.new(0, 0, -1)
 
 	return {
-		RootPart = rootPart,
-		Humanoid = humanoid,
-		StartPosition = rootPart.Position,
-		LocalDirection = DashMovement.GetLocalDirection(rootPart, moveDirection),
+		WorldDirection = direction,
+		Normal = normal,
 		Velocity = velocity,
 		Attachment = if createdAttachment then attachment else nil,
-		CurrentDirection = direction,
 		Elapsed = 0,
-		Distance = 0,
-		TailElapsed = 0,
-		Force = force,
-		Hovering = hovering,
+		ExitElapsed = 0,
 		Destroyed = false,
 		Destroy = DestroyMover,
 	}
 end
 
---- Advances the dash by one frame: steering, mode-specific distance control
---- and the tail. Returns false when the dash has finished and the mover can be
---- destroyed. Both the client and the NPC server loop call this same function.
+--- Advances the dash timer. The target stays flat, then eases down to the exit
+--- speed over the last BrakeFrames; the short hold after MoveFrames lets the
+--- constraint settle there before the caller removes it. Only VectorVelocity
+--- is written — never AssemblyLinearVelocity.
 function DashMovement.Update(handle: DashMover, deltaTime: number): boolean
 	if handle.Destroyed or not handle.Velocity then return false end
 
 	const Config = DashMovement.Config
 	handle.Elapsed += deltaTime
 
-	-- Steering: the stored direction is relative to RootPart, so turning the
-	-- shift-lock camera turns the dash with the character.
-	const desired = DashMovement.GetWorldDirection(handle.RootPart, handle.LocalDirection)
-	const current = handle.CurrentDirection
-	const angle = math.acos(math.clamp(current:Dot(desired), -1, 1))
-	if angle > 0.0001 then
-		const maxStep = math.rad(Config.TurnRate) * deltaTime
-		const alpha = math.clamp(maxStep / angle, 0, 1)
-		handle.CurrentDirection = (current + (desired - current) * alpha).Unit
-	end
-
-	const offset = handle.RootPart.Position - handle.StartPosition
-	handle.Distance = Vector3.new(offset.X, 0, offset.Z).Magnitude
-
-	-- The mode is fixed at cast time (see Apply), so a ground dash never
-	-- suddenly starts hovering over a ledge and an air dash keeps its flat
-	-- trajectory if it happens to land early.
-	const hovering = handle.Hovering
-	const moveSeconds =
-		DashMovement.FramesToSeconds(if hovering then Config.AirMoveFrames else Config.MoveFrames)
-
-	-- Safety net: a character stuck against geometry may never reach the cap,
-	-- so the dash cannot stay alive forever.
-	const maxFrames = if hovering
-		then Config.AirMoveFrames + Config.AirTailFrames + 36
-		else Config.MoveFrames + Config.SlideFrames + 36
-	local speedFactor = 1
-	local alive = handle.Elapsed < DashMovement.FramesToSeconds(maxFrames)
-
-	if handle.Elapsed > moveSeconds then
-		if hovering then
-			-- In the air there is no friction; brake smoothly before the cap so
-			-- the dash stays longer than on ground without flying away.
-			if handle.Distance >= Config.AirCapDistance then
-				alive = false
-			else
-				-- Never brake all the way to zero: reaching the cap with ~0
-				-- speed reads as a dead stop followed by a vertical drop.
-				const minFactor = Config.AirExitSpeed / Config.Speed
-				speedFactor = math.clamp(
-					(Config.AirCapDistance - handle.Distance) / Config.AirBrakeDistance,
-					minFactor,
-					1
-				)
-			end
-		else
-			-- Humanoid friction stops the character dead the moment the dash
-			-- ends, so keep a short decaying slide to reach a usable distance.
-			const slideSeconds = DashMovement.FramesToSeconds(Config.SlideFrames)
-			const slideTime = handle.Elapsed - moveSeconds
-			if slideTime >= slideSeconds then
-				alive = false
-			else
-				speedFactor = 1 - slideTime / slideSeconds
-			end
-		end
-	end
-
-	if not alive then
-		-- Hold the residual tail with the still-living constraint for a few
-		-- frames. Writing it once and destroying the mover on the same frame
-		-- lets the Humanoid/solver eat it, which reads as a full stop.
-		const currentVelocity = handle.RootPart.AssemblyLinearVelocity
-		const horizontal = Vector3.new(currentVelocity.X, 0, currentVelocity.Z)
-		const tailDirection = if horizontal.Magnitude > 0.001
-			then horizontal.Unit
-			else handle.CurrentDirection
-		const exitSpeed = if hovering then Config.AirExitSpeed else Config.ExitSpeed
-		const tail = tailDirection * exitSpeed
-
-		-- Releasing the Y force budget is what starts the falling arc. It
-		-- happens here, at the end of the flat segment, not later when the
-		-- mover is finally destroyed after the tail.
-		const motion = DashMovement.ResolveMotion(
-			tailDirection.X,
-			tailDirection.Z,
-			exitSpeed,
-			handle.Force,
-			false,
-			0
-		)
-		handle.Velocity.MaxAxesForce = Vector3.new(motion.Force.x, motion.Force.y, motion.Force.z)
-		handle.Velocity.VectorVelocity = Vector3.new(motion.Velocity.x, 0, motion.Velocity.z)
-
-		handle.TailElapsed += deltaTime
-		handle.RootPart.AssemblyLinearVelocity = Vector3.new(tail.X, currentVelocity.Y, tail.Z)
-		const tailSeconds = DashMovement.FramesToSeconds(
-			if hovering then Config.AirTailFrames else Config.TailFrames
-		)
-		return handle.TailElapsed >= tailSeconds
-	end
-
-	-- Keep writing the Y target every frame so steering and braking never
-	-- drop the hover; ground dashes keep the constraint's Y at zero.
+	const moveSeconds = DashMovement.FramesToSeconds(Config.MoveFrames)
+	const currentSpeed = DashMovement.ResolveSpeed(
+		handle.Elapsed,
+		moveSeconds,
+		DashMovement.FramesToSeconds(Config.BrakeFrames),
+		Config.Speed,
+		Config.ExitSpeed
+	)
 	const motion = DashMovement.ResolveMotion(
-		handle.CurrentDirection.X,
-		handle.CurrentDirection.Z,
-		Config.Speed * speedFactor,
-		handle.Force,
-		hovering,
-		Config.AirVerticalSpeed
+		handle.WorldDirection.X,
+		handle.WorldDirection.Z,
+		currentSpeed,
+		Config.Force
 	)
 	handle.Velocity.VectorVelocity =
 		Vector3.new(motion.Velocity.x, motion.Velocity.y, motion.Velocity.z)
-	return true
+
+	if handle.Elapsed < moveSeconds then return true end
+
+	-- Y force stays enabled through the hold, so the character does not start
+	-- falling until the mover is actually destroyed.
+	handle.ExitElapsed += deltaTime
+	return handle.ExitElapsed < DashMovement.FramesToSeconds(Config.ExitFrames)
 end
 
 return DashMovement

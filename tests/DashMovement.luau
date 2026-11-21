@@ -4,9 +4,9 @@
 ---   lune run tests/DashMovement.luau
 ---
 --- The resolver has no Roblox globals, so the cases below use plain scalars.
---- What matters is the contract that gives the air dash its flat trajectory:
---- only an active air dash gets a Y force budget, and releasing that budget
---- is what hands the character back to gravity at the end of the dash.
+--- What matters is the contract behind the new dash: one flat velocity and one
+--- Y force budget for the whole dash, then a fixed lower speed for the exit
+--- phase — same value on ground and in the air, with no acceleration.
 
 local DashMovement = require("../src/shared/DashMovement")
 
@@ -26,75 +26,96 @@ local function equal(name: string, actual: number, expected: number)
 	check(name, math.abs(actual - expected) < 1e-6, `expected {expected}, got {actual}`)
 end
 
-local function motion(name: string, hovering: boolean, verticalSpeed: number)
-	return DashMovement.ResolveMotion(0, -1, 100, 90_000, hovering, verticalSpeed)
+local function motion(directionX: number, directionZ: number, speed: number, force: number)
+	return DashMovement.ResolveMotion(directionX, directionZ, speed, force)
 end
 
--- GROUND ---------------------------------------------------------------------
+-- CONSTANT HORIZONTAL VELOCITY ------------------------------------------------
 
 do
-	const result = motion("ground", false, 0)
-	equal("ground: forward X", result.Velocity.x, 0)
-	equal("ground: forward Z", result.Velocity.z, -100)
-	equal("ground: Y target stays at zero", result.Velocity.y, 0)
-	equal("ground: no Y force budget", result.Force.y, 0)
-	equal("ground: X force budget", result.Force.x, 90_000)
-	equal("ground: Z force budget", result.Force.z, 90_000)
+	const result = motion(0, -1, 100, 100_000)
+	equal("forward X", result.Velocity.x, 0)
+	equal("forward Z", result.Velocity.z, -100)
+	equal("Y target stays at zero", result.Velocity.y, 0)
+	equal("X force budget", result.Force.x, 100_000)
+	equal("Y force budget stays on", result.Force.y, 100_000)
+	equal("Z force budget", result.Force.z, 100_000)
 end
 
--- AIR HOVER ------------------------------------------------------------------
+do
+	-- A diagonal input is still flattened and scaled by the same speed; no
+	-- component is ever added to Y.
+	const inv = 1 / math.sqrt(2)
+	const result = motion(inv, -inv, 100, 90_000)
+	equal("diagonal X", result.Velocity.x, 100 * inv)
+	equal("diagonal Z", result.Velocity.z, -100 * inv)
+	equal("diagonal Y", result.Velocity.y, 0)
+end
+
+-- CONSTANT DIRECTION -----------------------------------------------------------
 
 do
-	const result = motion("air", true, DashMovement.Config.AirVerticalSpeed)
-	equal("air: horizontal speed is unchanged", result.Velocity.z, -100)
-	equal(
-		"air: Y target is the hover speed",
-		result.Velocity.y,
-		DashMovement.Config.AirVerticalSpeed
-	)
-	equal("air: Y gets the force budget", result.Force.y, 90_000)
-	equal("air: X force budget", result.Force.x, 90_000)
+	-- The resolver has no elapsed-time argument: for a given speed it always
+	-- yields the same flat vector. The tail curve lives in ResolveSpeed.
+	const start = motion(0, -1, DashMovement.Config.Speed, DashMovement.Config.Force)
+	const again = motion(0, -1, DashMovement.Config.Speed, DashMovement.Config.Force)
+	equal("same input gives same velocity", start.Velocity.z, again.Velocity.z)
+	equal("speed is the configured speed", -again.Velocity.z, DashMovement.Config.Speed)
+end
+
+-- BRAKE CURVE ------------------------------------------------------------------
+
+do
+	-- move 0.2s, brake over the last 0.1s: flat to 0.1, then ease-out to 32.
+	const speed = DashMovement.ResolveSpeed(0, 0.2, 0.1, 100, 32)
+	const beforeBrake = DashMovement.ResolveSpeed(0.09, 0.2, 0.1, 100, 32)
+	const atStart = DashMovement.ResolveSpeed(0.1, 0.2, 0.1, 100, 32)
+	const midpoint = DashMovement.ResolveSpeed(0.15, 0.2, 0.1, 100, 32)
+	const atEnd = DashMovement.ResolveSpeed(0.2, 0.2, 0.1, 100, 32)
+	const after = DashMovement.ResolveSpeed(0.5, 0.2, 0.1, 100, 32)
+
+	equal("curve starts at dash speed", speed, 100)
+	equal("flat before the brake window", beforeBrake, 100)
+	equal("brake boundary equals dash speed", atStart, 100)
+	equal("ease-out midpoint drops fast", midpoint, 49)
+	equal("brake ends at exit speed", atEnd, 32)
+	equal("clamped after the dash", after, 32)
 	check(
-		"air: hover speed is zero (strictly horizontal)",
-		DashMovement.Config.AirVerticalSpeed == 0
+		"monotonic drop",
+		speed >= beforeBrake
+			and beforeBrake >= atStart
+			and atStart >= midpoint
+			and midpoint >= atEnd
 	)
 end
 
+-- EXIT PHASE ------------------------------------------------------------------
+
 do
-	-- The config is tunable: a non-zero hover speed must be respected.
-	const result = DashMovement.ResolveMotion(1, 0, 40, 50_000, true, 12)
-	equal("tunable lift: Y target", result.Velocity.y, 12)
-	equal("tunable lift: Y force budget", result.Force.y, 50_000)
+	-- The exit retargets the very same resolver to a fixed, lower speed along
+	-- the original direction; that value is what the character keeps.
+	const exitSpeed = DashMovement.Config.ExitSpeed
+	const result = motion(0, -1, exitSpeed, DashMovement.Config.Force)
+	check("exit speed is non-zero", exitSpeed > 0)
+	check("exit speed is below dash speed", exitSpeed < DashMovement.Config.Speed)
+	equal("exit: X velocity", result.Velocity.x, 0)
+	equal("exit: Y velocity stays zero", result.Velocity.y, 0)
+	equal("exit: Z velocity", result.Velocity.z, -exitSpeed)
+	equal("exit: Y force budget stays on", result.Force.y, DashMovement.Config.Force)
 end
 
--- BRAKING KEEPS THE HOVER ----------------------------------------------------
+-- CONFIG SHAPE ----------------------------------------------------------------
 
 do
-	-- Near the air cap speedFactor drops, but the vertical component must not.
-	const result = DashMovement.ResolveMotion(0, -1, 100 * 0.45, 90_000, true, 0)
-	equal("braking: reduced horizontal speed", result.Velocity.z, -45)
-	equal("braking: Y target still zero", result.Velocity.y, 0)
-	equal("braking: Y force still available", result.Force.y, 90_000)
-end
-
--- END OF DASH RELEASES GRAVITY ----------------------------------------------
-
-do
-	const result = DashMovement.ResolveMotion(0, -1, 45, 90_000, false, 0)
-	equal("tail: residual horizontal speed", result.Velocity.z, -45)
-	equal("tail: Y force released", result.Force.y, 0)
-	equal("tail: horizontal force kept", result.Force.x, 90_000)
-end
-
--- CONFIG SHAPE ---------------------------------------------------------------
-
-do
-	check("air mode is enabled", DashMovement.Config.AirHover)
+	check("dash speed is positive", DashMovement.Config.Speed > 0)
+	check("force budget is positive", DashMovement.Config.Force > 0)
 	check(
-		"air dash outlasts the ground dash",
-		DashMovement.Config.AirMoveFrames > DashMovement.Config.MoveFrames
+		"brake fits inside the dash",
+		DashMovement.Config.BrakeFrames < DashMovement.Config.MoveFrames
 	)
-	equal("frames to seconds", DashMovement.FramesToSeconds(18), 0.3)
+	check("brake window is positive", DashMovement.Config.BrakeFrames > 0)
+	check("exit phase is present", DashMovement.Config.ExitFrames > 0)
+	equal("frames to seconds", DashMovement.FramesToSeconds(6), 0.1)
 end
 
 print(`DashMovement: {passed} passed, {#failures} failed`)

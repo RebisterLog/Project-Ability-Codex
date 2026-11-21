@@ -9,9 +9,10 @@
      * NPCs run the very same Apply() + Update() loop here on the server,
        because they have no client to predict for them.
 
-   An air dash holds the character at a constant height for the whole dash
-   (no falling) and releases gravity on the last frame, producing the falling
-   arc. Ground dashes keep their old slide feel.
+   One constant world-space direction and one constant speed for the whole
+   dash, whether the character is on the ground or in the air. The shared
+   mover is a single LinearVelocity constraint; turning the body with
+   shift-lock never steers it.
 
    `Activate` deliberately does not await the sequence, so the global
    single-skill lock (Spec.ActivateSkill / Character.CheckActiveSkills) is
@@ -73,11 +74,25 @@ function Skill:onInit()
 			{
 				0,
 				function(seq)
-					-- 8 frames of dodge-level invulnerability. All parameters live
-					-- in the sequence cleaner, so Stop() always removes them.
-					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
-					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
-					seq.Cleaner:Add(character:AddParameter("IFrames", Enums.IFrames.Dodge))
+					-- All parameters live in the sequence cleaner, so Stop() always
+					-- removes them. Movement stays locked for the whole dash: the
+					-- Humanoid must not fight the dash mover on the ground during
+					-- its last frames, or the ground dash falls short.
+					seq.Cleaner:Set(
+						"DashWalkLock",
+						character:AddParameter("MaxWalkSpeed", 0),
+						"Destroy"
+					)
+					seq.Cleaner:Set(
+						"DashJumpLock",
+						character:AddParameter("MaxJumpPower", 0),
+						"Destroy"
+					)
+					seq.Cleaner:Set(
+						"DashIFrames",
+						character:AddParameter("IFrames", Enums.IFrames.Dodge),
+						"Destroy"
+					)
 
 					local Normal = RootPart.CFrame:VectorToObjectSpace(Humanoid.MoveDirection)
 					if Normal == Vector3.zero then Normal = Vector3.new(0, 0, -1) end
@@ -120,11 +135,11 @@ function Skill:onInit()
 					-- Players predict locally; NPCs have no client, so the server
 					-- drives their mover with the same Update() loop the local
 					-- player uses. The mover lives in the skill cleaner (not the
-					-- sequence cleaner) so the longer air dash is not cut short
-					-- by the 8-frame i-frame sequence.
+					-- sequence cleaner) so the dash outlives the 8-frame i-frame
+					-- sequence.
 					if not isPlayer then
 						stopDash(self)
-						const mover = DashMovement.Apply(RootPart, moveDirection, Humanoid)
+						const mover = DashMovement.Apply(RootPart, moveDirection)
 						self.Cleaner:Set("DashMover", mover, "Destroy")
 						self.Cleaner:Set(
 							"DashHeartbeat",
@@ -140,7 +155,16 @@ function Skill:onInit()
 				end,
 			},
 
-			{ Config.IFrameFrames }, -- end frame: Cleaner:Clean() drops IFrames
+			{
+				Config.IFrameFrames,
+				function(seq)
+					-- Invulnerability ends at 8 frames; the movement locks have to
+					-- survive until the dash mover finishes at MoveFrames.
+					seq.Cleaner:Remove("DashIFrames")
+				end,
+			},
+
+			{ Config.MoveFrames }, -- end frame: Cleaner:Clean() drops the remaining locks
 		},
 	}))
 
