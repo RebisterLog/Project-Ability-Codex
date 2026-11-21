@@ -82,13 +82,6 @@ function Skill.onInit(self)
 						Speed = seq.Speed,
 					})
 
-					seq.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
-							Character = character.instance,
-							Animation = anim.Animation,
-						})
-					end)
-
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/SilverPierce"),
@@ -121,7 +114,7 @@ function Skill.onInit(self)
 				30,
 			},
 
-			{ 50 },
+			{ 30 },
 		},
 	}))
 end
@@ -135,6 +128,11 @@ end
 
 function Skill.Interrupt(self)
 	if self.Sequence then self.Sequence:Stop() end
+
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = character.instance,
+		Animation = anim.Animation,
+	})
 end
 
 return Skill

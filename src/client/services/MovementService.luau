@@ -40,7 +40,15 @@ function MovementService.Apply(self: typeof(MovementService))
 		minWalkSpeed = math.max(minWalkSpeed, speed)
 	end
 
-	humanoid.WalkSpeed = MovementRules.GetWalkSpeed(minWalkSpeed, parameters.MaxWalkSpeed)
+	-- Local sources may only lower the ceiling; the server's maximum is the
+	-- other bound, so a prediction like Slide can never exceed what the
+	-- authoritative state allows.
+	local maxWalkSpeed = parameters.MaxWalkSpeed
+	for _, speed in self.LocalMaxWalkSpeeds do
+		maxWalkSpeed = math.min(maxWalkSpeed, speed)
+	end
+
+	humanoid.WalkSpeed = MovementRules.GetWalkSpeed(minWalkSpeed, maxWalkSpeed)
 
 	const jumpPower = MovementRules.GetJumpPower(parameters.MaxJumpPower)
 	humanoid.JumpPower = jumpPower
@@ -62,10 +70,28 @@ function MovementService.SetLocalMinWalkSpeed(
 	self:Apply()
 end
 
+--- Lowers the effective maximum walk speed for one named local source.
+--- `nil` releases the source. Mirrors SetLocalMinWalkSpeed so parkour tricks
+--- can slow the character without fighting the replicated parameters.
+function MovementService.SetLocalMaxWalkSpeed(
+	self: typeof(MovementService),
+	source: string,
+	speed: number?
+)
+	if speed ~= nil then
+		self.LocalMaxWalkSpeeds[source] = speed
+	else
+		self.LocalMaxWalkSpeeds[source] = nil
+	end
+
+	self:Apply()
+end
+
 function MovementService.Attach(self: typeof(MovementService), character: Model)
 	self.CharacterVersion += 1
 	const version = self.CharacterVersion
 	table.clear(self.LocalMinWalkSpeeds)
+	table.clear(self.LocalMaxWalkSpeeds)
 
 	self.Humanoid = nil
 	const humanoid = character:WaitForChild("Humanoid") :: Humanoid
@@ -78,6 +104,7 @@ end
 function MovementService.onStart(self: typeof(MovementService))
 	self.PlayerService = Crane:GetService("PlayerService")
 	self.LocalMinWalkSpeeds = {}
+	self.LocalMaxWalkSpeeds = {}
 	self.CharacterVersion = 0
 	self.Cleaner = Crane.Buttler.new()
 

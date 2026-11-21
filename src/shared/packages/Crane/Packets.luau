@@ -55,15 +55,8 @@ return ByteNet.defineNamespace("CranePackets", function()
 				}),
 			}),
 
-			-- Carries the client's Chrono render timestamps so the server can
-			-- rewind hitboxes to exactly what the attacker saw. float64 keeps
-			-- sub-millisecond precision on `os.clock()`-scale timestamps.
 			StartSkill = ByteNet.definePacket({
-				value = ByteNet.struct({
-					Id = ByteNet.string,
-					AimNormal = ByteNet.float64,
-					AimHalf = ByteNet.float64,
-				}),
+				value = ByteNet.string,
 			}),
 
 			StopSkill = ByteNet.definePacket({

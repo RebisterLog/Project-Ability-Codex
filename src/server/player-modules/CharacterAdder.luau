@@ -28,6 +28,7 @@ function CharacterAdder.onCharacterAdded(self: typeof(CharacterAdder), character
 	if specModule:GetSubSpec() ~= "None" then specModule:SetSubSpec(specModule:GetSubSpec()) end
 	self.player.Modules["GodModeModule"]:OnCharacter(self.Character)
 	self.player.Modules["NoCooldownModule"]:OnCharacter(self.Character)
+	self.player.Modules["CombatStateModule"]:OnCharacter(self.Character)
 end
 
 function CharacterAdder.onStart(self: typeof(CharacterAdder))

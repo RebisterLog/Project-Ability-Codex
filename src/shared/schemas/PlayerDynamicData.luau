@@ -35,6 +35,11 @@ export type PlayerDynamicData = {
 	CharacterState: {
 		Parameters: CharacterParameters,
 		Blocking: boolean,
+		-- True while the last landed hit is still inside the combat window.
+		-- `CombatUntil` is a server timestamp so a client can expire the flag
+		-- locally even if the resetting patch arrives a frame late.
+		InCombat: boolean,
+		CombatUntil: number,
 	},
 }
 
@@ -58,5 +63,7 @@ return {
 			HamonCharge = ChargeState.Snapshot(ChargeConfigs.HamonCharge.Default),
 		},
 		Blocking = false,
+		InCombat = false,
+		CombatUntil = 0,
 	},
 } :: PlayerDynamicData

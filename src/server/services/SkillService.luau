@@ -17,14 +17,12 @@ function SkillService:onStart()
 	self.SpecService = Crane:GetService("SpecService")
 	self.PathUtil = Crane:GetService("PathUtil")
 
-	Crane:GetPacket("StartSkill")
-		.listen(function(data: { Id: string, AimNormal: number, AimHalf: number }, player)
-			const character = player.Character
-			if not character then return end
+	Crane:GetPacket("StartSkill").listen(function(skillId: string, player)
+		const character = player.Character
+		if not character then return end
 
-			Crane:GetService("ChronoService"):RecordAim(player, data.AimNormal, data.AimHalf)
-			self:ActivateSkill(character, data.Id)
-		end)
+		self:ActivateSkill(character, skillId)
+	end)
 
 	Crane:GetPacket("StopSkill").listen(function(skillId: string, player)
 		const character = player.Character

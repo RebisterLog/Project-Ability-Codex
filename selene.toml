@@ -15,7 +15,6 @@ exclude = [
     "src/shared/packages/Sequencer/**",
     "src/shared/packages/Signal.luau",
     "src/shared/packages/Crane/packages/**",
-    "src/shared/packages/Chrono/**",
 ]
 
 [lints]

@@ -171,6 +171,7 @@ function Character.onStart(self: typeof(Character))
 
 	self.Humanoid.NameDisplayDistance = 0
 	self.Humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+	self.Humanoid.JumpPower = 25
 
 	if not self.Player then
 		Animate(self.instance)

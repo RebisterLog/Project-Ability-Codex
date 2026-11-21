@@ -39,20 +39,6 @@ type HeldInput = SkillRef & {
 -- does. Keep the cast in one place instead of widening every bind to `any`.
 const UNKNOWN_BIND: Bind = (Enum.KeyCode :: any).Unknown
 
---- Bundle the Chrono render timestamps with the activation itself: a separate
---- packet could arrive before/after the skill and leave the server with a
---- stale or mismatched aim instant.
-const function sendStartSkill(skillId: string)
-	const chrono = Crane:GetService("ChronoService")
-	const aim = chrono:GetAim()
-
-	Crane:GetPacket("StartSkill").send({
-		Id = skillId,
-		AimNormal = aim.Normal or 0,
-		AimHalf = aim.Half or 0,
-	})
-end
-
 const BindService = Crane:CreateService({
 	Name = "BindService",
 })
@@ -188,7 +174,7 @@ function BindService.onStart(self: typeof(BindService))
 
 	const function sendStart(candidate: Candidate, hold: boolean, key: string)
 		self.clientSkills:Activate(candidate.SkillId)
-		sendStartSkill(candidate.SkillId)
+		Crane:GetPacket("StartSkill").send(candidate.SkillId)
 
 		self.Held[key] = {
 			Slot = candidate.Slot,
@@ -264,7 +250,7 @@ function BindService.onStart(self: typeof(BindService))
 
 			held.Interval = BASE_RETRY_INTERVAL
 			self.clientSkills:Activate(held.SkillId)
-			sendStartSkill(held.SkillId)
+			Crane:GetPacket("StartSkill").send(held.SkillId)
 		end
 	end))
 end

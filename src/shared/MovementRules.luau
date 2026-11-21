@@ -2,7 +2,7 @@
 
 const MovementRules = {
 	BaseWalkSpeed = 16,
-	BaseJumpPower = 50,
+	BaseJumpPower = 40,
 	RunSpeed = 25,
 }
 
