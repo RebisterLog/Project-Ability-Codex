@@ -9,3 +9,9 @@ sourcemap.json
 
 /generated docs: reproduced by `lune run tools/sync-docs.luau`
 docs/ref/
+.opencode/
+.sharrowkin/
+.vscode/
+.zed/
+docs/
+mockups/
