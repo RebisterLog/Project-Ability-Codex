@@ -1,11 +1,12 @@
-const Players = game:GetService("Players")
-const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const ServerScriptService = game:GetService("ServerScriptService")
-const Crane = require(ReplicatedStorage.shared.packages.Crane)
-const Enums = require(ServerScriptService.server.Enums)
-const types = require(ServerScriptService.server.types)
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 
-const Skill: types.SkillData = {
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
+local Enums = require(ServerScriptService.server.Enums)
+local types = require(ServerScriptService.server.types)
+
+local Skill = {
 	DisplayName = "Zoom Punch",
 	Cooldown = 8,
 	BaseSpec = "JonathanHamon",
@@ -13,9 +14,8 @@ const Skill: types.SkillData = {
 
 	AttackInfo = {
 		Hitbox = {
-      -- Size depends on Hamon Charge
 			MinSize = Vector3.new(8, 8, 15),
-      MaxSize = Vector3.new(8, 8, 35)
+			MaxSize = Vector3.new(8, 8, 35),
 			Offset = CFrame.new(0, 0, -15),
 		},
 
@@ -25,7 +25,6 @@ const Skill: types.SkillData = {
 			PerfectBlockable = false,
 		},
 
-    -- Combo Extender / Starter, so 2 seconds should be enough to continue
 		Stun = {
 			Priority = Enums.Stun.Medium,
 			Duration = 2,
@@ -34,65 +33,76 @@ const Skill: types.SkillData = {
 }
 
 function Skill.onInit(Skill)
-	const character = Skill.Character
-	const RootPart = character.RootPart
-	const VFXService = Crane:GetService("VFXService")
-	const CombatService = Crane:GetService("CombatService")
+	local character = Skill.Character
+	local VFXService = Crane:GetService("VFXService")
+	local CombatService = Crane:GetService("CombatService")
 
 	Skill.Sequence = Skill.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
-      -- i hate seq, sorry
-      {0, function(self)
-					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
-					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+			{ 0, function(seq)
+				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
+				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					const anim = Skill:GetAsset("Animations/ZoomPunch")
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+				local anim = Skill:GetAsset("Animations/ZoomPunch")
+
+				VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+					Character = character.instance,
+					Animation = anim,
+					Speed = seq.Speed,
+				})
+
+				seq.Cleaner:Add(function()
+					VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = anim,
-						Speed = seq.Speed,
+						Animation = anim.Animation,
 					})
+				end)
+			end },
 
-					seq.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
-							Character = character.instance,
-							Animation = anim.Animation,
-						})
-					end)
-      end};
+			{ 30, function(seq)
+				local AttackInfo = Skill.Data.AttackInfo
+				local HitboxInfo = AttackInfo.Hitbox
 
-      {30, function(self)
-          const AttackInfo = Skill.Data.AttackInfo
+				local Charge = CombatService:GetCharge(character, "Hamon")
+                -- idk how do i get max hamon charge, so imma hardcode
+                local MaxCharge = 100
+				local Alpha = math.clamp(Charge / MaxCharge, 0, 1)
 
-          const Targets = CombatService:Hitbox({
-						Skill = self,
-						Caster = character,
-						Info = AttackInfo.Hitbox,
+				local HitboxSize = HitboxInfo.MinSize:Lerp(
+					HitboxInfo.MaxSize,
+					Alpha
+				)
+
+				local Targets = CombatService:Hitbox({
+					Skill = seq,
+					Caster = character,
+					Info = {
+						Size = HitboxSize,
+						Offset = HitboxInfo.Offset,
+					},
+				})
+
+				for _, Target in Targets do
+					CombatService:Attack({
+						Attacker = character,
+						Victim = Target,
+						Info = AttackInfo,
 					})
+				end
+			end },
 
-					for _, Target in Targets do
-						CombatService:Attack({
-							Attacker = character,
-							Victim = Target,
-							Info = AttackInfo,
-						})
-					end
-      end};
+			{ 30, function(seq)
+				-- CameraShake / FOV
+			end },
 
-      {30, function(self)
-          -- TODO: CameraShake or FOV Modification would be nice
-      end};
-
-			{130, function(self)
-          -- end
-      end},
+			{ 130, function(seq)
+				-- End
+			end },
 		},
 	}))
 end
 
 function Skill.Activate(self)
-	const CombatService = Crane:GetService("CombatService")
-
 	if self.Sequence then
 		self.Sequence:Play()
 		self.Sequence:Await()
@@ -100,7 +110,9 @@ function Skill.Activate(self)
 end
 
 function Skill.Interrupt(self)
-	if self.Sequence then self.Sequence:Stop() end
+	if self.Sequence then
+		self.Sequence:Stop()
+	end
 end
 
 return Skill
