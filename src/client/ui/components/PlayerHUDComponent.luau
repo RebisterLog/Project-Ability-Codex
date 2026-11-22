@@ -1,7 +1,5 @@
-const GuiService = game:GetService("GuiService")
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const Workspace = game:GetService("Workspace")
 
 const LocalPlayer = Players.LocalPlayer
 
@@ -22,36 +20,54 @@ const GetExperienceToNextLevel = function(level: number): number
 	return 100 * math.max(level, 1)
 end
 
-const GetTopInset = function(): number
-	const inset = GuiService.TopbarInset
-	const strip = inset.Min.Y + inset.Height
-
-	if strip > 0 and strip <= 200 then return strip end
-
-	return 36
-end
-
-const GetTopInsetScale = function(): number
-	const camera = Workspace.CurrentCamera
-	const viewportHeight = if camera then camera.ViewportSize.Y else 0
-
-	if viewportHeight <= 0 then return 36 / 1080 end
-
-	return GetTopInset() / viewportHeight
-end
-
 return function(scope: Fusion.Scope, props: DefaultProps, router: Router.Router)
 	const hudScope = scope:innerScope()
 
 	const humanoidHealth = hudScope:Value(100)
 	const humanoidMaxHealth = hudScope:Value(100)
+	const delayedHealth = hudScope:Value(100)
+	const delayedMaxHealth = hudScope:Value(100)
+
+	local currentHealth = 100
+	local currentMaxHealth = 100
+	local delayThread: thread? = nil
+	local delayToken = 0
+
+	const cancelCatchup = function()
+		delayToken = delayToken + 1
+
+		if delayThread then
+			task.cancel(delayThread)
+			delayThread = nil
+		end
+	end
+
+	const scheduleCatchup = function()
+		cancelCatchup()
+		const token = delayToken
+
+		delayThread = task.delay(1, function()
+			if token == delayToken then
+				delayedHealth:set(currentHealth)
+				delayedMaxHealth:set(currentMaxHealth)
+				delayThread = nil
+			end
+		end)
+	end
 
 	const healthRatio = hudScope:Computed(function(use)
 		return math.clamp(use(humanoidHealth) / math.max(use(humanoidMaxHealth), 1), 0, 1)
 	end)
 
+	const delayedHealthRatio = hudScope:Computed(function(use)
+		return math.clamp(use(delayedHealth) / math.max(use(delayedMaxHealth), 1), 0, 1)
+	end)
+
 	const healthText = hudScope:Computed(function(use)
-		return ("%d/%d"):format(math.ceil(use(humanoidHealth)), math.ceil(use(humanoidMaxHealth)))
+		return ("HP %d / %d"):format(
+			math.ceil(use(humanoidHealth)),
+			math.ceil(use(humanoidMaxHealth))
+		)
 	end)
 
 	const humanoidConnections = {}
@@ -65,17 +81,40 @@ return function(scope: Fusion.Scope, props: DefaultProps, router: Router.Router)
 
 	const bindHumanoid = function(character: Model?)
 		unbindHumanoid()
+		cancelCatchup()
 
 		const humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
 		if not humanoid then
+			currentHealth = 100
+			currentMaxHealth = 100
 			humanoidHealth:set(100)
 			humanoidMaxHealth:set(100)
+			delayedHealth:set(100)
+			delayedMaxHealth:set(100)
 			return
 		end
 
+		local lastHealth = 0
+
 		const update = function()
-			humanoidHealth:set(humanoid.Health)
-			humanoidMaxHealth:set(humanoid.MaxHealth)
+			const health = humanoid.Health
+			const maxHealth = humanoid.MaxHealth
+
+			if health < lastHealth then
+				scheduleCatchup()
+			elseif health > lastHealth then
+				cancelCatchup()
+				delayedHealth:set(health)
+				delayedMaxHealth:set(maxHealth)
+			elseif maxHealth ~= currentMaxHealth then
+				delayedMaxHealth:set(maxHealth)
+			end
+
+			lastHealth = health
+			currentHealth = health
+			currentMaxHealth = maxHealth
+			humanoidHealth:set(health)
+			humanoidMaxHealth:set(maxHealth)
 		end
 
 		update()
@@ -95,6 +134,7 @@ return function(scope: Fusion.Scope, props: DefaultProps, router: Router.Router)
 		end)
 	)
 	table.insert(hudScope, unbindHumanoid)
+	table.insert(hudScope, cancelCatchup)
 
 	const level = hudScope:Value(props.PlayerProxy().Level or 0)
 	const experience = hudScope:Value(props.PlayerProxy().Experience or 0)
@@ -113,56 +153,16 @@ return function(scope: Fusion.Scope, props: DefaultProps, router: Router.Router)
 		end)
 	)
 
-	const levelText = hudScope:Computed(function(use)
-		return ("%d lvl."):format(math.floor(use(level)))
-	end)
-
 	const experienceFraction = hudScope:Computed(function(use)
 		return math.clamp(use(experience) / GetExperienceToNextLevel(use(level)), 0, 1)
 	end)
 
-	const topInsetScale = hudScope:Value(GetTopInsetScale())
-
-	const updateTopInsetScale = function()
-		topInsetScale:set(GetTopInsetScale())
-	end
-
-	table.insert(
-		hudScope,
-		GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(updateTopInsetScale)
-	)
-
-	local cameraConnection: RBXScriptConnection? = nil
-
-	const bindCamera = function()
-		if cameraConnection then
-			cameraConnection:Disconnect()
-			cameraConnection = nil
-		end
-
-		const camera = Workspace.CurrentCamera
-		if not camera then return end
-
-		cameraConnection =
-			camera:GetPropertyChangedSignal("ViewportSize"):Connect(updateTopInsetScale)
-		updateTopInsetScale()
-	end
-
-	bindCamera()
-	table.insert(hudScope, Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(bindCamera))
-	table.insert(hudScope, function()
-		if cameraConnection then cameraConnection:Disconnect() end
-	end)
-
 	return PlayerHUDView(hudScope, {
-		HealthRatio = healthRatio,
-		HealthText = healthText,
-		LevelText = levelText,
-		Experience = experienceFraction,
 		DisplayName = LocalPlayer.DisplayName,
-		AvatarImage = ("rbxthumb://type=AvatarHeadShot&id=%d&w=150&h=150"):format(
-			LocalPlayer.UserId
-		),
-		TopInsetScale = topInsetScale,
+		Level = level,
+		Experience = experienceFraction,
+		HealthRatio = healthRatio,
+		DelayedHealthRatio = delayedHealthRatio,
+		HealthText = healthText,
 	})
 end

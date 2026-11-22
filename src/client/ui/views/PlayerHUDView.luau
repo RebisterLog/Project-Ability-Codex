@@ -8,250 +8,228 @@ type UsedAs<T> = Fusion.UsedAs<T>
 const PlayerHUDView = function(
 	scope: Fusion.Scope,
 	props: {
-		HealthRatio: UsedAs<number>,
-		HealthText: UsedAs<string>,
-		LevelText: UsedAs<string>,
-		Experience: UsedAs<number>,
 		DisplayName: UsedAs<string>,
-		AvatarImage: UsedAs<string>,
-		TopInsetScale: UsedAs<number>,
+		Level: UsedAs<number>,
+		Experience: UsedAs<number>,
+		HealthRatio: UsedAs<number>,
+		DelayedHealthRatio: UsedAs<number>,
+		HealthText: UsedAs<string>,
 	}
 )
-	const healthSpring = scope:Spring(props.HealthRatio, 25)
-	const experienceSpring = scope:Spring(props.Experience, 20)
+	const healthSpring = scope:Spring(props.HealthRatio, 15)
+	const delayedHealthSpring = scope:Spring(props.DelayedHealthRatio, 8)
+	const experienceSpring = scope:Spring(props.Experience, 12)
 
-	const sweepAngle = scope:Computed(function(use)
-		return use(experienceSpring) * 360
+	const healthSize = scope:Computed(function(use)
+		return UDim2.fromScale(math.clamp(use(healthSpring), 0, 1), 1)
 	end)
 
-	const bottomRotation = scope:Computed(function(use)
-		return math.min(use(sweepAngle) - 270, -90)
+	const delayedHealthSize = scope:Computed(function(use)
+		return UDim2.fromScale(math.clamp(use(delayedHealthSpring), 0, 1), 1)
 	end)
 
-	const topRotation = scope:Computed(function(use)
-		return use(sweepAngle) - 270
+	const experienceSize = scope:Computed(function(use)
+		return UDim2.fromScale(math.clamp(use(experienceSpring), 0, 1), 1)
 	end)
 
-	const isBottomShown = scope:Computed(function(use)
-		return use(sweepAngle) > 0.5
-	end)
-
-	const isTopShown = scope:Computed(function(use)
-		return use(sweepAngle) > 182
+	const levelText = scope:Computed(function(use)
+		return tostring(math.floor(use(props.Level)))
 	end)
 
 	return scope:New("Frame")({
-		Name = "PlayerHUD",
+		Name = "HUD",
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Position = scope:Computed(function(use)
-			return UDim2.fromScale(0, use(props.TopInsetScale))
-		end),
-		Size = UDim2.fromScale(0.276172, 0.147222),
+		Size = UDim2.fromScale(0.35, 0.15463),
 
 		[Children] = {
-			scope:New("Frame")({
-				Name = "Panel",
-				BackgroundColor3 = Color3.fromRGB(40, 61, 93),
-				BorderSizePixel = 0,
-				Position = UDim2.fromScale(0.123055, 0.471698),
-				Size = UDim2.fromScale(0.876945, 0.353774),
-				ZIndex = 1,
-
-				[Children] = {
-					scope:New("UICorner")({
-						CornerRadius = UDim.new(0, 5),
-					}),
-					scope:New("UIStroke")({
-						BorderStrokePosition = Enum.BorderStrokePosition.Inner,
-						Color = Color3.fromRGB(207, 81, 100),
-						Thickness = 4,
-					}),
-				},
+			scope:New("UIAspectRatioConstraint")({
+				AspectRatio = 4.02395,
+				AspectType = Enum.AspectType.ScaleWithParentSize,
 			}),
 
 			scope:New("Frame")({
-				Name = "BarBackground",
-				BackgroundColor3 = Color3.fromRGB(60, 24, 29),
+				Name = "AvatarSlot",
+				BackgroundColor3 = Color3.fromRGB(42, 36, 29),
 				BorderSizePixel = 0,
-				Position = UDim2.fromScale(0.247525, 0.519623),
-				Size = UDim2.fromScale(0.742574, 0.254717),
+				Position = UDim2.fromScale(0.00744048, 0.0419162),
+				Size = UDim2.fromScale(0.212798, 0.844311),
 				ZIndex = 2,
 
 				[Children] = {
-					scope:New("UICorner")({
-						CornerRadius = UDim.new(0, 5),
-					}),
 					scope:New("UIStroke")({
+						Name = "AvatarBorder",
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 						BorderStrokePosition = Enum.BorderStrokePosition.Inner,
-						Color = Color3.fromRGB(207, 81, 100),
-						Thickness = 4,
-					}),
-
-					scope:New("Frame")({
-						Name = "BarFill",
-						BackgroundColor3 = Color3.fromRGB(207, 81, 100),
-						BorderSizePixel = 0,
-						Size = scope:Computed(function(use)
-							return UDim2.fromScale(use(healthSpring), 1)
-						end),
-						ZIndex = 3,
-
-						[Children] = {
-							scope:New("UICorner")({
-								CornerRadius = UDim.new(0, 5),
-							}),
-						},
-					}),
-
-					scope:New("TextLabel")({
-						Name = "HealthText",
-						BackgroundTransparency = 1,
-						BorderSizePixel = 0,
-						FontFace = Font.new(
-							"rbxasset://fonts/families/Balthazar.json",
-							Enum.FontWeight.Regular,
-							Enum.FontStyle.Normal
-						),
-						Size = UDim2.fromScale(1, 1),
-						Text = props.HealthText,
-						TextColor3 = Color3.fromRGB(207, 81, 100),
-						TextSize = 48,
-						TextXAlignment = Enum.TextXAlignment.Center,
-						TextYAlignment = Enum.TextYAlignment.Center,
-						ZIndex = 4,
-
-						[Children] = {
-							scope:New("UIStroke")({
-								Color = Color3.fromRGB(60, 24, 29),
-								Thickness = 2,
-							}),
-						},
-					}),
-				},
-			}),
-
-			scope:New("Frame")({
-				Name = "AvatarBackground",
-				BackgroundColor3 = Color3.fromRGB(89, 83, 65),
-				BorderSizePixel = 0,
-				Size = UDim2.fromScale(0.247525, 0.825472),
-				ZIndex = 5,
-
-				[Children] = {
-					scope:New("UICorner")({
-						CornerRadius = UDim.new(0.5, 0),
-					}),
-				},
-			}),
-
-			scope:New("Frame")({
-				Name = "SweepTop",
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				ClipsDescendants = true,
-				Size = UDim2.fromScale(0.247525, 0.412736),
-				Visible = isTopShown,
-				ZIndex = 6,
-
-				[Children] = {
-					scope:New("ImageLabel")({
-						Name = "Sweep",
-						AnchorPoint = Vector2.new(0.5, 0.5),
-						BackgroundTransparency = 1,
-						BorderSizePixel = 0,
-						Image = "rbxassetid://93461507310089",
-						Position = UDim2.fromScale(0.5, 1),
-						Rotation = topRotation,
-						Size = UDim2.fromScale(1, 2),
-					}),
-				},
-			}),
-
-			scope:New("Frame")({
-				Name = "SweepBottom",
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				ClipsDescendants = true,
-				Position = UDim2.fromScale(0, 0.412736),
-				Size = UDim2.fromScale(0.247525, 0.412736),
-				Visible = isBottomShown,
-				ZIndex = 6,
-
-				[Children] = {
-					scope:New("ImageLabel")({
-						Name = "Sweep",
-						AnchorPoint = Vector2.new(0.5, 0.5),
-						BackgroundTransparency = 1,
-						BorderSizePixel = 0,
-						Image = "rbxassetid://93461507310089",
-						Position = UDim2.fromScale(0.5, 0),
-						Rotation = bottomRotation,
-						Size = UDim2.fromScale(1, 2),
+						Color = Color3.new(1, 1, 1),
+						LineJoinMode = Enum.LineJoinMode.Miter,
+						Thickness = 3,
 					}),
 				},
 			}),
 
 			scope:New("ImageLabel")({
-				Name = "AvatarPhoto",
+				Name = "Star",
 				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				Image = props.AvatarImage,
-				Position = UDim2.fromScale(0.016973, 0.056604),
-				Size = UDim2.fromScale(0.213579, 0.707547),
-				ZIndex = 7,
-
-				[Children] = {
-					scope:New("UICorner")({
-						CornerRadius = UDim.new(0.5, 0),
-					}),
-				},
+				Image = "rbxassetid://124610969806843",
+				Position = UDim2.fromScale(0.190476, 0),
+				ScaleType = Enum.ScaleType.Fit,
+				Size = UDim2.fromScale(0.06, 0.2),
+				ZIndex = 4,
 			}),
 
 			scope:New("TextLabel")({
-				Name = "Nickname",
+				Name = "Name",
 				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				FontFace = Font.new(
-					"rbxasset://fonts/families/Balthazar.json",
-					Enum.FontWeight.Regular,
-					Enum.FontStyle.Normal
-				),
-				Position = UDim2.fromScale(0.251768, 0.231132),
-				Size = UDim2.fromScale(0.528996, 0.245283),
+				FontFace = Font.new("rbxasset://fonts/families/RobotoCondensed.json"),
+				Position = UDim2.fromScale(0.24256, 0.0239521),
+				Size = UDim2.fromScale(0.708333, 0.236099),
 				Text = props.DisplayName,
-				TextColor3 = Color3.fromRGB(255, 255, 255),
-				TextSize = 40,
+				TextColor3 = Color3.new(1, 1, 1),
+				TextScaled = true,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Center,
-				ZIndex = 8,
+				ZIndex = 4,
 
 				[Children] = {
-					scope:New("UIStroke")({
-						Color = Color3.fromRGB(0, 0, 0),
-						Thickness = 2,
+					scope:New("UITextSizeConstraint")({
+						Name = "TextConstraint",
+						MaxTextSize = 50,
+						MinTextSize = 10,
 					}),
 				},
 			}),
 
 			scope:New("TextLabel")({
-				Name = "Level",
-				AnchorPoint = Vector2.new(0.5, 0),
+				Name = "LevelLabel",
 				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
+				FontFace = Font.new("rbxasset://fonts/families/RobotoCondensed.json"),
+				Position = UDim2.fromScale(0.247024, 0.335329),
+				Size = UDim2.fromScale(0.0568977, 0.155689),
+				Text = "LV.",
+				TextColor3 = Color3.new(1, 1, 1),
+				TextScaled = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 4,
+
+				[Children] = {
+					scope:New("UITextSizeConstraint")({
+						Name = "TextConstraint",
+						MaxTextSize = 50,
+						MinTextSize = 6,
+					}),
+				},
+			}),
+
+			scope:New("TextLabel")({
+				Name = "LevelValue",
+				BackgroundTransparency = 1,
 				FontFace = Font.new(
-					"rbxasset://fonts/families/Balthazar.json",
-					Enum.FontWeight.Regular,
+					"rbxasset://fonts/families/RobotoCondensed.json",
+					Enum.FontWeight.Bold,
 					Enum.FontStyle.Normal
 				),
-				Position = UDim2.fromScale(0.123762, 0.830189),
-				Size = UDim2.fromScale(0.247525, 0.221698),
-				Text = props.LevelText,
-				TextColor3 = Color3.fromRGB(255, 235, 175),
-				TextSize = 36,
-				TextXAlignment = Enum.TextXAlignment.Center,
-				TextYAlignment = Enum.TextYAlignment.Center,
-				ZIndex = 9,
+				Position = UDim2.fromScale(0.28869, 0.329341),
+				Size = UDim2.fromScale(0.0580356, 0.161676),
+				Text = levelText,
+				TextColor3 = Color3.new(1, 1, 1),
+				TextScaled = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 4,
+
+				[Children] = {
+					scope:New("UITextSizeConstraint")({
+						Name = "TextConstraint",
+						MaxTextSize = 50,
+						MinTextSize = 8,
+					}),
+				},
+			}),
+
+			scope:New("Frame")({
+				Name = "XPTrack",
+				BackgroundColor3 = Color3.fromRGB(42, 36, 29),
+				BorderSizePixel = 0,
+				Position = UDim2.fromScale(0.346726, 0.359281),
+				Size = UDim2.fromScale(0.604167, 0.0419162),
+				ZIndex = 3,
+
+				[Children] = {
+					scope:New("Frame")({
+						Name = "XPFill",
+						BackgroundColor3 = Color3.fromRGB(253, 175, 32),
+						BorderSizePixel = 0,
+						Size = experienceSize,
+						ZIndex = 4,
+					}),
+				},
+			}),
+
+			scope:New("Frame")({
+				Name = "HPBar",
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				Position = UDim2.fromScale(0.245536, 0.610778),
+				Size = UDim2.fromScale(0.705357, 0.225074),
+				ZIndex = 3,
+
+				[Children] = {
+					scope:New("Frame")({
+						Name = "HPTrack",
+						BackgroundColor3 = Color3.fromRGB(42, 36, 29),
+						BorderSizePixel = 0,
+						Size = UDim2.fromScale(1, 1),
+						ZIndex = 1,
+					}),
+
+					scope:New("Frame")({
+						Name = "HPDamageBar",
+						BackgroundColor3 = Color3.fromRGB(255, 0, 81),
+						BorderSizePixel = 0,
+						Size = delayedHealthSize,
+						ZIndex = 3,
+					}),
+
+					scope:New("Frame")({
+						Name = "HPFill",
+						BackgroundColor3 = Color3.fromRGB(0, 255, 136),
+						BorderSizePixel = 0,
+						Size = healthSize,
+						ZIndex = 4,
+					}),
+
+					scope:New("TextLabel")({
+						Name = "HPText",
+						BackgroundTransparency = 1,
+						FontFace = Font.new(
+							"rbxasset://fonts/families/RobotoCondensed.json",
+							Enum.FontWeight.Bold,
+							Enum.FontStyle.Normal
+						),
+						Position = UDim2.fromScale(0.0611814, 0.260771),
+						Size = UDim2.fromScale(0.421941, 0.464399),
+						Text = props.HealthText,
+						TextColor3 = Color3.fromRGB(0, 255, 136),
+						TextScaled = true,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						ZIndex = 5,
+
+						[Children] = {
+							scope:New("UITextSizeConstraint")({
+								Name = "TextConstraint",
+								MaxTextSize = 50,
+								MinTextSize = 8,
+							}),
+
+							scope:New("UIStroke")({
+								Name = "HPTextStroke",
+								ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
+								StrokeSizingMode = Enum.StrokeSizingMode.ScaledSize,
+								Color = Color3.fromRGB(8, 63, 26),
+								LineJoinMode = Enum.LineJoinMode.Round,
+								Thickness = 0.12,
+							}),
+						},
+					}),
+				},
 			}),
 		},
 	})

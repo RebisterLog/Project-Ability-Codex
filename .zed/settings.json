@@ -9,8 +9,16 @@
   // `stylua.toml` in the working directory Zed happens to spawn it in, and a
   // miss means the default 120-column, spaces, no sorted requires. With it,
   // StyLua resolves the config from the buffer's own path every time.
+  // lunaut is wired in here instead of in the user settings so the whole
+  // project's editor setup lives in this one file. The binary is a small
+  // stdio proxy: it forwards Zed <-> lunaut and also listens on 127.0.0.1:3667
+  // for the Roblox Studio companion plugin (the VS Code extension normally
+  // owns that listener; Zed has no equivalent).
   "languages": {
     "Luau": {
+      "show_edit_predictions": true,
+      // The Luau extension registers the server under the name "luau-lsp".
+      "language_servers": ["luau-lsp"],
       "formatter": {
         "external": {
           "command": "stylua",
@@ -33,6 +41,48 @@
       "hard_tabs": true,
       "tab_size": 4,
       "preferred_line_length": 100
+    }
+  },
+
+  "lsp": {
+    "luau-lsp": {
+      "binary": {
+        "path": "C:\\Program Files\\nodejs\\node.exe",
+        "arguments": [
+          "C:/Users/RebisterLog/AppData/Local/lunaut/studio-proxy.js",
+          "--port=3667",
+          "C:/Users/RebisterLog/AppData/Local/lunaut/bin/lunaut.exe",
+          "lsp"
+        ]
+      },
+      "initialization_options": {
+        "vscode": {
+          "lunaut.platform": "roblox",
+          "lunaut.studioPlugin.enabled": true,
+          "lunaut.studioPlugin.port": 3667,
+          "lunaut.rojo.enabled": true,
+          "lunaut.rojo.autogenerate": true,
+          "lunaut.rojo.projectFile": "default.project.json",
+          "lunaut.rojo.sourcemapFile": "sourcemap.json",
+          "lunaut.rojo.includeNonScripts": true,
+          "lunaut.rojo.strictDatamodelTypes": true,
+          "lunaut.definitions": [
+            {
+              "name": "@roblox",
+              "path": "C:/Users/RebisterLog/AppData/Local/Luau/globalTypes.d.luau",
+              "priority": 1000
+            }
+          ],
+          "lunaut.roblox.downloadTypes": false,
+          "lunaut.diagnostics.delay": 500,
+          "lunaut.diagnostics.includeDependents": false,
+          "lunaut.inlayHints.parameterNames": "all",
+          "lunaut.inlayHints.variableTypes": false,
+          "lunaut.inlayHints.parameterTypes": true,
+          "lunaut.inlayHints.functionReturnTypes": false,
+          "lunaut.inlayHints.typeHintMaxLength": 200
+        }
+      }
     }
   },
 

@@ -118,6 +118,7 @@ return function(
 		IgnoreGuiInset = true,
 		Parent = PlayerGui,
 		ResetOnSpawn = false,
+		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 
 		[Children] = {
 			RootRouter = router:Render("PlayerHUD"),
