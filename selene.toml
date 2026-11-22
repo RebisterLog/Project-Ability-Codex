@@ -25,6 +25,11 @@ exclude = [
 # stands down.
 multiple_statements = "allow"
 
+# Sequencer frame entries mix positional slots (`{start, callback, end}`) with
+# the optional `Interval` / `Offset` keys. That is the public format, so flagging
+# every such table would sieve through all combat skills for no gain.
+mixed_table = "allow"
+
 [config]
 # `function self:Method()` declares an implicit `self`, which shadows an outer
 # `local self`. That is how a method is written in Lua. Relaxing the name rather

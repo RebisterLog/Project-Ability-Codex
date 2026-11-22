@@ -116,16 +116,32 @@ function Skill.onInit(self)
 	const ChopInfo = self.Data.ChopInfo
 	const LastInfo = self.Data.LastHitInfo
 
-	self.AlreadyHit = {}
 	self.Burn = nil
+
+	const function hit(attackInfo)
+		const info = Crane.Utils.DeepClone(attackInfo)
+		info.Burn = self.Burn
+
+		const Targets = CombatService:Hitbox({
+			Skill = self,
+			Caster = character,
+			Info = attackInfo.Hitbox,
+		})
+
+		for _, Target in Targets do
+			CombatService:Attack({
+				Attacker = character,
+				Victim = Target,
+				Info = info,
+			})
+		end
+	end
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
 				0,
 				function(seq)
-					table.clear(self.AlreadyHit)
-
 					const Sword = CombatService:Equip(character, self:GetAsset("Models/Sword"))
 					seq.Cleaner:Add(Sword)
 
@@ -152,35 +168,25 @@ function Skill.onInit(self)
 
 			{
 				40,
-				function(_, currentFrame)
-					local attackInfo = ChopInfo
-
-					if currentFrame == 40 then
-						attackInfo = FirstInfo
-					elseif currentFrame == 60 then
-						attackInfo = LastInfo
-					else
-						if currentFrame % 6 ~= 4 then return end -- filter to every 6 frame
-					end
-
-					const info = Crane.Utils.DeepClone(attackInfo)
-					info.Burn = self.Burn
-
-					const Targets = CombatService:Hitbox({
-						Skill = self,
-						Caster = character,
-						Info = attackInfo.Hitbox,
-					})
-
-					for _, Target in Targets do
-						CombatService:Attack({
-							Attacker = character,
-							Victim = Target,
-							Info = info,
-						})
-					end
+				function()
+					hit(FirstInfo)
 				end,
+			},
+
+			{
+				46,
+				function()
+					hit(ChopInfo)
+				end,
+				58,
+				Interval = 6,
+			},
+
+			{
 				60,
+				function()
+					hit(LastInfo)
+				end,
 			},
 
 			{ 70 },

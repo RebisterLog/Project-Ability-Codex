@@ -124,9 +124,7 @@ function Skill.onInit(self)
 
 			{
 				20,
-				function(_, frame)
-					if frame % 10 ~= 0 then return end
-
+				function()
 					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
@@ -142,6 +140,7 @@ function Skill.onInit(self)
 					end
 				end,
 				120,
+				Interval = 10,
 			},
 
 			{

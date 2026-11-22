@@ -122,7 +122,7 @@ function Skill.onInit(self)
 
 			{
 				25,
-				function(_, currentFrame)
+				function()
 					if not self.VFXStarted then
 						self.VFXStarted = true
 						VFXService:StartEffect(Players:GetPlayers(), "ForgeVFXHold", {
@@ -144,14 +144,15 @@ function Skill.onInit(self)
 							"HamonCharge",
 							DRAIN_PER_SECOND * elapsed
 						)
-						if not spent then
-							self.Sequence:Stop()
-							return
-						end
+						if not spent then self.Sequence:Stop() end
 					end
+				end,
+				150,
+			},
 
-					if currentFrame % 5 ~= 0 then return end
-
+			{
+				25,
+				function()
 					const Targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
@@ -167,6 +168,7 @@ function Skill.onInit(self)
 					end
 				end,
 				150,
+				Interval = 5,
 			},
 
 			{ 155 },

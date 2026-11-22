@@ -212,16 +212,14 @@ function Skill.onInit(self)
 
 			{
 				45,
-				function(seq, frame)
-					if frame % 4 ~= 0 then return end
-
+				function()
 					const targets = CombatService:Hitbox({
 						Skill = self,
 						Caster = character,
 						Info = self.Data.BarrageInfo.Hitbox,
 					})
 
-					for i, target in targets do
+					for _, target in targets do
 						CombatService:Attack({
 							Attacker = character,
 							Victim = target,
@@ -230,6 +228,8 @@ function Skill.onInit(self)
 					end
 				end,
 				190,
+				Interval = 4,
+				Offset = 3,
 			},
 
 			{

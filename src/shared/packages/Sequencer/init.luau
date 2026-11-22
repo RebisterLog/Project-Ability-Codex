@@ -109,6 +109,7 @@ local RunService = game:GetService("RunService")
 
 -- REQUIRES
 local Butler = require(script.Butler)
+local FramePlanner = require(script.FramePlanner)
 
 -- CONSTANTS
 const MINIMAL_POSSIBLE_SPEED = 0
@@ -148,15 +149,26 @@ type Cleaner = typeof(Butler.new())
 		end,
 		40},
 		
+		-- Every 6 frames inside the window, starting 6 frames after 40:
+		-- fires on 46, 52 and 58
+		{40,
+		function(self, currentFrame: number)
+		
+		end,
+		60,
+		Interval = 6,
+		Offset = 6},
+		
 		-- End frame
 		{60},
 	```	
+
+	`currentFrame` is always the exact frame being executed, never the frame at
+	the end of the current Heartbeat tick. Multiple crossed frames are executed
+	one by one even when a single tick spans them all.
 ]]
 type FrameCallback = (self: Sequencer, currentFrame: number) -> ()
-
-type Frame = {
-	[number]: number | FrameCallback?,
-}
+type Frame = FramePlanner.Frame
 
 type InputData = {
 	Frames: { Frame },
@@ -174,6 +186,11 @@ type SequencerProperties = InputData & {
 	Speed: number,
 	State: State,
 	CurrentFrame: number,
+	-- Last integer frame whose callbacks already ran. Prevents both duplicates
+	-- and skips when `delta` accumulates a fractional part.
+	LastExecutedFrame: number,
+	-- Upper bound for catch-up after a hitch (the last declared frame).
+	LastFrame: number,
 	Cleaner: Cleaner,
 	Tick: RBXScriptConnection?,
 }
@@ -191,38 +208,6 @@ type SequencerMethods = {
 
 export type Sequencer = setmetatable<SequencerProperties & SequencerMethods, typeof(Sequencer)>
 
-local function GetFrames(frames: { Frame }, startFrame: number, endFrame: number): { Frame }
-	local scoped: { Frame } = {}
-	local low = math.min(startFrame, endFrame)
-	local high = math.max(startFrame, endFrame)
-
-	for i = 1, #frames do
-		local frame = frames[i]
-		local frameStart = frame[1] :: number
-		local frameEnd = frame[3] :: number?
-
-		if not frameEnd then
-			-- Single frame / end frame: fire if we passed or landed on it this tick
-			if frameStart >= low and frameStart <= high then table.insert(scoped, frame) end
-		else
-			-- Added 1 frame to include last frame
-			if high < frameStart or high > frameEnd + 1 then continue end
-
-			-- Count of passed frames for that period of time
-			local count = math.floor(high) - math.floor(low)
-
-			if count > 0 then
-				-- Dublicating if was passed a lot
-				for _ = 1, count do
-					table.insert(scoped, frame)
-				end
-			end
-		end
-	end
-
-	return scoped
-end
-
 function Sequencer.Play(self: Sequencer)
 	-- If was already playing
 	if self.State == States.Playing then return end
@@ -232,40 +217,60 @@ function Sequencer.Play(self: Sequencer)
 		return
 	end
 
+	-- A fresh run after Stop starts from zero. Paused keeps the playhead.
+	self.CurrentFrame = 0
+	self.LastExecutedFrame = -1
+
 	self.Tick = RunService.Heartbeat:Connect(function(delta: number)
 		-- Skipping until playing
 		if self.State ~= States.Playing then return end
 
-		local startFrame = self.CurrentFrame
+		const startFrame = self.CurrentFrame
 		self.CurrentFrame += self.Speed * delta * 60 -- 60 frames = 1 second
 
-		-- The frames that were passed between 'startFrame' and self.CurrentFrame
-		local toExecFrames: { Frame } = GetFrames(self.Frames, startFrame, self.CurrentFrame)
-		if #toExecFrames == 0 then return end
+		-- Every crossed integer frame is executed once, with its own frame
+		-- number — not the number at the end of this Heartbeat tick.
+		const planned = FramePlanner.Plan(
+			self.Frames,
+			startFrame,
+			self.CurrentFrame,
+			self.LastExecutedFrame,
+			self.LastFrame
+		)
 
-		for i = 1, #toExecFrames do
-			local validator = self.Validator :: ((self: Sequencer) -> boolean)?
-			if validator and not validator(self) then
-				-- Runtime check was failed
-				self:Stop()
-				return
+		local validatedFrame = self.LastExecutedFrame
+
+		for _, item in planned do
+			if item.Frame ~= validatedFrame then
+				validatedFrame = item.Frame
+
+				const validator = self.Validator :: ((self: Sequencer) -> boolean)?
+				if validator and not validator(self) then
+					-- Runtime check was failed
+					self:Stop()
+					return
+				end
 			end
 
-			local frame = toExecFrames[i]
+			self.LastExecutedFrame = item.Frame
 
-			local callback = frame[2] :: FrameCallback?
+			const callback = item.Entry[2] :: FrameCallback?
 
 			if not callback then
 				-- Found end frame (e.x.: {30})
 				self:Stop()
 				return
-			else
-				callback(self, math.floor(self.CurrentFrame))
 			end
+
+			callback(self, item.Frame)
+
+			-- A callback (or a signal it fired) may have stopped the sequence.
+			-- The rest of this batch must not run anymore.
+			if self.State ~= States.Playing then return end
 		end
 
 		-- Checks the time of the last frame
-		if self.CurrentFrame >= self.Frames[#self.Frames][1] or self.CurrentFrame <= 0 then
+		if self.CurrentFrame >= self.LastFrame or self.CurrentFrame <= 0 then
 			self:Stop()
 		end
 	end)
@@ -334,6 +339,7 @@ end
 function Sequencer.Destroy(self: Sequencer)
 	self.State = States.Stopped
 	self.CurrentFrame = 0
+	self.LastExecutedFrame = -1
 
 	if self.Tick then self.Tick:Disconnect() end
 
@@ -343,6 +349,9 @@ end
 -- CONSTRUCTOR
 return {
 	new = function(data: InputData)
+		const valid, reason = FramePlanner.Validate(data.Frames)
+		if not valid then error(`Sequencer.new: {reason}`, 2) end
+
 		local self = setmetatable({
 			-- From data
 			Validator = data.Validator,
@@ -352,6 +361,8 @@ return {
 			-- Private
 			State = States.None,
 			CurrentFrame = 0,
+			LastExecutedFrame = -1,
+			LastFrame = FramePlanner.LastFrame(data.Frames),
 			Cleaner = Butler.new(),
 		}, Sequencer)
 
