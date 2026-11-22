@@ -290,6 +290,15 @@ function Bot.Tick(self: Bot, dt: number)
 		self:ReleaseGuard()
 	end
 
+	-- A held Charge is a kiting window: back away to the Defend distance and
+	-- leave the attack slot alone until the hold is released. Attack.Step already
+	-- no-ops while a skill is active; the early return keeps this posture from
+	-- being overwritten by the Attack posture on the same tick.
+	if self.HeldSkill == "Charge" then
+		self:SetPosture("Charge")
+		return
+	end
+
 	-- The slot goes to the defense for what a block can take, and for a hit that has
 	-- already landed. "Does it have an active skill" must not be used for this: a
 	-- target holding a block stays active indefinitely, and the bot would back off

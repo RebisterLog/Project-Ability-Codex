@@ -9,7 +9,7 @@ local MovementStyles = require(script.Parent.NavigationController.MovementStyles
 --- This used to be a state machine table, but the states differed only by
 --- posture, so telling them apart turned out to be pointless: `Bot` decides who
 --- owns the action slot, and the posture is a consequence of that decision.
-export type Posture = "Idle" | "Attack" | "Defend"
+export type Posture = "Idle" | "Attack" | "Defend" | "Charge"
 
 local DEFEND_DISTANCE = 15
 
@@ -17,6 +17,9 @@ local STYLES: { [Posture]: { Style: string, HoldDistance: number? } } = {
 	Idle = { Style = MovementStyles.direct, HoldDistance = nil },
 	Attack = { Style = MovementStyles.puma, HoldDistance = nil },
 	Defend = { Style = MovementStyles.zigzag, HoldDistance = DEFEND_DISTANCE },
+	-- Charging is a kiting window: keep the Defend distance, but walk straight
+	-- back instead of juking so the retreat reads as part of the cast.
+	Charge = { Style = MovementStyles.direct, HoldDistance = DEFEND_DISTANCE },
 }
 
 local Posture = {}
