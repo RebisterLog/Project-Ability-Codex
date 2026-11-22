@@ -192,7 +192,7 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 				"OWN_THREATENED",
 				"OWN_HAMON_READY",
 			},
-			HoldMaxTime = 3,
+			HoldMaxTime = 2,
 			Priority = 1,
 		},
 
@@ -275,79 +275,70 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 		},
 	},
 
+	-- Punch (max two per plan) and KnifeStab fill the middle; Footrest and the
+	-- other ragdoll skills close the plan.
 	Combos = {
-		-- BasicWarrior (without the inactive Grab step)
+		-- Pure Hamon
 		{
-			"Footrest",
-			"Punch",
-			"Punch",
-			"Punch",
-			"Uppercut",
+			"SilverPierce",
+			"YellowOverdrive",
+			"PluckAndLuck",
 		},
 
+		-- Mixed: Standless + Hamon
 		{
+			"Dash",
+			"Punch",
+			"Punch",
+			"YellowOverdrive",
+			"KnifeStab",
+			"Uppercut",
+		},
+		{
+			"Counter",
+			"KnifeStab",
+			"Punch",
+			"SilverPierce",
+			"Footrest",
+		},
+		{
+			"Dash",
 			"KnifeStab",
 			"Punch",
 			"Punch",
-			"Punch",
-			"Uppercut",
-			"Dash",
-			"CircularKick",
+			"Footrest",
 		},
-
 		{
+			"Dash",
+			"KnifeStab",
 			"Punch",
+			"Punch",
+			"YellowOverdrive",
+			"SendoHamon",
+		},
+		{
+			"Counter",
+			"Punch",
+			"Punch",
+			"SilverPierce",
+			"YellowOverdrive",
+			"Uppercut",
+		},
+		{
+			"Dash",
 			"Punch",
 			"Punch",
 			"KnifeStab",
-			"CircularKick",
-		},
-
-		{
-			"Dash",
+			"DualPistols",
 			"Footrest",
-			"Uppercut",
-			"Dash",
-			"CircularKick",
 		},
-
-		-- JonathanJoestar
 		{
-			"PluckAndLuck",
-			"SilverPierce",
+			"Counter",
+			"KnifeStab",
+			"Punch",
+			"Punch",
 			"YellowOverdrive",
-		},
-		{
-			"SilverPierce",
 			"SendoHamon",
-		},
-		{
-			"Dash",
-			"Punch",
-			"Punch",
-			"PluckAndLuck",
-			"SilverPierce",
-		},
-		{
-			"Dash",
-			"Punch",
-			"Punch",
-			"YellowOverdrive",
-			"PluckAndLuck",
-		},
-		{
-			"Dash",
-			"SilverPierce",
-			"Punch",
-			"Punch",
-			"SendoHamon",
-		},
-		{
-			"Punch",
-			"Punch",
-			"PluckAndLuck",
-			"SilverPierce",
-			"YellowOverdrive",
 		},
 	},
 }

@@ -11,9 +11,9 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 
 	MaxHealth = 350,
 	Chaotic = 0,
-	Aggressive = 0.8,
-	Reaction = 0.6,
-	Agility = 0.9,
+	Aggressive = 1,
+	Reaction = 1,
+	Agility = 1,
 
 	Debug = false,
 	ConditionWeight = 1,
@@ -94,6 +94,7 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 				"TARGET_RAGDOLLED",
 				"TARGET_ARMORED",
 			},
+			HoldMaxTime = 2,
 		},
 
 		["StarStrike"] = {
@@ -261,13 +262,16 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 		},
 	},
 
+	-- Openers lean on Dash + StarFinger. Punch fills the gap before one or two
+	-- non-ragdoll Hamon skills (YellowOverdrive, SilverPierce); the finisher
+	-- always comes back to a Star Platinum ragdoll/ComboEnder.
 	Combos = {
-		-- Jotaro
 		{
 			"Dash",
+			"StarFinger",
 			"Punch",
-			"Punch",
-			"Punch",
+			"YellowOverdrive",
+			"SilverPierce",
 			"StarStrike",
 		},
 		{
@@ -275,54 +279,37 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 			"StarFinger",
 			"Punch",
 			"Punch",
+			"SilverPierce",
+			"GroundSlam",
+		},
+		{
+			"Dash",
+			"StarFinger",
 			"Punch",
+			"YellowOverdrive",
 			"GrabSlam",
 		},
 		{
 			"Dash",
+			"StarFinger",
 			"Punch",
 			"Punch",
+			"SilverPierce",
+			"StarStrike",
+		},
+		{
+			"Dash",
 			"Punch",
+			"Punch",
+			"YellowOverdrive",
 			"GroundSlam",
 		},
-
-		-- JonathanJoestar
 		{
-			"PluckAndLuck",
+			"StarFinger",
+			"Punch",
 			"SilverPierce",
 			"YellowOverdrive",
-		},
-		{
-			"SilverPierce",
-			"SendoHamon",
-		},
-		{
-			"Dash",
-			"Punch",
-			"Punch",
-			"PluckAndLuck",
-			"SilverPierce",
-		},
-		{
-			"Dash",
-			"Punch",
-			"Punch",
-			"YellowOverdrive",
-			"PluckAndLuck",
-		},
-		{
-			"Dash",
-			"SilverPierce",
-			"Punch",
-			"Punch",
-			"SendoHamon",
-		},
-		{
-			"Punch",
-			"Punch",
-			"PluckAndLuck",
-			"SilverPierce",
-			"YellowOverdrive",
+			"GrabSlam",
 		},
 	},
 }
