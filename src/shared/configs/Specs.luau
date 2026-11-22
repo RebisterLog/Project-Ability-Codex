@@ -113,11 +113,11 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Charge"] = Enum.KeyCode.G,
-			["SendoHamon"] = Enum.KeyCode.H,
-			["PluckAndLuck"] = Enum.KeyCode.R,
-			["YellowOverdrive"] = { Key = Enum.KeyCode.T, Hold = true },
-			["SilverPierce"] = Enum.KeyCode.Y,
+			["Charge"] = { Key = Enum.KeyCode.LeftAlt, Hold = true },
+			["SendoHamon"] = Enum.KeyCode.B,
+			["PluckAndLuck"] = Enum.KeyCode.Y,
+			["YellowOverdrive"] = { Key = Enum.KeyCode.X, Hold = true },
+			["SilverPierce"] = Enum.KeyCode.Z,
 		},
 	},
 
@@ -129,11 +129,11 @@ const Specs = {
 		IsPublic = false,
 
 		Binds = {
-			["Charge"] = Enum.KeyCode.G,
-			["SendoHamon"] = Enum.KeyCode.H,
-			["PluckAndLuck"] = Enum.KeyCode.R,
-			["YellowOverdrive"] = { Key = Enum.KeyCode.T, Hold = true },
-			["SilverPierce"] = Enum.KeyCode.Y,
+			["Charge"] = { Key = Enum.KeyCode.LeftAlt, Hold = true },
+			["SendoHamon"] = Enum.KeyCode.B,
+			["PluckAndLuck"] = Enum.KeyCode.Y,
+			["YellowOverdrive"] = { Key = Enum.KeyCode.X, Hold = true },
+			["SilverPierce"] = Enum.KeyCode.Z,
 		},
 	},
 }
