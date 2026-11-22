@@ -47,7 +47,7 @@ function Skill:onInit()
 				function(seq)
 					local assetPrefix = self.AssetPrefix or ""
 
-					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 8))
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					table.clear(self.AlreadyHit)

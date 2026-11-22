@@ -71,6 +71,8 @@ function Skill.onInit(self)
 				0,
 				function(seq)
 					table.clear(self.AlreadyHit)
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
+					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					const Sword = CombatService:Equip(character, self:GetAsset("Models/Sword"))
 					seq.Cleaner:Add(Sword)

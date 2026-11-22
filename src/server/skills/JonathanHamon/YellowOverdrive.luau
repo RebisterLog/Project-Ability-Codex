@@ -90,6 +90,9 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
+					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+
 					const anim = self:GetAsset("Animations/YellowOverdrive")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
