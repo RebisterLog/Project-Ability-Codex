@@ -63,7 +63,7 @@ const Jotaro: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		["Barrage"] = {
+		["StandBarrage"] = {
 			Distance = 10,
 			StandSummon = true,
 			PreferredDistance = {
