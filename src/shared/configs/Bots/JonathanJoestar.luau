@@ -98,7 +98,7 @@ const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
 				"OWN_THREATENED",
 				"OWN_HAMON_READY",
 			},
-			HoldMaxTime = 3,
+			HoldMaxTime = 2,
 			Priority = 1,
 		},
 

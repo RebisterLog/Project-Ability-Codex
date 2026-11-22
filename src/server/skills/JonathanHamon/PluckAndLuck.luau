@@ -37,7 +37,6 @@ const Skill: types.SkillData = {
 	BaseSpec = "JonathanHamon",
 	SkillCharacters = {
 		"Hit",
-		"Blockable",
 		"BlockBreak",
 		"Ragdoll",
 		"Debuff",
