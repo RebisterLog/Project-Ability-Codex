@@ -27,13 +27,13 @@ const HAMON_COST = 25
 
 const Skill: types.SkillData = {
 	DisplayName = "Sendo Hamon",
-	Cooldown = 2,
+	Cooldown = 15,
 	BaseSpec = "JonathanHamon",
 	SkillCharacters = { "Hit", "Blockable", "Ragdoll", "IgnoreBlock" },
 
 	AttackInfo = {
 		Hitbox = {
-			Size = Vector3.new(30, 2, 30),
+			Size = Vector3.new(30, 3, 30),
 			Offset = CFrame.new(0, -3, 0),
 			Debug = true,
 		},
