@@ -201,6 +201,7 @@ Heartbeat (accumulated to 1/30s so behaviour does not depend on FPS)
 | `HoldWhile`, `HoldUntil` | when the guard is kept and when it is dropped |
 | `Combos` | plans; a step in the plan gets `ComboWeight` |
 | `MaxHealth` | `Humanoid.MaxHealth` applied on spawn, with `Health` filled to the same value (defaults to the rig value when omitted) |
+| `SpecSkin`, `SubSpecSkin` | skin names passed to `SetSpec` for the primary and secondary slots (default `"None"`; unknown names fall back to `"None"`) |
 | `Chaotic`, `Aggressive`, `Agility` | spread of the attack movement style |
 
 Two rules worth keeping:

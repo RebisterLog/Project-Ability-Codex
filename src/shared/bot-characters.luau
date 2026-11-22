@@ -117,6 +117,10 @@ export type BotCharacterConfig = {
 	Spec: string,
 	SubSpec: string?,
 
+	-- Skin names passed to SetSpec for each slot. Omitted means "None".
+	SpecSkin: string?,
+	SubSpecSkin: string?,
+
 	-- Applied on every spawn: MaxHealth is written first, then Health is filled
 	-- to the same value. Falls back to the rig default when omitted.
 	MaxHealth: number?,

@@ -37,6 +37,20 @@ local bor = bit32.bor
 -- on accumulated time so the behaviour does not depend on FPS.
 local TICK_INTERVAL = 1 / 30
 
+--- Bots bypass SkinModule's ownership check, so a typo in a bot config would
+--- make SpecService return nil and leave the bot without a spec. Fall back to
+--- the built-in skin instead.
+local function resolveSkin(specId: string, skinName: string?): string
+	const requested = skinName or "None"
+	if requested == "None" then return "None" end
+
+	const skins = Crane:GetService("ConfigService"):Get("Skins")
+	const specSkins = skins and skins[specId]
+	if specSkins and specSkins[requested] then return requested end
+
+	return "None"
+end
+
 --- Only `Casted` is needed from the service, so it is described here instead of
 --- dragging the types of the whole CombatService in, and `typeof` does not accept
 --- calls.
@@ -347,8 +361,10 @@ return {
 	new = function(character: types.Character, config: BotsCharacters.BotCharacterConfig)
 		-- The primary spec owns movement/animations; the optional SubSpec owns
 		-- the combat skills (SetSpec routes by the spec's configured type).
-		character:SetSpec(config.Spec)
-		if config.SubSpec then character:SetSpec(config.SubSpec) end
+		character:SetSpec(config.Spec, resolveSkin(config.Spec, config.SpecSkin))
+		if config.SubSpec then
+			character:SetSpec(config.SubSpec, resolveSkin(config.SubSpec, config.SubSpecSkin))
+		end
 
 		const primarySpec = character.Spec
 		local random = Random.new()
