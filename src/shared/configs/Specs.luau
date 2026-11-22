@@ -96,14 +96,14 @@ const Specs = {
 			["Block"] = { Key = Enum.KeyCode.F, Hold = true },
 			["Punch"] = { Key = Enum.UserInputType.MouseButton1, Hold = true },
 			["Run"] = Enum.KeyCode.LeftControl,
-			["Grab"] = Enum.KeyCode.X,
+			--["Grab"] = Enum.KeyCode.X,
 			["Summon"] = Enum.KeyCode.Q,
 
 			["StandBarrage"] = Enum.KeyCode.E,
 			["GroundSlam"] = Enum.KeyCode.G,
 			["StarFinger"] = Enum.KeyCode.T,
 			["StarStrike"] = Enum.KeyCode.R,
-			["GrabSlam"] = Enum.KeyCode.X,
+			["GrabSlam"] = Enum.KeyCode.V,
 		},
 	},
 

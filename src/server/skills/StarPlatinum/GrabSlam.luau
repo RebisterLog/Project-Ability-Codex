@@ -22,7 +22,7 @@ const Skill: types.SkillData = {
 			Debug = true,
 		},
 
-		Damage = 15,
+	--	Damage = 15,
 
 		Block = {
 			BlockIgnore = true,
