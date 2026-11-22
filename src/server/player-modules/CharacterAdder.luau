@@ -5,6 +5,7 @@ const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const CharacterReplication = require(script.Parent.Parent.components.Character.Replication)
+const CombatConfig = require(ReplicatedStorage.shared.configs.Combat)
 const types = require(ServerScriptService.server.types)
 
 const CharacterAdder = {} :: types.PlayerModule
@@ -17,6 +18,10 @@ end
 function CharacterAdder.onCharacterAdded(self: typeof(CharacterAdder), character: Model)
 	self.Character = Crane:AddComponent(character, "Character")
 	CharacterReplication.Bind(self.Character, self.playerProxy)
+
+	const humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	humanoid.MaxHealth = CombatConfig.PlayerMaxHealth
+	humanoid.Health = CombatConfig.PlayerMaxHealth
 
 	self.Character.Destroying:Once(function()
 		self:Spawn()

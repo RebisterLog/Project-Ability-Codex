@@ -3,6 +3,7 @@ const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 
 const Jotaro: BotsCharacters.BotCharacterConfig = {
 	Spec = "StarPlatinum",
+	MaxHealth = 100,
 	Chaotic = 0,
 	Aggressive = 0.5,
 	Reaction = 0.6,

@@ -3,6 +3,7 @@ const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 
 const Undyne: BotsCharacters.BotCharacterConfig = {
 	Spec = "Undyne",
+	MaxHealth = 100,
 	Chaotic = 0,
 	Aggressive = 0.5,
 	Reaction = 0.6,

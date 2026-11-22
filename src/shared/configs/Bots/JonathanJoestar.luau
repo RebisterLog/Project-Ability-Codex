@@ -7,6 +7,7 @@ const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
 	Spec = "Standless",
 	SubSpec = "Hamon",
 
+	MaxHealth = 100,
 	Chaotic = 0.1,
 	Aggressive = 0.5,
 	Reaction = 0.7,

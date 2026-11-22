@@ -116,6 +116,11 @@ export type BotCharacterConfig = {
 	-- skills from it while the primary `Spec` owns movement/animations.
 	Spec: string,
 	SubSpec: string?,
+
+	-- Applied on every spawn: MaxHealth is written first, then Health is filled
+	-- to the same value. Falls back to the rig default when omitted.
+	MaxHealth: number?,
+
 	Chaotic: number,
 	Aggressive: number,
 	Reaction: number,

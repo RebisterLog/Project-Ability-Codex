@@ -200,6 +200,7 @@ Heartbeat (accumulated to 1/30s so behaviour does not depend on FPS)
 | `Priority` | flat offset, for when conditions cannot separate two skills |
 | `HoldWhile`, `HoldUntil` | when the guard is kept and when it is dropped |
 | `Combos` | plans; a step in the plan gets `ComboWeight` |
+| `MaxHealth` | `Humanoid.MaxHealth` applied on spawn, with `Health` filled to the same value (defaults to the rig value when omitted) |
 | `Chaotic`, `Aggressive`, `Agility` | spread of the attack movement style |
 
 Two rules worth keeping:

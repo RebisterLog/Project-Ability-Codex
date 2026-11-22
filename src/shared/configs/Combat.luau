@@ -8,6 +8,7 @@
 
 const Combat = {
 	CombatTimeout = 10,
+	PlayerMaxHealth = 350,
 }
 
 export type CombatConfig = typeof(Combat)

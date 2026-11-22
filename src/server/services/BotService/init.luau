@@ -23,6 +23,14 @@ end
 
 function BotsService:Instance(botName: string, character: types.Character)
 	local config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
+
+	-- Per-bot HP from the config. MaxHealth goes first: Roblox clamps Health
+	-- when the maximum is lowered, so filling after the write keeps it correct.
+	if config.MaxHealth then
+		character.Humanoid.MaxHealth = config.MaxHealth
+		character.Humanoid.Health = config.MaxHealth
+	end
+
 	local bot = Bot.new(character, config)
 
 	self.Bots[character] = bot
