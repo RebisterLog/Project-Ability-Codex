@@ -545,6 +545,8 @@ export type SkillReplicationData = {
 
 export type SpecSaveData = PlayerSaveData.SpecData
 
+export type SkinSaveData = PlayerSaveData.SkinData
+
 export type SpecDef = {
 	Id: string,
 	Skin: string?,

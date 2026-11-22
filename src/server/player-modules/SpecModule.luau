@@ -28,7 +28,8 @@ const function EquipSpec(self: typeof(SpecModule), slot: types.SpecSlot, specId:
 		return true
 	end
 
-	const spec = characterComponent:SetSpec(ownedSpec.Name, "None", {}, specId)
+	const skinName = proxy().EquippedSkins[specId] or "None"
+	const spec = characterComponent:SetSpec(ownedSpec.Name, skinName, {}, specId)
 	if not spec then return false end
 
 	self:ReplicateSkills(slot, spec)
