@@ -44,6 +44,10 @@
     }
   },
 
+  // NOTE: every key under `initialization_options.vscode` is mirrored in
+  // `.vscode/settings.json`. Zed sends an empty `workspace/didChangeConfiguration`
+  // right after initialize, and lunaut replaces its client settings with that
+  // payload, so the file is what actually keeps these options in effect.
   "lsp": {
     "luau-lsp": {
       "binary": {
@@ -78,7 +82,7 @@
           "lunaut.diagnostics.includeDependents": false,
           "lunaut.inlayHints.parameterNames": "all",
           "lunaut.inlayHints.variableTypes": false,
-          "lunaut.inlayHints.parameterTypes": true,
+          "lunaut.inlayHints.parameterTypes": false,
           "lunaut.inlayHints.functionReturnTypes": false,
           "lunaut.inlayHints.typeHintMaxLength": 200
         }
