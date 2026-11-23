@@ -2,12 +2,12 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 
 -- Boss config: Star Platinum owns the primary slot (movement, stand and its
--- skills), Hamon owns the secondary one (Jonathan's combat skills). The skill
--- allowlist and combo list are the union of the Jotaro and JonathanJoestar
--- bot configs; overlapping conditions are merged together.
+-- skills), JonathanHamon owns the secondary one (Jonathan's combat skills,
+-- including Charge). The skill allowlist and combo list are the union of the
+-- Jotaro and JonathanJoestar bot configs; overlapping conditions are merged together.
 const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 	Spec = "StarPlatinum",
-	SubSpec = "Hamon",
+	SubSpec = "JonathanHamon",
 
 	MaxHealth = 350,
 	Chaotic = 0,
@@ -153,9 +153,10 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		-- Hamon skills (SubSpec). Charge only in a free window: the target is
-		-- not attacking and no hit is incoming. Released at 50 Hamon, on threat
-		-- or after 3 seconds.
+		-- JonathanHamon skills (SubSpec). Charge only in a free window: the target is
+		-- not attacking, not stunned and no hit is incoming. A stunned target is
+		-- a combo window, so it is never spent on charging. Released at 50 Hamon,
+		-- on stun, on threat or after 3 seconds.
 		["Charge"] = {
 			Distance = 30,
 			RequiredConditions = {
@@ -163,10 +164,10 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 			},
 			ForbiddenConditions = {
 				"TARGET_ATTACKING",
+				"TARGET_STUNNED",
 				"OWN_THREATENED",
 			},
 			PreferredConditions = {
-				"TARGET_STUNNED",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
 				"TARGET_PERFECT_BLOCKING",
@@ -176,6 +177,7 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 			},
 			HoldUntil = {
 				"TARGET_ATTACKING",
+				"TARGET_STUNNED",
 				"OWN_THREATENED",
 				"OWN_HAMON_READY",
 			},
@@ -246,7 +248,7 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 		},
 
 		["SendoHamon"] = {
-			Distance = 15,
+			Distance = 10,
 			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",

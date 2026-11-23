@@ -12,6 +12,9 @@ type SoundData = {
 type SoundStopData = {
 	Origin: Instance?,
 	Sound: Sound?,
+	-- Fade the clone's volume to zero before removing it. Omitted means the
+	-- old instant stop, which every other "Sound" caller relies on.
+	FadeOutSeconds: number?,
 }
 
 return {
@@ -53,6 +56,7 @@ return {
 			Sound.Parent = Attachment
 			Sound:Play()
 			task.delay(Sound.TimeLength + 1, function()
+				if Sound:GetAttribute("FadingOut") then return end
 				Attachment:Destroy()
 			end)
 			return
@@ -62,6 +66,7 @@ return {
 			Sound.Parent = Origin
 			Sound:Play()
 			task.delay(Sound.TimeLength + 1, function()
+				if Sound:GetAttribute("FadingOut") then return end
 				Sound:Destroy()
 			end)
 		end
@@ -75,6 +80,27 @@ return {
 		if not (Inst and Sound) then return end
 		if typeof(Sound) ~= "Instance" then return end
 		local playing = Inst:FindFirstChild(Sound.Name)
-		if playing then playing:Destroy() end
+		if not playing then return end
+		if playing:GetAttribute("FadingOut") then return end
+
+		const fade = data.FadeOutSeconds
+		if fade and fade > 0 and playing:IsA("Sound") then
+			playing:SetAttribute("FadingOut", true)
+
+			const tween = TweenService:Create(
+				playing,
+				TweenInfo.new(fade, Enum.EasingStyle.Linear),
+				{ Volume = 0 }
+			)
+
+			tween.Completed:Once(function()
+				tween:Destroy()
+				playing:Destroy()
+			end)
+			tween:Play()
+			return
+		end
+
+		playing:Destroy()
 	end,
 }

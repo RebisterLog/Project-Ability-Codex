@@ -105,26 +105,10 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Charge"] = { Key = Enum.KeyCode.LeftAlt, Hold = true },
+			["Charge"] = Enum.KeyCode.LeftAlt,
 			["SendoHamon"] = Enum.KeyCode.B,
 			["PluckAndLuck"] = Enum.KeyCode.Y,
-			["YellowOverdrive"] = { Key = Enum.KeyCode.X, Hold = true },
-			["SilverPierce"] = Enum.KeyCode.Z,
-		},
-	},
-
-	-- Hamon SubSpec: combat skills for Hamon bots and the asset source for the
-	-- shared Charge skill (`BaseSpec = "Hamon"`).
-	["Hamon"] = {
-		Type = "SubSpec",
-		DisplayName = "Hamon",
-		IsPublic = false,
-
-		Binds = {
-			["Charge"] = { Key = Enum.KeyCode.LeftAlt, Hold = true },
-			["SendoHamon"] = Enum.KeyCode.B,
-			["PluckAndLuck"] = Enum.KeyCode.Y,
-			["YellowOverdrive"] = { Key = Enum.KeyCode.X, Hold = true },
+			["YellowOverdrive"] = Enum.KeyCode.X,
 			["SilverPierce"] = Enum.KeyCode.Z,
 		},
 	},

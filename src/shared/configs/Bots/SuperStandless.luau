@@ -166,9 +166,10 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		-- Hamon skills (SubSpec). Charge only in a free window: the target is
-		-- not attacking and no hit is incoming. Released at 50 Hamon, on threat
-		-- or after 3 seconds.
+		-- JonathanHamon skills (SubSpec). Charge only in a free window: the target is
+		-- not attacking, not stunned and no hit is incoming. A stunned target is
+		-- a combo window, so it is never spent on charging. Released at 50 Hamon,
+		-- on stun, on threat or after 2 seconds.
 		["Charge"] = {
 			Distance = 30,
 			RequiredConditions = {
@@ -176,10 +177,10 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 			},
 			ForbiddenConditions = {
 				"TARGET_ATTACKING",
+				"TARGET_STUNNED",
 				"OWN_THREATENED",
 			},
 			PreferredConditions = {
-				"TARGET_STUNNED",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
 				"TARGET_PERFECT_BLOCKING",
@@ -189,6 +190,7 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 			},
 			HoldUntil = {
 				"TARGET_ATTACKING",
+				"TARGET_STUNNED",
 				"OWN_THREATENED",
 				"OWN_HAMON_READY",
 			},
@@ -259,7 +261,7 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 		},
 
 		["SendoHamon"] = {
-			Distance = 15,
+			Distance = 10,
 			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",

@@ -1,21 +1,22 @@
 --[=[ CHARGE
 
-   Hold-to-cast Hamon charge. Shared skill: any spec can import it from
-   ~/skills/Charge. Assets are resolved from the Hamon SubSpec skin through
-   `BaseSpec`, so the skill itself owns no spec-specific paths. The hold ends
-   on release/interrupt or automatically once Hamon is fully charged; a cast
-   on an already-full bar is skipped entirely.
+   Hold-to-cast Hamon charge owned by the JonathanHamon spec. The module lives
+   in `skills/JonathanHamon`, so only specs that declare `Charge` get it.
+   Assets are resolved from the JonathanHamon skin through `BaseSpec`, which
+   keeps the skill free of concrete asset paths. The hold ends on
+   release/interrupt or automatically once Hamon is fully charged; a cast on
+   an already-full bar is skipped entirely.
 
    ASSETS:
 
    Animations
-      Charge : Looped clip played for the whole hold (assets/Default/Hamon).
+      Charge : Looped clip played for the whole hold (assets/JonathanHamon/None).
 
    Sounds
-      Charge : Sound played on press (assets/Default/Hamon).
+      Charge : Sound played on press (assets/JonathanHamon/None).
 
    Models
-      Charge : Particle VFX attached to the root while charging.
+      Charge : Particle VFX attached to the root while charging (assets/JonathanHamon/None).
 
 ]=]
 
@@ -40,7 +41,7 @@ end
 const Skill: types.SkillData = {
 	DisplayName = "Hamon Charge",
 	Cooldown = 1,
-	BaseSpec = "Hamon",
+	BaseSpec = "JonathanHamon",
 	SkillCharacters = { "Buff" },
 
 	-- A spec change or respawn destroys the skill without a key release, so the
@@ -104,6 +105,19 @@ function Skill.Activate(self)
 			Origin = RootPart,
 			Sound = chargeSound,
 		})
+
+		-- The fill is still open here (Butler cleans up LIFO, so this runs
+		-- before StopChargeFill): a bar below Max means the player released or
+		-- was interrupted early, so let the sound tail off instead of cutting.
+		Collector:Add(function()
+			if isFullyCharged(character, CombatService) then return end
+
+			VFXService:StopEffect(Players:GetPlayers(), "Sound", {
+				Origin = RootPart,
+				Sound = chargeSound,
+				FadeOutSeconds = 0.25,
+			})
+		end)
 	end
 
 	const chargeVFX = self:TryGetAsset("VFXs/Charge")

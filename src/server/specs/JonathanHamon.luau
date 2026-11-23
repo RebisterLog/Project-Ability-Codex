@@ -2,7 +2,7 @@ const types = require(game:GetService("ServerScriptService").server.types)
 
 const Spec = {
 	Skills = {
-		["Charge"] = "~/skills/Charge",
+		["Charge"] = "@Specs/JonathanHamon/Charge",
 		["SendoHamon"] = "@Specs/JonathanHamon/SendoHamon",
 		["PluckAndLuck"] = "@Specs/JonathanHamon/PluckAndLuck",
 		["YellowOverdrive"] = "@Specs/JonathanHamon/YellowOverdrive",

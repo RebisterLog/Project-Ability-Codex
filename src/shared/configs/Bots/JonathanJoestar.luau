@@ -2,10 +2,10 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 
 const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
-	-- Standless owns movement/animations; all combat skills live in the Hamon
-	-- SubSpec. Only those skills are in the allowlist below.
+	-- Standless owns movement/animations; all combat skills, including Charge,
+	-- live in the JonathanHamon SubSpec. Only those skills are in the allowlist below.
 	Spec = "Standless",
-	SubSpec = "Hamon",
+	SubSpec = "JonathanHamon",
 
 	MaxHealth = 100,
 	Chaotic = 0.1,
@@ -73,8 +73,10 @@ const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		-- Charge only in a free window: the target is not attacking and no hit is
-		-- incoming. Released at 50 Hamon, on threat, or after 3 seconds.
+		-- Charge only in a free window: the target is not attacking, not stunned
+		-- and no hit is incoming. A stunned target is a combo window, so it is
+		-- never spent on charging. Released at 50 Hamon, on stun, on threat or
+		-- after 2 seconds.
 		["Charge"] = {
 			Distance = 30,
 			RequiredConditions = {
@@ -82,10 +84,10 @@ const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
 			},
 			ForbiddenConditions = {
 				"TARGET_ATTACKING",
+				"TARGET_STUNNED",
 				"OWN_THREATENED",
 			},
 			PreferredConditions = {
-				"TARGET_STUNNED",
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
 				"TARGET_PERFECT_BLOCKING",
@@ -95,6 +97,7 @@ const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
 			},
 			HoldUntil = {
 				"TARGET_ATTACKING",
+				"TARGET_STUNNED",
 				"OWN_THREATENED",
 				"OWN_HAMON_READY",
 			},
@@ -169,7 +172,7 @@ const JonathanJoestar: BotsCharacters.BotCharacterConfig = {
 
 		-- Only the frame-125 release ignores block; the wave ticks are blockable.
 		["SendoHamon"] = {
-			Distance = 15,
+			Distance = 10,
 			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",
 				"TARGET_BLOCKING",
