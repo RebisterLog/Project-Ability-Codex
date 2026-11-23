@@ -46,6 +46,8 @@ const Skill: types.SkillData = {
 			Blockable = true,
 			PerfectBlockable = false,
 			BlockBreak = false,
+			BlockCancel = false,
+			BlockIgnore = false,
 		},
 
 		Stun = {
@@ -130,6 +132,10 @@ end
 
 function Skill.Interrupt(self)
 	if self.Sequence then self.Sequence:Stop() end
+
+	const character = self.Character
+	const anim = self:GetAsset("Animations/SilverPierce")
+	const VFXService = Crane:GetService("VFXService")
 
 	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 		Character = character.instance,

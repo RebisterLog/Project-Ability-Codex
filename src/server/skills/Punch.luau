@@ -111,8 +111,11 @@ function Skill:onInit()
 							Info = {
 								Damage = 2.5,
 								Block = {
+									Blockable = true,
 									PerfectBlockable = false,
-									--BlockCancel = self.PunchCount == self.Data.MaxCombo
+									BlockBreak = false,
+									BlockCancel = false,
+									BlockIgnore = false,
 								},
 								Knockback = {
 									Direction = { Mode = "AwayFromAttacker" },
@@ -131,6 +134,7 @@ function Skill:onInit()
 						end)
 					end
 				end,
+				16,
 			},
 		},
 	}))

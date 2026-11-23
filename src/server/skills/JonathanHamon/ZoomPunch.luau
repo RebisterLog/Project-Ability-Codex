@@ -23,7 +23,11 @@ const Skill = {
 		Damage = 15,
 
 		Block = {
+			Blockable = true,
 			PerfectBlockable = false,
+			BlockBreak = false,
+			BlockCancel = false,
+			BlockIgnore = false,
 		},
 
 		Stun = {

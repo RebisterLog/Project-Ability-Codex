@@ -25,8 +25,11 @@ const Skill: types.SkillData = {
 		},
 
 		Block = {
+			Blockable = false,
 			PerfectBlockable = false,
+			BlockBreak = false,
 			BlockCancel = true,
+			BlockIgnore = false,
 		},
 	},
 
@@ -35,8 +38,11 @@ const Skill: types.SkillData = {
 		Damage = 10,
 
 		Block = {
+			Blockable = false,
 			PerfectBlockable = false,
+			BlockBreak = false,
 			BlockCancel = true,
+			BlockIgnore = false,
 		},
 
 		Knockback = {

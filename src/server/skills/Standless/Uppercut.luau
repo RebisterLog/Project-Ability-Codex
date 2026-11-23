@@ -30,8 +30,11 @@ const Skill: Types.SkillData = {
 		Damage = 15,
 
 		Block = {
+			Blockable = true,
 			PerfectBlockable = true,
 			BlockBreak = true,
+			BlockCancel = false,
+			BlockIgnore = false,
 		},
 
 		Knockback = {

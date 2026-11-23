@@ -53,8 +53,18 @@ function Block:Activate()
 
 		Collector:Add(CombatService.Attacked:Connect(function(Type, Data)
 			if not (Type == "Precast" and Data.Victim == character) then return end
-			if Data.State.BlockCanceled then return resolve() end
-			if Data.State.PerfectBlocked then
+
+			const State = Data.State
+			local finished = false
+			const function finish()
+				if finished then return end
+				finished = true
+				resolve()
+			end
+
+			-- Каждое состояние обрабатывается независимо: конфиг удара может
+			-- задать несколько свойств сразу, и ни одно не должно теряться.
+			if State.PerfectBlocked then
 				const stun = Data.Attacker:AddParameter("Stun", {
 					Duration = 1.5,
 					Priority = Enums.Stun.Heavy,
@@ -81,13 +91,14 @@ function Block:Activate()
 					Sound = ReplicatedStorage.assets.Default.Block.Sounds.PerfectBlock,
 					Volume = 1,
 				})
-			elseif Data.State.BlockBroken then
+			end
+
+			if State.BlockBroken then
 				const stun = Data.Victim:AddParameter("Stun", {
 					Duration = Enums.StunTime.Heavy,
 					Priority = Enums.Stun.Heavy,
 				})
 				task.delay(1.5, stun.Destroy, stun)
-				resolve()
 
 				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 					Particle = ReplicatedStorage.assets.Default.Block.VFX.BlockBreak,
@@ -99,7 +110,9 @@ function Block:Activate()
 					Sound = ReplicatedStorage.assets.Default.Block.Sounds.BlockBreak,
 					Volume = 1,
 				})
-			elseif Data.State.Blocked then
+			end
+
+			if State.Blocked then
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 					Origin = RootPart,
 					Sound = ReplicatedStorage.assets.Default.Block.Sounds.Hit,
@@ -107,7 +120,7 @@ function Block:Activate()
 				})
 			end
 
-			return
+			if State.BlockBroken or State.BlockCanceled then finish() end
 		end))
 
 		Collector:Add(character.instance.AncestryChanged:Connect(function()

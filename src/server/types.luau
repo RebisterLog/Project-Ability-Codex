@@ -5,6 +5,7 @@ const PlayerComponent = require(ServerScriptService.server.components.Player)
 const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
 const PlayerSaveData = require(ReplicatedStorage.shared.schemas.PlayerSaveData)
 const KnockbackLib = require(ReplicatedStorage.shared.combat.Knockback)
+const BlockLib = require(ReplicatedStorage.shared.combat.Block)
 const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const Signal = require(ReplicatedStorage.shared.packages.Signal)
 const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
@@ -83,13 +84,9 @@ export type AttackInfo = {
 		Priority: number,
 	}?,
 
-	Block: {
-		BlockCancel: boolean,
-		PerfectBlockable: boolean,
-		Blockable: boolean,
-		BlockBreak: boolean,
-		BlockIgnore: boolean,
-	}?,
+	-- Полный конфиг обязателен: все пять свойств задаются явно и разбираются
+	-- независимо. Семантика и приоритеты — в shared/combat/Block.luau.
+	Block: BlockLib.Config,
 
 	-- Канонические типы лежат рядом с резолвером; здесь только реэкспорт.
 	Knockback: KnockbackLib.KnockbackConfig?,
@@ -186,8 +183,18 @@ export type AttackData = {
 -- Blocked — что произошло с атакой
 
 -- [Block Broken]
--- true: атака сломала блок врага, атака был заблокирована, но блок при этом сломался
--- false: блок не был сломан
+-- true: удар сломал стойку цели. Независимый флаг: больше НЕ требует
+--       `Blockable = true`, поэтому урон может пройти одновременно со сломом
+-- false: стойка не сломана
+
+-- [Block Canceled]
+-- true: удар сбросил стойку без статуса слома (стойка просто отпускается)
+-- false: стойка не сбрасывалась
+
+-- [Block Ignored]
+-- true: удар полностью проигнорировал блок. Доминирующее правило: остальные
+--       состояния блока в этом случае не выставляются
+-- false: удар взаимодействовал с блоком обычным порядком
 
 -- [Perfect Blocking]
 -- true: блок был сделан в перфект тайминг
@@ -195,8 +202,19 @@ export type AttackData = {
 -- Это состояние цели, а не результат удара
 
 -- [Perfect Blocked]
--- true: атакующий получил наказание
+-- true: атакующий получил наказание; `BlockBreak` в этой ветке не работает
 -- false: обычный блок / хит
+
+-- Матрица `AttackInfo.Block` (все поля задаются явно; дефолтов нет):
+--[[
+	Blockable        PerfectBlockable  BlockBreak  BlockCancel  BlockIgnore  Результат
+	true             false             false       false        false        удар в блок, урон не проходит
+	true             false             true        false        false        удар в блок, стойка ломается, урон не проходит
+	false            false             true        false        false        урон проходит, стойка ломается
+	false            false             false       true         false        урон проходит, стойка сбрасывается
+	*                *                 *           *            true         урон проходит, остальные флаги не действуют
+	true             true (перфект)    —           —            false        парирование, атакующий наказывается
+]]
 
 -- Обычный хит:
 --[[
@@ -207,6 +225,7 @@ export type AttackData = {
 	    Blocked = false,
 	    BlockBroken = false,
 	    BlockCanceled = false,
+	    BlockIgnored = false,
 	    PerfectBlocking = false,
 	    PerfectBlocked = false,
 	}
@@ -220,6 +239,7 @@ export type AttackData = {
 	    Blocked = true,
 	    BlockBroken = false,
 	    BlockCanceled = false,
+	    BlockIgnored = false,
 	    PerfectBlocking = false,
 	    PerfectBlocked = false,
 	}
@@ -233,6 +253,7 @@ export type AttackData = {
 	    Blocked = true,
 	    BlockBroken = true,
 	    BlockCanceled = false,
+	    BlockIgnored = false,
 	    PerfectBlocking = false,
 	    PerfectBlocked = false,
 	}
@@ -243,9 +264,10 @@ export type AttackData = {
 	    Success = true,
 	    Continue = false,
 	    Blocking = true,
-	    Blocked = true,
+	    Blocked = false,
 	    BlockBroken = false,
 	    BlockCanceled = false,
+	    BlockIgnored = false,
 	    PerfectBlocking = true,
 	    PerfectBlocked = true,
 	}
@@ -259,6 +281,21 @@ export type AttackData = {
 	    Blocked = false,
 	    BlockBroken = false,
 	    BlockCanceled = true,
+	    BlockIgnored = false,
+	    PerfectBlocking = false,
+	    PerfectBlocked = false,
+	}
+]]
+-- Игнор Блока (BlockIgnored) — доминирующее правило:
+--[[
+	{
+	    Success = true,
+	    Continue = true,
+	    Blocking = true,
+	    Blocked = false,
+	    BlockBroken = false,
+	    BlockCanceled = false,
+	    BlockIgnored = true,
 	    PerfectBlocking = false,
 	    PerfectBlocked = false,
 	}

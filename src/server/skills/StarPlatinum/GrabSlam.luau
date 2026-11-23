@@ -22,16 +22,27 @@ const Skill: types.SkillData = {
 			Debug = true,
 		},
 
-	--	Damage = 15,
+		--	Damage = 15,
 
 		Block = {
-			BlockIgnore = true,
+			Blockable = false,
+			PerfectBlockable = false,
+			BlockBreak = false,
 			BlockCancel = true,
+			BlockIgnore = true,
 		},
 	},
 
 	ReleaseInfo = {
 		Priority = Enums.IFrames.True,
+
+		Block = {
+			Blockable = true,
+			PerfectBlockable = true,
+			BlockBreak = false,
+			BlockCancel = false,
+			BlockIgnore = false,
+		},
 
 		Ragdoll = {
 			Duration = Enums.Ragdoll.Medium,
@@ -136,6 +147,13 @@ function Skill.onInit(self)
 						Info = {
 							Priority = Enums.IFrames.True,
 							Damage = if frame == 20 then 10 else 0.5,
+							Block = {
+								Blockable = true,
+								PerfectBlockable = true,
+								BlockBreak = false,
+								BlockCancel = false,
+								BlockIgnore = false,
+							},
 						},
 					})
 				end,

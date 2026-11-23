@@ -16,6 +16,7 @@ return {
 	Stun = Stun,
 
 	StunTime = {
+		ExtraLight = 0.15,
 		Light = 0.5,
 		Medium = 1,
 		Heavy = 1.5,

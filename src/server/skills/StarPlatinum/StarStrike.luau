@@ -23,8 +23,11 @@ const Skill: types.SkillData = {
 		Damage = 15,
 
 		Block = {
-			BlockBreak = true,
+			Blockable = true,
 			PerfectBlockable = true,
+			BlockBreak = true,
+			BlockCancel = false,
+			BlockIgnore = false,
 		},
 
 		Ragdoll = {
@@ -55,6 +58,7 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
+					seq.Cleaner:Add(CombatService:AddArmor(character, true))
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 					table.clear(self.AlreadyHit)

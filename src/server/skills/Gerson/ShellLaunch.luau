@@ -30,6 +30,7 @@ const Skill: types.SkillData = {
 			PerfectBlockable = false,
 			BlockBreak = false,
 			BlockCancel = true,
+			BlockIgnore = false,
 		},
 
 		Stun = {

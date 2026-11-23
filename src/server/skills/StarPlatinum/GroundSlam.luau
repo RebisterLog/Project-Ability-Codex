@@ -31,9 +31,11 @@ const Skill: types.SkillData = {
 		Damage = 15,
 
 		Block = {
-			BlockIgnore = true,
 			Blockable = false,
 			PerfectBlockable = false,
+			BlockBreak = false,
+			BlockCancel = false,
+			BlockIgnore = true,
 		},
 
 		Ragdoll = {
@@ -64,7 +66,6 @@ function Skill.onInit(self)
 			{
 				0,
 				function(seq)
-					seq.Cleaner:Add(CombatService:AddArmor(character, true))
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
@@ -75,14 +76,10 @@ function Skill.onInit(self)
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{
-							Origin = self.Stand.RootPart,
-							Sound = self:GetAsset("Stand/Sounds/GroundSlam"),
-						}
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = self.Stand.RootPart,
+						Sound = self:GetAsset("Stand/Sounds/GroundSlam"),
+					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
