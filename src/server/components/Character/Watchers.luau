@@ -240,17 +240,22 @@ return {
 		self:SetCollisionToPlayers(value ~= nil and value or true)
 	end,
 
+	["NoRotate"] = function(self: types.Character, value: boolean)
+		self.Humanoid.AutoRotate = not value
+	end,
+
 	["Restrain"] = function(self: types.Character, value: boolean, object)
 		if not value then return end
 
-		self.Humanoid.AutoRotate = not value
+		--self.Humanoid.AutoRotate = not value
 		--self.RootPart.Anchored = value
 
+		object.Cleaner:Add(self:AddParameter("NoRotate", true))
 		object.Cleaner:Add(self:AddParameter("MaxWalkSpeed", 0))
 		object.Cleaner:Add(self:AddParameter("MaxJumpPower", 0))
 
 		object.Cleaner:Add(function()
-			self.Humanoid.AutoRotate = true
+			--self.Humanoid.AutoRotate = true
 			--self.RootPart.Anchored = false
 		end)
 	end,
