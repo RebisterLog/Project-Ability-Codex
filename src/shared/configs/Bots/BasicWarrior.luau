@@ -15,6 +15,10 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 
 	Skills = {
 		["Punch"] = {
+			-- One activation = one hit; Punch itself chains up to MaxCombo.
+			MaxRepeats = 2,
+			-- Matches Punch's ComboResetTime: the chain dies before this expires.
+			RepeatResetTime = 1.5,
 			Distance = 6,
 
 			ForbiddenConditions = {
@@ -157,15 +161,11 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 		{
 			"Footrest",
 			"Punch",
-			"Punch",
-			"Punch",
 			"Uppercut",
 		},
 
 		{
 			"KnifeStab",
-			"Punch",
-			"Punch",
 			"Punch",
 			"Uppercut",
 			"Dash",
@@ -173,8 +173,6 @@ const BasicWarrior: BotsCharacters.BotCharacterConfig = {
 		},
 
 		{
-			"Punch",
-			"Punch",
 			"Punch",
 			"KnifeStab",
 			"Grab",

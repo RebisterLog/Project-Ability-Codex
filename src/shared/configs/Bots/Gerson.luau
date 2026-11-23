@@ -14,6 +14,10 @@ const Gerson: BotsCharacters.BotCharacterConfig = {
 
 	Skills = {
 		["Punch"] = {
+			-- One activation = one hit; Punch itself chains up to MaxCombo.
+			MaxRepeats = 2,
+			-- Matches Punch's ComboResetTime: the chain dies before this expires.
+			RepeatResetTime = 1.5,
 			Priority = 1,
 			Distance = 8,
 			PreferredDistance = {
@@ -132,21 +136,15 @@ const Gerson: BotsCharacters.BotCharacterConfig = {
 		{
 			"Dash",
 			"Punch",
-			"Punch",
-			"Punch",
 			"Grab",
 		},
 
 		{
 			"Punch",
-			"Punch",
-			"Punch",
 			"Bonk",
 		},
 
 		{
-			"Punch",
-			"Punch",
 			"Punch",
 			"ShellLaunch",
 		},

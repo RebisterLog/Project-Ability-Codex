@@ -33,7 +33,9 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 		},
 
 		["Punch"] = {
-			Priority = 1,
+			MaxRepeats = 2,
+			RepeatResetTime = 1.5,
+			Priority = 2,
 			Distance = 8,
 			PreferredDistance = {
 				Min = 5,
@@ -291,7 +293,6 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 		{
 			"Dash",
 			"Punch",
-			"Punch",
 			"YellowOverdrive",
 			"KnifeStab",
 			"Uppercut",
@@ -307,13 +308,11 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 			"Dash",
 			"KnifeStab",
 			"Punch",
-			"Punch",
 			"Footrest",
 		},
 		{
 			"Dash",
 			"KnifeStab",
-			"Punch",
 			"Punch",
 			"YellowOverdrive",
 			"SendoHamon",
@@ -321,14 +320,12 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 		{
 			"Counter",
 			"Punch",
-			"Punch",
 			"SilverPierce",
 			"YellowOverdrive",
 			"Uppercut",
 		},
 		{
 			"Dash",
-			"Punch",
 			"Punch",
 			"KnifeStab",
 			"DualPistols",
@@ -337,7 +334,6 @@ const SuperStandless: BotsCharacters.BotCharacterConfig = {
 		{
 			"Counter",
 			"KnifeStab",
-			"Punch",
 			"Punch",
 			"YellowOverdrive",
 			"SendoHamon",

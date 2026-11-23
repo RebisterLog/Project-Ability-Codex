@@ -102,18 +102,25 @@ end
 --- `comboSkillId` is the skill currently in the plan: it gets `ComboWeight` and
 --- wins every tie. That keeps the combo as the backbone of the behaviour, with
 --- conditions only shifting it when they offer a strict advantage.
+---
+--- `blocked` holds the skills that hit their `MaxRepeats` limit this cycle:
+--- they are skipped entirely, so the bot cannot keep re-selecting a
+--- self-chaining skill (Punch) through the fallback path.
 function SkillPriority.Select(
 	config: BotsCharacters.BotCharacterConfig,
 	candidates: { Candidate },
 	mask: number,
 	distance: number,
-	comboSkillId: string?
+	comboSkillId: string?,
+	blocked: { [string]: boolean }?
 ): ScoredSkill?
 	local best: ScoredSkill? = nil
 	local ties: { string } = {}
 
 	for _, candidate in candidates do
 		local id = candidate.Data.Id
+		if blocked and blocked[id] then continue end
+
 		local options = config.Skills[id]
 		if not options then continue end
 		if not IsEligible(options, mask) then continue end

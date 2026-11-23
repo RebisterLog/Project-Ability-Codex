@@ -35,7 +35,7 @@ local bor = bit32.bor
 
 -- How often the bot thinks. The tick is not bound to a frame: the decision is made
 -- on accumulated time so the behaviour does not depend on FPS.
-local TICK_INTERVAL = 1 / 30
+local TICK_INTERVAL = 1 / 60
 
 --- Bots bypass SkinModule's ownership check, so a typo in a bot config would
 --- make SpecService return nil and leave the bot without a spec. Fall back to
@@ -83,6 +83,11 @@ type BotProperities = {
 	-- is the guard against "forgot to release" when no condition fires.
 	HeldSkill: string?,
 	HeldAt: number,
+
+	-- Per-skill repeat guard shared with Attack.Step (Punch self-chains).
+	-- Sticky: an entry expires only by time, never because another skill was
+	-- chosen in between.
+	Repeats: { [string]: { Count: number, At: number } },
 
 	Random: Random,
 	Accumulator: number,
@@ -330,6 +335,8 @@ function Bot.SetTarget(self: Bot, character: types.Character?)
 	self.Sense:SetTarget(character)
 	self.Threat:Clear()
 
+	table.clear(self.Repeats)
+
 	self.TargetCleaner:Add(character.Destroying:Once(function()
 		self:ClearTarget()
 	end))
@@ -354,6 +361,8 @@ function Bot.ClearTarget(self: Bot)
 	self.Target = nil
 	self.Sense:ClearTarget()
 	self.Threat:Clear()
+
+	table.clear(self.Repeats)
 
 	self:SetPosture("Idle")
 	self.Navigator:ClearTarget()
@@ -420,6 +429,8 @@ return {
 			HeldSkill = nil,
 			HeldAt = 0,
 
+			Repeats = {},
+
 			Random = random,
 			Accumulator = 0,
 		}, Bot)
@@ -435,6 +446,8 @@ return {
 		cleaner:Add(RunService.Heartbeat:Connect(function(dt)
 			bot:Tick(dt)
 		end))
+
+		Crane:GetService("CollisionService"):SetCollisionGroup("NPC", character.instance)
 
 		return bot
 	end,

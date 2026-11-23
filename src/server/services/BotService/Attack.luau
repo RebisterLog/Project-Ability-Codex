@@ -16,8 +16,16 @@ type Host = {
 	-- by Bot.Tick's release rules.
 	HeldSkill: string?,
 	HeldAt: number,
+
+	-- Sticky per-skill repeat guard (Punch chains up to four hits on its own).
+	Repeats: { [string]: { Count: number, At: number } },
+
 	Random: Random,
 }
+
+-- Safety reset for the repeat guard: matches Punch's ComboResetTime, so a bot
+-- with no other candidates waits for the same window a player would.
+local DEFAULT_REPEAT_RESET_TIME = 1.5
 
 local CANDIDATES: { types.Skill } = {}
 local OWNERS: { [string]: types.Spec } = {}
@@ -104,7 +112,33 @@ function Attack.Step(host: Host, mask: number, distance: number)
 		print("Bot candidates:", table.concat(ids, ", "))
 	end
 
-	local best = SkillPriority.Select(host.Config, candidates, mask, distance, comboSkillId)
+	-- A self-chaining skill (Punch) must not be re-selected just because the
+	-- planned step is unavailable: that is how "one Punch" becomes four hits.
+	-- The guard is per-skill and time-based -- choosing another skill in between
+	-- does not clear it, so the skill's own ComboResetTime can expire first.
+	const now = workspace:GetServerTimeNow()
+	const blocked: { [string]: boolean } = {}
+
+	for id, entry in host.Repeats do
+		const options = host.Config.Skills[id]
+		const maxRepeats = options and options.MaxRepeats
+
+		if not maxRepeats then
+			host.Repeats[id] = nil
+			continue
+		end
+
+		const resetTime = (options and options.RepeatResetTime) or DEFAULT_REPEAT_RESET_TIME
+
+		if now - entry.At >= resetTime then
+			host.Repeats[id] = nil
+		elseif entry.Count >= maxRepeats then
+			blocked[id] = true
+		end
+	end
+
+	const best =
+		SkillPriority.Select(host.Config, candidates, mask, distance, comboSkillId, blocked)
 	if not best then return end
 
 	if host.Config.Debug then print("Bot selected skill:", best.Id) end
@@ -120,6 +154,21 @@ function Attack.Step(host: Host, mask: number, distance: number)
 			const summonSpec = OWNERS.Summon or host.Character.Spec
 			if summonSpec then summonSpec:ActivateSkill("Summon") end
 			return
+		end
+	end
+
+	-- Only a real activation counts: the stand-summon branch above returns
+	-- before reaching here, so it leaves the repeat counter untouched.
+	-- Other skills never touch this entry -- the block is sticky by time.
+	const maxRepeats = options and options.MaxRepeats
+	if maxRepeats then
+		const entry = host.Repeats[best.Id]
+
+		if entry then
+			entry.Count += 1
+			entry.At = now
+		else
+			host.Repeats[best.Id] = { Count = 1, At = now }
 		end
 	end
 
