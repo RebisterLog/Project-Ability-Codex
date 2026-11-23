@@ -100,8 +100,10 @@ local function activate(_self: ClientSkillService.ClientSkill, ctx: Context)
 			if not state or not state.Parameters then return end
 
 			const parameters = state.Parameters
+			const castingSkill = parameters.CastingSkill
 			if
-				parameters.Ragdoll
+				(castingSkill and castingSkill ~= "" and castingSkill ~= "Dash")
+				or parameters.Ragdoll
 				or parameters.Restand
 				or parameters.Restrain
 				or ctx.Humanoid.PlatformStand

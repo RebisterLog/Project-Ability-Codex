@@ -35,13 +35,18 @@ function SpecService:GetSpecData(spec: types.SpecDef): types.SpecData?
 		return nil
 	end
 
-	const module = SpecsFolder:FindFirstChild(spec.Id)
-	if not module or not module:IsA("ModuleScript") then
+	const specsModules = SpecsFolder:QueryDescendants("ModuleScript")
+
+	local data
+	for i, module in specsModules do
+		if module.Name == spec.Id then data = Crane.Utils.DeepClone(require(module)) end
+	end
+
+	if not data then
 		Crane.Utils.Log("SpecService", `Can't find spec module with Name: {spec.Id}`, "warn")
 		return nil
 	end
 
-	const data = Crane.Utils.DeepClone(require(module))
 	for key, value in specInfo do
 		data[key] = value
 	end
@@ -85,17 +90,8 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 
 		spec:AddSkill(skill)
 
-		-- Config binds are either a bare enum (legacy) or a declaration that
-		-- also carries `Hold`. A per-owner override is always a bare enum: it
-		-- replaces the key only, never the options attached in the config.
-		const declared = specData.Binds and specData.Binds[skillId]
-		const declaration = if type(declared) == "table"
-			then declared :: { Key: types.Bind, Hold: boolean? }
-			else nil
-		const defaultKey = if declaration then declaration.Key else declared :: types.Bind?
-
-		local bind: types.Bind? = data.Binds and data.Binds[skillId]
-		if not bind then bind = defaultKey end
+		local bind = data.Binds and data.Binds[skillId]
+		if not bind then bind = specData.Binds[skillId] end
 
 		if not bind then
 			-- A skill without a bind keeps `Enum.KeyCode.Unknown`, which is also
@@ -111,7 +107,6 @@ function SpecService:CreateSpec(character: types.Character, data: types.SpecDef)
 		end
 
 		skill:SetBind(bind)
-		skill:SetHold(declaration ~= nil and declaration.Hold == true)
 	end
 
 	if _G["CRANE_DEBUGGING"] then

@@ -25,6 +25,8 @@ const SkillsFolder = script.Parent.Parent.skills
    * `CanActivate` gates prediction on the replicated CharacterState, and the
      context hands the skill a `Deactivate` callback so it can resync itself
      when the server disagrees (interrupt, restraint, respawn).
+   * The replicated `CastingSkill` locks out every client skill while the
+     server is casting a different one, including the hold re-send path.
 
    Contract (each module returns):
      Id: string                      -- matches the server skill id / bind
@@ -110,6 +112,16 @@ function ClientSkillService.MakeContext(
 	}
 end
 
+--- `CastingSkill` is the id of the skill holding the server's global
+--- single-cast lock. Comparing it with the candidate id means a skill can keep
+--- predicting itself while every other client skill stays locked out.
+local function isBusyCasting(parameters: { CastingSkill: string }?, skillId: string): boolean
+	if not parameters then return false end
+
+	const activeSkill = parameters.CastingSkill
+	return activeSkill ~= nil and activeSkill ~= "" and activeSkill ~= skillId
+end
+
 --- Side-effect-free check used by BindService before it sends a StartSkill
 --- packet. Skills with a client module use their own `CanActivate` gate; the
 --- rest fall back to the replicated CharacterState, which is also what keeps
@@ -119,6 +131,7 @@ function ClientSkillService.CanStart(self: typeof(ClientSkillService), skillId: 
 	const state = source and source.CharacterState
 	const parameters = state and state.Parameters
 	if not state or not parameters then return false end
+	if isBusyCasting(parameters, skillId) then return false end
 
 	const now = workspace:GetServerTimeNow()
 	if parameters.Ragdoll or parameters.Restrain then return false end
@@ -147,6 +160,14 @@ function ClientSkillService.CanStart(self: typeof(ClientSkillService), skillId: 
 	return module.CanActivate(module, ctx) ~= false
 end
 
+--- Whether a *different* skill currently owns the server's cast lock. Used by
+--- BindService to pause hold re-sends until the cast finishes.
+function ClientSkillService.IsBusy(_self: typeof(ClientSkillService), skillId: string): boolean
+	const source = Crane:GetService("PlayerService").Proxy()
+	const state = source and source.CharacterState
+	return isBusyCasting(state and state.Parameters, skillId)
+end
+
 function ClientSkillService.Activate(self: typeof(ClientSkillService), skillId: string): boolean
 	const entry = self.Skills[skillId]
 	if not entry then return false end
@@ -161,6 +182,10 @@ function ClientSkillService.Activate(self: typeof(ClientSkillService), skillId: 
 
 	-- Hold-to-cast: ignore repeats while already active.
 	if entry.Active then return true end
+
+	-- BindService's hold loop calls Activate directly and never passes through
+	-- CanStart, so the busy gate must be enforced here for every client skill.
+	if self:IsBusy(skillId) then return false end
 
 	const cleaner = Crane.Buttler.new()
 	const ctx = self:MakeContext(skillId, cleaner)
@@ -217,6 +242,13 @@ end
 function ClientSkillService.IsActive(self: typeof(ClientSkillService), skillId: string): boolean
 	const entry = self.Skills[skillId]
 	return entry ~= nil and entry.Active
+end
+
+--- Press-to-flip skills must not be auto-repeated while the key is down: every
+--- packet would flip the server-side state again.
+function ClientSkillService.IsToggle(self: typeof(ClientSkillService), skillId: string): boolean
+	const entry = self.Skills[skillId]
+	return entry ~= nil and entry.Module.Toggle == true
 end
 
 function ClientSkillService.Destroy(self: typeof(ClientSkillService))

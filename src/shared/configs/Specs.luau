@@ -1,19 +1,11 @@
 export type BindKey = Enum.KeyCode & Enum.UserInputType
 
--- A bind is either the legacy bare enum or a declaration that also carries
--- per-skill input options. `Hold` makes BindService keep requesting the skill
--- while the key is down, instead of firing once on press.
-export type BindDecl = BindKey | {
-	Key: BindKey,
-	Hold: boolean?,
-}
-
 export type SpecInfo = {
 	DisplayName: string,
 	IsPublic: boolean,
 	Type: ("Spec" | "SubSpec")?,
 	Binds: {
-		[string]: BindDecl,
+		[string]: BindKey,
 	},
 }
 
@@ -23,9 +15,9 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Dash"] = { Key = Enum.KeyCode.C, Hold = true },
-			["Block"] = { Key = Enum.KeyCode.F, Hold = true },
-			["Punch"] = { Key = Enum.UserInputType.MouseButton1, Hold = true },
+			["Dash"] = Enum.KeyCode.C,
+			["Block"] = Enum.KeyCode.F,
+			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
 			["Grab"] = Enum.KeyCode.X,
 			--
@@ -43,9 +35,9 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Dash"] = { Key = Enum.KeyCode.C, Hold = true },
-			["Block"] = { Key = Enum.KeyCode.F, Hold = true },
-			["Punch"] = { Key = Enum.UserInputType.MouseButton1, Hold = true },
+			["Dash"] = Enum.KeyCode.C,
+			["Block"] = Enum.KeyCode.F,
+			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
 			["Grab"] = Enum.KeyCode.X,
 
@@ -60,9 +52,9 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Dash"] = { Key = Enum.KeyCode.C, Hold = true },
-			["Block"] = { Key = Enum.KeyCode.F, Hold = true },
-			["Punch"] = { Key = Enum.UserInputType.MouseButton1, Hold = true },
+			["Dash"] = Enum.KeyCode.C,
+			["Block"] = Enum.KeyCode.F,
+			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
 			["Grab"] = Enum.KeyCode.X,
 
@@ -76,9 +68,9 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Dash"] = { Key = Enum.KeyCode.C, Hold = true },
-			["Block"] = { Key = Enum.KeyCode.F, Hold = true },
-			["Punch"] = { Key = Enum.UserInputType.MouseButton1, Hold = true },
+			["Dash"] = Enum.KeyCode.C,
+			["Block"] = Enum.KeyCode.F,
+			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
 			["Grab"] = Enum.KeyCode.X,
 			["Summon"] = Enum.KeyCode.Q,
@@ -92,9 +84,9 @@ const Specs = {
 		IsPublic = true,
 
 		Binds = {
-			["Dash"] = { Key = Enum.KeyCode.C, Hold = true },
-			["Block"] = { Key = Enum.KeyCode.F, Hold = true },
-			["Punch"] = { Key = Enum.UserInputType.MouseButton1, Hold = true },
+			["Dash"] = Enum.KeyCode.C,
+			["Block"] = Enum.KeyCode.F,
+			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
 			--["Grab"] = Enum.KeyCode.X,
 			["Summon"] = Enum.KeyCode.Q,

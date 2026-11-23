@@ -52,17 +52,27 @@ function Run.Activate(self: ClientSkillService.ClientSkill, ctx: Context)
 	-- Resync: when the server's authoritative minimum drops below the sprint
 	-- speed, the prediction is stale — hand it back without waiting for a press.
 	const playerService = Crane:GetService("PlayerService")
-	ctx.Cleaner:Add(
-		playerService.Proxy:Subscribe(
-			"AnyChange",
-			{ "CharacterState", "Parameters", "MinWalkSpeed" },
-			function()
-				const state = playerService.Proxy().CharacterState
-				const min = state and state.Parameters and state.Parameters.MinWalkSpeed or 0
-				if min < MovementRules.RunSpeed then ctx.Deactivate() end
+	ctx.Cleaner:Add(playerService.Proxy:Subscribe(
+		"AnyChange",
+		-- Watch the whole Parameters subtree so a CastingSkill change is
+		-- heard too; the callback still only acts on MinWalkSpeed / lock.
+		{ "CharacterState", "Parameters" },
+		function()
+			const state = playerService.Proxy().CharacterState
+			const parameters = state and state.Parameters
+			if not parameters then return end
+
+			-- A different skill taking the cast lock ends the prediction
+			-- immediately; our own cast must not cut the sprint short.
+			const castingSkill = parameters.CastingSkill
+			if castingSkill and castingSkill ~= "" and castingSkill ~= "Run" then
+				ctx.Deactivate()
 			end
-		)
-	)
+
+			const min = parameters.MinWalkSpeed or 0
+			if min < MovementRules.RunSpeed then ctx.Deactivate() end
+		end
+	))
 end
 
 return Run

@@ -9,9 +9,6 @@ type SkillData = {
 		DisplayName: string,
 		ReleaseTime: number,
 		Bind: Enum.KeyCode | Enum.UserInputType,
-		-- Replicated from the spec config: the skill should be re-requested
-		-- while its key stays down. See BindService.
-		Hold: boolean,
 		Enabled: boolean,
 	},
 }
@@ -28,6 +25,9 @@ export type CharacterParameters = {
 	MaxWalkSpeed: number,
 	MaxJumpPower: number,
 	HamonCharge: ChargeState.Snapshot,
+	-- Id of the skill holding the server's global cast lock, "" when idle.
+	-- Lets the client refuse to predict a dash while a different skill casts.
+	CastingSkill: string,
 }
 
 export type PlayerDynamicData = {
@@ -61,6 +61,7 @@ return {
 			MaxWalkSpeed = 2048,
 			MaxJumpPower = 4096,
 			HamonCharge = ChargeState.Snapshot(ChargeConfigs.HamonCharge.Default),
+			CastingSkill = "",
 		},
 		Blocking = false,
 		InCombat = false,

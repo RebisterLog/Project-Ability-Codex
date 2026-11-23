@@ -29,7 +29,6 @@ function Skill.new(character: types.Character, spec: types.Spec, data: types.Ski
 				ReleaseTime = 0,
 				Enabled = false,
 				Bind = Enum.KeyCode.Unknown,
-				Hold = false,
 			},
 		}),
 	}, Skill) :: types.Skill
@@ -58,9 +57,17 @@ function Skill.Activate(self: types.Skill)
 	self.Active = true
 	self.Holding = true
 
+	-- Mirror the global single-cast lock to the owner. The guard lives for the
+	-- whole activation, including long sequence/promise driven casts, and is
+	-- always released before Activate returns. `GetParameter` re-folds the
+	-- remaining objects, so overlapping holds cannot leave a stale id behind.
+	const castGuard = self.Character:AddParameter("CastingSkill", self.Data.Id)
+
 	local ok, err = xpcall(function()
 		if self.Data.Activate then self.Data.Activate(self) end
 	end, debug.traceback)
+
+	castGuard:Destroy()
 
 	if not ok then
 		softStopActiveSkill(self)
@@ -119,13 +126,6 @@ end
 function Skill.SetBind(self: types.Skill, bind: types.Bind)
 	self.Proxy:Patch({
 		{ Name = "SetDictionary", Path = { "Parameters" }, Args = { "Bind", bind } },
-	})
-end
-
---- Whether BindService should keep requesting this skill while its key is held.
-function Skill.SetHold(self: types.Skill, hold: boolean)
-	self.Proxy:Patch({
-		{ Name = "SetDictionary", Path = { "Parameters" }, Args = { "Hold", hold } },
 	})
 end
 

@@ -559,7 +559,6 @@ type SkillMethods = {
 	SetDisplayName: (self: Skill, name: string) -> (),
 	SetEnabled: (self: Skill, enabled: boolean) -> (),
 	SetBind: (self: Skill, bind: Bind) -> (),
-	SetHold: (self: Skill, hold: boolean) -> (),
 	IsOnCooldown: (self: Skill) -> boolean,
 	Validate: (self: Skill) -> (boolean, string?),
 	Init: (self: Skill) -> (),
@@ -571,7 +570,6 @@ export type Skill = SkillProperties & SkillMethods
 export type SkillReplicationData = {
 	Parameters: {
 		Bind: Bind,
-		Hold: boolean,
 		Enabled: boolean,
 		-- Server time (workspace:GetServerTimeNow()), comparable on the client.
 		ReleaseTime: number,
@@ -603,7 +601,7 @@ export type SpecData = {
 	-- either the spec or the subspec slot is enough.
 	TimeStopVision: boolean?,
 
-	Binds: { [string]: Bind | { Key: Bind, Hold: boolean? } },
+	Binds: { [string]: Bind },
 
 	Assets: {
 		Animations: {

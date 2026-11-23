@@ -100,6 +100,11 @@ return {
 	Restrain = { Default = false, Parser = ORParser, Replicate = Mirror },
 	NoSkillCast = { Default = false, Parser = ORParser },
 
+	-- Replicated id of the skill that currently owns the character's global
+	-- single-cast lock. Empty when nothing is casting. The client compares it
+	-- with the skill it is about to predict so a skill never blocks itself.
+	CastingSkill = { Default = "", Parser = LastParser, Replicate = Mirror },
+
 	-- Health cannot drop below one while active. The beat lands as usual (knockback,
 	-- ragdoll, stun all apply); excess damage is tracked as debt and paid out when
 	-- the last hold is released.

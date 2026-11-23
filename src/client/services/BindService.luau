@@ -9,10 +9,17 @@ const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 
 const JoystickBinds = require(script.Parent.Parent.controls.JoystickBinds)
 
--- Hold-to-cast tuning. The server still revalidates every request; these only
--- keep obvious duplicate/spam requests off the wire.
-const BASE_RETRY_INTERVAL = 0.12
-const MAX_RETRY_INTERVAL = 0.4
+-- ByteNet allows only 512 bytes/sec per player for ALL client packets. This is
+-- a shared budget across every held key, not a per-key interval: ~12 packets/s
+-- total leaves room for StopSkill and proxy patches.
+const HOLD_SEND_INTERVAL = 0.08
+-- StopSkill is idempotent on the server. Repeating it briefly after a release
+-- guarantees at least one copy survives a dropped packet.
+const STOP_REPEATS = 4
+const STOP_REPEAT_INTERVAL = 0.05
+-- Server toggles that have no client module with a `Toggle` flag. A repeated
+-- StartSkill would flip them back and forth while the key is held.
+const NON_REPEATABLE = { Summon = true }
 
 -- First priority level. Candidates inside one slot are sorted by skill id.
 const SLOT_RANK = { Spec = 1, SubSpec = 2 }
@@ -29,10 +36,9 @@ type Candidate = SkillRef & {
 	Bind: Bind,
 }
 
-type HeldInput = SkillRef & {
-	Hold: boolean,
-	AttemptAt: number,
-	Interval: number,
+type PendingStop = {
+	Left: number,
+	NextAt: number,
 }
 
 -- The analyzer's Roblox definitions don't list KeyCode.Unknown, but the engine
@@ -43,7 +49,8 @@ const BindService = Crane:CreateService({
 	Name = "BindService",
 })
 BindService.Binds = {} :: { [Bind]: { Candidate } }
-BindService.Held = {} :: { [string]: HeldInput }
+BindService.Held = {} :: { [string]: SkillRef }
+BindService.StopQueue = {} :: { [string]: PendingStop }
 
 function BindService.onStart(self: typeof(BindService))
 	const LocalPlayer = Players.LocalPlayer
@@ -52,6 +59,8 @@ function BindService.onStart(self: typeof(BindService))
 	self.clientSkills = Crane:GetService("ClientSkillService")
 	self.Cleaner = Crane.Janitor.new()
 	self.BindSignature = ""
+	self.NextHoldSendAt = 0
+	self.RoundRobin = 0
 
 	const function skillData(ref: SkillRef)
 		const skills = self.playerProxy().Skills
@@ -96,6 +105,7 @@ function BindService.onStart(self: typeof(BindService))
 		-- subscription. Only a real rebind may invalidate held inputs.
 		if signature ~= self.BindSignature then
 			table.clear(self.Held)
+			table.clear(self.StopQueue)
 			self.BindSignature = signature
 		end
 
@@ -115,6 +125,7 @@ function BindService.onStart(self: typeof(BindService))
 
 	self.Cleaner:Add(LocalPlayer.CharacterAdded:Connect(function()
 		table.clear(self.Held)
+		table.clear(self.StopQueue)
 	end))
 
 	-- Keep the original InputObject intact: after a gamepad remap the old code
@@ -148,41 +159,33 @@ function BindService.onStart(self: typeof(BindService))
 		return self.clientSkills:CanStart(candidate.SkillId)
 	end
 
-	const function isHold(candidate: Candidate): boolean
-		const data = skillData(candidate)
-		const parameters = data and data.Parameters
-		return parameters ~= nil and parameters.Hold == true
-	end
-
-	const function pick(candidates: { Candidate }): (Candidate?, boolean?)
+	const function pick(candidates: { Candidate }): Candidate?
 		-- Candidates are sorted by slot then skill id. The key belongs to the
 		-- first one that can actually start right now: a cooldown, a disabled
 		-- skill (e.g. OnlyForStand without a stand), an absent skill or a blocked
 		-- state all pass the key to the next candidate in priority order.
 		for _, candidate in candidates do
-			if canStart(candidate) then return candidate, isHold(candidate) end
+			if canStart(candidate) then return candidate end
 		end
 
-		-- Nothing is ready, but a hold-capable candidate must wait for its
-		-- window while the key stays down.
-		for _, candidate in candidates do
-			if isHold(candidate) then return candidate, true end
-		end
-
-		return nil
+		-- Nothing is ready: every skill is hold-capable by default, so the
+		-- highest-priority candidate keeps the key and waits for its window.
+		return candidates[1]
 	end
 
-	const function sendStart(candidate: Candidate, hold: boolean, key: string)
+	const function isRepeatable(skillId: string): boolean
+		if NON_REPEATABLE[skillId] then return false end
+		return not self.clientSkills:IsToggle(skillId)
+	end
+
+	const function sendStart(candidate: Candidate, key: string)
 		self.clientSkills:Activate(candidate.SkillId)
 		Crane:GetPacket("StartSkill").send(candidate.SkillId)
 
-		self.Held[key] = {
-			Slot = candidate.Slot,
-			SkillId = candidate.SkillId,
-			Hold = hold,
-			AttemptAt = workspace:GetServerTimeNow() + BASE_RETRY_INTERVAL,
-			Interval = BASE_RETRY_INTERVAL,
-		}
+		-- A fresh press cancels any pending release packets for this skill, so
+		-- a quick re-tap cannot be stopped by a stale copy from the last hold.
+		self.StopQueue[candidate.SkillId] = nil
+		self.Held[key] = { Slot = candidate.Slot, SkillId = candidate.SkillId }
 	end
 
 	self.Cleaner:Add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -195,10 +198,10 @@ function BindService.onStart(self: typeof(BindService))
 		const candidates = resolve(input, remapped)
 		if not candidates then return end
 
-		const chosen, hold = pick(candidates)
+		const chosen = pick(candidates)
 		if not chosen then return end
 
-		sendStart(chosen, hold == true, key)
+		sendStart(chosen, key)
 	end))
 
 	-- Deliberately not gated by `gameProcessed`: a UI that consumes the release
@@ -210,47 +213,54 @@ function BindService.onStart(self: typeof(BindService))
 		self.Held[key] = nil
 
 		self.clientSkills:Stop(held.SkillId)
-		Crane:GetPacket("StopSkill").send(held.SkillId)
+		self.StopQueue[held.SkillId] = {
+			Left = STOP_REPEATS,
+			NextAt = workspace:GetServerTimeNow(),
+		}
 	end))
 
 	self.Cleaner:Add(RunService.Heartbeat:Connect(function()
 		const now = workspace:GetServerTimeNow()
 
-		for _key, held in self.Held do
-			if not held.Hold then continue end
-			if now < held.AttemptAt then continue end
+		-- Every held bind keeps requesting its skill; the server validates.
+		-- One shared slot per tick keeps the client inside ByteNet's 512 B/s
+		-- budget even when several keys are held at once.
+		if now >= self.NextHoldSendAt then
+			self.NextHoldSendAt = now + HOLD_SEND_INTERVAL
 
-			held.AttemptAt = now + held.Interval
-
-			const data = skillData(held)
-			const parameters = data and data.Parameters
-			if not parameters or not parameters.Enabled then continue end
-
-			if parameters.ReleaseTime > now then
-				-- Exact wake-up: no polling while the authoritative cooldown runs.
-				held.AttemptAt = math.max(held.AttemptAt, parameters.ReleaseTime)
-				held.Interval = BASE_RETRY_INTERVAL
-				continue
+			const keys: { string } = {}
+			for key, held in self.Held do
+				if not isRepeatable(held.SkillId) then continue end
+				-- While a different skill owns the server's cast lock every
+				-- request would be rejected. Drop it from the rotation and
+				-- keep the hold armed, so casting does not queue up behind the
+				-- current one. The key reappears as soon as the lock clears.
+				if self.clientSkills:IsBusy(held.SkillId) then continue end
+				table.insert(keys, key)
 			end
 
-			if not self.clientSkills:CanStart(held.SkillId) then
-				-- A stun has an exact replicated end time: wake up on it instead
-				-- of polling. Other blocks (ragdoll, restraint, local prediction)
-				-- fall back to a capped backoff.
-				const state = self.playerProxy().CharacterState
-				const stun = state and state.Parameters and state.Parameters.Stun
-				if stun and stun.ExpiresAt > now then
-					held.AttemptAt = math.max(held.AttemptAt, stun.ExpiresAt)
-					held.Interval = BASE_RETRY_INTERVAL
-				else
-					held.Interval = math.min(held.Interval * 1.5, MAX_RETRY_INTERVAL)
+			if #keys > 0 then
+				self.RoundRobin = self.RoundRobin % #keys
+				const key = keys[self.RoundRobin + 1]
+				self.RoundRobin += 1
+
+				const held = self.Held[key]
+				if not self.clientSkills:IsActive(held.SkillId) then
+					self.clientSkills:Activate(held.SkillId)
 				end
-				continue
-			end
 
-			held.Interval = BASE_RETRY_INTERVAL
-			self.clientSkills:Activate(held.SkillId)
-			Crane:GetPacket("StartSkill").send(held.SkillId)
+				Crane:GetPacket("StartSkill").send(held.SkillId)
+			end
+		end
+
+		for skillId, pending in self.StopQueue do
+			if now < pending.NextAt then continue end
+
+			pending.NextAt = now + STOP_REPEAT_INTERVAL
+			pending.Left -= 1
+			if pending.Left <= 0 then self.StopQueue[skillId] = nil end
+
+			Crane:GetPacket("StopSkill").send(skillId)
 		end
 	end))
 end

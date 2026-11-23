@@ -299,9 +299,9 @@ local Specs = {
         IsPublic = true,
 
         Binds = {
-            ["Dash"]              = { Key = Enum.KeyCode.C, Hold = true },
-            ["Block"]             = { Key = Enum.KeyCode.F, Hold = true },
-            ["Punch"]             = { Key = Enum.UserInputType.MouseButton1, Hold = true },
+            ["Dash"]              = Enum.KeyCode.C,
+            ["Block"]             = Enum.KeyCode.F,
+            ["Punch"]             = Enum.UserInputType.MouseButton1,
             ["Run"]               = Enum.KeyCode.LeftControl,
             ["Grab"]              = Enum.KeyCode.X,
 
@@ -313,13 +313,17 @@ local Specs = {
 ```
 
 ### Bind types:
-- `Enum.KeyCode.X` — bare enum: keyboard key, fires once per press (legacy form)
+- `Enum.KeyCode.X` — keyboard key
 - `Enum.UserInputType.MouseButton1` — mouse buttons
 - `Enum.UserInputType.Touch` — touch input
-- `{ Key = Enum..., Hold = true }` — the same key plus hold-to-cast. BindService keeps re-requesting the skill while the key is down, retrying exactly when the replicated cooldown / character state allows it. Use this for Punch / Block / Dash-like skills; omit `Hold` for one-shot skills.
+
+### Holding
+There is no `Hold` option. Every bound skill is re-requested while its key is down: BindService sends `StartSkill` and lets the server validate it (no waiting for replicated cooldown / stun state). The send rate is a single shared ~12 packets/sec budget across all held keys (ByteNet limit), and `StopSkill` is repeated briefly after release so a dropped packet cannot leave a skill stuck.
+
+Press-to-flip skills are excluded automatically: `Run` via its client `Toggle` flag, `Summon` via the explicit `NON_REPEATABLE` list in `BindService`.
 
 ### Colliding binds
-When several skills share a key, BindService sorts the candidates by slot (`Spec` before `SubSpec`) and then alphabetically by skill id inside the slot, and starts the **first one that can actually be cast right now**. Any reason the higher-priority skill cannot start — cooldown, disabled state (e.g. `OnlyForStand` without a stand), absent skill, or blocked character state — passes the key to the next candidate. If none can start and one is hold-capable, that one is chosen and waited on until release.
+When several skills share a key, BindService sorts the candidates by slot (`Spec` before `SubSpec`) and then alphabetically by skill id inside the slot, and starts the **first one that can actually be cast right now**. Any reason the higher-priority skill cannot start — cooldown, disabled state (e.g. `OnlyForStand` without a stand), absent skill, or blocked character state — passes the key to the next candidate. If none can start, the highest-priority candidate keeps the key and waits for its window until release.
 
 ---
 
