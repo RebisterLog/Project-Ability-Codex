@@ -232,11 +232,3 @@ Other changes made while implementing the review:
 - A throwing listener (or `OnPatch` handler) is reported with `warn` and does not stop the remaining listeners or the patch batch.
 - The packet contract is unchanged: `OnPatch` forwards `{ Name, Path = {string}, Args = {any} }`, exactly what `Packets.luau` already declares.
 
-## Tests
-
-```bash
-lune run tests/Proxy.luau   # 55 checks
-```
-
-The suite covers deep-copy isolation, path normalization and key collisions, every instruction, the `AnyChange` ctx and its documented direction, wildcards, cleanup, `OnPatch` forwarding, and listener error isolation. `tests/baseline/analysis.txt` no longer carries the nine legacy `Proxy.luau` findings.
-

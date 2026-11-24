@@ -6,7 +6,7 @@ Read this FIRST before touching code. Compact reference; full details in skills.
 - `src/shared` → `ReplicatedStorage.shared`
 - `src/server` → `ServerScriptService.server`
 - `src/client` → `StarterPlayer.StarterPlayerScripts.client`
-- Vendored read-only packages under `src/shared/packages/*` (Roact, Fusion, Crane, Janitor, Proxy, Sequencer, etc.) — see `tools/Toolchain.VENDORED` + `selene.toml` exclude list (must stay in sync).
+- Vendored read-only packages under `src/shared/packages/*` (Roact, Fusion, Crane, Janitor, Proxy, Sequencer, etc.) — see `tools/Toolchain.VENDORED`.
 
 ## Pragmas
 - Performance-critical server combat code: `--!native` / `--!optimize 2`
@@ -37,14 +37,13 @@ Read this FIRST before touching code. Compact reference; full details in skills.
 
 ## Standard commands
 ```bash
-lune run tools/run-tests.luau                # gates + all suites
-lune run tools/check.luau                    # syntax/format/lint/analyze
-lune run tools/check.luau --only=lint
-lune run tools/check.luau --update-baseline  # accept current findings
-lune run tools/gen-types-doc.luau         # docs/API_TYPES.md
-lune run tools/sync-docs.luau        # download/update docs/ref
+rojo build -o PAC.rbxlx              # build the place
+rojo serve                           # stream into Studio
+lune run tools/format.luau --fix --src  # whole-project format, preserves line endings
 ```
-- Tools resolved via `PAC_TOOLS_DIR`, `<root>/.tools`, PATH.
+- Zed tasks expose the same three commands: `Rojo: Build`, `Rojo: Server`, `Format`.
+- Format on save is handled by lunaut's built-in StyLua formatting (`lunaut.format.enabled`, on by default); `stylua.toml` holds the style.
+- `stylua` and `rojo` are looked up via `PAC_TOOLS_DIR`, `<root>/.tools`, PATH.
 
 ## Agent helpers
 ```bash
@@ -55,15 +54,14 @@ lune run tools/impact.luau Proxy        # by identifier
 ```
 
 ## Line endings / formatting
-- `core.autocrlf=on`, no `.gitattributes`: 208 files CRLF, 820 LF. DO NOT force LF globally.
-- Zed formats on save via `stylua --stdin-filepath {buffer_path} -` (makes stylua find `stylua.toml`).
-- Vendored are read-only in editor.
+- `core.autocrlf=on`, no `.gitattributes`: mixed CRLF/LF. DO NOT force LF globally.
+- StyLua only supports `Unix` or `Windows` line endings, so plain `stylua src` would rewrite every CRLF file. Use `tools/format.luau` for whole-project passes.
+- Vendored are read-only in the editor.
 
 ## Where to look next
 - Luau/idioms → skill `pac-luau`
 - Crane patterns → skill `pac-crane`
 - Combat (AttackHook/AttackInfo/Sequencer) → skill `pac-combat`
-- Testing/gates → skill `pac-testing`
 - Bridge (Studio-only) → skill `pac-bridge`
 - Performance principles → skill `pac-performance`
 - Known traps → `docs/GOTCHAS.md`

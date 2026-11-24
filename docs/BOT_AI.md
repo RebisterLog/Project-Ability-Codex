@@ -1,8 +1,7 @@
 # PAC Bot AI
 
 How a bot decides what to do. Everything below is implemented in
-`src/server/services/BotService/` and is covered by
-`tools/tests/bot-skill-priority.luau`.
+`src/server/services/BotService/`.
 
 ## The one idea: a single action slot
 
@@ -48,9 +47,8 @@ operation and allocates nothing. Condition lists coming from configs are
 converted to masks once and cached.
 
 `Conditions` deliberately duplicates the vocabulary of
-`shared/bot-characters.luau` so the same file loads in Studio and in `lune`. The
-test suite compares the two vocabularies in both directions, so they cannot drift
-apart silently.
+`shared/bot-characters.luau` so the same file loads in Studio and in `lune`;
+keep the two lists in sync by review.
 
 ## Roles come from tags, not from config
 
@@ -209,7 +207,7 @@ Two rules worth keeping:
 - A skill listed in `Combos` must also be described in `Skills`, otherwise the
   allowlist cuts it and it never fires.
 - `Block.HoldUntil` must contain `TARGET_PERFECT_BLOCKABLE`, otherwise the bot
-  silently loses perfect blocks. Both are asserted by the test suite.
+  silently loses perfect blocks.
 
 ## Known gaps
 

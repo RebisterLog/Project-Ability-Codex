@@ -84,13 +84,11 @@ else
 	print(`  sources: src={srcCount} luau, tools={toolsCount}, tests={testsCount}`)
 	print(`  content: skills={skillCount}, specs={specCount}`)
 	print("  tools:")
-	for _, name in { "lune", "stylua", "luau-compile", "luau-lsp", "rojo" } do
+	for _, name in { "lune", "stylua", "rojo" } do
 		local status = if hasBin(root, name) then "ok" else "MISSING"
 		print(`    {name}: {status}`)
 	end
-	print(
-		"  note: run 'lune run tools/check.luau' for gates; 'lune run tools/run-tests.luau' for tests"
-	)
+	print("  note: run 'lune run tools/format.luau --fix --src' to format the project")
 end
 
 process.exit(0)

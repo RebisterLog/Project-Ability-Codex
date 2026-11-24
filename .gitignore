@@ -7,7 +7,7 @@
 
 sourcemap.json
 
-/generated docs: reproduced by `lune run tools/sync-docs.luau`
+# generated docs
 docs/ref/
 .opencode/
 .sharrowkin/

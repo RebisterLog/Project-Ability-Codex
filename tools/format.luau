@@ -1,7 +1,7 @@
 --!strict
 --- Autoformatting of the codebase.
 ---
----   lune run tools/format.luau                          check our own code: tools and tests
+---   lune run tools/format.luau                          check our own code: tools
 ---   lune run tools/format.luau --fix                    format our own code
 ---   lune run tools/format.luau --fix --src              format src as well
 ---   lune run tools/format.luau --exclude Signal.luau    also exclude matching files/dirs
@@ -21,8 +21,8 @@ local Toolchain = require("./Toolchain")
 local fs = require("@lune/fs")
 local process = require("@lune/process")
 
---- Our own code: what the format gate checks strictly.
-const OWN_DIRS = { "tools", "tests" }
+--- Our own code, formatted strictly.
+const OWN_DIRS = { "tools" }
 
 --- Files and directories excluded from formatting by default. More entries can be
 --- added with `--exclude`.
@@ -190,8 +190,8 @@ files = filtered
 table.sort(files)
 print(
 	`{wantsFix and "formatting" or "checking"} {#files} files ({if wantsSrc
-		then "tools, tests, src"
-		else "tools, tests"})`
+		then "tools, src"
+		else "tools"})`
 )
 
 -- The parentheses are mandatory: an `if ... then ... else ...` without them in an

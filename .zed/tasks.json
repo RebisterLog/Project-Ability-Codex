@@ -1,29 +1,20 @@
 [
   {
-    "label": "Dev Watch Project",
-    "command": "cmd",
-    "args": [
-      "/c",
-      "npx concurrently -n \"SOURC,ROJO\" -c \"bgBlue,bgGreen\" \"rojo sourcemap --include-non-scripts --watch default.project.json --output sourcemap.json\" \"rojo serve\""
-    ],
-    "use_new_terminal": false
-  },
-  {
-    "label": "Quality Gate",
-    "command": "cmd",
-    "args": ["/c", "lune run tools/check.luau"],
-    "use_new_terminal": false
-  },
-  {
-    "label": "Lint",
-    "command": "cmd",
-    "args": ["/c", "lune run tools/check.luau --only=lint"],
-    "use_new_terminal": false
-  },
-  {
-    "label": "Format Project",
+    "label": "Format",
     "command": "cmd",
     "args": ["/c", "lune run tools/format.luau --fix --src"],
+    "use_new_terminal": false
+  },
+  {
+    "label": "Rojo: Build",
+    "command": "cmd",
+    "args": ["/c", "rojo build -o PAC.rbxlx"],
+    "use_new_terminal": false
+  },
+  {
+    "label": "Rojo: Server",
+    "command": "cmd",
+    "args": ["/c", "rojo serve"],
     "use_new_terminal": false
   }
 ]

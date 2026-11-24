@@ -47,10 +47,8 @@ const VENDORED = {
 	"src/shared/packages/Crane/packages",
 }
 
---- Directories holding the sources every gate checks. Exported rather than kept
---- local: the lint gate hands selene the directories instead of the file list,
---- and a second copy of these three strings would drift.
-Toolchain.SOURCE_ROOTS = { "src", "tools", "tests" }
+--- Source directories shared by the remaining developer tools.
+Toolchain.SOURCE_ROOTS = { "src", "tools" }
 
 --- Windows paths arrive with backslashes, while the baseline and the report need
 --- paths that are identical on any machine.

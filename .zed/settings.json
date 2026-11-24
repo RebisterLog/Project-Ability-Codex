@@ -1,30 +1,18 @@
 {
-  // Zed project settings. Committed on purpose: every gate in tools/ is a
-  // team-wide rule, and the editor is where most of them are felt first.
+  // Zed project settings. Committed on purpose: the editor setup is shared
+  // across the team (formatting, Rojo server, read-only vendored packages).
 
-  // Format on save. `stylua` reads the buffer from stdin and writes the result
-  // back to stdout, which is the only shape Zed's external formatter supports.
-  //
-  // `--stdin-filepath` is not optional. Without it StyLua looks for
-  // `stylua.toml` in the working directory Zed happens to spawn it in, and a
-  // miss means the default 120-column, spaces, no sorted requires. With it,
-  // StyLua resolves the config from the buffer's own path every time.
+  // Format on save is handled by lunaut's built-in StyLua formatting
+  // (`lunaut.format.enabled`), so Zed needs no external formatter here.
   // lunaut is wired in here instead of in the user settings so the whole
-  // project's editor setup lives in this one file. The binary is a small
-  // stdio proxy: it forwards Zed <-> lunaut and also listens on 127.0.0.1:3667
-  // for the Roblox Studio companion plugin (the VS Code extension normally
-  // owns that listener; Zed has no equivalent).
+  // project's editor setup lives in this one file. It runs directly, with no
+  // JS proxy; all lunaut settings live in `.vscode/settings.json`, which the
+  // server reads itself.
   "languages": {
     "Luau": {
       "show_edit_predictions": true,
       // The Luau extension registers the server under the name "luau-lsp".
       "language_servers": ["luau-lsp"],
-      "formatter": {
-        "external": {
-          "command": "stylua",
-          "arguments": ["--stdin-filepath", "{buffer_path}", "-"]
-        }
-      },
       "format_on_save": "on",
 
       // Left at "detect" on purpose, which is also the default. Do not force
@@ -44,48 +32,16 @@
     }
   },
 
-  // NOTE: every key under `initialization_options.vscode` is mirrored in
-  // `.vscode/settings.json`. Zed sends an empty `workspace/didChangeConfiguration`
-  // right after initialize, and lunaut replaces its client settings with that
-  // payload, so the file is what actually keeps these options in effect.
+  // lunaut is the only language server for Luau; the Luau extension provides
+  // syntax highlighting only. Its settings live in `.vscode/settings.json` —
+  // the single source of truth, read by the server itself. No
+  // `initialization_options` here: Zed replaces them with an empty
+  // `workspace/didChangeConfiguration` right after initialize.
   "lsp": {
     "luau-lsp": {
       "binary": {
-        "path": "C:\\Program Files\\nodejs\\node.exe",
-        "arguments": [
-          "C:/Users/RebisterLog/AppData/Local/lunaut/studio-proxy.js",
-          "--port=3667",
-          "C:/Users/RebisterLog/AppData/Local/lunaut/bin/lunaut.exe",
-          "lsp"
-        ]
-      },
-      "initialization_options": {
-        "vscode": {
-          "lunaut.platform": "roblox",
-          "lunaut.studioPlugin.enabled": true,
-          "lunaut.studioPlugin.port": 3667,
-          "lunaut.rojo.enabled": true,
-          "lunaut.rojo.autogenerate": true,
-          "lunaut.rojo.projectFile": "default.project.json",
-          "lunaut.rojo.sourcemapFile": "sourcemap.json",
-          "lunaut.rojo.includeNonScripts": true,
-          "lunaut.rojo.strictDatamodelTypes": true,
-          "lunaut.definitions": [
-            {
-              "name": "@roblox",
-              "path": "C:/Users/RebisterLog/AppData/Local/Luau/globalTypes.d.luau",
-              "priority": 1000
-            }
-          ],
-          "lunaut.roblox.downloadTypes": false,
-          "lunaut.diagnostics.delay": 500,
-          "lunaut.diagnostics.includeDependents": false,
-          "lunaut.inlayHints.parameterNames": "all",
-          "lunaut.inlayHints.variableTypes": false,
-          "lunaut.inlayHints.parameterTypes": false,
-          "lunaut.inlayHints.functionReturnTypes": false,
-          "lunaut.inlayHints.typeHintMaxLength": 200
-        }
+        "path": "C:/Users/RebisterLog/AppData/Local/lunaut/bin/lunaut.exe",
+        "arguments": ["lsp"]
       }
     }
   },
