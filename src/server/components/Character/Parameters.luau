@@ -57,6 +57,7 @@ return {
 	MaxWalkSpeed = { Default = 2048, Parser = LowestParser, Replicate = Mirror },
 	MinWalkSpeed = { Default = 0, Parser = HighestParser, Replicate = Mirror },
 	MaxJumpPower = { Default = 4096, Parser = LowestParser, Replicate = Mirror },
+	NoRotate = { Default = false, Parser = ORParser },
 
 	Stun = {
 		Default = {

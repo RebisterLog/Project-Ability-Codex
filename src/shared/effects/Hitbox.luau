@@ -5,6 +5,7 @@ const Skins = require(ReplicatedStorage.shared.configs.Skins)
 const Hitbox = {}
 
 type HitboxData = {
+	Success: boolean?,
 	Origin: CFrame?,
 	-- A number draws a ball, a Vector3 a block.
 	Size: Vector3 | number?,
@@ -19,7 +20,7 @@ function Hitbox:onStart(data: HitboxData)
 	Part.CanCollide = false
 	Part.CanTouch = false
 	Part.CanQuery = false
-	Part.Color = Color3.new(1, 0, 0)
+	Part.Color = data.Success and Color3.new(0.14902, 1, 0) or Color3.new(1, 0, 0)
 	Part.Material = Enum.Material.ForceField
 	Part.CastShadow = false
 
