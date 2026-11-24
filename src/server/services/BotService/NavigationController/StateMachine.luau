@@ -1,8 +1,6 @@
 --!native
 --!optimize 2
 
-local RunService = game:GetService("RunService")
-
 type Cleanup = () -> ()
 
 export type State = {
@@ -16,8 +14,7 @@ export type StateMachine<T = { [string]: State }> = {
 	CurrentState: string?,
 	Listeners: { (new: string?, old: string?) -> () },
 
-	UpdateConnection: RBXScriptConnection?,
-
+	Update: (self: StateMachine<T>, dt: number) -> (),
 	ChangeState: (self: StateMachine<T>, stateName: string?) -> (),
 	GetCurrent: (self: StateMachine<T>) -> string?,
 	AddState: (self: StateMachine<T>, name: string, state: State) -> (),
@@ -38,32 +35,25 @@ export type StateMachineConfig = {
 local StateMachine = {}
 StateMachine.__index = StateMachine
 
+function StateMachine.Update<T>(self: StateMachine<T>, dt: number)
+	local current = self.CurrentState
+	local state = current and self.States[current]
+	if state and state.Update then state:Update(dt) end
+end
+
 function StateMachine.ChangeState<T>(self: StateMachine<T>, new: keyof<T>)
 	if new == self.CurrentState then return end
-	local old = self.CurrentState
 
+	local old = self.CurrentState
 	if old then
 		self.CurrentState = nil
-		if self.UpdateConnection then self.UpdateConnection:Disconnect() end
 		if self.States[old]["Exit"] then self.States[old]:Exit(new) end
 	end
 
 	if new then
 		if self.States[new]["Enter"] then self.States[new]:Enter(old) end
 		self.CurrentState = new
-
-		self.UpdateConnection = RunService.Heartbeat:Connect(function(dt)
-			if
-				self.CurrentState
-				and self.States[self.CurrentState]
-				and self.States[self.CurrentState].Update
-			then
-				self.States[self.CurrentState]:Update(dt)
-			end
-		end)
 	end
-
-	--print("Current:", self.CurrentState)
 
 	for _, listener in self.Listeners do
 		listener(new, old)
@@ -78,8 +68,8 @@ function StateMachine.AddState<T>(self: StateMachine<T>, name: string, state: St
 	self.States[name] = state
 end
 
-function StateMachine.RemoveState<T>(self: StateMachine<T>, name: string, state: State)
-	if self.CurrentState == state then self:ChangeState(nil) end
+function StateMachine.RemoveState<T>(self: StateMachine<T>, name: string, _state: State)
+	if self.CurrentState == name then self:ChangeState(nil) end
 
 	self.States[name] = nil
 end
@@ -98,8 +88,6 @@ end
 
 function StateMachine.Destroy<T>(self: StateMachine<T>)
 	if self.CurrentState then self:ChangeState(nil) end
-
-	if self.UpdateConnection then self.UpdateConnection:Disconnect() end
 end
 
 return {
@@ -121,18 +109,6 @@ return {
 			Listeners = {},
 			CurrentState = nil,
 		}, StateMachine)
-
-		if machine.CurrentState then
-			machine.UpdateConnection = RunService.Heartbeat:Connect(function(dt)
-				if
-					machine.CurrentState
-					and machine.States[machine.CurrentState]
-					and machine.States[machine.CurrentState].Update
-				then
-					machine.States[machine.CurrentState]:Update(dt)
-				end
-			end)
-		end
 
 		if config.Initial then machine:ChangeState(config.Initial or "None") end
 

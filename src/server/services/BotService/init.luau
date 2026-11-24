@@ -1,15 +1,15 @@
+--!native
+--!optimize 2
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local types = require(ServerScriptService.server.types)
-
 local Bot = require(script.Bot)
-local NavigationController = require(script.NavigationController)
-local StateMachine = NavigationController.StateMachine
-
+local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+local CombatSnapshot = require(script.CombatSnapshot)
 local Crane = require(ReplicatedStorage.shared.packages.Crane)
-
-local rand = Random.new(tick())
+local Sense = require(script.Sense)
+local types = require(ServerScriptService.server.types)
 
 local BotsService = Crane:CreateService({
 	Name = "BotsService",
@@ -17,39 +17,64 @@ local BotsService = Crane:CreateService({
 
 function BotsService:onStart()
 	self.BotConfigs = Crane:GetService("ConfigService"):Get("Bots")
-
 	self.Bots = {} :: { [types.Character]: typeof(Bot.new()) }
+	self.TickId = 0
+	self.Cleaner = Crane.Buttler.new()
+
+	local combatService = Crane:GetService("CombatService")
+	CombatSnapshot:Configure({ StandService = Crane:GetService("StandService") })
+	Sense:Configure({ CombatService = combatService })
+
+	self.Cleaner:Add(RunService.Heartbeat:Connect(function(dt)
+		self.TickId += 1
+
+		local now = workspace:GetServerTimeNow()
+		for _, bot in self.Bots do
+			if bot.Destroyed then continue end
+
+			bot.Navigator:Update(dt, now)
+			bot:Tick(dt, self.TickId, now)
+		end
+	end))
+
+	self.Cleaner:Add(combatService.Casted:Connect(function(data)
+		local now = workspace:GetServerTimeNow()
+		local caster = data.Caster
+
+		for _, bot in self.Bots do
+			if bot.Destroyed then continue end
+			if bot.Target == caster then bot:OnIncoming(data, now) end
+		end
+	end))
 end
 
 function BotsService:Instance(botName: string, character: types.Character)
 	local config = self.BotConfigs[botName] :: BotsCharacters.BotCharacterConfig
 
-	-- Per-bot HP from the config. MaxHealth goes first: Roblox clamps Health
-	-- when the maximum is lowered, so filling after the write keeps it correct.
 	if config.MaxHealth then
 		character.Humanoid.MaxHealth = config.MaxHealth
 		character.Humanoid.Health = config.MaxHealth
 	end
 
 	local bot = Bot.new(character, config)
-
 	self.Bots[character] = bot
+
+	character.Destroying:Once(function()
+		self:Remove(character)
+	end)
 
 	return bot
 end
 
 function BotsService:Remove(character: types.Character)
-	const bot = self.Bots[character]
+	local bot = self.Bots[character]
 	if not bot then return end
 
-	bot.Cleaner:Cleanup()
 	self.Bots[character] = nil
+	if not bot.Destroyed then bot:Destroy() end
 end
 
---- Looks a bot up by its character component. Returns nil for non-bot characters
---- (e.g. a player). Used by CombatService's knockback to route a client-side
---- knockback to the player the bot is currently targeting.
-function BotsService:GetBot(character: types.Character): any?
+function BotsService:GetBot(character: types.Character): typeof(Bot.new())?
 	return self.Bots[character]
 end
 

@@ -4,11 +4,6 @@
 local BotsCharacters = require(game:GetService("ReplicatedStorage").shared["bot-characters"])
 local MovementStyles = require(script.Parent.NavigationController.MovementStyles)
 
---- Posture of the bot: how it stands and how far it keeps from the target.
----
---- This used to be a state machine table, but the states differed only by
---- posture, so telling them apart turned out to be pointless: `Bot` decides who
---- owns the action slot, and the posture is a consequence of that decision.
 export type Posture = "Idle" | "Attack" | "Defend" | "Charge"
 
 local DEFEND_DISTANCE = 15
@@ -16,29 +11,47 @@ local DEFEND_DISTANCE = 15
 local STYLES: { [Posture]: { Style: string, HoldDistance: number? } } = {
 	Idle = { Style = MovementStyles.direct, HoldDistance = nil },
 	Attack = { Style = MovementStyles.puma, HoldDistance = nil },
-	Defend = { Style = MovementStyles.zigzag, HoldDistance = DEFEND_DISTANCE },
-	-- Charging is a kiting window: keep the Defend distance, but walk straight
-	-- back instead of juking so the retreat reads as part of the cast.
+	Defend = { Style = MovementStyles.orbit, HoldDistance = DEFEND_DISTANCE },
 	Charge = { Style = MovementStyles.direct, HoldDistance = DEFEND_DISTANCE },
 }
 
 local Posture = {}
 
---- Movement style while attacking: `puma` goes straight in, `zigzag` jukes aside.
----
---- The roll happens on every entry into the attack posture, so bots with a high
---- `Chaotic` vary their manner more often. `Chaotic` in a config is a spread
---- (`0..1`), not a time multiplier: `Aggressive + rand(0, Chaotic)` may exceed
---- one, and that is on purpose.
 function Posture.RollAttackStyle(config: BotsCharacters.BotCharacterConfig, random: Random): string
 	local chaotic = config.Chaotic
+	local aggressive = config.Aggressive
+	local agility = config.Agility
 
-	local isMelee = random:NextNumber() < config.Aggressive + random:NextNumber(0, chaotic)
-	if not isMelee then return MovementStyles.puma end
+	local puma = (0.4 + aggressive * 0.8) * (1 + random:NextNumber(0, chaotic))
+	local lunge = (0.15 + aggressive * 0.6 + (1 - agility) * 0.2)
+		* (1 + random:NextNumber(0, chaotic))
+	local zigzag = (0.25 + agility * 0.8) * (1 + random:NextNumber(0, chaotic))
+	local sidestep = (0.1 + agility * 0.6) * (1 + random:NextNumber(0, chaotic))
+	local flank = (0.1 + agility * 0.3) * (1 + random:NextNumber(0, chaotic))
 
-	local isBaiting = random:NextNumber() < config.Agility + random:NextNumber(0, chaotic)
+	local roll = random:NextNumber() * (puma + lunge + zigzag + sidestep + flank)
 
-	return if isBaiting then MovementStyles.zigzag else MovementStyles.puma
+	if roll < puma then return MovementStyles.puma end
+	roll -= puma
+	if roll < lunge then return MovementStyles.lunge end
+	roll -= lunge
+	if roll < zigzag then return MovementStyles.zigzag end
+	roll -= zigzag
+	if roll < sidestep then return MovementStyles.sidestep end
+
+	return MovementStyles.flank
+end
+
+function Posture.RollDefendStyle(config: BotsCharacters.BotCharacterConfig, random: Random): string
+	local chaotic = config.Chaotic
+	local agility = config.Agility
+
+	local orbit = (0.3 + agility * 0.7) * (1 + random:NextNumber(0, chaotic))
+	local strafe = (0.7 - agility * 0.3) * (1 + random:NextNumber(0, chaotic))
+
+	return if random:NextNumber() * (orbit + strafe) < orbit
+		then MovementStyles.orbit
+		else MovementStyles.strafe
 end
 
 function Posture.Get(name: Posture): { Style: string, HoldDistance: number? }
