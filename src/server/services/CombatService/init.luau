@@ -13,12 +13,16 @@ const Enums = require(ServerScriptService.server.Enums)
 const Charges = require(ServerScriptService.server["combat-classes"].Charges)
 const types = require(ServerScriptService.server.types)
 
+-- The legacy fallback must not scale with Dash (100 studs/s) or a hard landing.
+const MOVEMENT_CORRECTION_LIMIT = 2
+
 const CombatService = Crane:CreateService({
 	Name = "CombatService",
 })
 
 function CombatService:onStart()
 	self.VFXService = Crane:GetService("VFXService")
+	self.ClientStateService = Crane:GetService("ClientStateService")
 
 	self.AttackHook = Hook.new("Attack", { "Precast", "Cast", "Postcast" })
 	self.HealHook = Hook.new("Heal", { "Cast" })
@@ -78,16 +82,23 @@ function CombatService:Hitbox(Data: types.HitboxData)
 	--	Params.CollisionGroup = "Player"
 	--end
 
-	if MovementCorrection then
-		const humanoid = Caster.Humanoid
-		const move = humanoid.MoveDirection
-		const correction = Vector3.zAxis
-			* math.min(
-				0,
-				(-Origin.LookVector:Dot(move) * RootPart.AssemblyLinearVelocity.Magnitude / 4)
-			)
+	if MovementCorrection and not Info.Origin then
+		-- Preferred path: move the query origin to where the attacking client
+		-- actually rendered its root, extrapolated by its latency. Invalid or
+		-- missing samples fall back to the old velocity heuristic so bots and
+		-- high-latency clients keep working.
+		const metadata = self.ClientStateService:GetMetadata(Caster)
 
-		Offset += correction
+		if metadata then
+			Origin = metadata.Predicted
+		else
+			const humanoid = Caster.Humanoid
+			const move = humanoid.MoveDirection
+			const raw = -Origin.LookVector:Dot(move) * RootPart.AssemblyLinearVelocity.Magnitude / 4
+			const correction = Vector3.zAxis * math.clamp(raw, -MOVEMENT_CORRECTION_LIMIT, 0)
+
+			Offset += correction
+		end
 	end
 
 	if Offset and Offset ~= CFrame.identity then

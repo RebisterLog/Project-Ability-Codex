@@ -14,5 +14,7 @@
 10. **Прагмы идут в самом верху.** `--!native` / `--!optimize 2` до любого `require`; `--!strict` для типизированных модулей.
 11. **`Hold` в нокабке — время жизни, а не демпфирование.** См. [[Knockback and movement (RU)]].
 12. **У биндов нет флага Hold.** Повторные запросы проверяются на сервере; см. [[Input and BindService (RU)]].
+13. **Бюджет ByteNet 512 B/s общий для всех клиент→сервер пакетов.** Надёжный и ненадёжный каналы проходят через один лимитер (`ByteNet/process/server.luau`), поэтому частый поток поз нужно троттлить и диффить; см. [[Lag compensation (RU)]].
+14. **Клиентские сервисы работают внутри `Main` Actor.** `RenderStepped` там не dispatch’ится; для покадровой работы используйте `Heartbeat` (как `BindService`).
 
 Связанные: [[Formatting and inspection (RU)]], [[Data schemas and Proxy (RU)]], [[Runtime boundaries (RU)]]. Оригинал: [[Gotchas]].

@@ -26,6 +26,7 @@ local targets = CombatService:Hitbox({
 | `SortByDistance` | Nearest targets first. |
 | `CanQueryCaster` | Allow the caster to be returned. |
 | `Parameters` | Custom `OverlapParams`. |
+| `MovementCorrection` | Move the query origin to the caster's latency-compensated client pose (bounded to 3 studs, horizontal only); falls back to a 2-stud velocity heuristic for bots/invalid samples. Ignored when `Origin` is explicit. See [[Lag compensation]]. |
 | `Debug` | Visualise the query through VFX. |
 
 ## Common pattern
@@ -34,4 +35,4 @@ Loop frames call the hitbox, skip targets already in `self.AlreadyHit`, call `Co
 
 Client-side `TargetLockService` handles target selection/presentation only; it does not decide hits. See [[Runtime boundaries]].
 
-Related: [[Sequencer]], [[AttackInfo and AttackData]], [[Character parameters]].
+Related: [[Sequencer]], [[AttackInfo and AttackData]], [[Character parameters]], [[Lag compensation]].

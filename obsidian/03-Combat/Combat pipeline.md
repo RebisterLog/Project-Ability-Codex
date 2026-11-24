@@ -26,6 +26,7 @@ client input
 - Frame-based timing: hitbox checks happen on explicit frames of a [[Sequencer]] sequence.
 - Interruption: stun, ragdoll or death can interrupt a skill; `Interrupt` must stop sequences and effects.
 - Everything is observable through signals: `Casted` (hitbox), `Attacked` (attack), `Interrupted`.
+- Optional input to a hitbox: the throttled client pose stream feeds `CombatService:Hitbox` origin compensation; the server validates it before use. See [[Lag compensation]].
 
 ## Reading order
 

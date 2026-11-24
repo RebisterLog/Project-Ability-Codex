@@ -14,5 +14,7 @@ Read before risky edits. These are non-obvious traps found in the codebase.
 10. **Pragmas go at the very top.** `--!native` / `--!optimize 2` before any `require`; `--!strict` for typed modules.
 11. **Knockback `Hold` is a lifetime, not damping.** See [[Knockback and movement]].
 12. **Binds have no Hold flag.** Repeated requests are validated on the server; see [[Input and BindService]].
+13. **ByteNet's 512 B/s is shared by every client→server packet.** Both reliable and unreliable remotes pass the same limiter (`ByteNet/process/server.luau`), so a high-frequency pose stream must be throttled and diffed; see [[Lag compensation]].
+14. **Client services run inside the `Main` Actor.** `RenderStepped` is not dispatched there; use `Heartbeat` for client-service frame work (as `BindService` does).
 
 Related: [[Formatting and inspection]], [[Data schemas and Proxy]], [[Runtime boundaries]].
