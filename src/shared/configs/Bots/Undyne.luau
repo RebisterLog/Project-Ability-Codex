@@ -113,9 +113,14 @@ const Undyne: BotsCharacters.BotCharacterConfig = {
 		},
 
 		["Dash"] = {
+			Distance = 18,
+			Priority = 3,
 			PreferredDistance = {
 				Min = 12,
+				Max = 18,
 			},
+			MaxRepeats = 1,
+			RepeatResetTime = 3,
 
 			PreferredConditions = {
 				"TARGET_ATTACKING",

@@ -1,8 +1,6 @@
-const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
-const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const types = require(ServerScriptService.server.types)
 
 type SpawnerBotConfig = {
@@ -46,35 +44,35 @@ function BotSpawner.onStart(self: typeof(BotSpawner))
 	end)
 end
 
-function BotSpawner:GetRandomBotConfig(config: SpawnerConfig)
+function BotSpawner:GetRandomBotConfig(config: SpawnerConfig): SpawnerBotConfig?
 	const bots = config.Bots
-	local summ = 0
+	if #bots == 0 then return nil end
 
-	const sorted = {}
-
-	for i, bot in bots do
-		summ += bot.Weight or 0
-		sorted[bot.Weight] = bot
+	local total = 0
+	for _, bot in bots do
+		total += math.max(0, bot.Weight or 0)
 	end
+	if total <= 0 then return bots[1] end
 
-	const random = self.Random:NextInteger(0, summ)
-
+	const pick = self.Random:NextNumber() * total
 	local current = 0
-	for weight, bot in sorted do
-		current += weight
 
-		if random <= current then return bot end
+	for _, bot in bots do
+		current += math.max(0, bot.Weight or 0)
+		if pick < current then return bot end
 	end
 
-	return bots[1]
+	return bots[#bots]
 end
 
 function BotSpawner:Spawn()
 	const botsCount =
 		self.Random:NextInteger(self.Config.MinBots, self.Config.MaxBots or self.Config.MinBots)
 
-	for i = 1, botsCount do
+	for _ = 1, botsCount do
 		const botConfig = self:GetRandomBotConfig(self.Config)
+		if not botConfig then continue end
+
 		const model = botConfig.Model:Clone() :: Model
 		model:PivotTo(
 			self.instance.CFrame
@@ -86,22 +84,18 @@ function BotSpawner:Spawn()
 			:Create(botConfig.BotCharacter, model)
 
 		if self.Config.FightTogether then
-			const Cleaner = Crane.Buttler.new()
+			character.OnTakeDamage:Once(function(attacker)
+				for _, other in self.Bots do
+					if other == bot then continue end
 
-			Cleaner:Add(character.OnTakeDamage:Once(function(attacker, data)
-				for i, bot in self.Bots do
-					if bot == self then continue end
-					bot:SetTarget(attacker)
+					other:SetTarget(attacker)
 				end
-
-				Cleaner:Destroy()
-			end))
+			end)
 		end
 
 		character.Destroying:Once(function()
-			if table.find(self.Bots, bot) then
-				table.remove(self.Bots, table.find(self.Bots, bot))
-			end
+			const index = table.find(self.Bots, bot)
+			if index then table.remove(self.Bots, index) end
 
 			if #self.Bots == 0 then
 				task.delay(self.Config.RespawnTime or 0, function()
