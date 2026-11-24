@@ -34,21 +34,21 @@ function CombatService:onStart()
 		if not v:IsA("ModuleScript") then continue end
 		const module = require(v)
 		const hook = if module.Hook == "Heal" then self.HealHook else self.AttackHook
-		hook:Hook(module.Type, module.Name, module.Priority, module.Function)
+		hook:Hook(module.Type, module.Priority, module.Function)
 	end
 
-	self.AttackHook:Hook("Precast", "Main", 0, function(Data)
+	self.AttackHook:Hook("Precast", 0, function(Data)
 		if Data.NoDeathDeferred then return true end
 		self.Attacked:Fire("Precast", Data)
 		return true
 	end)
 
-	self.AttackHook:Hook("Cast", "Main", 0, function(Data)
+	self.AttackHook:Hook("Cast", 0, function(Data)
 		self.Attacked:Fire("Cast", Data)
 		return true
 	end)
 
-	self.AttackHook:Hook("Postcast", "Return", 0, function(Data)
+	self.AttackHook:Hook("Postcast", 0, function(Data)
 		self.Attacked:Fire("Postcast", Data)
 		return true
 	end)
