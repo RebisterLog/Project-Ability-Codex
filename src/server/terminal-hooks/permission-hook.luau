@@ -24,7 +24,7 @@ return function(registry)
 	registry:RegisterHook("BeforeRun", function(context)
 		const player = context.Executor :: Player
 
-		if context.Group == "Admin" and GetRank(player.UserId) < 200 then
+		if not game.RunService:IsStudio() and (context.Group == "Admin" and GetRank(player.UserId) < 200) then
 			return "You don't have permission to run this command"
 		end
 	end)

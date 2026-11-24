@@ -1,6 +1,8 @@
+const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Proxy = require(ReplicatedStorage.shared.packages.Proxy)
 const types = require(ServerScriptService.server.types)
 
 type SpawnerBotConfig = {
@@ -44,35 +46,35 @@ function BotSpawner.onStart(self: typeof(BotSpawner))
 	end)
 end
 
-function BotSpawner:GetRandomBotConfig(config: SpawnerConfig): SpawnerBotConfig?
+function BotSpawner:GetRandomBotConfig(config: SpawnerConfig)
 	const bots = config.Bots
-	if #bots == 0 then return nil end
+	local summ = 0
 
-	local total = 0
-	for _, bot in bots do
-		total += math.max(0, bot.Weight or 0)
+	const sorted = {}
+
+	for i, bot in bots do
+		summ += bot.Weight or 0
+		sorted[bot.Weight] = bot
 	end
-	if total <= 0 then return bots[1] end
 
-	const pick = self.Random:NextNumber() * total
+	const random = self.Random:NextInteger(0, summ)
+
 	local current = 0
+	for weight, bot in sorted do
+		current += weight
 
-	for _, bot in bots do
-		current += math.max(0, bot.Weight or 0)
-		if pick < current then return bot end
+		if random <= current then return bot end
 	end
 
-	return bots[#bots]
+	return bots[1]
 end
 
 function BotSpawner:Spawn()
 	const botsCount =
 		self.Random:NextInteger(self.Config.MinBots, self.Config.MaxBots or self.Config.MinBots)
 
-	for _ = 1, botsCount do
+	for i = 1, botsCount do
 		const botConfig = self:GetRandomBotConfig(self.Config)
-		if not botConfig then continue end
-
 		const model = botConfig.Model:Clone() :: Model
 		model:PivotTo(
 			self.instance.CFrame
@@ -84,18 +86,22 @@ function BotSpawner:Spawn()
 			:Create(botConfig.BotCharacter, model)
 
 		if self.Config.FightTogether then
-			character.OnTakeDamage:Once(function(attacker)
-				for _, other in self.Bots do
-					if other == bot then continue end
+			const Cleaner = Crane.Buttler.new()
 
-					other:SetTarget(attacker)
+			Cleaner:Add(character.OnTakeDamage:Once(function(attacker, data)
+				for i, bot in self.Bots do
+					if bot == self then continue end
+					bot:SetTarget(attacker)
 				end
-			end)
+
+				Cleaner:Destroy()
+			end))
 		end
 
 		character.Destroying:Once(function()
-			const index = table.find(self.Bots, bot)
-			if index then table.remove(self.Bots, index) end
+			if table.find(self.Bots, bot) then
+				table.remove(self.Bots, table.find(self.Bots, bot))
+			end
 
 			if #self.Bots == 0 then
 				task.delay(self.Config.RespawnTime or 0, function()

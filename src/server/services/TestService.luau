@@ -5,6 +5,7 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const types = require(ServerScriptService.server.types)
 const Configuration = ServerScriptService.server.Configuration
 
+
 const TestService = Crane:CreateService({
 	Name = "TestService",
 	LoadOrder = 999,
@@ -28,6 +29,7 @@ const HandleWatchHome = function(homePoint: Vector3, character: Model)
 end
 
 function TestService:onStart()
+	
 	task.delay(3, function()
 		local ATTACKING_DUMMY
 		do
@@ -104,6 +106,18 @@ function TestService:onStart()
 
 			Crane:GetService("BotsService"):Instance("BasicWarrior", char)
 		end
+	end)
+	
+	task.delay(5, function()
+		const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
+		
+		Sequencer.new({
+			Frames = {
+				{25, function(self, frame)
+					print(frame)
+				end,}
+			},
+		}):Play()
 	end)
 end
 

@@ -137,6 +137,7 @@ function CombatService:Hitbox(Data: types.HitboxData)
 
 	if Info.Debug then
 		self.VFXService:StartEffect({ Caster.instance }, "Hitbox", {
+			Success = #Hit > 0,
 			Origin = Origin,
 			Size = Size,
 		})

@@ -22,15 +22,6 @@ const UltimativeJotaro: BotsCharacters.BotCharacterConfig = {
 	Skills = {
 		-- Shared skills: mobility, guard and the basic combo filler.
 		["Dash"] = {
-			Distance = 18,
-			Priority = 3,
-			PreferredDistance = {
-				Min = 8,
-				Max = 18,
-			},
-			MaxRepeats = 1,
-			RepeatResetTime = 3,
-
 			PreferredConditions = {
 				"TARGET_ATTACKING",
 				"TARGET_IGNORE_BLOCK",
