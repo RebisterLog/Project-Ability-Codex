@@ -55,7 +55,7 @@ const Skill: types.SkillData = {
 			BlockCancel = false,
 			BlockIgnore = false,
 		},
-		
+
 		HitAnimations = "Default",
 
 		Stun = {
@@ -80,7 +80,7 @@ const Skill: types.SkillData = {
 			Offset = CFrame.new(0, 0, -5),
 			Debug = true,
 		},
-		
+
 		HitAnimations = "Default",
 
 		Damage = 10,

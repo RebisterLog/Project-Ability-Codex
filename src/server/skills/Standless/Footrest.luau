@@ -41,12 +41,12 @@ const Skill = {
 			Priority = Enums.Stun.Heavy,
 			Duration = 1.5,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
-		
+
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
+
 		HitAnimations = "Default",
 	},
 }

@@ -30,10 +30,10 @@ const Skill: types.SkillData = {
 	Cooldown = 15,
 	BaseSpec = "JonathanHamon",
 	SkillCharacters = { "Hit", "Blockable", "Ragdoll", "IgnoreBlock" },
-	
+
 	Checks = {
-		IsGrounded = true;
-	};
+		IsGrounded = true,
+	},
 
 	AttackInfo = {
 		Hitbox = {
@@ -56,13 +56,13 @@ const Skill: types.SkillData = {
 			Priority = Enums.Stun.Medium,
 			Duration = 0.5,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
-		
-		HitAnimations = "Default";
+
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
+
+		HitAnimations = "Default",
 	},
 
 	ReleaseInfo = {
@@ -83,11 +83,11 @@ const Skill: types.SkillData = {
 		-- Ragdoll = {
 		-- 	Duration = Enums.Ragdoll.Heavy,
 		-- },
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
+
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
 	},
 }
 
@@ -162,20 +162,28 @@ function Skill.onInit(self)
 							Info = AttackInfo,
 						})
 					end
-					
+
 					const Valid = {}
 					const Radius = AttackInfo.Hitbox.Size.Magnitude * 1.25
 					for _, Player in Players:GetPlayers() do
-						if not ( Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") ) then
+						if
+							not (
+								Player.Character
+								and Player.Character:FindFirstChild("HumanoidRootPart")
+							)
+						then
 							continue
 						end
-						if (Player.Character.HumanoidRootPart.Position - RootPart.Position).Magnitude >= Radius then
+						if
+							(Player.Character.HumanoidRootPart.Position - RootPart.Position).Magnitude
+							>= Radius
+						then
 							continue
 						end
-						
+
 						table.insert(Valid, Player)
 					end
-					
+
 					VFXService:StartEffect(Valid, "CameraShake", { Type = "Sendo" })
 				end,
 				120,

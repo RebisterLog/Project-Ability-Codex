@@ -154,11 +154,13 @@ function Skill.onInit(self)
 								BlockCancel = false,
 								BlockIgnore = false,
 							},
-							
-							HitEffects = {{
-								Particle = "Models/BarrageHeavyHit";
-								Sound = "Default";
-							}};
+
+							HitEffects = {
+								{
+									Particle = "Models/BarrageHeavyHit",
+									Sound = "Default",
+								},
+							},
 						},
 					})
 				end,

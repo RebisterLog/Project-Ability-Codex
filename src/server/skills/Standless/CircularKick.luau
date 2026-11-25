@@ -67,12 +67,12 @@ const Skill: types.SkillData = {
 			Lift = 20,
 			Hold = 0.1,
 		},
-		
-		HitEffects = {{
-			Particle = "Models/BarrageHeavyHit";
-			Sound = "Default";
-		}};
-		
+
+		HitEffects = { {
+			Particle = "Models/BarrageHeavyHit",
+			Sound = "Default",
+		} },
+
 		HitAnimations = "Default",
 	},
 }

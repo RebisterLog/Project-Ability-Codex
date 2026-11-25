@@ -59,7 +59,7 @@ return {
 		for _, v in Data.Info.HitEffects or {} do
 			local Particle = v.Particle
 			local Sound = v.Sound
-			
+
 			if type(Particle) == "string" then
 				if Particle == "Default" then
 					Particle = DefaultHits.HitEffects.BaseHitVFX
@@ -67,7 +67,7 @@ return {
 					Particle = skill:TryGetAsset(v.Particle)
 				end
 			end
-			
+
 			if type(Sound) == "string" then
 				if Sound == "Default" then
 					Sound = DefaultHits.HitSounds.Hit2
@@ -75,20 +75,23 @@ return {
 					Sound = skill:TryGetAsset(Sound)
 				end
 			end
-			
+
 			VFXService:StartEffect(Players:GetPlayers(), "HitFeedback", {
 				Attacker = attacker,
 				Victim = victim,
 				BodyPart = v.BodyPart,
 				LookAt = v.LookAt or "Attacker",
 				Particle = Particle,
-				Sound = Sound
+				Sound = Sound,
 			})
 		end
-		
-		const animation =
-			Data.Info.HitAnimations and
-			pickRandom((Data.Info.HitAnimations == "Default" and DefaultHits.HitAnimations) or Data.Info.HitAnimations, "Animation")
+
+		const animation = Data.Info.HitAnimations
+			and pickRandom(
+				(Data.Info.HitAnimations == "Default" and DefaultHits.HitAnimations)
+					or Data.Info.HitAnimations,
+				"Animation"
+			)
 		if animation then
 			VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 				Type = "Play",

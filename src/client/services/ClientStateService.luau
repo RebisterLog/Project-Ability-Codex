@@ -50,10 +50,13 @@ function ClientStateService.onStart(self: typeof(ClientStateService))
 			or (velocity - (self.LastVelocity :: Vector3)).Magnitude > VELOCITY_EPSILON
 		const sendLookYaw = self.LastLookYaw == nil
 			or math.abs(angleDelta(lookYaw, self.LastLookYaw :: number)) > YAW_EPSILON
-		
+
 		local IsGrounded = true
 		local State = character.Humanoid:GetState()
-		if State ~= Enum.HumanoidStateType.RunningNoPhysics and State ~= Enum.HumanoidStateType.Running then
+		if
+			State ~= Enum.HumanoidStateType.RunningNoPhysics
+			and State ~= Enum.HumanoidStateType.Running
+		then
 			IsGrounded = State == Enum.HumanoidStateType.Landed
 		end
 

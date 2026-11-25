@@ -63,13 +63,13 @@ const Skill: types.SkillData = {
 			Duration = Enums.StunTime.Heavy,
 			Priority = Enums.Stun.Heavy,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
-		
-		HitAnimations = "Default";
+
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
+
+		HitAnimations = "Default",
 	},
 
 	ChopInfo = {
@@ -93,13 +93,13 @@ const Skill: types.SkillData = {
 			Duration = Enums.StunTime.Heavy,
 			Priority = Enums.Stun.Heavy,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
 
-		HitAnimations = "Default";
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
+
+		HitAnimations = "Default",
 	},
 
 	LastHitInfo = {
@@ -122,13 +122,13 @@ const Skill: types.SkillData = {
 			BlockCancel = false,
 			BlockIgnore = false,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
 
-		HitAnimations = "Default";
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
+
+		HitAnimations = "Default",
 	},
 }
 

@@ -239,11 +239,8 @@ return {
 	)
 		self:SetCollisionToPlayers(value ~= nil and value or true)
 	end,
-	
-	["NoRotate"] = function(
-		self: types.Character,
-		value: boolean
-	)
+
+	["NoRotate"] = function(self: types.Character, value: boolean)
 		self.Humanoid.AutoRotate = not value
 	end,
 

@@ -124,14 +124,16 @@ function Skill:onInit()
 									Hold = 0.2,
 									MaxForce = Vector3.new(20_000, 0, 20_000),
 								},
-								
+
 								HitAnimations = "Default",
-								
-								HitEffects = {{
-									Particle = "Default";
-									Sound = "Default";
-								}};
-								
+
+								HitEffects = {
+									{
+										Particle = "Default",
+										Sound = "Default",
+									},
+								},
+
 								Stun = {
 									Priority = Enums.Stun.Medium,
 									Duration = self.PunchCount == self.Data.MaxCombo and 0.2 or 0.4,

@@ -57,11 +57,11 @@ const Skill: Types.SkillData = {
 		Ragdoll = {
 			Duration = 2,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Sounds/UppercutHit";
-		}};
+
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Sounds/UppercutHit",
+		} },
 	},
 }
 
@@ -97,7 +97,7 @@ function Skill.onInit(self)
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/UppercutVL"),
 					})
-					
+
 					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
 						Character = self.Character.instance,
 						EffectsFolder = self:GetAsset("Models/UppercutHit"),
@@ -122,10 +122,8 @@ function Skill.onInit(self)
 							Victim = Target,
 							Info = AttackInfo,
 						}):andThen(function(Data)
-							if not Data.State.Success then
-								return
-							end
-							
+							if not Data.State.Success then return end
+
 							table.insert(self.AlreadyHit, Target)
 						end)
 					end

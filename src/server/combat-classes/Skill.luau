@@ -152,26 +152,20 @@ end
 function Skill.Validate(self: types.Skill)
 	local Checks = self.Data.Checks or {}
 	local Metadata = self.ClientStateService:GetMetadata(self.Character) or {}
-	
+
 	if self.Character:GetParameter("NoSkillCast") then return false end
 	if not self.Proxy().Parameters.Enabled then return false end
-	
+
 	if Checks.Stunned ~= false and self.Character:GetParameter("Stun").Duration > 0 then
 		return false
 	end
-	if Checks.Ragdolled ~= false and self.Character:GetParameter("Ragdoll") then
-		return false
-	end
-	if Checks.Dead ~= false and self.Character.Humanoid.Health <= 0 then
-		return false
-	end
-	if Checks.IsGrounded ~= nil and Metadata.IsGrounded ~= Checks.IsGrounded then
-		return false
-	end
-	
+	if Checks.Ragdolled ~= false and self.Character:GetParameter("Ragdoll") then return false end
+	if Checks.Dead ~= false and self.Character.Humanoid.Health <= 0 then return false end
+	if Checks.IsGrounded ~= nil and Metadata.IsGrounded ~= Checks.IsGrounded then return false end
+
 	if self.Character:GetParameter("Restand") then return false end
 	if self:IsOnCooldown() then return false end
-	
+
 	return true
 end
 

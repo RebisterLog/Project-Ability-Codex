@@ -50,13 +50,13 @@ const Skill: types.SkillData = {
 			Lift = 0.75,
 			Hold = 0.05,
 		},
-		
+
 		HitAnimations = "Default",
-		
-		HitEffects = {{
-			Particle = "Models/BarrageHit";
-			Sound = "Default";
-		}};
+
+		HitEffects = { {
+			Particle = "Models/BarrageHit",
+			Sound = "Default",
+		} },
 	} :: types.AttackInfo,
 
 	PostBarrageInfo = {
@@ -87,13 +87,13 @@ const Skill: types.SkillData = {
 			Hold = 0.25,
 			MaxForce = Vector3.new(100_000, 0, 100_000),
 		},
-		
+
 		HitAnimations = "Default",
-		
-		HitEffects = {{
-			Particle = "Models/BarrageHeavyHit";
-			Sound = "Default";
-		}};
+
+		HitEffects = { {
+			Particle = "Models/BarrageHeavyHit",
+			Sound = "Default",
+		} },
 	},
 }
 

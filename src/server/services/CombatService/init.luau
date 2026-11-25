@@ -147,10 +147,8 @@ function CombatService:Hitbox(Data: types.HitboxData)
 end
 
 function CombatService:Attack(data: types.AttackData)
-	if not data.Attacker and data.Skill then
-		data.Attacker = data.Skill.Character
-	end
-	
+	if not data.Attacker and data.Skill then data.Attacker = data.Skill.Character end
+
 	if not data.NoDeathDeferred then
 		data.State = self:GetStates(data.Victim)
 		data.State.Success = true

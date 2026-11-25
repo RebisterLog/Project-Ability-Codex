@@ -65,11 +65,11 @@ const Skill: types.SkillData = {
 			Push = 5,
 			Hold = 0.1,
 		},
-		
-		HitEffects = {{
-			Particle = "Default";
-			Sound = "Default";
-		}};
+
+		HitEffects = { {
+			Particle = "Default",
+			Sound = "Default",
+		} },
 	},
 }
 

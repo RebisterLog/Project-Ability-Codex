@@ -16,19 +16,14 @@ Hook.__index = Hook
 
 export type Hook = setmetatable<HookData, typeof(Hook)>
 
-function Hook.Hook(
-	self: Hook,
-	stack: string,
-	priority: number,
-	callback: () -> boolean
-)
+function Hook.Hook(self: Hook, stack: string, priority: number, callback: () -> boolean)
 	if not self.Stacks[stack] then return end
 
 	const stack = self.Stacks[stack]
 	const identifier = game.HttpService:GenerateGUID(false)
-	
+
 	stack:Add(identifier, callback, priority)
-	
+
 	return function()
 		stack:Remove(identifier)
 	end
