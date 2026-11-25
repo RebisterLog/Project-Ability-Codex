@@ -4,10 +4,10 @@ The end-to-end path of a single attack. Every step after the packet is server-si
 
 ```
 client input
-  -> packet StartSkill(skillId)
+  -> packet StartSkill({ Id, AimPoint? })
   -> SkillService: validate (cooldown, stun, ragdoll, alive, ownership)
-  -> spec:ActivateSkill(skillId)
-  -> Skill:Activate()
+  -> spec:ActivateSkill(skillId, aimPoint)
+  -> Skill:Activate(aimPoint)
        -> Sequence:Play() / promise-based flow
        -> frame callbacks: parameters, animation, sound, hitbox
        -> CombatService:Hitbox() -> candidate targets

@@ -7,11 +7,21 @@ Bindings live in `src/shared/configs/Specs.luau` under each spec's `Binds` table
 ```
 key / mouse / touch
   -> client BindService
-  -> packet StartSkill(skillId)
+  -> packet StartSkill({ Id, AimPoint? })
   -> server SkillService validates
-  -> spec:ActivateSkill(skillId)
-  -> Skill:Activate()
+  -> spec:ActivateSkill(skillId, aimPoint)
+  -> Skill:Activate(aimPoint)
 ```
+
+## AimPoint (cursor position in world space)
+
+`StartSkill` is a struct, not a bare string: `{ Id: string, AimPoint: Vector3? }`. Only the ids listed in `AIMED_SKILLS` in `BindService` send a point; every other bind sends `nil`, so the shared client→server budget is unchanged for existing skills.
+
+- **Normal camera:** the point is `Mouse.Hit.Position`, clamped to `MAX_AIM_DISTANCE` (120 studs) from the character's `HumanoidRootPart`.
+- **ShiftLock:** when `TargetLockService.Locked` is true or `UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter`, the cursor is pinned in the centre and `Mouse.Hit` is meaningless. The client instead sends `root.Position + root.CFrame.LookVector * MAX_AIM_DISTANCE` — the farthest point along the character's look vector.
+- **No character / no `Mouse.Hit`:** the same look-vector fallback is used.
+
+The server never trusts the point for hit resolution: it is only a direction/aim hint for projectile launch. `SkillService:ActivateSkill(character, skillId, aimPoint)` forwards it through `Spec:ActivateSkill` into `Skill:Activate(aimPoint)` and then `SkillData.Activate(self, aimPoint)`. Skills that do not need aim simply ignore the extra argument.
 
 ## Important behaviours
 

@@ -4,10 +4,10 @@
 
 ```
 ввод клиента
-  -> пакет StartSkill(skillId)
+  -> пакет StartSkill({ Id, AimPoint? })
   -> SkillService: проверка (кулдаун, стан, рэгдолл, жизнь, права)
-  -> spec:ActivateSkill(skillId)
-  -> Skill:Activate()
+  -> spec:ActivateSkill(skillId, aimPoint)
+  -> Skill:Activate(aimPoint)
        -> Sequence:Play() / promise-поток
        -> кадры: параметры, анимация, звук, хитбокс
        -> CombatService:Hitbox() -> кандидаты

@@ -17,12 +17,13 @@ function SkillService:onStart()
 	self.SpecService = Crane:GetService("SpecService")
 	self.PathUtil = Crane:GetService("PathUtil")
 
-	Crane:GetPacket("StartSkill").listen(function(skillId: string, player)
-		const character = player.Character
-		if not character then return end
+	Crane:GetPacket("StartSkill")
+		.listen(function(request: { Id: string, AimPoint: Vector3? }, player)
+			const character = player.Character
+			if not character then return end
 
-		self:ActivateSkill(character, skillId)
-	end)
+			self:ActivateSkill(character, request.Id, request.AimPoint)
+		end)
 
 	Crane:GetPacket("StopSkill").listen(function(skillId: string, player)
 		const character = player.Character
@@ -41,7 +42,11 @@ end
 
 --- Activates a skill through the canonical spec validation path. Accepting a
 --- Model keeps the packet handler and Studio Bridge on the same code path.
-function SkillService:ActivateSkill(character: types.Character | Model, skillId: string): boolean
+function SkillService:ActivateSkill(
+	character: types.Character | Model,
+	skillId: string,
+	aimPoint: Vector3?
+): boolean
 	local component: types.Character?
 	if typeof(character) == "Instance" then
 		component = Crane:GetComponent("Character", character) :: types.Character?
@@ -54,7 +59,7 @@ function SkillService:ActivateSkill(character: types.Character | Model, skillId:
 	if not spec or not spec.Skills[skillId] then spec = component:GetSubSpec() end
 	if not spec or not spec.Skills[skillId] then return false end
 
-	spec:ActivateSkill(skillId)
+	spec:ActivateSkill(skillId, aimPoint)
 	return true
 end
 

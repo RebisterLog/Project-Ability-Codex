@@ -547,7 +547,7 @@ export type SkillData = {
 	SkillCharacters: { BotsCharacters.SkillCharacter },
 	onInit: (self: Skill) -> (),
 	onDestroy: (self: Skill) -> (),
-	Activate: (self: Skill) -> (),
+	Activate: (self: Skill, aimPoint: Vector3?) -> (),
 	Interrupt: (self: Skill) -> (),
 }
 
@@ -569,7 +569,7 @@ type SkillProperties = {
 }
 
 type SkillMethods = {
-	Activate: (self: Skill) -> (),
+	Activate: (self: Skill, aimPoint: Vector3?) -> (),
 	Interrupt: (self: Skill) -> (),
 	Deactivate: (self: Skill) -> (),
 	-- Suspends / continues the running sequence, keeping its progress.

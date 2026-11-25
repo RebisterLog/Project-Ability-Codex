@@ -2,6 +2,7 @@ const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const RunService = game:GetService("RunService")
 const UserInputService = game:GetService("UserInputService")
+const Mouse = Players.LocalPlayer:GetMouse()
 
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const PlayerData = require(ReplicatedStorage.shared.schemas.PlayerData)
@@ -20,6 +21,11 @@ const STOP_REPEAT_INTERVAL = 0.05
 -- Server toggles that have no client module with a `Toggle` flag. A repeated
 -- StartSkill would flip them back and forth while the key is held.
 const NON_REPEATABLE = { Summon = true }
+
+-- Skills that consume a world-space cursor point. Sending it for every bind
+-- would waste ByteNet's shared 512 B/s budget, so only these ids opt in.
+const AIMED_SKILLS = { MarkedKnives = true }
+const MAX_AIM_DISTANCE = 120
 
 -- First priority level. Candidates inside one slot are sorted by skill id.
 const SLOT_RANK = { Spec = 1, SubSpec = 2 }
@@ -178,9 +184,37 @@ function BindService.onStart(self: typeof(BindService))
 		return not self.clientSkills:IsToggle(skillId)
 	end
 
+	-- ShiftLock pins the cursor in the centre, so Mouse.Hit is meaningless:
+	-- aim at the maximum range along the character's own look vector instead.
+	const function aimPointFor(skillId: string): Vector3?
+		if not AIMED_SKILLS[skillId] then return nil end
+
+		const character = LocalPlayer.Character
+		const root = character and character:FindFirstChild("HumanoidRootPart")
+		if not root or not root:IsA("BasePart") then return nil end
+
+		const farPoint = root.Position + root.CFrame.LookVector * MAX_AIM_DISTANCE
+		const lockService = Crane:GetService("TargetLockService") :: any
+		const shiftLocked = (lockService and lockService.Locked == true)
+			or UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter
+		if shiftLocked then return farPoint end
+
+		const hit = Mouse.Hit
+		if not hit then return farPoint end
+
+		const delta = hit.Position - root.Position
+		if delta.Magnitude > MAX_AIM_DISTANCE then
+			return root.Position + delta.Unit * MAX_AIM_DISTANCE
+		end
+		return hit.Position
+	end
+
 	const function sendStart(candidate: Candidate, key: string)
 		self.clientSkills:Activate(candidate.SkillId)
-		Crane:GetPacket("StartSkill").send(candidate.SkillId)
+		Crane:GetPacket("StartSkill").send({
+			Id = candidate.SkillId,
+			AimPoint = aimPointFor(candidate.SkillId),
+		})
 
 		-- A fresh press cancels any pending release packets for this skill, so
 		-- a quick re-tap cannot be stopped by a stale copy from the last hold.
@@ -249,7 +283,10 @@ function BindService.onStart(self: typeof(BindService))
 					self.clientSkills:Activate(held.SkillId)
 				end
 
-				Crane:GetPacket("StartSkill").send(held.SkillId)
+				Crane:GetPacket("StartSkill").send({
+					Id = held.SkillId,
+					AimPoint = aimPointFor(held.SkillId),
+				})
 			end
 		end
 

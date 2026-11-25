@@ -7,11 +7,21 @@
 ```
 клавиша / мышь / тач
   -> клиентский BindService
-  -> пакет StartSkill(skillId)
+  -> пакет StartSkill({ Id, AimPoint? })
   -> серверный SkillService проверяет
-  -> spec:ActivateSkill(skillId)
-  -> Skill:Activate()
+  -> spec:ActivateSkill(skillId, aimPoint)
+  -> Skill:Activate(aimPoint)
 ```
+
+## AimPoint (положение курсора в мире)
+
+`StartSkill` — это структура, а не голая строка: `{ Id: string, AimPoint: Vector3? }`. Точку шлют только id из списка `AIMED_SKILLS` в `BindService`; остальные бинды шлют `nil`, поэтому бюджет клиент→сервер для существующих скиллов не меняется.
+
+- **Обычная камера:** берётся `Mouse.Hit.Position`, ограниченная `MAX_AIM_DISTANCE` (120 стадов) от `HumanoidRootPart` персонажа.
+- **ShiftLock:** когда `TargetLockService.Locked == true` или `UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter`, курсор закреплён в центре и `Mouse.Hit` бессмыслен. Клиент шлёт `root.Position + root.CFrame.LookVector * MAX_AIM_DISTANCE` — самую дальнюю точку по направлению взгляда персонажа.
+- **Нет персонажа / нет `Mouse.Hit`:** используется тот же запасной вариант по LookVector.
+
+Сервер не доверяет точке для определения попаданий: это только подсказка направления для запуска снаряда. `SkillService:ActivateSkill(character, skillId, aimPoint)` передаёт её через `Spec:ActivateSkill` в `Skill:Activate(aimPoint)` и дальше в `SkillData.Activate(self, aimPoint)`. Скиллы, которым прицел не нужен, просто игнорируют лишний аргумент.
 
 ## Важные моменты
 

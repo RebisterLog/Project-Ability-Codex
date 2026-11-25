@@ -56,7 +56,10 @@ return ByteNet.defineNamespace("CranePackets", function()
 			}),
 
 			StartSkill = ByteNet.definePacket({
-				value = ByteNet.string,
+				value = ByteNet.struct({
+					Id = ByteNet.string,
+					AimPoint = ByteNet.optional(ByteNet.vec3),
+				}),
 			}),
 
 			StopSkill = ByteNet.definePacket({

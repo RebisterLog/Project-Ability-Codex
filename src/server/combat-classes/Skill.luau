@@ -51,7 +51,7 @@ local function softStopActiveSkill(self: types.Skill)
 	self.Holding = false
 end
 
-function Skill.Activate(self: types.Skill)
+function Skill.Activate(self: types.Skill, aimPoint: Vector3?)
 	if self.Active then return end
 
 	self.Active = true
@@ -64,7 +64,7 @@ function Skill.Activate(self: types.Skill)
 	const castGuard = self.Character:AddParameter("CastingSkill", self.Data.Id)
 
 	local ok, err = xpcall(function()
-		if self.Data.Activate then self.Data.Activate(self) end
+		if self.Data.Activate then self.Data.Activate(self, aimPoint) end
 	end, debug.traceback)
 
 	castGuard:Destroy()

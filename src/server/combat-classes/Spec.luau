@@ -132,7 +132,7 @@ function Spec.RemoveSkill(self: types.Spec, skillId: string)
 	})
 end
 
-function Spec.ActivateSkill(self: types.Spec, skillId: string)
+function Spec.ActivateSkill(self: types.Spec, skillId: string, aimPoint: Vector3?)
 	if not self.Skills[skillId] then return end
 
 	const isBusy, activeSkills = self.Character:CheckActiveSkills()
@@ -145,7 +145,7 @@ function Spec.ActivateSkill(self: types.Spec, skillId: string)
 
 	self.OnActivateSkill:Fire(skill)
 
-	return skill:Activate()
+	return skill:Activate(aimPoint)
 end
 
 function Spec.InterruptSkill(self: types.Spec, skillId: string)
