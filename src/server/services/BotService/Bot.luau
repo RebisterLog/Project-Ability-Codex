@@ -159,15 +159,24 @@ function Bot.SetPosture(self: Bot, posture: Posture.Posture)
 	if previous == "Defend" and posture ~= "Defend" then self:ReleaseGuard() end
 end
 
-function Bot.ActivateSkill(_self: Bot, id: string, owner: types.Spec?, spawned: boolean?)
+function Bot.ActivateSkill(self: Bot, id: string, owner: types.Spec?, spawned: boolean?)
 	if not owner then return end
+
+	-- Bots have no cursor and no StartSkill packet: the server supplies the
+	-- aim point from the bot's current target so aimed skills still work.
+	let aimPoint: Vector3? = nil
+	if id == "MarkedKnives" and self.Target then
+		const targetModel = if typeof(self.Target) == "Instance" then self.Target else self.Target.instance
+		const root = targetModel and targetModel:FindFirstChild("HumanoidRootPart")
+		if root and root:IsA("BasePart") then aimPoint = root.Position end
+	end
 
 	if spawned then
 		task.spawn(function()
-			owner:ActivateSkill(id)
+			owner:ActivateSkill(id, aimPoint)
 		end)
 	else
-		owner:ActivateSkill(id)
+		owner:ActivateSkill(id, aimPoint)
 	end
 end
 

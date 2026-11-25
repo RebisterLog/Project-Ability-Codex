@@ -25,6 +25,7 @@ export type CharacterParameters = {
 	MaxWalkSpeed: number,
 	MaxJumpPower: number,
 	HamonCharge: ChargeState.Snapshot,
+	Ammo: { [string]: { Amount: number, Max: number, NextRegenAt: number } },
 	-- Id of the skill holding the server's global cast lock, "" when idle.
 	-- Lets the client refuse to predict a dash while a different skill casts.
 	CastingSkill: string,
@@ -61,6 +62,7 @@ return {
 			MaxWalkSpeed = 2048,
 			MaxJumpPower = 4096,
 			HamonCharge = ChargeState.Snapshot(ChargeConfigs.HamonCharge.Default),
+			Ammo = {},
 			CastingSkill = "",
 		},
 		Blocking = false,

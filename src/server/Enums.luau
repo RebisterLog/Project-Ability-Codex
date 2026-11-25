@@ -37,6 +37,15 @@ return {
 		Heavy = 2,
 	},
 
+	Limb = {
+		Head = "Head",
+		LeftArm = "LeftArm",
+		RightArm = "RightArm",
+		LeftLeg = "LeftLeg",
+		RightLeg = "RightLeg",
+		Torso = "Torso",
+	},
+
 	CastSpeed = {
 		None = 0,
 		Slowed = 4,

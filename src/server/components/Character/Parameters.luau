@@ -5,6 +5,7 @@ const ServerScriptService = game:GetService("ServerScriptService")
 const Enums = require(ServerScriptService.server.Enums)
 const ChargeConfigs = require(ReplicatedStorage.shared.configs.Charges)
 const ChargeState = require(ReplicatedStorage.shared.combat.ChargeState)
+const AmmoConfigs = require(ReplicatedStorage.shared.configs.Ammo)
 
 type StunState = { Priority: number, Duration: number }
 
@@ -44,6 +45,23 @@ const ORParser = function(a, b)
 end
 const LastParser = function(a, b)
 	return b
+end
+
+-- Different limbs are independent; hitting the same limb again only extends
+-- its deadline. The strength of a wound is fixed by the limb type.
+const SeveredParser = function(a, b)
+	const result = table.clone(a)
+	for limb, entry in b do
+		if not result[limb] or entry.ExpiresAt > result[limb].ExpiresAt then
+			result[limb] = entry
+		end
+	end
+	return result
+end
+
+const DefaultAmmo = {}
+for id, config in AmmoConfigs do
+	DefaultAmmo[id] = { Amount = config.Max, Max = config.Max, NextRegenAt = 0 }
 end
 
 return {
@@ -120,5 +138,17 @@ return {
 		Default = table.clone(ChargeConfigs.HamonCharge.Default),
 		Parser = LastParser,
 		Replicate = ChargeState.Snapshot,
+	},
+
+	Ammo = {
+		Default = DefaultAmmo,
+		Parser = LastParser,
+		Replicate = Mirror,
+	},
+
+	SeveredLimbs = {
+		Default = {},
+		Parser = SeveredParser,
+		Replicate = Mirror,
 	},
 }

@@ -137,6 +137,13 @@ export type AttackInfo = {
 		Slow: number?,
 	}?,
 
+	-- Sever a specific body part for a fixed duration. The limb id uses
+	-- Enums.Limb values; Hooks/Sever applies the matching debuff.
+	Sever: {
+		Limb: string,
+		Duration: number,
+	}?,
+
 	Burn: {
 		Damage: number,
 		Duration: number,

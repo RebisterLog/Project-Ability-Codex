@@ -185,6 +185,57 @@ return {
 		end
 	end,
 
+	["SeveredLimbs"] = function(self: types.Character, value, object)
+		-- Limbs are independent records in one parameter. A missing leg caps
+		-- movement and swaps locomotion clips; each missing arm halves the
+		-- outgoing damage multiplier for as long as that wound lives.
+		const VFXService = Crane:GetService("VFXService")
+		const now = workspace:GetServerTimeNow()
+		for _, entry in value do
+			if entry.UUID and entry.ExpiresAt <= now then
+				VFXService:StopEffect(Players:GetPlayers(), "SeveredLimb", { UUID = entry.UUID })
+				VFXService:StopEffect(Players:GetPlayers(), "BloodFXBurst", { UUID = entry.UUID })
+			end
+		end
+
+		const function original(name: string): string?
+			const key = "Original" .. name
+			var saved = self.instance:GetAttribute(key) :: string?
+			if not saved then
+				saved = self.instance:GetAttribute(name) :: string?
+				self.instance:SetAttribute(key, saved)
+			end
+			return saved
+		end
+
+		var hasLeg = false
+		var arms = 0
+		var walk: string? = nil
+		var run: string? = nil
+		var idle: string? = nil
+
+		for _, entry in value do
+			if entry.WalkSpeed then hasLeg = true end
+			if entry.DamageMultiplier then arms += 1 end
+			if entry.Walk then walk = entry.Walk end
+			if entry.Run then run = entry.Run end
+			if entry.Idle then idle = entry.Idle end
+		end
+
+		if object then
+			if hasLeg and not object.Cleaner:Has("SeverWalkSpeed") then
+				object.Cleaner:Set("SeverWalkSpeed", self:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
+			end
+			if arms > 0 and not object.Cleaner:Has("SeverDamage") then
+				object.Cleaner:Set("SeverDamage", self:AddParameter("DamageMultiplier", 0.5 ^ arms))
+			end
+		end
+
+		self.instance:SetAttribute("Walk", walk or original("Walk"))
+		self.instance:SetAttribute("Run", run or original("Run"))
+		self.instance:SetAttribute("Idle", idle or original("Idle"))
+	end,
+
 	["Burning"] = function(self: types.Character, value, object)
 		const burning = value ~= nil and (value.Damage or 0) > 0
 		const VFXService = Crane:GetService("VFXService")

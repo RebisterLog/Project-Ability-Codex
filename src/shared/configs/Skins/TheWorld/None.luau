@@ -30,6 +30,12 @@ const None = {
 		Punch3 = actionAnimation(Animations.User.Punches.Punch3),
 		Punch4 = actionAnimation(Animations.User.Punches.Punch4),
 		Block = actionAnimation(Animations.User.Block),
+
+		-- The World skills
+		StopSign = actionAnimation(Animations.User.StopSign),
+		StopSignVictim = actionAnimation(Animations.User.StopSignVictim),
+		MarkedKnives = actionAnimation(Animations.User.MarkedKnives),
+		DistantSlamCast = actionAnimation(Animations.User.DistantSlamCast),
 	},
 	Sounds = {
 		-- Dash
@@ -42,12 +48,24 @@ const None = {
 		Grab = sound(GlobalAssets.Grab.Sounds.GrabStart),
 		GrabHit = sound(GlobalAssets.Grab.Sounds.GrabHit),
 		GrabVL = sound(GlobalAssets.Grab.Sounds.GrabVoice),
+
+		-- The World skills
+		MarkedKnivesThrow = sound(Sounds.User.MarkedKnivesThrow),
+		MarkedKnivesHit = sound(Sounds.User.MarkedKnivesHit),
+		DistantSlamCast = sound(Sounds.User.DistantSlamCast),
 	},
 	Models = {
 		-- Dash
 		DashEffect = GlobalAssets.Dash.DashEffect,
 		-- Stand model
 		Stand = Models.Stand,
+
+		-- The World skills
+		StopSignImpact = Models.StopSignImpact,
+		MarkIndicator = Models.MarkIndicator,
+		LegBarrageVFX = Models.LegBarrageVFX,
+		LegBarrageHeavyVFX = Models.LegBarrageHeavyVFX,
+		DistantSlamWarning = Models.DistantSlamWarning,
 	},
 
 	Stats = {
@@ -55,6 +73,17 @@ const None = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
 			FinalFrame = 30,
 		},
+
+		StopSign = { HitFrame = 50, EndFrame = 90, SignLifetime = 15 },
+		LegBarrage = {
+			FirstTick = 8,
+			LastTick = 84,
+			Interval = 4,
+			FinisherFrame = 100,
+			EndFrame = 115,
+		},
+		MarkedKnives = { SpawnFrames = { 8, 16, 24 }, EndFrame = 40 },
+		DistantSlam = { WarningDuration = 1.5, StandAnimationFrames = 45, HitFrame = 20 },
 	},
 
 	Stand = {
@@ -78,6 +107,13 @@ const None = {
 			Unsummon = actionAnimation(Animations.Stand.Unsummon),
 			-- Barrage
 			Barrage = actionAnimation(Animations.Stand.BarrageStart),
+
+			-- The World skills
+			StopSign = actionAnimation(Animations.Stand.StopSign),
+			LegBarrage = actionAnimation(Animations.Stand.LegBarrage),
+			LegBarrageFinisher = actionAnimation(Animations.Stand.LegBarrageFinisher),
+			MarkedKnives = actionAnimation(Animations.Stand.MarkedKnives),
+			DistantSlam = actionAnimation(Animations.Stand.DistantSlam),
 		},
 		Sounds = {
 			Punch1 = sound(Sounds.Stand.Punches.Punch1),
@@ -93,6 +129,13 @@ const None = {
 			Barrage = sound(Sounds.Stand.Barrage, 0.25),
 			BarrageHit = sound(Sounds.Stand.BarrageHeavyHit, 0.25),
 			BarrageVL = sound(Sounds.Stand.BarrageVL),
+
+			-- The World skills
+			LegBarrage = sound(Sounds.Stand.LegBarrage),
+			LegBarrageHit = sound(Sounds.Stand.LegBarrageHit),
+			LegBarrageVL = sound(Sounds.Stand.LegBarrageVL),
+			MarkedKnives = sound(Sounds.Stand.MarkedKnives),
+			DistantSlam = sound(Sounds.Stand.DistantSlam),
 		},
 		Models = {
 			-- Stand model

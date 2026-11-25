@@ -19,6 +19,11 @@ const Spec = {
 		["Summon"] = "~/skills/Summon",
 
 		["StandBarrage"] = "~/skills/StandBarrage",
+
+		["StopSign"] = "@Specs/TheWorld/StopSign",
+		["MarkedKnives"] = "@Specs/TheWorld/MarkedKnives",
+		["LegBarrage"] = "@Specs/TheWorld/LegBarrage",
+		["DistantSlam"] = "@Specs/TheWorld/DistantSlam",
 	},
 
 	onInit = function(self: types.Spec)
