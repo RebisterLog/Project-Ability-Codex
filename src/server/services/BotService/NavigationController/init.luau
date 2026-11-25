@@ -10,7 +10,7 @@ local LOWEST_MAGNITUDE = 0.001
 local FLAT = Vector3.new(1, 0, 1)
 local LOS_CLEAR_INTERVAL = 2
 local LOS_BLOCKED_INTERVAL = 0.5
-local MAX_DIRECT_PITCH = math.rad(40)
+local MAX_DIRECT_PITCH = math.rad(12)
 local FACE_INTERVAL = 0.05
 local MAX_PATHS_PER_SECOND = 12
 local PATH_MAX_AGE = 5
@@ -19,6 +19,13 @@ local STUCK_DISTANCE = 0.3
 local TELEPORT_COOLDOWN = 4
 local TELEPORT_LIMIT = 2
 local WAYPOINT_SAFE_DISTANCE = 2
+local TELEPORT_HEIGHT = 3
+local GROUND_PROBE_LENGTH = 12
+local UNSTUCK_TELEPORT_COOLDOWN = 6
+local NO_PATH_TIMEOUT = 5
+local TARGET_TELEPORT_COOLDOWN = 10
+local TARGET_TELEPORT_DISTANCE = 4
+local ARRIVED_RESUME_DISTANCE = 9
 
 local JUMP_COOLDOWN = 1
 local PUMA_MIN = 3
@@ -240,6 +247,8 @@ type NavigationControllerMethods = {
 	Update: (self: NavigationController, dt: number, now: number) -> (),
 	CheckStuck: (self: NavigationController, now: number) -> (),
 	HandleStuck: (self: NavigationController, now: number) -> (),
+	TeleportTo: (self: NavigationController, position: Vector3) -> (),
+	TeleportNearTarget: (self: NavigationController, force: boolean?) -> (),
 	MoveInDirection: (self: NavigationController, direction: Vector3?) -> (),
 	FaceTarget: (self: NavigationController, pos: Vector3, targetPos: Vector3) -> (),
 	HasLineOfSight: (
@@ -426,10 +435,45 @@ local States = {
 		end,
 	},
 
+	Arrived = {
+		Enter = function(self: NavigatorState)
+			local navigator = self.navigator
+			navigator.humanoid:Move(Vector3.zero)
+			navigator.alignOrient.Enabled = navigator.config.RotateToTarget
+				and not navigator.RotationSuppressed
+		end,
+
+		Update = function(self: NavigatorState, _dt: number)
+			local navigator = self.navigator
+			local target = navigator.target
+			if not target or not target.Parent then
+				navigator:ClearTarget()
+				return
+			end
+
+			local pos = navigator.rootPart.Position
+			local targetPos = target.Position
+			navigator:FaceTarget(pos, targetPos)
+			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
+				and not navigator.RotationSuppressed
+
+			if (pos - targetPos).Magnitude > ARRIVED_RESUME_DISTANCE then
+				navigator.stateMachine:ChangeState(
+					if navigator:HasLineOfSight(pos, targetPos) then "Direct" else "Pathfinding"
+				)
+				return
+			end
+
+			navigator.humanoid:Move(Vector3.zero)
+		end,
+	},
+
 	Pathfinding = {
 		Enter = function(self: NavigatorState)
-			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
-				and not self.navigator.RotationSuppressed
+			local navigator = self.navigator
+			navigator.pathWaitAt = navigator.now
+			navigator.alignOrient.Enabled = navigator.config.RotateToTarget
+				and not navigator.RotationSuppressed
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -457,11 +501,14 @@ local States = {
 
 			navigator:UpdatePathfinding(pos, targetPos, dt)
 
-			-- No forward pressure while the path is being computed: a light
-			-- sidestep keeps the bot alive without pushing it into the wall.
-			navigator:MoveInDirection(
-				navigator:SideStep(navigator:GetBaseDirection(pos, targetPos))
-			)
+			if
+				navigator.now - navigator.pathWaitAt >= NO_PATH_TIMEOUT
+				and navigator.now - navigator.targetTeleportAt >= TARGET_TELEPORT_COOLDOWN
+			then
+				navigator:TeleportNearTarget()
+			end
+
+			navigator:MoveInDirection(navigator:GetBaseDirection(pos, targetPos))
 		end,
 	},
 
@@ -481,7 +528,7 @@ local States = {
 
 			local currentWaypoint = navigator.waypoints[navigator.waypoint]
 			if not currentWaypoint then
-				navigator.stateMachine:ChangeState("Direct")
+				navigator.stateMachine:ChangeState("Arrived")
 				return
 			end
 
@@ -510,9 +557,10 @@ local States = {
 			end
 
 			if distToWaypoint < (navigator.humanoid.WalkSpeed / 16) then
-				navigator.waypoint += 1
+				local remaining = #navigator.waypoints - navigator.waypoint
+				navigator.waypoint += math.max(1, math.floor(remaining / 2))
 				if navigator.waypoint > #navigator.waypoints then
-					navigator.stateMachine:ChangeState("Direct")
+					navigator.stateMachine:ChangeState("Arrived")
 				end
 			end
 		end,
@@ -574,6 +622,10 @@ type NavigationControllerProperties = {
 	stuckLevel: number,
 	teleportCount: number,
 	teleportAt: number,
+	pathWaitAt: number,
+	targetTeleportAt: number,
+	unstuckTeleportAt: number,
+	teleportPending: boolean,
 	lastFaceTime: number,
 	lastFacePos: Vector3?,
 }
@@ -677,6 +729,43 @@ end
 function NavigationController:HandleStuck(now: number)
 	self:InvalidateLOS()
 
+	local total = #self.waypoints
+	local current = self.waypoint
+	local target = self.target
+
+	-- Jump to the midpoint of the points that are still ahead, not to the
+	-- midpoint of the whole path: the bot may already have walked half of it.
+	local index: number? = nil
+	if current and total > 0 and current <= total then
+		local remaining = total - current
+		index = current + math.max(1, math.floor(remaining / 2))
+		if index > total then index = total end
+	end
+
+	local waypoint = index and self.waypoints[index]
+	local safe = waypoint
+		and (
+			not target
+			or (waypoint.Position - target.Position).Magnitude >= WAYPOINT_SAFE_DISTANCE
+		)
+	local canTeleport = safe
+		and now - self.teleportAt >= TELEPORT_COOLDOWN
+		and self.teleportCount < TELEPORT_LIMIT
+
+	if self.stuckLevel == 0 and index and waypoint and canTeleport then
+		self.stuckLevel = 1
+		self.teleportAt = now
+		self.teleportCount += 1
+		self.teleportPending = true
+
+		self:TeleportTo(waypoint.Position + Vector3.yAxis * TELEPORT_HEIGHT)
+		self.waypoint = index + 1
+		self.samplePos = self.rootPart.Position
+		self.sampleAt = now
+		self:InvalidateLOS()
+		return
+	end
+
 	if self.stuckLevel == 0 then
 		self.stuckLevel = 1
 		self.path = nil
@@ -688,34 +777,50 @@ function NavigationController:HandleStuck(now: number)
 		return
 	end
 
-	local waypoint = self.waypoint and self.waypoints[self.waypoint]
-	local target = self.target
-	local safe = waypoint
-		and (
-			not target
-			or (waypoint.Position - target.Position).Magnitude >= WAYPOINT_SAFE_DISTANCE
-		)
-
-	if
-		not safe
-		or now - self.teleportAt < TELEPORT_COOLDOWN
-		or self.teleportCount >= TELEPORT_LIMIT
-	then
-		self:Jump()
-		self.stuckLevel = 0
-		self.lastCalcPathTime = -math.huge
-		return
-	end
-
-	self.teleportAt = now
-	self.teleportCount += 1
+	self:Jump()
 	self.stuckLevel = 0
+	self.lastCalcPathTime = -math.huge
+end
 
-	self.rig:PivotTo(CFrame.new(waypoint.Position + Vector3.new(0, 2, 0)))
+function NavigationController:TeleportTo(position: Vector3)
+	local origin = position + Vector3.yAxis * 4
+	local result = workspace:Raycast(origin, Vector3.yAxis * -GROUND_PROBE_LENGTH, self.rayParams)
+	local destination = if result then result.Position + Vector3.yAxis else position
+
+	self.rig:PivotTo(CFrame.new(destination))
 	self.rootPart.AssemblyLinearVelocity = Vector3.zero
 	self.rootPart.AssemblyAngularVelocity = Vector3.zero
-	self.waypoint = self.waypoint + 1
+end
+
+function NavigationController:TeleportNearTarget(_force: boolean?)
+	local target = self.target
+	if not target then return end
+
+	self.targetTeleportAt = self.now
+	self.teleportPending = false
+
+	local direction = (self.rootPart.Position - target.Position) * FLAT
+	if direction.Magnitude < LOWEST_MAGNITUDE then
+		direction = self.rootPart.CFrame.LookVector * FLAT
+	end
+	if direction.Magnitude < LOWEST_MAGNITUDE then return end
+
+	local destination = target.Position
+		+ direction.Unit * TARGET_TELEPORT_DISTANCE
+		+ Vector3.yAxis * TELEPORT_HEIGHT
+
+	self:TeleportTo(destination)
+	self.samplePos = self.rootPart.Position
+	self.sampleAt = self.now
+
+	self.path = nil
+	table.clear(self.waypoints)
+	self.waypoint = 0
+	self.lastCalcPathTime = -math.huge
+	self.pathCreatedAt = -math.huge
+	self.pathWaitAt = self.now
 	self:InvalidateLOS()
+	self.stateMachine:ChangeState("Direct")
 end
 
 function NavigationController:CheckStuck(now: number)
@@ -752,6 +857,14 @@ function NavigationController:CheckStuck(now: number)
 
 	if moved >= STUCK_DISTANCE then
 		self.stuckLevel = 0
+		self.teleportPending = false
+		return
+	end
+
+	if self.teleportPending and now - self.unstuckTeleportAt >= UNSTUCK_TELEPORT_COOLDOWN then
+		self.teleportPending = false
+		self.unstuckTeleportAt = now
+		self:TeleportNearTarget(true)
 		return
 	end
 
@@ -908,6 +1021,9 @@ function NavigationController.SetTarget(self: NavigationController, target: Base
 	self.pathCreatedAt = -math.huge
 	self.teleportCount = 0
 	self.teleportAt = -math.huge
+	self.targetTeleportAt = -math.huge
+	self.unstuckTeleportAt = -math.huge
+	self.teleportPending = false
 	self:ResetStyleState()
 	self.lastLosTime = -math.huge
 	self.lastFaceTime = -math.huge
@@ -923,6 +1039,9 @@ function NavigationController.ClearTarget(self: NavigationController)
 	self.pathCreatedAt = -math.huge
 	self.teleportCount = 0
 	self.teleportAt = -math.huge
+	self.targetTeleportAt = -math.huge
+	self.unstuckTeleportAt = -math.huge
+	self.teleportPending = false
 	self:ResetStyleState()
 	self.lastLosTime = -math.huge
 	self.humanoid:Move(Vector3.zero)
@@ -1049,6 +1168,10 @@ return {
 				stuckLevel = 0,
 				teleportCount = 0,
 				teleportAt = -math.huge,
+				pathWaitAt = -math.huge,
+				targetTeleportAt = -math.huge,
+				unstuckTeleportAt = -math.huge,
+				teleportPending = false,
 				lastFaceTime = -math.huge,
 				lastFacePos = nil,
 			} :: NavigationController,

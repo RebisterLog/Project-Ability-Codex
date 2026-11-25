@@ -244,6 +244,9 @@ function Bot.Tick(self: Bot, dt: number, tickId: number, now: number)
 	self.NavBlocked = navState == "Pathfinding"
 		or navState == "FollowingPath"
 		or navState == "HoldingDistance"
+
+	if navState == "Pathfinding" or navState == "FollowingPath" then return end
+
 	self.DodgeIntent = Conditions.Has(mask, "TARGET_ATTACKING")
 		or Conditions.Has(mask, "OWN_THREATENED")
 

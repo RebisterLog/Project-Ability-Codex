@@ -29,9 +29,11 @@ Attacks are combos selected by scoring: range, target state, cooldowns and role 
 
 ## Navigation and pathfinding
 
-The navigator uses a short line of sight check that distinguishes a **clear** result (cached for 2 seconds) from a **blocked** result (cached for 0.5 seconds). Any raycast hit on something other than the target counts as an obstacle; the old 5-stud tolerance was removed. A ray with a vertical angle above `MaxDirectPitch` (40 degrees by default) is treated as blocked, so bots do not try to walk straight up ledges.
+The navigator uses a short line of sight check that distinguishes a **clear** result (cached for 2 seconds) from a **blocked** result (cached for 0.5 seconds). Any raycast hit on something other than the target counts as an obstacle; the old 5-stud tolerance was removed. A ray with a vertical angle above `MaxDirectPitch` (12 degrees by default) is treated as blocked, so bots do not try to walk straight up ledges.
 
-Entering `Pathfinding` does not push the bot into the obstacle: while a path is being computed the bot performs a light sidestep. Once a path exists, `FollowingPath` moves strictly toward waypoints with no movement style. It returns to `Direct` only after two consecutive fresh clear line-of-sight checks. Paths expire after 5 seconds and are recalculated when the target moves far enough or the bot gets stuck.
+The attack layer is skipped entirely while the navigator is in `Pathfinding` or `FollowingPath`; the defense layer (guard, immediate dodge) still runs. This prevents casting skills at a target the bot cannot see.
+
+While a path is being computed the bot keeps a simple forward approach without movement styling. Once a path exists, `FollowingPath` moves strictly toward waypoints, but each reached waypoint skips **half of the remaining points** instead of advancing by one. It returns to `Direct` only after two consecutive fresh clear line-of-sight checks. When the path is exhausted, the bot enters `Arrived`: it stops moving at the last waypoint and attacks from there instead of pushing closer to `ReachDistance`. It resumes navigation only if the target moves more than 9 studs away. Paths expire after 5 seconds and are recalculated when the target moves far enough or the bot gets stuck.
 
 ## Dash is a dodge, not a filler
 
@@ -39,7 +41,7 @@ Skills tagged `Escape` are excluded from attack scoring while navigation owns th
 
 ## Stuck recovery
 
-If a bot moves less than 0.3 studs over 0.8 seconds while it is supposed to be moving, recovery runs in two steps: first invalidate line of sight, drop the path and force recalculation; on a repeat, pivot the rig onto the current waypoint (2 studs up), clear velocity, and continue with a 4-second cooldown and at most two teleports per path. A pending path computation falls back to a single jump plus a sidestep.
+If a bot moves less than 0.3 studs over 0.8 seconds while it is supposed to be moving, recovery first invalidates line of sight, drops the path and forces recalculation; on a repeat it pivots onto the **midpoint of the remaining waypoints** (with a downward ground probe), clears velocity, with a 4-second cooldown and at most two teleports per path. If the bot is still stuck after that teleport, the next stuck check moves it to a point 4 studs from the target instead, with a 6-second cooldown. If no path is produced within 5 seconds, the same near-target move applies with a 10-second cooldown, so a bot wedged in geometry can still reach the player.
 
 ## A tick in full
 

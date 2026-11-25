@@ -137,7 +137,6 @@ function ClientStateService.GetMetadata(
 		else Vector3.zero
 	const predicted = cframe + (if speed > 0 then horizontal.Unit * travel else Vector3.zero)
 
-
 	return {
 		Position = position,
 		LookVector = lookVector,
