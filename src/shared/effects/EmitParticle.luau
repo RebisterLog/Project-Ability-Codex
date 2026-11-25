@@ -1,12 +1,11 @@
 const Debris = game:GetService("Debris")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const TweenService = game:GetService("TweenService")
-
 const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
 
 type EmitData = {
-	UUID: number,
-	Particle: BasePart,
+	UUID: number?,
+	Particle: BasePart | string,
 	Origin: CFrame | Instance,
 	Offset: CFrame?,
 	UseForge: boolean?,

@@ -62,6 +62,23 @@ return ByteNet.defineNamespace("CranePackets", function()
 			StopSkill = ByteNet.definePacket({
 				value = ByteNet.string,
 			}),
+
+			-- Client -> server pose sample for melee lag compensation. Position
+			-- and Time always travel; Velocity/LookYaw are diffed on the client
+			-- to stay inside ByteNet's shared 512 B/s budget. Append only:
+			-- packet and struct IDs are declaration order and must not shift.
+			ClientState = ByteNet.definePacket({
+				reliabilityType = "unreliable",
+				value = ByteNet.struct({
+					-- GetServerTimeNow() is epoch-scale here; float32 would
+					-- quantise it to ~128 s and break latency maths.
+					Time = ByteNet.float64,
+					Position = ByteNet.vec3,
+					Velocity = ByteNet.optional(ByteNet.vec3),
+					LookYaw = ByteNet.optional(ByteNet.float32),
+					IsGrounded = ByteNet.bool,
+				}),
+			}),
 		},
 
 		queries = {},

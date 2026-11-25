@@ -68,6 +68,13 @@ const Skill: types.SkillData = {
 			Priority = Enums.Stun.Light,
 			Duration = 0.5,
 		},
+		
+		HitEffects = {{
+			Particle = "Default";
+			Sound = "Default";
+		}};
+
+		HitAnimations = "Default",
 
 		-- Knockback = {
 		-- 	Direction = { Mode = "AwayFromAttacker" },

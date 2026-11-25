@@ -69,6 +69,11 @@ const Skill: types.SkillData = {
 			Lift = 20,
 			Hold = 0.1,
 		},
+		
+		HitEffects = {{
+			Particle = "Default";
+			Sound = "Default";
+		}};
 	},
 }
 

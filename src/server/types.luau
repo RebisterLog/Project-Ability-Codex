@@ -61,6 +61,25 @@ export type GrabData = {
 	Victim: GrabCharacter?,
 }
 
+-- Latest client-reported pose. Velocity/LookYaw are optional on the wire (the
+-- client only sends them when they change); the server service fills them from
+-- the previous sample before exposing the struct.
+export type ClientStateSample = {
+	Time: number,
+	Position: Vector3,
+	Velocity: Vector3?,
+	LookYaw: number?,
+}
+
+export type CombatMetadata = {
+	Position: Vector3,
+	LookVector: Vector3,
+	Velocity: Vector3,
+	Latency: number,
+	Predicted: CFrame,
+	Compensated: boolean,
+}
+
 export type HitboxData = {
 	Caster: Character,
 	Skill: Skill?,
@@ -71,6 +90,9 @@ export type HitboxData = {
 		SortByDistance: boolean?,
 		CanQueryCaster: boolean?,
 		Parameters: OverlapParams?,
+		-- Use the validated client pose to move the caster's hitbox origin to
+		-- where the client was rendering it. Falls back to the old velocity
+		-- heuristic when there is no trustworthy client sample (e.g. bots).
 		MovementCorrection: boolean?,
 		Debug: boolean?,
 	},
@@ -125,7 +147,7 @@ export type AttackInfo = {
 	-- Hit feedback on a landed hit; nil falls back to assets.Default.Hits.
 	HitEffects: Folder?,
 	HitSounds: Folder?,
-	HitAnimations: Folder?,
+	HitAnimations: Folder? | string?,
 }
 
 export type AttackData = {

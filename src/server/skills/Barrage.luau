@@ -55,6 +55,8 @@ const Skill: types.SkillData = {
 			BlockCancel = false,
 			BlockIgnore = false,
 		},
+		
+		HitAnimations = "Default",
 
 		Stun = {
 			Priority = Enums.Stun.Heavy,
@@ -78,6 +80,8 @@ const Skill: types.SkillData = {
 			Offset = CFrame.new(0, 0, -5),
 			Debug = true,
 		},
+		
+		HitAnimations = "Default",
 
 		Damage = 10,
 
@@ -168,7 +172,7 @@ function Skill.onInit(self)
 
 					for i, target in targets do
 						CombatService:Attack({
-							Attacker = character,
+							Skill = self,
 							Victim = target,
 							Info = self.Data.PreBarrageInfo,
 						})

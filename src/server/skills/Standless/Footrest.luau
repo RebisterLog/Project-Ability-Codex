@@ -41,6 +41,13 @@ const Skill = {
 			Priority = Enums.Stun.Heavy,
 			Duration = 1.5,
 		},
+		
+		HitEffects = {{
+			Particle = "Default";
+			Sound = "Default";
+		}};
+		
+		HitAnimations = "Default",
 	},
 }
 
@@ -110,6 +117,7 @@ function Skill.onInit(self)
 						}):andThen(function(Data: Types.AttackData)
 							if not Data.State.Success then return end
 							table.insert(self.AlreadyHit, Target)
+							if Data.State.Blocked or Data.State.PerfectBlocked then return end
 							if not Data.State.Continue then return end
 
 							VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {

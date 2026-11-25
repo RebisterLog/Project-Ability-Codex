@@ -2,113 +2,181 @@
 --!optimize 2
 
 local PathfindingService = game:GetService("PathfindingService")
-local RunService = game:GetService("RunService")
 
 local MovementStyles = require(script.MovementStyles)
 local StateMachine = require(script.StateMachine)
 
-const LOWEST_MAGNITUDE = 0.001
+local LOWEST_MAGNITUDE = 0.001
+local FLAT = Vector3.new(1, 0, 1)
+local LOS_CLEAR_INTERVAL = 2
+local LOS_BLOCKED_INTERVAL = 0.5
+local MAX_DIRECT_PITCH = math.rad(40)
+local FACE_INTERVAL = 0.05
+local MAX_PATHS_PER_SECOND = 12
+local PATH_MAX_AGE = 5
+local STUCK_TIME = 0.8
+local STUCK_DISTANCE = 0.3
+local TELEPORT_COOLDOWN = 4
+local TELEPORT_LIMIT = 2
+local WAYPOINT_SAFE_DISTANCE = 2
 
-local function VisualizePath(path: Path): ()
-	if not path then return end
-	local nodes = path:GetWaypoints()
+local JUMP_COOLDOWN = 1
+local PUMA_MIN = 3
+local PUMA_MAX = 10
+local PUMA_DURATION = 0.25
+local PUMA_COOLDOWN = 3
+local LUNGE_DURATION = 0.3
+local LUNGE_COOLDOWN = 2.5
+local BAIT_DURATION = 0.4
+local BAIT_COOLDOWN = 4
+local SIDESTEP_DURATION = 0.25
+local SIDESTEP_COOLDOWN = 1.5
+local FLANK_DURATION = 2.5
+local FLANK_LATERAL = 0.65
 
-	for i, waypoint: PathWaypoint in ipairs(nodes) do
-		local part = Instance.new("Part")
-		part.Size = Vector3.new(1, 1, 1)
-		part.Anchored = true
-		part.CanCollide = false
-		part.Material = Enum.Material.Neon
-		part.Position = waypoint.Position
-		part.Parent = workspace
-		game.Debris:AddItem(part, 10)
-	end
-end
+local pathBudget = 0
+local budgetStart = 0
+
+type MovementCallback = (
+	controller: NavigationController,
+	baseDirection: Vector3,
+	dt: number,
+	distance: number
+) -> Vector3?
 
 local MovementStyleConfigs: { [string]: MovementCallback } = {
-	direct = function(self: NavigationController, baseDirection, dt, distance)
+	direct = function(_self: NavigationController, baseDirection)
 		return baseDirection
 	end,
 
-	strafe = function(self: NavigationController, baseDirection, dt, distance)
-		local right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
-		local time = tick()
-
-		local strafeAmount = math.sin(time * 2.5) * 0.8
-		local result = baseDirection + right * strafeAmount
-
-		if result.Magnitude > LOWEST_MAGNITUDE then return result.Unit end
-		return baseDirection
+	strafe = function(self: NavigationController, baseDirection, _dt, distance)
+		local amplitude = 0.4 + 0.15 * math.clamp((distance - self.config.ReachDistance) / 12, 0, 1)
+		return self:Sway(baseDirection, amplitude, 2.2)
 	end,
 
-	zigzag = function(self: NavigationController, baseDirection, dt, distance)
-		local right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
-
-		local zigzagAmount = math.sin(tick() * 2) * 2
-		local result = baseDirection + right * zigzagAmount
-
-		if result.Magnitude > LOWEST_MAGNITUDE then return result.Unit end
-
-		return baseDirection
+	zigzag = function(self: NavigationController, baseDirection, _dt, distance)
+		local amplitude = 0.4 + 0.2 * math.clamp((distance - self.config.ReachDistance) / 12, 0, 1)
+		return self:Sway(baseDirection, amplitude, 1.8)
 	end,
 
-	flank = function(self: NavigationController, baseDirection, dt, distance)
-		local right = Vector3.new(-baseDirection.Z, 0, baseDirection.X)
+	flank = function(self: NavigationController, baseDirection, _dt, distance)
+		if self.FlankSide == 0 then
+			self.FlankSide = if self.StylePhase > math.pi then 1 else -1
+			self.FlankAt = self.now
+		end
 
-		--local hash = math.noise(self.rootPart.Position.X * 0.03, 0, self.rootPart.Position.Z * 0.03)
-		--local side = hash > 0 and 1 or -1
+		if
+			self.now - self.FlankAt > FLANK_DURATION
+			or distance <= self.config.ReachDistance + 6
+		then
+			return baseDirection
+		end
 
-		--local blend = math.clamp(distance / 30, 0.3, 1)
-		--local result = baseDirection * (1 - blend * 0.5) + right * blend * side
-
-		--if result.Magnitude > LOWEST_MAGNITUDE then
-		--	return result.Unit
-		--end
-		return baseDirection
+		local result = baseDirection
+			+ self:RightVector(baseDirection) * (self.FlankSide * FLANK_LATERAL)
+		return result.Magnitude > LOWEST_MAGNITUDE and result.Unit or baseDirection
 	end,
 
-	bait = function(self: NavigationController, baseDirection, dt, distance)
-		local reachDist = self.config.ReachDistance or 4
-		local baitStart = reachDist + 10
-		local baitEnd = reachDist + 20
+	bait = function(self: NavigationController, baseDirection, _dt, distance)
+		local reach = self.config.ReachDistance
+		local baitStart = reach + 10
+		local baitEnd = reach + 20
 
 		if distance >= baitEnd then
 			self.StartBait = false
 			return baseDirection
 		end
 
-		if self.StartBait and distance < baitEnd then
-			self:Jump()
-			return -baseDirection
+		if distance <= baitStart and not self.StartBait then
+			self.StartBait = true
+			self:PulseJump()
+			self:StartImpulse(-baseDirection, BAIT_DURATION, BAIT_COOLDOWN)
 		end
 
-		if distance <= baitStart then
-			self.StartBait = true
-			return -baseDirection
+		if self.StartBait then return self:ImpulseDirection(baseDirection) or -baseDirection end
+
+		return baseDirection
+	end,
+
+	puma = function(self: NavigationController, baseDirection, _dt, distance)
+		local impulse = self:ImpulseDirection(baseDirection)
+		if impulse then return impulse end
+
+		local reach = self.config.ReachDistance
+		if
+			self:IsDirect()
+			and distance >= reach + PUMA_MIN
+			and distance <= reach + PUMA_MAX
+			and self:CanImpulse(PUMA_COOLDOWN)
+		then
+			self:PulseJump()
+			self:StartImpulse(baseDirection, PUMA_DURATION, PUMA_COOLDOWN)
+			return baseDirection
+		end
+
+		return self:Sway(baseDirection, 0.15, 1.2)
+	end,
+
+	lunge = function(self: NavigationController, baseDirection, _dt, distance)
+		local impulse = self:ImpulseDirection(baseDirection)
+		if impulse then return impulse end
+
+		local reach = self.config.ReachDistance
+		if
+			self:IsDirect()
+			and distance >= reach + 2
+			and distance <= reach + 12
+			and self:CanImpulse(LUNGE_COOLDOWN)
+		then
+			self:StartImpulse(baseDirection, LUNGE_DURATION, LUNGE_COOLDOWN)
+			return baseDirection
 		end
 
 		return baseDirection
 	end,
 
-	puma = function(self: NavigationController, baseDirection, dt, distance)
-		if
-			distance < 15 + self.config.ReachDistance
-			and distance > 2 + self.config.ReachDistance
-		then
-			--self:Jump()
+	orbit = function(self: NavigationController, baseDirection, _dt, distance)
+		if self.FlankSide == 0 then self.FlankSide = if self.StylePhase > math.pi then 1 else -1 end
+
+		local target = self.target
+		local toward = baseDirection
+		if target then
+			local delta = (target.Position - self.rootPart.Position) * FLAT
+			if delta.Magnitude > LOWEST_MAGNITUDE then toward = delta.Unit end
 		end
 
-		return baseDirection
+		local hold = self.config.HoldDistance or self.config.ReachDistance
+		local radial = toward * math.clamp((distance - hold) / 4, -1, 1) * 0.35
+		local result = self:RightVector(toward) * self.FlankSide + radial
+
+		return result.Magnitude > LOWEST_MAGNITUDE and result.Unit or baseDirection
+	end,
+
+	sidestep = function(self: NavigationController, baseDirection, _dt, distance)
+		local impulse = self:ImpulseDirection(baseDirection)
+		if impulse then return impulse end
+
+		if self:IsDirect() and self:CanImpulse(SIDESTEP_COOLDOWN) then
+			self.FlankSide = -self.FlankSide
+			local side = if self.FlankSide == 0 then 1 else self.FlankSide
+			self.FlankSide = side
+
+			local direction = baseDirection + self:RightVector(baseDirection) * (side * 0.7)
+			self:StartImpulse(direction.Unit, SIDESTEP_DURATION, SIDESTEP_COOLDOWN)
+		end
+
+		return self:Sway(baseDirection, 0.15, 1.4)
 	end,
 }
 
-const DEFAULT_CONFIG: NavigationConfig = {
+local DEFAULT_CONFIG: NavigationConfig = {
 	ReachDistance = 4,
 	ObstacleCheckDistance = 5,
 	ObstacleCheckRadius = 5,
 	PathRecalculateInterval = 3,
 	PathRecalculateDistance = 15,
 	AutoJump = true,
+	MaxDirectPitch = MAX_DIRECT_PITCH,
 	RotateToTarget = false,
 	Style = MovementStyles.direct,
 	Debug = false,
@@ -129,6 +197,7 @@ export type NavigationConfig = {
 	PathRecalculateDistance: number,
 
 	AutoJump: boolean,
+	MaxDirectPitch: number?,
 
 	RotateToTarget: boolean?,
 	Style: MovementStyle?,
@@ -147,6 +216,46 @@ type NavigationControllerMethods = {
 	SetMovementStyle: (self: NavigationController, style: MovementStyle) -> (),
 
 	Jump: (self: NavigationController) -> (),
+	PulseJump: (self: NavigationController) -> (),
+	CanImpulse: (self: NavigationController, cooldown: number) -> boolean,
+	StartImpulse: (
+		self: NavigationController,
+		direction: Vector3,
+		duration: number,
+		cooldown: number
+	) -> (),
+	ImpulseDirection: (self: NavigationController, baseDirection: Vector3) -> Vector3?,
+	IsDirect: (self: NavigationController) -> boolean,
+	GetState: (self: NavigationController) -> string?,
+	SideStep: (self: NavigationController, baseDirection: Vector3) -> Vector3,
+	InvalidateLOS: (self: NavigationController) -> (),
+	RightVector: (self: NavigationController, baseDirection: Vector3) -> Vector3,
+	Sway: (
+		self: NavigationController,
+		baseDirection: Vector3,
+		amplitude: number,
+		frequency: number
+	) -> Vector3,
+	ResetStyleState: (self: NavigationController) -> (),
+	Update: (self: NavigationController, dt: number, now: number) -> (),
+	CheckStuck: (self: NavigationController, now: number) -> (),
+	HandleStuck: (self: NavigationController, now: number) -> (),
+	MoveInDirection: (self: NavigationController, direction: Vector3?) -> (),
+	FaceTarget: (self: NavigationController, pos: Vector3, targetPos: Vector3) -> (),
+	HasLineOfSight: (
+		self: NavigationController,
+		from: Vector3,
+		to: Vector3,
+		force: boolean?
+	) -> (boolean, RaycastResult?),
+	UpdatePathfinding: (
+		self: NavigationController,
+		from: Vector3,
+		to: Vector3,
+		dt: number
+	) -> (),
+	VisualizePath: (self: NavigationController, path: Path?) -> (),
+	GetBaseDirection: (self: NavigationController, from: Vector3, to: Vector3) -> Vector3,
 
 	DisableRotation: (self: NavigationController) -> (),
 	EnableRotation: (self: NavigationController) -> (),
@@ -164,49 +273,36 @@ local States = {
 				and not self.navigator.RotationSuppressed
 		end,
 
-		Update = function(self: NavigatorState, dt: number)
-			if not self.navigator.target or not self.navigator.target.Parent then
-				self.navigator:ClearTarget()
+		Update = function(self: NavigatorState, _dt: number)
+			local navigator = self.navigator
+			local target = navigator.target
+			if not target or not target.Parent then
+				navigator:ClearTarget()
 				return
 			end
 
-			local target = self.navigator.target
-			local pos = self.navigator.rootPart.Position
+			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
 			local dist = (pos - targetPos).Magnitude
 
-			self.navigator.alignOrient.CFrame =
-				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
+			navigator:FaceTarget(pos, targetPos)
+			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
+				and not navigator.RotationSuppressed
 
-			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
-				and not self.navigator.RotationSuppressed
+			local hasLOS = navigator:HasLineOfSight(pos, targetPos)
 
-			local hasLOS: boolean, result: RaycastResult =
-				self.navigator:HasLineOfSight(pos, targetPos)
-
-			if self.navigator.config.HoldDistance then
-				if hasLOS then
-					self.navigator.stateMachine:ChangeState("HoldingDistance")
-				else
-					self.navigator.stateMachine:ChangeState("Direct")
-				end
-
+			if navigator.config.HoldDistance then
+				navigator.stateMachine:ChangeState(if hasLOS then "HoldingDistance" else "Direct")
 				return
 			end
 
-			if self.navigator.config.ReachDistance then
-				if
-					hasLOS
-					or (
-						(result.Position - pos).Magnitude
-						> self.navigator.config.ObstacleCheckDistance
-					)
-				then
-					if dist <= self.navigator.config.ReachDistance then return end
+			if navigator.config.ReachDistance then
+				if hasLOS then
+					if dist <= navigator.config.ReachDistance then return end
 
-					self.navigator.stateMachine:ChangeState("Direct")
+					navigator.stateMachine:ChangeState("Direct")
 				else
-					self.navigator.stateMachine:ChangeState("Pathfinding")
+					navigator.stateMachine:ChangeState("Pathfinding")
 				end
 			end
 		end,
@@ -214,69 +310,65 @@ local States = {
 
 	Direct = {
 		Enter = function(self: NavigatorState)
-			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
-				and not self.navigator.RotationSuppressed
+			local navigator = self.navigator
+			navigator.alignOrient.Enabled = navigator.config.RotateToTarget
+				and not navigator.RotationSuppressed
 
-			if self.navigator.path then
-				self.navigator.path = nil
-				table.clear(self.navigator.waypoints)
-				self.navigator.waypoint = 0
+			if navigator.path then
+				navigator.path = nil
+				table.clear(navigator.waypoints)
+				navigator.waypoint = 0
 			end
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			local target = self.navigator.target
-			local pos = self.navigator.rootPart.Position
+			local navigator = self.navigator
+			local target = navigator.target
+			if not target then return end
+
+			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
 			local dist = (pos - targetPos).Magnitude
 
-			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
-				and not self.navigator.RotationSuppressed
+			navigator:FaceTarget(pos, targetPos)
+			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
+				and not navigator.RotationSuppressed
 
-			self.navigator.alignOrient.CFrame =
-				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
-
-			if not self.navigator.config.ReachDistance then
-				self.navigator.stateMachine:ChangeState("Idle")
+			if not navigator.config.ReachDistance then
+				navigator.stateMachine:ChangeState("Idle")
 				return
 			end
 
-			local hasLOS: boolean, result: RaycastResult =
-				self.navigator:HasLineOfSight(pos, targetPos)
+			local hasLOS = navigator:HasLineOfSight(pos, targetPos)
 
 			if
 				hasLOS
-				and self.navigator.config.HoldDistance
-				and dist < self.navigator.config.HoldDistance
+				and navigator.config.HoldDistance
+				and dist < navigator.config.HoldDistance
 			then
-				self.navigator.stateMachine:ChangeState("HoldingDistance")
+				navigator.stateMachine:ChangeState("HoldingDistance")
 				return
 			end
 
-			if dist <= self.navigator.config.ReachDistance then
-				if self.navigator.config.HoldDistance and hasLOS then
-					self.navigator.stateMachine:ChangeState("HoldingDistance")
-					return
+			if dist <= navigator.config.ReachDistance then
+				if navigator.config.HoldDistance and hasLOS then
+					navigator.stateMachine:ChangeState("HoldingDistance")
 				else
-					self.navigator.humanoid:Move(Vector3.zero)
-					return
+					navigator.humanoid:Move(Vector3.zero)
 				end
+				return
 			end
 
-			if
-				hasLOS
-				or ((result.Position - pos).Magnitude > self.navigator.config.ObstacleCheckDistance)
-			then
-				local baseDirection = self.navigator:GetBaseDirection(pos, targetPos)
-				local styleCallback = MovementStyleConfigs[self.navigator.config.Style]
-				local finalDirection = baseDirection
-				if styleCallback then
-					finalDirection = styleCallback(self.navigator, baseDirection, dt, dist)
-				end
-
-				self.navigator:MoveInDirection(finalDirection)
+			if hasLOS then
+				local baseDirection = navigator:GetBaseDirection(pos, targetPos)
+				local styleCallback = MovementStyleConfigs[navigator.config.Style]
+				navigator:MoveInDirection(
+					if styleCallback
+						then styleCallback(navigator, baseDirection, dt, dist)
+						else baseDirection
+				)
 			else
-				self.navigator.stateMachine:ChangeState("Pathfinding")
+				navigator.stateMachine:ChangeState("Pathfinding")
 			end
 		end,
 	},
@@ -288,52 +380,49 @@ local States = {
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			local target = self.navigator.target
-			local pos = self.navigator.rootPart.Position
+			local navigator = self.navigator
+			local target = navigator.target
+			if not target then return end
+
+			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
 			local dist = (pos - targetPos).Magnitude
 
-			self.navigator.alignOrient.CFrame =
-				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
+			navigator:FaceTarget(pos, targetPos)
+			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
+				and not navigator.RotationSuppressed
 
-			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
-				and not self.navigator.RotationSuppressed
-
-			if not self.navigator.config.HoldDistance then
-				self.navigator.stateMachine:ChangeState("Idle")
+			if not navigator.config.HoldDistance then
+				navigator.stateMachine:ChangeState("Idle")
 				return
 			end
 
-			local hasLOS: boolean, result: RaycastResult =
-				self.navigator:HasLineOfSight(pos, targetPos)
-
+			local hasLOS = navigator:HasLineOfSight(pos, targetPos)
 			if not hasLOS then
-				self.navigator.stateMachine:ChangeState("Pathfinding")
+				navigator.stateMachine:ChangeState("Pathfinding")
 				return
 			end
 
-			if dist > self.navigator.config.HoldDistance + 10 then
-				self.navigator.stateMachine:ChangeState("Direct")
+			if dist > navigator.config.HoldDistance + 10 then
+				navigator.stateMachine:ChangeState("Direct")
 				return
 			end
 
-			if dist >= self.navigator.config.HoldDistance then
-				self.navigator.humanoid:Move(Vector3.zero)
+			if dist >= navigator.config.HoldDistance then
+				navigator.humanoid:Move(Vector3.zero)
 				return
 			end
 
-			local baseDirection = self.navigator:GetBaseDirection(
+			local baseDirection = navigator:GetBaseDirection(
 				targetPos,
-				(pos - targetPos).Unit * self.navigator.config.HoldDistance
-			) -- switched direction
-			local styleCallback = MovementStyleConfigs[self.navigator.config.Style]
-			local finalDirection = baseDirection
-
-			if styleCallback then
-				finalDirection = styleCallback(self.navigator, baseDirection, dt, dist)
-			end
-
-			self.navigator:MoveInDirection(finalDirection)
+				(pos - targetPos).Unit * navigator.config.HoldDistance
+			)
+			local styleCallback = MovementStyleConfigs[navigator.config.Style]
+			navigator:MoveInDirection(
+				if styleCallback
+					then styleCallback(navigator, baseDirection, dt, dist)
+					else baseDirection
+			)
 		end,
 	},
 
@@ -344,37 +433,35 @@ local States = {
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
-			local target = self.navigator.target
-			local pos = self.navigator.rootPart.Position
+			local navigator = self.navigator
+			local target = navigator.target
+			if not target then return end
+
+			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
-			local dist = (pos - targetPos).Magnitude
 
-			self.navigator.alignOrient.CFrame =
-				CFrame.lookAt(pos, targetPos * Vector3.new(1, 0, 1) + Vector3.yAxis * pos.Y)
+			navigator:FaceTarget(pos, targetPos)
+			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
+				and not navigator.RotationSuppressed
 
-			self.navigator.alignOrient.Enabled = not self.navigator.humanoid.PlatformStand
-				and not self.navigator.RotationSuppressed
-
-			local hasValidPath = self.navigator.path
-				and self.navigator.waypoint
-				and self.navigator.waypoint > 0
-				and self.navigator.waypoint <= #self.navigator.waypoints
+			local hasValidPath = navigator.path
+				and navigator.waypoint
+				and navigator.waypoint > 0
+				and navigator.waypoint <= #navigator.waypoints
 
 			if hasValidPath then
-				self.navigator.alignOrient.Enabled = false
-				self.navigator.stateMachine:ChangeState("FollowingPath")
-			else
-				self.navigator:UpdatePathfinding(pos, targetPos, dt)
-
-				local baseDirection = self.navigator:GetBaseDirection(pos, targetPos)
-				local styleCallback = MovementStyleConfigs[self.navigator.config.Style]
-				local finalDirection = baseDirection
-				if styleCallback then
-					finalDirection = styleCallback(self.navigator, baseDirection, dt, dist)
-				end
-
-				self.navigator:MoveInDirection(finalDirection)
+				navigator.alignOrient.Enabled = false
+				navigator.stateMachine:ChangeState("FollowingPath")
+				return
 			end
+
+			navigator:UpdatePathfinding(pos, targetPos, dt)
+
+			-- No forward pressure while the path is being computed: a light
+			-- sidestep keeps the bot alive without pushing it into the wall.
+			navigator:MoveInDirection(
+				navigator:SideStep(navigator:GetBaseDirection(pos, targetPos))
+			)
 		end,
 	},
 
@@ -384,48 +471,58 @@ local States = {
 			self.navigator.waypoint = 1
 		end,
 
-		Update = function(self: NavigatorState, dt: number)
-			local target = self.navigator.target
-			local pos = self.navigator.rootPart.Position
+		Update = function(self: NavigatorState, _dt: number)
+			local navigator = self.navigator
+			local target = navigator.target
+			if not target then return end
+
+			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
-			local dist = (pos - targetPos).Magnitude
 
-			local currentWaypoint = self.navigator.waypoints[self.navigator.waypoint]
-			local waypointPos = currentWaypoint.Position
-			local distToWaypoint = (waypointPos * Vector3.new(1, 0, 1) - pos * Vector3.new(1, 0, 1)).Magnitude
-
-			local moveDir = (waypointPos - pos).Unit
-			self.navigator.humanoid:Move(moveDir)
-
-			if
-				currentWaypoint.Action == Enum.PathWaypointAction.Jump
-				and self.navigator.config.AutoJump
-			then
-				self.navigator.humanoid.Jump = true
-			end
-
-			local hasLOS: boolean, result: RaycastResult =
-				self.navigator:HasLineOfSight(pos, targetPos)
-
-			if hasLOS then
-				self.navigator.stateMachine:ChangeState("Direct")
+			local currentWaypoint = navigator.waypoints[navigator.waypoint]
+			if not currentWaypoint then
+				navigator.stateMachine:ChangeState("Direct")
 				return
 			end
 
-			if distToWaypoint < (self.navigator.humanoid.WalkSpeed / 16) then
-				self.navigator.waypoint += 1
-				if self.navigator.waypoint > #self.navigator.waypoints then
-					self.navigator.stateMachine:ChangeState("Direct")
-					return
+			local waypointPos = currentWaypoint.Position
+			local distToWaypoint = (waypointPos * FLAT - pos * FLAT).Magnitude
+
+			navigator.humanoid:Move((waypointPos - pos).Unit)
+
+			if
+				currentWaypoint.Action == Enum.PathWaypointAction.Jump
+				and navigator.config.AutoJump
+			then
+				navigator:Jump()
+			end
+
+			if navigator.now - navigator.lastLosTime >= 0.25 then
+				local hasLOS = navigator:HasLineOfSight(pos, targetPos, true)
+				if hasLOS then
+					if navigator.ClearStreak >= 2 then
+						navigator.stateMachine:ChangeState("Direct")
+						return
+					end
+				else
+					navigator.ClearStreak = 0
+				end
+			end
+
+			if distToWaypoint < (navigator.humanoid.WalkSpeed / 16) then
+				navigator.waypoint += 1
+				if navigator.waypoint > #navigator.waypoints then
+					navigator.stateMachine:ChangeState("Direct")
 				end
 			end
 		end,
 
 		Exit = function(self: NavigatorState)
-			if self.navigator.path then
-				self.navigator.path = nil
-				table.clear(self.navigator.waypoints)
-				self.navigator.waypoint = 0
+			local navigator = self.navigator
+			if navigator.path then
+				navigator.path = nil
+				table.clear(navigator.waypoints)
+				navigator.waypoint = 0
 			end
 		end,
 	},
@@ -456,25 +553,119 @@ type NavigationControllerProperties = {
 	rotateAttach: Attachment,
 
 	RotationSuppressed: boolean,
+	StartBait: boolean?,
+
+	StylePhase: number,
+	LastJump: number,
+	LastImpulse: number,
+	ImpulseUntil: number,
+	ImpulseDir: Vector3?,
+	FlankSide: number,
+	FlankAt: number,
+
+	now: number,
+	lastLosTime: number,
+	losResult: RaycastResult?,
+	losClear: boolean,
+	ClearStreak: number,
+	pathCreatedAt: number,
+	samplePos: Vector3?,
+	sampleAt: number,
+	stuckLevel: number,
+	teleportCount: number,
+	teleportAt: number,
+	lastFaceTime: number,
+	lastFacePos: Vector3?,
 }
 
 export type NavigationController = NavigationControllerProperties & NavigationControllerMethods
 
-type MovementCallback = (
-	controller: NavigationController,
-	baseDirection: Vector3,
-	dt: number,
-	distance: number
-) -> Vector3?
-
 local NavigationController = {}
 NavigationController.__index = NavigationController
 
-function NavigationController.Jump(self: NavigationController)
-	self.humanoid.Jump = true
+function NavigationController:Update(dt: number, now: number)
+	self.now = now
+	self.stateMachine:Update(dt)
+	self:CheckStuck(now)
 end
 
-function NavigationController.MoveInDirection(self: NavigationController, direction: Vector3)
+function NavigationController.Jump(self: NavigationController)
+	self.humanoid.Jump = true
+	task.defer(function()
+		if self.humanoid.Parent then self.humanoid.Jump = false end
+	end)
+end
+
+function NavigationController:PulseJump()
+	if self.now - self.LastJump < JUMP_COOLDOWN then return end
+	if self.humanoid.FloorMaterial == Enum.Material.Air then return end
+
+	self.LastJump = self.now
+	self:Jump()
+end
+
+function NavigationController:CanImpulse(cooldown: number): boolean
+	return self.now - self.LastImpulse >= cooldown
+end
+
+function NavigationController:StartImpulse(direction: Vector3, duration: number, cooldown: number)
+	self.LastImpulse = self.now
+	self.ImpulseUntil = self.now + duration
+	self.ImpulseDir = direction
+end
+
+function NavigationController:ImpulseDirection(baseDirection: Vector3): Vector3?
+	if self.now >= self.ImpulseUntil then return nil end
+
+	return self.ImpulseDir or baseDirection
+end
+
+function NavigationController:IsDirect(): boolean
+	return self.stateMachine:GetCurrent() == "Direct"
+end
+
+function NavigationController:GetState(): string?
+	return self.stateMachine:GetCurrent()
+end
+
+function NavigationController:InvalidateLOS()
+	self.lastLosTime = -math.huge
+	self.ClearStreak = 0
+end
+
+function NavigationController:SideStep(baseDirection: Vector3): Vector3
+	return self:RightVector(baseDirection) * math.sin(self.now * 2.5 + self.StylePhase)
+end
+
+function NavigationController:RightVector(baseDirection: Vector3): Vector3
+	return Vector3.new(-baseDirection.Z, 0, baseDirection.X)
+end
+
+function NavigationController:Sway(
+	baseDirection: Vector3,
+	amplitude: number,
+	frequency: number
+): Vector3
+	local result = baseDirection
+		+ self:RightVector(baseDirection)
+			* (math.sin(self.now * frequency + self.StylePhase) * amplitude)
+
+	return result.Magnitude > LOWEST_MAGNITUDE and result.Unit or baseDirection
+end
+
+function NavigationController:ResetStyleState()
+	self.LastImpulse = -math.huge
+	self.ImpulseUntil = -math.huge
+	self.ImpulseDir = nil
+	self.FlankSide = 0
+	self.FlankAt = -math.huge
+	self.StartBait = false
+	self.samplePos = nil
+	self.sampleAt = self.now
+	self.stuckLevel = 0
+end
+
+function NavigationController.MoveInDirection(self: NavigationController, direction: Vector3?)
 	if not direction or direction.Magnitude < LOWEST_MAGNITUDE then
 		self.humanoid:Move(Vector3.zero)
 		return
@@ -483,46 +674,181 @@ function NavigationController.MoveInDirection(self: NavigationController, direct
 	self.humanoid:Move(direction)
 end
 
+function NavigationController:HandleStuck(now: number)
+	self:InvalidateLOS()
+
+	if self.stuckLevel == 0 then
+		self.stuckLevel = 1
+		self.path = nil
+		table.clear(self.waypoints)
+		self.waypoint = 0
+		self.lastCalcPathTime = -math.huge
+		self.pathCreatedAt = -math.huge
+		self.stateMachine:ChangeState("Pathfinding")
+		return
+	end
+
+	local waypoint = self.waypoint and self.waypoints[self.waypoint]
+	local target = self.target
+	local safe = waypoint
+		and (
+			not target
+			or (waypoint.Position - target.Position).Magnitude >= WAYPOINT_SAFE_DISTANCE
+		)
+
+	if
+		not safe
+		or now - self.teleportAt < TELEPORT_COOLDOWN
+		or self.teleportCount >= TELEPORT_LIMIT
+	then
+		self:Jump()
+		self.stuckLevel = 0
+		self.lastCalcPathTime = -math.huge
+		return
+	end
+
+	self.teleportAt = now
+	self.teleportCount += 1
+	self.stuckLevel = 0
+
+	self.rig:PivotTo(CFrame.new(waypoint.Position + Vector3.new(0, 2, 0)))
+	self.rootPart.AssemblyLinearVelocity = Vector3.zero
+	self.rootPart.AssemblyAngularVelocity = Vector3.zero
+	self.waypoint = self.waypoint + 1
+	self:InvalidateLOS()
+end
+
+function NavigationController:CheckStuck(now: number)
+	local state = self.stateMachine:GetCurrent()
+
+	if state ~= "Direct" and state ~= "Pathfinding" and state ~= "FollowingPath" then
+		self.samplePos = nil
+		self.sampleAt = now
+		self.stuckLevel = 0
+		return
+	end
+
+	local target = self.target
+	if not target then return end
+
+	local pos = self.rootPart.Position
+	if state == "Direct" and (target.Position - pos).Magnitude <= self.config.ReachDistance then
+		self.samplePos = nil
+		self.sampleAt = now
+		return
+	end
+
+	if not self.samplePos then
+		self.samplePos = pos
+		self.sampleAt = now
+		return
+	end
+
+	if now - self.sampleAt < STUCK_TIME then return end
+
+	local moved = (pos - self.samplePos).Magnitude
+	self.samplePos = pos
+	self.sampleAt = now
+
+	if moved >= STUCK_DISTANCE then
+		self.stuckLevel = 0
+		return
+	end
+
+	self:HandleStuck(now)
+end
+
+function NavigationController.FaceTarget(
+	self: NavigationController,
+	pos: Vector3,
+	targetPos: Vector3
+)
+	if self.now - self.lastFaceTime < FACE_INTERVAL then return end
+	if self.lastFacePos and (self.lastFacePos - targetPos).Magnitude < 0.1 then return end
+
+	self.lastFaceTime = self.now
+	self.lastFacePos = targetPos
+
+	self.alignOrient.CFrame = CFrame.lookAt(pos, targetPos * FLAT + Vector3.yAxis * pos.Y)
+end
+
 function NavigationController.HasLineOfSight(
 	self: NavigationController,
 	from: Vector3,
-	to: Vector3
-): boolean
+	to: Vector3,
+	force: boolean?
+): (boolean, RaycastResult?)
+	local interval = if self.losClear then LOS_CLEAR_INTERVAL else LOS_BLOCKED_INTERVAL
+	if not force and self.now - self.lastLosTime < interval then
+		return self.losClear, self.losResult
+	end
+
+	self.lastLosTime = self.now
+
 	local direction = to - from
 	local distance = direction.Magnitude
 
-	local result = workspace:Raycast(from, direction.Unit * distance, self.rayParams)
-
-	if not result then return true end
-
-	if result.Instance and self.target then
-		if result.Instance == self.target then return true end
-
-		local targetModel = self.target:FindFirstAncestorOfClass("Model")
-		if targetModel and result.Instance:IsDescendantOf(targetModel) then return true end
+	-- A clear ray is not a walkable route: a steep ray means the target sits on
+	-- a ledge or a pyramid, where direct movement just oscillates.
+	local flat = Vector3.new(direction.X, 0, direction.Z).Magnitude
+	local pitch = math.atan2(math.abs(direction.Y), flat)
+	if pitch > (self.config.MaxDirectPitch or MAX_DIRECT_PITCH) then
+		self.losClear = false
+		self.losResult = nil
+		self.ClearStreak = 0
+		return false, nil
 	end
 
-	return false, result
+	local result: RaycastResult? =
+		workspace:Raycast(from, direction.Unit * distance, self.rayParams)
+
+	local clear = true
+	if result and self.target then
+		if result.Instance == self.target then
+			result = nil
+		else
+			local targetModel = self.target:FindFirstAncestorOfClass("Model")
+			if targetModel and result.Instance:IsDescendantOf(targetModel) then result = nil end
+		end
+	end
+
+	if result then clear = false end
+
+	self.losClear = clear
+	self.losResult = result
+	self.ClearStreak = if clear then self.ClearStreak + 1 else 0
+
+	return clear, result
 end
 
 function NavigationController.UpdatePathfinding(
 	self: NavigationController,
 	from: Vector3,
 	to: Vector3,
-	deltaTime: number
+	_deltaTime: number
 )
-	local timeSinceLastCalc = tick() - self.lastCalcPathTime
-	if timeSinceLastCalc < self.config.PathRecalculateInterval then return end
 	if self.isComputingPath then return end
+
+	local now = os.clock()
+	if now - budgetStart >= 1 then
+		budgetStart = now
+		pathBudget = 0
+	end
+	if pathBudget >= MAX_PATHS_PER_SECOND then return end
+
+	local timeSinceLastCalc = tick() - (self.lastCalcPathTime or 0)
+	if timeSinceLastCalc < self.config.PathRecalculateInterval then return end
 
 	local pathFinished = self.path and self.waypoint and self.waypoint > #self.waypoints
 	local targetMoved = self.lastTargetPos
 		and (to - self.lastTargetPos).Magnitude > self.config.PathRecalculateDistance
+	local pathExpired = self.path and self.now - self.pathCreatedAt > PATH_MAX_AGE
 
-	if self.path and not pathFinished and not targetMoved then return end
+	if self.path and not pathFinished and not targetMoved and not pathExpired then return end
 
 	self.isComputingPath = true
 	self.lastCalcPathTime = tick()
+	pathBudget += 1
 
 	task.spawn(function()
 		local success, path = pcall(function()
@@ -538,20 +864,36 @@ function NavigationController.UpdatePathfinding(
 			self.waypoint = 1
 			self.waypoints = path:GetWaypoints()
 			self.lastTargetPos = to
+			self.pathCreatedAt = self.now
+			self.teleportCount = 0
+			self.stuckLevel = 0
 
-			if self.config.Debug then VisualizePath(path) end
+			if self.config.Debug then self:VisualizePath(path) end
 		else
 			self.path = nil
 			table.clear(self.waypoints)
 			self.waypoint = 0
-
-			if self.config.Debug then print("No path, dropping") end
 		end
 	end)
 end
 
+function NavigationController.VisualizePath(_self: NavigationController, path: Path?)
+	if not path then return end
+
+	for _, waypoint in path:GetWaypoints() do
+		local part = Instance.new("Part")
+		part.Size = Vector3.new(1, 1, 1)
+		part.Anchored = true
+		part.CanCollide = false
+		part.Material = Enum.Material.Neon
+		part.Position = waypoint.Position
+		part.Parent = workspace
+		game.Debris:AddItem(part, 10)
+	end
+end
+
 function NavigationController:GetBaseDirection(from: Vector3, to: Vector3): Vector3
-	local direction = (to - from) * Vector3.new(1, 0, 1)
+	local direction = (to - from) * FLAT
 
 	if direction.Magnitude < LOWEST_MAGNITUDE then return self.rootPart.CFrame.LookVector end
 
@@ -563,6 +905,13 @@ function NavigationController.SetTarget(self: NavigationController, target: Base
 
 	self.target = target
 	self.lastTargetPos = target.Position
+	self.pathCreatedAt = -math.huge
+	self.teleportCount = 0
+	self.teleportAt = -math.huge
+	self:ResetStyleState()
+	self.lastLosTime = -math.huge
+	self.lastFaceTime = -math.huge
+	self.lastFacePos = nil
 
 	self.stateMachine:ChangeState("Idle")
 end
@@ -571,6 +920,11 @@ function NavigationController.ClearTarget(self: NavigationController)
 	self.stateMachine:ChangeState("None")
 
 	self.target = nil
+	self.pathCreatedAt = -math.huge
+	self.teleportCount = 0
+	self.teleportAt = -math.huge
+	self:ResetStyleState()
+	self.lastLosTime = -math.huge
 	self.humanoid:Move(Vector3.zero)
 	self.alignOrient.Enabled = false
 
@@ -578,9 +932,8 @@ function NavigationController.ClearTarget(self: NavigationController)
 end
 
 function NavigationController.SetMovementStyle(self: NavigationController, style: MovementStyle)
-	if self.config.Debug then print(`Movestyle changed to {style} from {self.config.Style}`) end
-
 	self.config.Style = style
+	self:ResetStyleState()
 end
 
 function NavigationController.Destroy(self: NavigationController)
@@ -589,8 +942,6 @@ function NavigationController.Destroy(self: NavigationController)
 	self.alignOrient:Destroy()
 	self.rotateAttach:Destroy()
 	self.stateMachine:Destroy()
-
-	if self.config.Debug then print("Navigator controller destroyed") end
 end
 
 function NavigationController.DisableRotation(self: NavigationController)
@@ -614,15 +965,13 @@ return {
 	new = function(rig: Model, config: NavigationConfig?): NavigationController
 		if config then
 			for i, v in DEFAULT_CONFIG do
-				if not config[i] then config[i] = v end
+				if config[i] == nil then config[i] = v end
 			end
 		end
 
 		local root = rig.PrimaryPart or rig:FindFirstChild("HumanoidRootPart")
 		if not root then
-			error(
-				"NavigationController rig must have a PrimaryPart or a part named HumanoidRootPart"
-			)
+			error("NavigationController rig must have a PrimaryPart or HumanoidRootPart")
 		end
 
 		local humanoid = rig:FindFirstChildOfClass("Humanoid")
@@ -636,7 +985,7 @@ return {
 			WaypointSpacing = 10,
 		}
 
-		local rayParams = config.RayParams
+		local rayParams = config and config.RayParams
 
 		if not rayParams then
 			rayParams = RaycastParams.new()
@@ -658,14 +1007,10 @@ return {
 		alignOrientation.RigidityEnabled = true
 		alignOrientation.Parent = root
 
-		if config.Debug then print("Navigator controller created successfully") end
-
 		local navigator = setmetatable(
 			{
 				config = config or table.clone(DEFAULT_CONFIG),
-				stateMachine = StateMachine.new({
-					CreateNoneState = true,
-				}),
+				stateMachine = StateMachine.new({ CreateNoneState = true }),
 
 				agentParams = agentParams,
 				rayParams = rayParams,
@@ -683,8 +1028,29 @@ return {
 				rotateAttach = rotateAttachment,
 
 				RotationSuppressed = false,
+				StartBait = false,
 
-				isComputingPath = false,
+				StylePhase = Random.new():NextNumber(0, math.pi * 2),
+				LastJump = -math.huge,
+				LastImpulse = -math.huge,
+				ImpulseUntil = -math.huge,
+				ImpulseDir = nil,
+				FlankSide = 0,
+				FlankAt = -math.huge,
+
+				now = 0,
+				lastLosTime = -math.huge,
+				losResult = nil,
+				losClear = true,
+				ClearStreak = 0,
+				pathCreatedAt = -math.huge,
+				samplePos = nil,
+				sampleAt = 0,
+				stuckLevel = 0,
+				teleportCount = 0,
+				teleportAt = -math.huge,
+				lastFaceTime = -math.huge,
+				lastFacePos = nil,
 			} :: NavigationController,
 			NavigationController
 		) :: NavigationController
@@ -693,12 +1059,6 @@ return {
 			local copy = table.clone(state)
 			copy["navigator"] = navigator
 			navigator.stateMachine:AddState(name, copy)
-		end
-
-		if config.Debug then
-			navigator.stateMachine:OnStateChanged(function(new, old)
-				print("State changed from", old, "to", new)
-			end)
 		end
 
 		return navigator

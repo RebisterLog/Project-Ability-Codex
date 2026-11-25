@@ -5,28 +5,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
 local Conditions = require(script.Parent.Conditions)
 
---- Skill priority scoring for bots.
----
---- The module knows nothing about `Spec`, `Skill` or the world: it receives an
---- already filtered list of candidates, the mask of target conditions
---- (`Sense.Mask`, see `BotService/Conditions`) and the distance to it. Everything
---- else is pure arithmetic over the config, which is why it can be verified
---- without Studio.
----
---- The guard (`Block`) never reaches this module: the bot has a single action
---- slot and a defensive skill must not compete with an attack by weights. The
---- "should we block" question belongs to `BotService/Defense`.
-
 local DEFAULT_CONDITION_WEIGHT = 1
 local DEFAULT_COMBO_WEIGHT = 1
 
--- Bitwise operations come from `bit32`: the formatter version used here chokes on
--- the `&` and `|` operators.
 local band = bit32.band
 
---- A candidate to use. Only the id is needed, everything else the scorer takes
---- from the config. Structurally compatible with `types.Skill`, so
---- `Spec:GetAvailableSkills()` can be passed as is.
 export type Candidate = {
 	Data: {
 		Id: string,
@@ -39,15 +22,13 @@ export type ScoredSkill = {
 }
 
 local SkillPriority = {}
+local TIES: { string } = {}
 
---- Weight of a single soft condition for this bot.
-local function GetConditionWeight(config: BotsCharacters.BotCharacterConfig)
+function SkillPriority:GetConditionWeight(config: BotsCharacters.BotCharacterConfig): number
 	return config.ConditionWeight or DEFAULT_CONDITION_WEIGHT
 end
 
---- Hard groups: every `RequiredConditions` entry has to be met, and not a single
---- `ForbiddenConditions` entry.
-local function IsEligible(options: BotsCharacters.SkillPreference, mask: number): boolean
+function SkillPriority:IsEligible(options: BotsCharacters.SkillPreference, mask: number): boolean
 	local required = Conditions.Mask(options.RequiredConditions)
 	if band(mask, required) ~= required then return false end
 
@@ -57,8 +38,10 @@ local function IsEligible(options: BotsCharacters.SkillPreference, mask: number)
 	return true
 end
 
---- Bonus for landing inside the soft distance band.
-local function IsPreferredDistance(preferred: { Min: number?, Max: number? }, distance: number)
+function SkillPriority:IsPreferredDistance(
+	preferred: { Min: number?, Max: number? },
+	distance: number
+): boolean
 	local min = preferred.Min
 	if min and distance < min then return false end
 
@@ -68,10 +51,6 @@ local function IsPreferredDistance(preferred: { Min: number?, Max: number? }, di
 	return true
 end
 
---- Priority of a single skill. `isCombo` tells whether it is the planned step.
----
---- The only place where the arithmetic lives: both the winner selection and the
---- hold check go through it, so the rules cannot drift apart.
 function SkillPriority.Score(
 	config: BotsCharacters.BotCharacterConfig,
 	options: BotsCharacters.SkillPreference,
@@ -79,14 +58,14 @@ function SkillPriority.Score(
 	distance: number,
 	isCombo: boolean
 ): number
-	local conditionWeight = GetConditionWeight(config)
+	local conditionWeight = SkillPriority:GetConditionWeight(config)
 	local score = options.Priority or 0
 
 	score += Conditions.Count(mask, options.PreferredConditions) * conditionWeight
 	score -= Conditions.Count(mask, options.PenaltyConditions) * conditionWeight
 
 	local preferred = options.PreferredDistance
-	if preferred and IsPreferredDistance(preferred, distance) then
+	if preferred and SkillPriority:IsPreferredDistance(preferred, distance) then
 		score += conditionWeight
 	end
 
@@ -97,15 +76,6 @@ function SkillPriority.Score(
 	return score
 end
 
---- Returns the skill with the highest priority, or `nil` when nothing fits.
----
---- `comboSkillId` is the skill currently in the plan: it gets `ComboWeight` and
---- wins every tie. That keeps the combo as the backbone of the behaviour, with
---- conditions only shifting it when they offer a strict advantage.
----
---- `blocked` holds the skills that hit their `MaxRepeats` limit this cycle:
---- they are skipped entirely, so the bot cannot keep re-selecting a
---- self-chaining skill (Punch) through the fallback path.
 function SkillPriority.Select(
 	config: BotsCharacters.BotCharacterConfig,
 	candidates: { Candidate },
@@ -114,8 +84,10 @@ function SkillPriority.Select(
 	comboSkillId: string?,
 	blocked: { [string]: boolean }?
 ): ScoredSkill?
-	local best: ScoredSkill? = nil
-	local ties: { string } = {}
+	local bestId: string? = nil
+	local bestScore = 0
+
+	table.clear(TIES)
 
 	for _, candidate in candidates do
 		local id = candidate.Data.Id
@@ -123,7 +95,7 @@ function SkillPriority.Select(
 
 		local options = config.Skills[id]
 		if not options then continue end
-		if not IsEligible(options, mask) then continue end
+		if not SkillPriority:IsEligible(options, mask) then continue end
 
 		local maxDistance = options.Distance
 		if maxDistance and distance > maxDistance then continue end
@@ -131,42 +103,25 @@ function SkillPriority.Select(
 		local isCombo = comboSkillId ~= nil and id == comboSkillId
 		local score = SkillPriority.Score(config, options, mask, distance, isCombo)
 
-		if not best or score > best.Score then
-			best = { Id = id, Score = score }
-			table.clear(ties)
-			table.insert(ties, id)
-		elseif score == best.Score then
-			table.insert(ties, id)
+		if not bestId or score > bestScore then
+			bestId = id
+			bestScore = score
+			table.clear(TIES)
+			table.insert(TIES, id)
+		elseif score == bestScore then
+			table.insert(TIES, id)
 		end
 	end
 
-	if not best then return nil end
+	if not bestId then return nil end
 
-	-- Tie: the plan wins over conditions, everything else is random.
-	for _, id in ties do
-		if comboSkillId and id == comboSkillId then return { Id = id, Score = best.Score } end
+	for _, id in TIES do
+		if comboSkillId and id == comboSkillId then return { Id = id, Score = bestScore } end
 	end
 
-	return { Id = ties[math.random(1, #ties)], Score = best.Score }
+	return { Id = TIES[math.random(1, #TIES)], Score = bestScore }
 end
 
---- Should the bot release a held skill right now.
----
---- Only the config rules live here: `HoldUntil` (emergency abort) and `HoldWhile`
---- (keep holding while at least one condition is met). The defense layer passes
---- no rival for the recompute fallback: the bot has a single action slot and the
---- question "who owns it" is answered by the posture, not by the attack rating.
---- `bestId` therefore stays available for attacking skills held as part of a combo.
----
---- Order:
---- 1. `HoldUntil` fired — emergency release, nothing is computed;
---- 2. `HoldWhile` is set — hold while at least one of its conditions is met;
---- 3. `HoldWhile` is not set — fallback by recomputation: release as soon as the
----    skill is no longer the best candidate. If no candidates are left (all are on
----    cooldown) holding still makes sense, so there is nothing to release to.
----
---- An empty list counts as a missing field: `{}` is truthy in Luau, and without
---- this check `HoldWhile = {}` would mean "release every frame".
 function SkillPriority.ShouldRelease(
 	config: BotsCharacters.BotCharacterConfig,
 	skillId: string,

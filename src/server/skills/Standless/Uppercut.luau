@@ -57,6 +57,11 @@ const Skill: Types.SkillData = {
 		Ragdoll = {
 			Duration = 2,
 		},
+		
+		HitEffects = {{
+			Particle = "Default";
+			Sound = "Sounds/UppercutHit";
+		}};
 	},
 }
 
@@ -83,10 +88,6 @@ function Skill.onInit(self)
 
 					table.clear(self.AlreadyHit)
 
-					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
-						Character = self.Character.instance,
-						EffectsFolder = self:GetAsset("Models/UppercutHit"),
-					})
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
 						Animation = self:GetAsset("Animations/Uppercut"),
@@ -95,6 +96,11 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/UppercutVL"),
+					})
+					
+					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
+						Character = self.Character.instance,
+						EffectsFolder = self:GetAsset("Models/UppercutHit"),
 					})
 				end,
 			},
@@ -112,26 +118,15 @@ function Skill.onInit(self)
 						if table.find(self.AlreadyHit, Target) then continue end
 
 						CombatService:Attack({
-							Attacker = character,
+							Skill = self,
 							Victim = Target,
 							Info = AttackInfo,
-						}):andThen(function(Data: Types.AttackData)
-							if not Data.State.Success then return end
-							table.insert(self.AlreadyHit, Target)
-
-							if Data.State.PerfectBlocked or Data.State.BlockBroken then return end
-
-							if #self.AlreadyHit <= 1 then
-								VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
-									Character = self.Character.instance,
-									EffectsFolder = self:GetAsset("Models/UppercutHit"),
-								})
+						}):andThen(function(Data)
+							if not Data.State.Success then
+								return
 							end
-
-							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-								Origin = Data.Victim.RootPart.CFrame,
-								Sound = self:GetAsset("Sounds/UppercutHit"),
-							})
+							
+							table.insert(self.AlreadyHit, Target)
 						end)
 					end
 				end,

@@ -232,7 +232,7 @@ function Skill.onInit(self)
 						table.insert(self.AlreadyHit, Target)
 
 						CombatService:Attack({
-							Attacker = character,
+							Skill = self,
 							Victim = Target,
 							Info = AttackInfo,
 						}):andThen(function(Data: types.AttackData)

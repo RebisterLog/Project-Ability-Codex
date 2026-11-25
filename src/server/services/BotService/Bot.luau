@@ -2,76 +2,36 @@
 --!optimize 2
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
-local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
-local types = require(ServerScriptService.server.types)
-
-local Crane = require(ReplicatedStorage.shared.packages.Crane)
-local NavigationController = require(script.Parent.NavigationController)
-
 local Attack = require(script.Parent.Attack)
+local BotsCharacters = require(ReplicatedStorage.shared["bot-characters"])
+local CombatSnapshot = require(script.Parent.CombatSnapshot)
 local Conditions = require(script.Parent.Conditions)
+local Crane = require(ReplicatedStorage.shared.packages.Crane)
 local Defense = require(script.Parent.Defense)
+local NavigationController = require(script.Parent.NavigationController)
 local Posture = require(script.Parent.Posture)
 local Sense = require(script.Parent.Sense)
+local SkillIndex = require(script.Parent.SkillIndex)
 local SkillPriority = require(script.Parent.SkillPriority)
 local Threat = require(script.Parent.Threat)
+local types = require(ServerScriptService.server.types)
 
 local bor = bit32.bor
 
---- The bot: target, navigation, spec.
----
---- There are exactly two decisions here and they live in separate layers:
----   * defense is event driven (`OnIncoming`), because the perfect-block window is
----     0.25 seconds long and a single frame of delay decides whether it happens;
----   * attack runs on the tick (`Tick`), because plans and priorities are in no
----     hurry.
----
---- Owns the action slot: while the slot is held by the defense the attack leaves it
---- alone, and an incoming threat preempts the attack. A state machine used to do
---- this, but the states differed only by posture, so telling them apart was
---- pointless.
-
--- How often the bot thinks. The tick is not bound to a frame: the decision is made
--- on accumulated time so the behaviour does not depend on FPS.
 local TICK_INTERVAL = 1 / 60
 
---- Bots bypass SkinModule's ownership check, so a typo in a bot config would
---- make SpecService return nil and leave the bot without a spec. Fall back to
---- the built-in skin instead.
-local function resolveSkin(specId: string, skinName: string?): string
-	const requested = skinName or "None"
-	if requested == "None" then return "None" end
-
-	const skins = Crane:GetService("ConfigService"):Get("Skins")
-	const specSkins = skins and skins[specId]
-	if specSkins and specSkins[requested] then return requested end
-
-	return "None"
-end
-
---- Only `Casted` is needed from the service, so it is described here instead of
---- dragging the types of the whole CombatService in, and `typeof` does not accept
---- calls.
-type CombatServiceLike = {
-	Casted: {
-		Connect: (self: any, callback: (data: types.HitboxData) -> ()) -> RBXScriptConnection,
-	},
-}
-
-type BotProperities = {
+type BotProperties = {
 	Target: types.Character?,
 	Navigator: NavigationController.NavigationController,
 	Config: BotsCharacters.BotCharacterConfig,
+	SkillIndex: SkillIndex.SkillIndex,
 	Cleaner: typeof(Crane.Buttler.new()),
 	TargetCleaner: typeof(Crane.Buttler.new()),
 	Character: types.Character,
-
-	CombatService: CombatServiceLike,
+	Destroyed: boolean,
 
 	Posture: Posture.Posture,
-
 	Roles: Defense.Roles,
 	Sense: Sense.Sense,
 	Threat: Threat.Threat,
@@ -79,15 +39,12 @@ type BotProperities = {
 	Combo: BotsCharacters.SkillCombo,
 	ComboIndex: number,
 
-	-- A skill held by the bot (Charge) and the time it was pressed. The timeout
-	-- is the guard against "forgot to release" when no condition fires.
 	HeldSkill: string?,
 	HeldAt: number,
-
-	-- Per-skill repeat guard shared with Attack.Step (Punch self-chains).
-	-- Sticky: an entry expires only by time, never because another skill was
-	-- chosen in between.
 	Repeats: { [string]: { Count: number, At: number } },
+	Blocked: { [string]: boolean },
+	NavBlocked: boolean,
+	DodgeIntent: boolean,
 
 	Random: Random,
 	Accumulator: number,
@@ -96,9 +53,8 @@ type BotProperities = {
 type BotMethods = {
 	SetTarget: (self: Bot, character: types.Character?) -> (),
 	ClearTarget: (self: Bot) -> (),
-
-	OnIncoming: (self: Bot, data: types.HitboxData) -> (),
-	Tick: (self: Bot, dt: number) -> (),
+	OnIncoming: (self: Bot, data: types.HitboxData, now: number) -> (),
+	Tick: (self: Bot, dt: number, tickId: number, now: number) -> (),
 	SetPosture: (self: Bot, posture: Posture.Posture) -> (),
 
 	IsGuardHeld: (self: Bot) -> boolean,
@@ -106,64 +62,41 @@ type BotMethods = {
 	ReleaseGuard: (self: Bot) -> (),
 
 	ReleaseHeld: (self: Bot) -> (),
-	UpdateHeld: (self: Bot, mask: number) -> (),
+	UpdateHeld: (self: Bot, mask: number, now: number) -> (),
 
+	ActivateSkill: (self: Bot, id: string, owner: types.Spec?, spawned: boolean?) -> (),
 	Destroy: (self: Bot) -> (),
 }
 
-export type Bot = BotProperities & BotMethods
+export type Bot = BotProperties & BotMethods
 
 local Bot = {}
 Bot.__index = Bot
 
---- Defense roles come from the tags of the skills of the specs and not from the
---- config: the skill itself decides what it is, the guard or the retreat.
-local function CollectRoles(specs: { types.Spec? }): { Defense.RoleSkill }
-	local roles: { Defense.RoleSkill } = {}
+function Bot.ResolveSkin(specId: string, skinName: string?): string
+	local requested = skinName or "None"
+	if requested == "None" then return "None" end
 
-	for _, spec in specs do
-		if not spec then continue end
+	local skins = Crane:GetService("ConfigService"):Get("Skins")
+	local specSkins = skins and skins[specId]
+	if specSkins and specSkins[requested] then return requested end
 
-		for id, skill in spec.Skills do
-			table.insert(roles, { Id = id, Tags = skill.Data.SkillCharacters })
-		end
-	end
-
-	return roles
-end
-
---- Skills may live in either slot: Standless owns Block/Dash/Punch, Hamon owns
---- the Hamon skills. Helpers below always look in both.
-local function Specs(self: Bot): { types.Spec? }
-	return { self.Character.SubSpec, self.Character.Spec }
-end
-
-local function FindSkill(self: Bot, id: string): (types.Skill?, types.Spec?)
-	for _, spec in Specs(self) do
-		if not spec then continue end
-
-		const skill = spec.Skills[id]
-		if skill then return skill, spec end
-	end
-
-	return nil, nil
+	return "None"
 end
 
 function Bot.IsGuardHeld(self: Bot): boolean
 	local guardId = self.Roles.Guard
 	if not guardId then return false end
 
-	const guard, _ = FindSkill(self, guardId)
-
+	local guard, _ = self.SkillIndex:Find(guardId)
 	return guard ~= nil and guard.Active
 end
 
---- No guard counts as "unavailable": the defense then falls back to the escape.
 function Bot.IsGuardOnCooldown(self: Bot): boolean
 	local guardId = self.Roles.Guard
 	if not guardId then return true end
 
-	const guard, _ = FindSkill(self, guardId)
+	local guard, _ = self.SkillIndex:Find(guardId)
 	if not guard then return true end
 
 	return guard:IsOnCooldown()
@@ -173,38 +106,34 @@ function Bot.ReleaseGuard(self: Bot)
 	local guardId = self.Roles.Guard
 	if not guardId then return end
 
-	const _, spec = FindSkill(self, guardId)
+	local _, spec = self.SkillIndex:Find(guardId)
 	if spec then spec:DeactivateSkill(guardId) end
 end
 
---- Drop a held resource skill right now: used by incoming hits and by
---- `UpdateHeld` once any release rule fires.
 function Bot.ReleaseHeld(self: Bot)
-	const skillId = self.HeldSkill
+	local skillId = self.HeldSkill
 	if not skillId then return end
 
 	self.HeldSkill = nil
 
-	const _, spec = FindSkill(self, skillId)
+	local _, spec = self.SkillIndex:Find(skillId)
 	if spec then spec:DeactivateSkill(skillId) end
 end
 
-function Bot.UpdateHeld(self: Bot, mask: number)
-	const skillId = self.HeldSkill
+function Bot.UpdateHeld(self: Bot, mask: number, now: number)
+	local skillId = self.HeldSkill
 	if not skillId then return end
 
-	-- An interrupt (stun, ragdoll, death) can end the skill without going
-	-- through our release rules: forget it instead of holding a stale id.
-	const skill, _ = FindSkill(self, skillId)
+	local skill, _ = self.SkillIndex:Find(skillId)
 	if not skill or not skill.Active then
 		self.HeldSkill = nil
 		return
 	end
 
-	const options = self.Config.Skills[skillId]
-	const holdMax = options and options.HoldMaxTime
+	local options = self.Config.Skills[skillId]
+	local holdMax = options and options.HoldMaxTime
 
-	if holdMax and os.clock() - self.HeldAt >= holdMax then
+	if holdMax and now - self.HeldAt >= holdMax then
 		self:ReleaseHeld()
 		return
 	end
@@ -221,28 +150,33 @@ function Bot.SetPosture(self: Bot, posture: Posture.Posture)
 	local style = Posture.Get(posture)
 	local movementStyle = if posture == "Attack"
 		then Posture.RollAttackStyle(self.Config, self.Random)
+		elseif posture == "Defend" then Posture.RollDefendStyle(self.Config, self.Random)
 		else style.Style
 
 	self.Navigator:SetMovementStyle(movementStyle)
 	self.Navigator:SetHoldDistance(style.HoldDistance)
 
-	-- The guard is only held while the bot backs off: in an attack the slot has to
-	-- be free.
 	if previous == "Defend" and posture ~= "Defend" then self:ReleaseGuard() end
 end
 
---- Reaction to an incoming hit of the target. Called straight from the `Casted`
---- handler: `Casted` flies before `CombatService:Attack` computes the states of the
---- victim, so the guard decision belongs here and not on the next tick.
-function Bot.OnIncoming(self: Bot, data: types.HitboxData)
+function Bot.ActivateSkill(_self: Bot, id: string, owner: types.Spec?, spawned: boolean?)
+	if not owner then return end
+
+	if spawned then
+		task.spawn(function()
+			owner:ActivateSkill(id)
+		end)
+	else
+		owner:ActivateSkill(id)
+	end
+end
+
+function Bot.OnIncoming(self: Bot, data: types.HitboxData, now: number)
 	local target = self.Target
 	if not target then return end
+	if not self.Threat:Track(data, target, now) then return end
 
-	if not self.Threat:Track(data, target) then return end
-
-	-- A charge in progress must never survive the start of an enemy attack.
 	self:ReleaseHeld()
-
 	self:SetPosture("Defend")
 
 	local decision = Defense.React(data, {
@@ -255,68 +189,79 @@ function Bot.OnIncoming(self: Bot, data: types.HitboxData)
 	local skillId = if decision == "Press"
 		then self.Roles.Guard
 		else if decision == "Escape" then self.Roles.Escape else nil
-
 	if not skillId then return end
 
-	-- `Skill:Activate` yields, so the press is spawned: the guard state
-	-- (`PerfectBlockTime`) has to settle before the states of the victim are
-	-- computed.
-	task.spawn(function()
-		const _, spec = FindSkill(self, skillId)
-		if spec then spec:ActivateSkill(skillId) end
-	end)
+	local _, spec = self.SkillIndex:Find(skillId)
+	self:ActivateSkill(skillId, spec, true)
 end
 
-function Bot.Tick(self: Bot, dt: number)
+function Bot.Tick(self: Bot, dt: number, tickId: number, now: number)
 	self.Accumulator += dt
 	if self.Accumulator < TICK_INTERVAL then return end
 
-	self.Accumulator = 0
+	self.Accumulator -= TICK_INTERVAL
+	if self.Accumulator > TICK_INTERVAL then self.Accumulator = 0 end
 
 	if not self.Target then
 		self:SetPosture("Idle")
 		return
 	end
 
-	self.Sense:Refresh()
+	self.Sense:Refresh(tickId)
 
 	local mask = self.Sense.Mask
-	if self.Threat:IsRecent() then mask = bor(mask, Conditions.Bit("OWN_THREATENED")) end
+	local recent = self.Threat:IsRecent(now)
+	if recent then mask = bor(mask, Conditions.Bit("OWN_THREATENED")) end
 
-	self:UpdateHeld(mask)
+	self:UpdateHeld(mask, now)
 
-	const guardId = self.Roles.Guard
-
+	local guardId = self.Roles.Guard
+	local released = false
 	if
 		guardId
 		and self:IsGuardHeld()
 		and Defense.ShouldReleaseGuard(self.Config, guardId, mask)
 	then
 		self:ReleaseGuard()
+		released = true
 	end
 
-	-- A held Charge is a kiting window: back away to the Defend distance and
-	-- leave the attack slot alone until the hold is released. Attack.Step already
-	-- no-ops while a skill is active; the early return keeps this posture from
-	-- being overwritten by the Attack posture on the same tick.
+	if released then CombatSnapshot:Get(self.Character):Refresh(self.Character, -1) end
+
 	if self.HeldSkill == "Charge" then
 		self:SetPosture("Charge")
 		return
 	end
 
-	-- The slot goes to the defense for what a block can take, and for a hit that has
-	-- already landed. "Does it have an active skill" must not be used for this: a
-	-- target holding a block stays active indefinitely, and the bot would back off
-	-- from it for the whole fight; a windup of an unblockable hit is a window for a
-	-- counter attack, and retreating there only gets in the way (see
-	-- `Defense.ShouldDefend`).
-	if Defense.ShouldDefend(mask, self.Threat:IsRecent()) then
+	if Defense.ShouldDefend(mask, recent) then
 		self:SetPosture("Defend")
 		return
 	end
 
 	self:SetPosture("Attack")
-	Attack.Step(self, mask, self.Sense.Distance)
+
+	local navState = self.Navigator:GetState()
+	self.NavBlocked = navState == "Pathfinding"
+		or navState == "FollowingPath"
+		or navState == "HoldingDistance"
+	self.DodgeIntent = Conditions.Has(mask, "TARGET_ATTACKING")
+		or Conditions.Has(mask, "OWN_THREATENED")
+
+	local id, mode = Attack.Step(self, mask, self.Sense.Distance, now)
+	if not id then return end
+
+	if mode == "summon" then
+		self:ActivateSkill("Summon", self.SkillIndex:SummonOwner())
+		return
+	end
+
+	local _, owner = self.SkillIndex:Find(id)
+	if mode == "hold" then
+		self.HeldSkill = id
+		self.HeldAt = now
+	end
+
+	self:ActivateSkill(id, owner, mode == "hold")
 end
 
 function Bot.SetTarget(self: Bot, character: types.Character?)
@@ -329,6 +274,7 @@ function Bot.SetTarget(self: Bot, character: types.Character?)
 	if not (character.Spec or character.SubSpec) then return end
 
 	self.TargetCleaner:Clean()
+	if self.Target then CombatSnapshot:Forget(self.Target) end
 
 	self.Target = character
 	self.Navigator:SetTarget(character.RootPart)
@@ -341,14 +287,6 @@ function Bot.SetTarget(self: Bot, character: types.Character?)
 		self:ClearTarget()
 	end))
 
-	self.TargetCleaner:Add(self.CombatService.Casted:Connect(function(data: types.HitboxData)
-		if data.Caster ~= self.Target then return end
-
-		self:OnIncoming(data)
-	end))
-
-	-- A freshly acquired target is approached defensively: the same posture the old
-	-- state machine entered with `ChangeState("Defending")`.
 	self:SetPosture("Defend")
 end
 
@@ -358,6 +296,7 @@ function Bot.ClearTarget(self: Bot)
 	self:ReleaseGuard()
 	self:ReleaseHeld()
 
+	if self.Target then CombatSnapshot:Forget(self.Target) end
 	self.Target = nil
 	self.Sense:ClearTarget()
 	self.Threat:Clear()
@@ -369,22 +308,22 @@ function Bot.ClearTarget(self: Bot)
 end
 
 function Bot.Destroy(self: Bot)
+	self.Destroyed = true
 	self.TargetCleaner:Clean()
-	self.Cleaner:Clean()
+	self.Cleaner:Destroy()
+	CombatSnapshot:Forget(self.Character)
 
 	self.Character.Navigator = nil
 end
 
 return {
-	new = function(character: types.Character, config: BotsCharacters.BotCharacterConfig)
-		-- The primary spec owns movement/animations; the optional SubSpec owns
-		-- the combat skills (SetSpec routes by the spec's configured type).
-		character:SetSpec(config.Spec, resolveSkin(config.Spec, config.SpecSkin))
+	new = function(character: types.Character, config: BotsCharacters.BotCharacterConfig): Bot
+		character:SetSpec(config.Spec, Bot.ResolveSkin(config.Spec, config.SpecSkin))
 		if config.SubSpec then
-			character:SetSpec(config.SubSpec, resolveSkin(config.SubSpec, config.SubSpecSkin))
+			character:SetSpec(config.SubSpec, Bot.ResolveSkin(config.SubSpec, config.SubSpecSkin))
 		end
 
-		const primarySpec = character.Spec
+		local primarySpec = character.Spec
 		local random = Random.new()
 
 		local navigator = NavigationController.new(character.instance, {
@@ -405,21 +344,20 @@ return {
 		local cleaner = character.Cleaner:Scope()
 		cleaner:Set("Navigator", navigator)
 
+		local skillIndex = SkillIndex.new(character, config)
+
 		local bot = setmetatable({
 			Navigator = navigator,
 			Config = config,
+			SkillIndex = skillIndex,
 			Cleaner = cleaner,
 			TargetCleaner = cleaner:Scope(),
 			Target = nil,
 			Character = character,
-
-			CombatService = Crane:GetService("CombatService"),
+			Destroyed = false,
 
 			Posture = "Idle",
-			Roles = Defense.ResolveRoles(
-				CollectRoles({ character.SubSpec, character.Spec }),
-				config.Skills
-			),
+			Roles = skillIndex:ResolveRoles(config.Skills),
 			Sense = Sense.new(character),
 			Threat = Threat.new(character),
 
@@ -430,6 +368,9 @@ return {
 			HeldAt = 0,
 
 			Repeats = {},
+			Blocked = {},
+			NavBlocked = false,
+			DodgeIntent = false,
 
 			Random = random,
 			Accumulator = 0,
@@ -441,10 +382,6 @@ return {
 			if not attacker then return end
 
 			bot:SetTarget(attacker)
-		end))
-
-		cleaner:Add(RunService.Heartbeat:Connect(function(dt)
-			bot:Tick(dt)
 		end))
 
 		Crane:GetService("CollisionService"):SetCollisionGroup("NPC", character.instance)

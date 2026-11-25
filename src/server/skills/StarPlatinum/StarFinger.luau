@@ -34,6 +34,11 @@ const Skill: types.SkillData = {
 			Priority = Enums.Stun.Medium,
 			Duration = 1, --1.5
 		},
+		
+		HitEffects = {{
+			Particle = "Default";
+			Sound = "Default";
+		}};
 	},
 }
 

@@ -53,6 +53,11 @@ const Skill: types.SkillData = {
 			Velocity = Vector3.new(-25, 0, 0),
 			Duration = 0.2,
 		},
+		
+		HitEffects = {{
+			Particle = "Default";
+			Sound = "Default";
+		}};
 	},
 }
 

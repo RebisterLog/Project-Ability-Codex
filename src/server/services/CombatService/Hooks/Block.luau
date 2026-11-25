@@ -38,6 +38,8 @@ return {
 			Data.Info.Restand = nil
 			Data.Info.Stun = nil
 			Data.Info.Bleed = nil
+			Data.Info.HitEffects = nil
+			Data.Info.HitAnimations = nil
 
 			Data.Info.Knockback = nil
 			Data.Info.Angular = nil

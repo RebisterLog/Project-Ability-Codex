@@ -6,10 +6,12 @@ const types = require(ServerScriptService.server.types)
 
 const VFXService = Crane:GetService("VFXService")
 const CombatService = Crane:GetService("CombatService")
+const PlayersService = Crane:GetService("PlayersService")
+
 const DefaultHits = ReplicatedStorage.assets.Default.Hits
-const Hamon = ReplicatedStorage.assets.Default.Hamon
-const HamonHitVFX = Hamon.VFXs and Hamon.VFXs:FindFirstChild("Hit")
-const HamonHitSound = Hamon.Sounds and Hamon.Sounds:FindFirstChild("Hit")
+--const Hamon = ReplicatedStorage.assets.Default.Hamon
+--const HamonHitVFX = Hamon.VFXs and Hamon.VFXs:FindFirstChild("Hit")
+--const HamonHitSound = Hamon.Sounds and Hamon.Sounds:FindFirstChild("Hit")
 
 const function pickRandom(folder: Folder, className: string): Instance?
 	const pool = {}
@@ -21,6 +23,20 @@ const function pickRandom(folder: Folder, className: string): Instance?
 	if #pool == 0 then return nil end
 	return pool[math.random(1, #pool)]
 end
+
+--[[
+	HitAnimations = HitAnimations = {Folder} || "Default"
+
+	HitEffects = {
+		{
+			BodyPart = BasePart || "Head" || "Torso",
+			Particle = Particle || "Models/BarrageHit" || "Default",
+			LookAt = "Attacker" || "Victim",
+			Sound = Sound || "Sounds/BarrageHit" || "Default",
+			SpecName: string?
+		};
+	}
+]]
 
 return {
 	Name = "HitFeedback",
@@ -37,15 +53,42 @@ return {
 		if Data.DamageDealt == nil and not Data.Victim:GetParameter("GodMode") then return true end
 
 		const victim = Data.Victim.instance
+		const attacker = Data.Attacker.instance
+		const skill = Data.Skill
 
-		VFXService:StartEffect(Players:GetPlayers(), "HitFeedback", {
-			Character = victim,
-			Effects = Data.Info.HitEffects or DefaultHits.HitEffects,
-			Sound = pickRandom(Data.Info.HitSounds or DefaultHits.HitSounds, "Sound"),
-		})
-
+		for _, v in Data.Info.HitEffects or {} do
+			local Particle = v.Particle
+			local Sound = v.Sound
+			
+			if type(Particle) == "string" then
+				if Particle == "Default" then
+					Particle = DefaultHits.HitEffects.BaseHitVFX
+				elseif skill then
+					Particle = skill:TryGetAsset(v.Particle)
+				end
+			end
+			
+			if type(Sound) == "string" then
+				if Sound == "Default" then
+					Sound = DefaultHits.HitSounds.Hit2
+				elseif skill then
+					Sound = skill:TryGetAsset(Sound)
+				end
+			end
+			
+			VFXService:StartEffect(Players:GetPlayers(), "HitFeedback", {
+				Attacker = attacker,
+				Victim = victim,
+				BodyPart = v.BodyPart,
+				LookAt = v.LookAt or "Attacker",
+				Particle = Particle,
+				Sound = Sound
+			})
+		end
+		
 		const animation =
-			pickRandom(Data.Info.HitAnimations or DefaultHits.HitAnimations, "Animation")
+			Data.Info.HitAnimations and
+			pickRandom((Data.Info.HitAnimations == "Default" and DefaultHits.HitAnimations) or Data.Info.HitAnimations, "Animation")
 		if animation then
 			VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 				Type = "Play",
@@ -57,22 +100,22 @@ return {
 			})
 		end
 
-		if CombatService:GetCharge(Data.Attacker, "HamonCharge") > 0 then
-			if HamonHitVFX and HamonHitVFX:IsA("BasePart") then
-				VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-					Particle = HamonHitVFX,
-					Origin = Data.Victim.RootPart,
-					UseForge = true,
-				})
-			end
+		--if CombatService:GetCharge(Data.Attacker, "HamonCharge") > 0 then
+		--	if HamonHitVFX and HamonHitVFX:IsA("BasePart") then
+		--		VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+		--			Particle = HamonHitVFX,
+		--			Origin = Data.Victim.RootPart,
+		--			UseForge = true,
+		--		})
+		--	end
 
-			if HamonHitSound and HamonHitSound:IsA("Sound") then
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-					Origin = Data.Victim.RootPart,
-					Sound = HamonHitSound,
-				})
-			end
-		end
+		--	if HamonHitSound and HamonHitSound:IsA("Sound") then
+		--		VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+		--			Origin = Data.Victim.RootPart,
+		--			Sound = HamonHitSound,
+		--		})
+		--	end
+		--end
 
 		return true
 	end,

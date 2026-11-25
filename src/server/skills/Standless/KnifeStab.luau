@@ -75,6 +75,8 @@ const Skill: types.SkillData = {
 			Duration = 0.5,
 			Priority = Enums.Stun.Medium,
 		},
+
+		HitAnimations = "Default",
 	},
 }
 

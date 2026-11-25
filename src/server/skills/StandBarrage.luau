@@ -50,6 +50,13 @@ const Skill: types.SkillData = {
 			Lift = 0.75,
 			Hold = 0.05,
 		},
+		
+		HitAnimations = "Default",
+		
+		HitEffects = {{
+			Particle = "Models/BarrageHit";
+			Sound = "Default";
+		}};
 	} :: types.AttackInfo,
 
 	PostBarrageInfo = {
@@ -80,6 +87,13 @@ const Skill: types.SkillData = {
 			Hold = 0.25,
 			MaxForce = Vector3.new(100_000, 0, 100_000),
 		},
+		
+		HitAnimations = "Default",
+		
+		HitEffects = {{
+			Particle = "Models/BarrageHeavyHit";
+			Sound = "Default";
+		}};
 	},
 }
 
@@ -169,7 +183,7 @@ function Skill.onInit(self)
 
 					for _, target in targets do
 						CombatService:Attack({
-							Attacker = character,
+							Skill = self,
 							Victim = target,
 							Info = self.Data.BarrageInfo,
 						})
@@ -217,7 +231,7 @@ function Skill.onInit(self)
 
 					for i, target in targets do
 						CombatService:Attack({
-							Attacker = character,
+							Skill = self,
 							Victim = target,
 							Info = self.Data.PostBarrageInfo,
 						})

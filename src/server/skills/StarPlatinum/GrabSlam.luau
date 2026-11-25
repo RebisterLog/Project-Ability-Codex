@@ -145,7 +145,7 @@ function Skill.onInit(self)
 						Attacker = character,
 						Victim = self.Target,
 						Info = {
-							Priority = Enums.IFrames.True,
+							Priority = Enums.IFrames.True, -- grab?
 							Damage = if frame == 20 then 10 else 0.5,
 							Block = {
 								Blockable = true,
@@ -154,6 +154,11 @@ function Skill.onInit(self)
 								BlockCancel = false,
 								BlockIgnore = false,
 							},
+							
+							HitEffects = {{
+								Particle = "Models/BarrageHeavyHit";
+								Sound = "Default";
+							}};
 						},
 					})
 				end,
