@@ -38,25 +38,40 @@ function VFXService.onStart(self: typeof(VFXService))
 	end)
 end
 
+-- Effects are registered at onStart, but Rojo can sync a new effect module a
+-- little later than the service boots. Resolve it on demand instead of losing
+-- the packet entirely.
+const function resolveEffect(self: typeof(VFXService), name: string): Effect?
+	if self.Effects[name] then return self.Effects[name] end
+
+	for _, module in EffectsFolder:QueryDescendants("ModuleScript") do
+		if module.Name ~= name then continue end
+		const effect = require(module) :: Effect
+		self.Effects[name] = effect
+		return effect
+	end
+	return nil
+end
+
 function VFXService:StartEffect(name: string, data: any?)
-	if not self.Effects[name] then
+	const effect = resolveEffect(self, name)
+	if not effect then
 		Crane.Utils.Log(script.Name, `Can't find VFX with name {name}`, "error")
 		return
 	end
 
-	const effect: Effect = self.Effects[name]
 	if effect.Validate and not effect:Validate(data) then return end
 
 	effect:onStart(data)
 end
 
 function VFXService:StopEffect(name: string, data: any?)
-	if not self.Effects[name] then
+	const effect = resolveEffect(self, name)
+	if not effect then
 		Crane.Utils.Log(script.Name, `Can't find VFX with name {name}`, "error")
 		return
 	end
 
-	const effect: Effect = self.Effects[name]
 	if effect.onStop then effect:onStop(data) end
 end
 

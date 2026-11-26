@@ -66,6 +66,9 @@ return {
 				elseif skill then
 					Particle = skill:TryGetAsset(v.Particle)
 				end
+				-- An unresolved skin key must never reach EmitParticle: it
+				-- would try to call :Clone() on a plain string on the client.
+				if type(Particle) == "string" then Particle = DefaultHits.HitEffects.BaseHitVFX end
 			end
 
 			if type(Sound) == "string" then
@@ -74,6 +77,7 @@ return {
 				elseif skill then
 					Sound = skill:TryGetAsset(Sound)
 				end
+				if type(Sound) == "string" then Sound = nil end
 			end
 
 			VFXService:StartEffect(Players:GetPlayers(), "HitFeedback", {
