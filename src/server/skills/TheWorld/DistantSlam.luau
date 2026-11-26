@@ -184,10 +184,9 @@ function Skill:onInit()
 			{
 				45,
 				function()
-					if self.StrikeSequence then
-						self.StrikeSequence:Play()
-						self.StrikeSequence:Await()
-					end
+					-- The strike is awaited by Activate, not here: blocking
+					-- this frame callback would stall the telegraph itself.
+					if self.StrikeSequence then self.StrikeSequence:Play() end
 				end,
 			},
 
@@ -197,6 +196,8 @@ function Skill:onInit()
 end
 
 function Skill:Activate()
+	self.Target = nil
+
 	const marked = getMarkedKnives(self)
 	if not marked or not marked.Marks then return end
 
@@ -226,7 +227,10 @@ function Skill:Activate()
 		self.TelegraphSequence:Play()
 		self.TelegraphSequence:Await()
 	end
-	if self.StrikeSequence then self.StrikeSequence:Await() end
+
+	-- A strike interrupted during the telegraph never starts; Await() would
+	-- hang forever on a sequence stuck in the None state.
+	if self.StrikeSequence and self.StrikeSequence:IsPlaying() then self.StrikeSequence:Await() end
 end
 
 function Skill:Interrupt()
