@@ -1,3 +1,0 @@
-const module = {}
-
-return module
