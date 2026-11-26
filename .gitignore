@@ -7,7 +7,6 @@
 
 sourcemap.json
 
-# generated docs
 docs/ref/
 .opencode/
 .sharrowkin/
@@ -15,3 +14,6 @@ docs/ref/
 .zed/
 docs/
 mockups/
+opencode.json
+cli.json
+.obsidian/
