@@ -61,36 +61,6 @@ const Undyne: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		["Grab"] = {
-			Distance = 6,
-			PreferredDistance = {
-				Min = 4,
-				Max = 6,
-			},
-
-			RequiredConditions = {
-				"TARGET_BLOCKING",
-			},
-
-			PreferredConditions = {
-				"TARGET_BLOCKING",
-				"TARGET_STUNNED",
-			},
-		},
-
-		["Barrage"] = {
-			Distance = 10,
-			PreferredDistance = {
-				Min = 6,
-				Max = 10,
-			},
-
-			ForbiddenConditions = {
-				"TARGET_RAGDOLLED",
-				"TARGET_ARMORED",
-			},
-		},
-
 		["ArcSpearStrike"] = {
 			Distance = 7,
 			PreferredDistance = {

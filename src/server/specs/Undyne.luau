@@ -13,10 +13,7 @@ const Spec = {
 		["Punch"] = "~/skills/Punch",
 		["Block"] = "~/skills/Block",
 		["Run"] = "~/skills/Run",
-		-- ["Grab"] = "~/skills/Grab",
-		--
 
-		["Barrage"] = "~/skills/Barrage",
 		["ArcSpearStrike"] = "@Specs/Undyne/ArcSpearStrike",
 		["WaitALittleBit"] = "~/skills/Undyne/WaitALittleBit",
 	},
