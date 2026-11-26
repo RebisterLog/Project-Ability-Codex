@@ -1,10 +1,10 @@
 # Параметры персонажа
 
-Параметры — многослойные временные модификаторы компонента персонажа. Несколько источников могут добавить один и тот же параметр; последний слой имеет приоритет и удаляется при очистке владельца.
+Параметры — многослойные временные модификаторы компонента персонажа. Несколько источников могут добавить один и тот же параметр; приоритет определяет парсер (`LowestParser` для `MaxWalkSpeed`/`MaxJumpPower`, `HighestParser` для `MinWalkSpeed`/`IFrames`, приоритетный — для `Stun`, `MultParser` для множителей, `ORParser` для boolean, `LastParser` для `CastingSkill`), а не просто «последний победил».
 
 ```luau
-local mod = character:AddParameter("MaxWalkSpeed", 3)
-local current = character:GetParameter("MaxWalkSpeed")
+const mod = character:AddParameter("MaxWalkSpeed", 3) -- { Value, Cleaner, Destroy }
+const current = character:GetParameter("MaxWalkSpeed")
 mod:Destroy() -- освободить слой
 ```
 
@@ -20,9 +20,14 @@ mod:Destroy() -- освободить слой
 | `Ragdoll` | Принудительное состояние рэгдолла. |
 | `Restrain` | Отключение движения. |
 | `NoCollision` | Отключение коллизий персонажа. |
+| `CastingSkill` | Активный каст (устанавливается `Skill.Activate` на всё время применения). |
+| `CooldownMultiplier`, `DamageMultiplier`, `DamageReceivalMultiplier`, `HealMultiplier` | Множители (используют `MultParser`). |
+| `NoRotate`, `Bleeding`, `Burning`, `GodMode`, `Restand`, `NoSkillCast`, `NoDeath`, `DamageHold`, `HamonCharge` | Другие часто используемые флаги и состояние. |
+
+Для ограничения скорости каста используйте `Enums.CastSpeed.Medium`, а не числовой литерал. Другие хелперы: `SetParameterValue`, `RefreshParameter`, `WatchParameter`.
 
 ## Владение
 
-Добавляйте параметры в `onInit` или в кадре секвенса, затем регистрируйте возвращённый объект в `self.Janitor` или `seq.Cleaner`. При прерывании [[Sequencer (RU)]] cleaner освобождает все слои, и движение автоматически возвращается к предыдущему состоянию.
+Добавляйте параметры в `onInit` или в кадре секвенса, затем регистрируйте возвращённый объект в `self.Cleaner` скилла (`Crane.Buttler`, `Janitor` у скилла нет) или в `seq.Cleaner`. При прерывании [[Sequencer (RU)]] cleaner освобождает все слои, и движение автоматически возвращается к предыдущему состоянию.
 
 Связанные: [[Skill contract and lifecycle (RU)]], [[Knockback and movement (RU)]], [[Bot combat AI (RU)]]. Оригинал: [[Character parameters]].

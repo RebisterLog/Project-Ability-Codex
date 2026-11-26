@@ -13,6 +13,7 @@ local targets = CombatService:Hitbox({
         SortByDistance = true,
         CanQueryCaster = false,
         Parameters = OverlapParams.new(),
+        MovementCorrection = true, -- компенсация задержки для ближнего боя
         Debug = false,
     },
 })
@@ -26,12 +27,12 @@ local targets = CombatService:Hitbox({
 | `SortByDistance` | Ближайшие цели первыми. |
 | `CanQueryCaster` | Разрешить возврат самого кастера. |
 | `Parameters` | Пользовательский `OverlapParams`. |
-| `MovementCorrection` | Перенести начало запроса в компенсированную по задержке клиентскую позу кастера (не более 3 стадсов, только горизонталь); при отсутствии сэмпла или для ботов — эвристика по скорости с лимитом 2 стадса. Игнорируется при явном `Origin`. См. [[Lag compensation (RU)]]. |
+| `MovementCorrection` | Перенести начало запроса в предсказанную клиентскую позу кастера из `ClientStateService:GetMetadata(Caster).Predicted`; если сэмпла нет — эвристика по скорости с лимитом `MOVEMENT_CORRECTION_LIMIT = 2`. Игнорируется при явном `Origin`. Используется в `Punch.luau`. См. [[Lag compensation (RU)]]. |
 | `Debug` | Визуализация запроса через VFX. |
 
 ## Типичный паттерн
 
-Кадры цикла вызывают хитбокс, пропускают цели уже в `self.AlreadyHit`, вызывают `CombatService:Attack` и добавляют цель в `AlreadyHit` только при `Data.State.Success`. Это предотвращает многократные попадания по одной цели за циклический секвенс.
+Повторяющиеся кадры (задаются ключами `Interval = N` / `Offset = M`, а не циклом) вызывают хитбокс, пропускают цели уже в `self.AlreadyHit`, вызывают `CombatService:Attack` и добавляют цель в `AlreadyHit` только при `Data.State.Success`. Это предотвращает многократные попадания по одной цели за секвенс. Если скилл можно применить дважды, очистите `self.AlreadyHit` на кадре 0.
 
 Клиентский `TargetLockService` отвечает за выбор и отображение цели, но не решает попадания. См. [[Runtime boundaries (RU)]].
 

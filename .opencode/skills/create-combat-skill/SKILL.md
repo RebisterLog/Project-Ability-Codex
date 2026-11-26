@@ -1,609 +1,155 @@
 ---
 name: create-combat-skill
-description: Generate combat skill modules following PAC project architecture
+description: "Generate new Luau combat skills for Project-Ability-Codex (PAC) — src/server/skills/*.luau with correct SkillData, Sequencer frames, CombatService Hitbox/Attack, VFX effects, asset lookup and registration in specs/Specs.luau. Use this skill whenever the user asks to add, write, implement, create or refactor a combat ability, skill or move in PAC: «создай скилл», «напиши абилку», «новый приём для персонажа», «добавь удар/блок/чардж», even if they never say the words skill module. This skill produces the actual Luau module; for explanations of how PAC combat works, use pac-combat. Do NOT use it for a Russian ТЗ/technical design doc (use create-tech-spec) or for whole character specs, skins and binds (use create-spec)."
 ---
 
 # Create Combat Skill
 
-Instructs the AI to generate a new combat skill module (`src/server/skills/*.luau`) following the PAC project's architecture.
+Create a combat skill module under `src/server/skills/` and wire it into a spec. Skills in PAC are deliberately **not** template-driven: each one defines its own private data and flow. The only real contract is that the module returns a table shaped like `types.SkillData`.
 
----
+## Workflow
 
-## Overview
+1. **Find the closest existing skill** and read it — do not invent a structure. `src/server/skills/TEMPLATE.luau` is the canonical stub; `patterns.md` maps intent → example file.
+2. **Copy the idiom, not the numbers**: `const` bindings, `function Skill.onInit(self)`, `self.Cleaner` (a `Crane.Buttler`), `self:GetAsset("Category/Name")`.
+3. **Pick one flow**: a Sequencer (most attacks), a promise over signals (Block), or a direct toggle (Run).
+4. **Read only the references you need**, from the index at the bottom.
+5. **Register**: add the module key to the spec's `Skills` table and a bind to `src/shared/configs/Specs.luau`.
+6. **Verify** with `lune run tools/format.luau --fix --src`, then `lune run tools/context.luau` / `lune run tools/impact.luau <target>`. There is no test runner; sanity-check in Studio.
 
-Skills are the atomic combat actions in PAC. They are **highly variable** — there is no rigid template. Every skill defines its own structure, data fields, and execution flow. The only commonality is that each skill module returns a table conforming (loosely) to `types.SkillData`.
+## Rules that break code if ignored
+
+These are the highest-frequency mistakes. They are expanded in the references.
+
+- `VFXService:StartEffect/StopEffect` take **exactly three arguments**: `(players, effectName, dataTable)`. Never pass `RootPart` or an animation as a positional argument.
+- Skills own `self.Cleaner` (Buttler), **not** `self.Janitor`. Sequences own `seq.Cleaner`.
+- A Sequencer validator key is `Validator`, not `Validate`. `Validate = function() ... end` inside a sequence is silently ignored (and exists as dead code in a couple of older skills).
+- Repeated frames use `Interval = N` / `Offset = M` keys on the frame entry, not `if frame % N ~= 0 then return end`.
+- `SkillCharacters` are **typed bot tags** (`"Hit"`, `"Stun"`, `"Blockable"`, `"PerfectBlock"`, `"BlockBreak"`, ...), not free-form strings. `OnlyForStand` is a `Tag` value, `BaseSpec` is the asset-fallback field, `Checks` is a private table read by `Skill:Validate`.
+- A **guard-breaking** hit must set `PerfectBlockable = false`: a perfect block parries first, and `BlockBreak` never applies in that branch (`Block.luau:89-96`). Leaving it `true` produces a finisher that can never break a held guard.
+- `DisplayName` is required. The module **filename** is the skill `Id` and must equal the key in the spec's `Skills` table; the string value (`~/skills/...`) is only a convention.
+- Every bind is hold-to-cast on the server. Long casts should release on `self.Deactivated` rather than assuming a single press.
+- Top-level bindings use `const`. Add `--!native` / `--!optimize 2` only for genuinely hot server combat code.
+
+## Minimal correct stub
 
 ```luau
--- Minimal valid skill (Run.luau)
-local Skill = {
-    DisplayName = "Run",
+const Players = game:GetService("Players")
+const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const ServerScriptService = game:GetService("ServerScriptService")
+const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const types = require(ServerScriptService.server.types)
+
+const Skill: types.SkillData = {
+	DisplayName = "NAME",
+	Cooldown = 2,
+	AttackInfo = {
+		Hitbox = { Size = Vector3.new(7, 7, 7), Offset = CFrame.new(0, 0, -3) },
+		Damage = 15,
+		Block = {
+			Blockable = true,
+			PerfectBlockable = false,
+			BlockBreak = false,
+			BlockCancel = false,
+			BlockIgnore = false,
+		},
+		Stun = { Priority = Enums.Stun.Medium, Duration = 0.7 },
+	},
 }
-function Skill.Activate(self)
-    -- toggle walk speed
+
+function Skill.onInit(self)
+	const CombatService = Crane:GetService("CombatService")
+	self.AlreadyHit = {}
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(self.Character, {
+		Frames = {
+			{ 0, function(seq)
+				const anim = self:GetAsset("Animations/NAME")
+				seq.Cleaner:Add(function()
+					VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+						Character = self.Character.instance, Animation = anim.Animation,
+					})
+				end)
+			end },
+			{ 30, function()
+				const Targets = CombatService:Hitbox({
+					Skill = self, Caster = self.Character,
+					Info = self.Data.AttackInfo.Hitbox,
+				})
+				for _, Target in Targets do
+					if table.find(self.AlreadyHit, Target) then continue end
+					CombatService:Attack({
+						Attacker = self.Character, Victim = Target,
+						Info = self.Data.AttackInfo,
+					}):andThen(function(data: types.AttackData)
+						if data.State.Success then table.insert(self.AlreadyHit, Target) end
+					end)
+				end
+			end },
+			{ 45 },
+		},
+	}))
 end
+
+function Skill.Activate(self)
+	if self.Sequence then
+		self.Sequence:Play()
+		self.Sequence:Await()
+	end
+end
+
+function Skill.Interrupt(self)
+	if self.Sequence then self.Sequence:Stop() end
+end
+
 return Skill
 ```
 
-```luau
--- Full-featured skill (Barrage.luau)
-local Skill: types.SkillData = {
-    DisplayName = "Barrage",
-    Cooldown = 2,
-    SkillCharacters = { "Hit", "ComboExtender", "Blockable" },
-    PreBarrageInfo = { ... },
-    BarrageInfo = { ... },
-    PostBarrageInfo = { ... },
-}
-function Skill.onInit(self) ... end
-function Skill.Activate(self) ... end
-function Skill.Interrupt(self) ... end
-return Skill
-```
+Treat this as a skeleton: real skills frequently differ, and `Enums`/`VFXService` locals must be declared as in `TEMPLATE.luau`.
 
----
+## Header comment block
 
-## Comment Block Requirement
-
-Before the `local Skill` declaration, you MUST include a block comment documenting the skill's purpose and all assets it uses, following this format:
+Put a block comment above `const Skill` describing the skill and **every asset it reads**, so the spec's skin config can be checked:
 
 ```luau
 --[=[ SKILL_NAME
 
-   Short description of the skill, what it does, and when it's used.
-
+   Short description: what it does and when it is used.
 
    ASSETS:
-
    Animations
-      AnimName : Animation for [action]
-
+      NAME : Animation for [action]
    Sounds
-      SoundName : Sound for [effect]
-
+      NAME : Sound for [effect]
    Models
-      ModelName : (BasePart) VFX part for [purpose]
-
+      NAME : (BasePart) VFX part for [purpose]
    Stats
-      StatName : Description (CFrame, Vector3, Color3, number, etc.)
+      NAME : CFrame / Vector3 / number used for [tuning]
 ]=]
-
-local Skill = {
-    ...
 ```
 
-Include **all** assets the skill references so developers can verify the spec's skin config provides them. Omit any asset category that isn't used.
-
----
-
-## SkillData Contract — What's Guaranteed vs What's Freeform
-
-### Fields defined by `types.SkillData` (the "contract"):
-
-| Field | Type | Required? | Notes |
-|---|---|---|---|
-| `DisplayName` | `string` | Yes | Human-readable skill name |
-| `Id` | `string` | Set by SkillService | Auto-assigned from module name |
-| `Cooldown` | `number` | No | Seconds before skill can be used again |
-| `AttackInfo` | `types.AttackInfo` | No | Optional — see AttackInfo section below |
-| `SkillCharacters` | `{string}` | No | Arbitrary tags for categorizing the skill |
-| `onInit` | `(self: Skill) -> ()` | No | Called once when skill is first added to spec |
-| `Activate` | `(self: Skill) -> ()` | No | Called when skill fires |
-| `Interrupt` | `(self: Skill) -> ()` | No | Called when skill is interrupted (stun, etc.) |
-
-### **Everything else is skill-defined private data.**
-
-There is no fixed schema. Each skill adds whatever fields it needs:
-
-- **Punch.luau** adds: `ComboCooldown`, `ComboResetTime`, `MaxCombo`
-- **Dash.luau** adds: `DashProperties { Speed, Time }`
-- **Barrage.luau** adds: `PreBarrageInfo`, `BarrageInfo`, `PostBarrageInfo`
-- **Grab.luau** adds: `OnGrab`, `OnThrow`, `Throw { ... }`, `AttackInfo`
-- **Block.luau** adds: nothing beyond the base contract (minimal)
-
-When creating a new skill, **analyze existing skills for the closest analog** rather than forcing a template.
-
----
-
-## Lifecycle Methods — All Optional
-
-### `onInit(self)`
-
-Called once when the skill is constructed (inside `Spec:AddSkill`). Use for setup that needs access to `self.Character` and `self.Spec`.
-
-**Common patterns inside onInit:**
-
-1. **Get services** via `Crane:GetService("ServiceName")`:
-   ```luau
-   local VFXService = Crane:GetService("VFXService")
-   local CombatService = Crane:GetService("CombatService")
-   ```
-
-2. **Access spec assets** for this skill (через `Skill:GetAsset` — путь от корня `Spec.Data.Assets`, с фоллбеком в `BaseSpec`/скин `None`; при промахе `warn` + мягкая остановка + `error`). **Импортируй конкретные ассеты в местах использования** (не общие таблицы категорий):
-   ```luau
-   local blockAnim = self:GetAsset("Animations/Block")
-   VFXService:StartEffect(Players:GetPlayers(), "Animation", {
-       Character = character.instance,
-       Animation = blockAnim,
-   })
-
-   VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-       Origin = RootPart,
-       Sound = self:GetAsset("Sounds/UppercutVL"),
-   })
-
-   -- динамический ключ: self:GetAsset("Animations/Punch" .. self.PunchCount)
-   -- стенд: self:GetAsset("Stand/Animations/Barrage"), self:GetAsset("Stand/Sounds/StarStrike").Sound
-   -- динамический контекст (user/stand): local prefix = self.AssetPrefix or ""; self:GetAsset(prefix .. "Animations/Grab")
-   -- опционально (без warn/soft-stop/error): self:TryGetAsset("Sounds/Dash"), self:TryGetAsset("Stats/Grab/FinalFrame") or 30
-   ```
-
-3. **Initialize state**:
-   ```luau
-   self.AlreadyHit = {}
-   self.PunchCount = 1
-   ```
-
-4. **Create a sequence** (most common pattern):
-   ```luau
-   self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
-       Frames = { ... }
-   }))
-   ```
-
-**Skills that skip onInit entirely:** Block.luau, Run.luau
-
-### `Activate(self)`
-
-Called when the player triggers the skill (after validation passes).
-
-**Patterns seen in real code:**
-
-| Pattern | Used by | Notes |
-|---|---|---|
-| Play sequence and await | Most skills | `self.Sequence:Play()` → `self.Sequence:Await()` |
-| Toggle a state | Run.luau | Just toggles `MinWalkSpeed` parameter |
-| Promise with signals | Block.luau | Uses `Promise.new()` with `self.Deactivated:Once(resolve)` |
-| Multi-sequence management | Grab.luau | Plays `Sequence`, then may play `GrabSequence` |
-
-### `Interrupt(self)`
-
-Called when the character is stunned, ragdolled, or otherwise interrupted during the skill.
-
-**Common cleanup:**
-```luau
-if self.Sequence then self.Sequence:Stop() end
-VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-    Animation = Anims["SkillName"].Animation,
-})
-```
-
-**Skills that skip Interrupt:** Run.luau (no cleanup needed)
-
----
-
-## Sequence Pattern (Most Common)
-
-Frame-based animation sequence using `CombatService.CreateSequence`.
-
-```luau
-self.Sequence = self.Janitor:Add(CombatService.CreateSequence(character, {
-    Frames = {
-        -- { frameNumber, callback }
-        -- Optionally: { frameNumber, callback, loopEndFrame } for looping sections
-        {0, function(seq)
-            -- Setup: parameters, animations, sounds
-            seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 3))
-            seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
-
-            VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-                Animation = Anims["SkillName"],
-                Speed = seq.Speed,
-            })
-            VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["SkillName"])
-
-            -- Cleanup on sequence end/interrupt
-            seq.Cleaner:Add(function()
-                VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-                    Animation = Anims["SkillName"].Animation,
-                })
-            end)
-        end},
-
-        {15, function(seq)
-            -- Hitbox check + attack at this frame
-            local Targets = CombatService:Hitbox({
-                Skill = self,
-                Caster = character,
-                Info = AttackInfo.Hitbox,
-            })
-
-            for _, Target in Targets do
-                if table.find(self.AlreadyHit, Target) then continue end
-
-                CombatService:Attack({
-                    Attacker = character,
-                    Victim = Target,
-                    Info = AttackInfo,
-                }):andThen(function(Data: types.AttackData)
-                    if not Data.State.Success then return end
-                    table.insert(self.AlreadyHit, Target)
-                end)
-            end
-        end, 20}, -- loopEndFrame = 20 means runs frames 15-20 repeatedly
-
-        {45} -- End frame
-    }
-}))
-```
-
-### Cleaner API inside sequences:
-
-| Method | Usage | Description |
-|---|---|---|
-| `seq.Cleaner:Add(object)` | Add cleanup callback or Janitor-managed object | Destroyed when sequence stops/ends |
-| `seq.Cleaner:Set(key, object)` | Like Add but keyed (replaces existing) | Overwrite without duplicate |
-| `seq.Cleaner:Remove(key)` | Remove a keyed object early | Release before sequence ends |
-
-### Sequence validation (optional):
-
-```luau
-self.GrabSequence = self.Janitor:Add(CombatService.CreateSequence(character, {
-    Validate = function()
-        return self.Target.Parent and character.instance.Parent
-    end,
-    Frames = { ... }
-}))
-```
-
-### Alternative: Promise-based flow (no sequence)
-
-Used by Block.luau. Attach to signals, resolve when done:
-
-```luau
-function Block:Activate()
-    local Collector = Crane.Janitor.new()
-    Promise.new(function(resolve)
-        Collector:Add(self.Deactivated:Once(resolve))
-        Collector:Add(CombatService.Attacked:Connect(function(Type, Data)
-            if Type == "Precast" and Data.Victim == character then
-                -- handle block states
-            end
-        end))
-    end):finallyCall(Collector.Destroy, Collector):await()
-end
-```
-
----
-
-## CombatService API
-
-### `CombatService:Hitbox(data: HitboxData): {Character}`
-
-Performs a spatial query to find hit targets.
-
-```luau
-local targets = CombatService:Hitbox({
-    Skill = self,       -- Optional: fires Casted signal if set
-    Caster = character, -- Required
-    Info = {
-        Size = Vector3.new(7, 7, 7),  -- Vector3 for box, number for sphere radius
-        Offset = CFrame.new(0, 0, -3), -- Offset from caster RootPart
-        Origin = CFrame?,              -- Override origin (defaults to RootPart.CFrame)
-        SortByDistance = true?,        -- Sort targets nearest-first
-        CanQueryCaster = false?,       -- Allow hitting self
-        Parameters = OverlapParams?,   -- Custom overlap params
-        Debug = true?,                 -- Visualize hitbox via VFX
-    }
-})
-```
-
-**Size types:**
-- `Vector3` → `GetPartBoundsInBox`
-- `number` → `GetPartBoundsInRadius`
-
-### `CombatService:Attack(data: AttackData): Promise<AttackData>`
-
-Registers an attack on a target. Returns a Promise that resolves with the attack result.
-
-```luau
-CombatService:Attack({
-    Attacker = character,
-    Victim = target,
-    Info = {
-        Damage = 15,
-        Block = {
-            Blockable = true?,     -- Can be blocked
-            PerfectBlockable = false?,
-            BlockBreak = false?,   -- Breaks blocking target's guard
-            BlockCancel = false?,  -- Cancels the block entirely
-            BlockIgnore = false?,  -- Ignores block (grab)
-        },
-        Stun = {
-            Duration = 0.7,
-            Priority = Enums.Stun.Medium,  -- Light=10, Medium=20, Heavy=30
-        },
-        Knockback = {
-            Direction = { Mode = "AwayFromAttacker" }, -- or TowardsAttacker/FromPoint/Custom
-            Push = 40,      -- horizontal studs/s along Direction
-            Lift = 50,      -- vertical studs/s
-            Hold = 0.1,     -- mover lifetime, NOT damping
-            -- Preset = "Launch" is a shortcut for Push/Lift/Hold;
-            -- MaxForce = "Auto" (default) unlocks Y only when Lift ~= 0.
-        },
-        Ragdoll = {
-            Duration = 2,
-        },
-        Angular = {
-            Velocity = Vector3.new(-15, 0, 0),
-            Duration = 0.2,
-        },
-    },
-}):andThen(function(Data)
-    if Data.State.Success then
-        -- Hit connected
-        if Data.State.Continue then
-            -- Allowed to continue combo
-        end
-        if Data.State.Blocked then
-            -- Target was blocking
-        end
-        if Data.State.BlockBroken then
-            -- Target's block was broken
-        end
-        if Data.State.PerfectBlocked then
-            -- Attacker was perfect-blocked (attacker gets punished)
-        end
-    end
-end)
-```
-
-### `AttackData.State` fields:
-
-| Field | Type | Meaning |
-|---|---|---|
-| `Success` | bool | Hit registered (not miss, IFrame, dead) |
-| `Continue` | bool | Attack chain can continue |
-| `Blocking` | bool | Target was holding block |
-| `Blocked` | bool | Hit landed on block |
-| `BlockBroken` | bool | Block was broken by this hit |
-| `BlockCanceled` | bool | Block was canceled entirely |
-| `PerfectBlocking` | bool | Target was in perfect block window |
-| `PerfectBlocked` | bool | Attacker got punished by perfect block |
-| `BlockIgnored` | bool | Attack ignores block (grab) |
-| `IFrames` | number | Target's IFrame level |
-| `Armored` | bool | Target has super armor |
-
----
-
-## Character Parameters (`character:AddParameter` / `character:GetParameter`)
-
-Parameters are layered (stacked) — multiple sources can add the same parameter, newest takes priority, removed when the source is destroyed.
-
-```luau
--- Add a parameter (returns an object with .Destroy())
-local walkMod = character:AddParameter("MaxWalkSpeed", 3)
--- Later: walkMod:Destroy() to remove it
-
--- Commonly used parameters:
-character:AddParameter("MaxWalkSpeed", value)    -- Movement speed cap
-character:AddParameter("MaxJumpPower", value)    -- Jump power cap
-character:AddParameter("IFrames", Enums.IFrames.Ragdoll)  -- Invincibility frames
-character:AddParameter("Stun", {Duration = 1, Priority = Enums.Stun.Heavy})
-character:AddParameter("Armor", true)            -- Super armor
-character:AddParameter("Timescale", 1.5)         -- Animation speed multiplier
-character:AddParameter("Ragdoll", true)          -- Force ragdoll state
-character:AddParameter("Restrain", true)         -- Disable movement
-character:AddParameter("NoCollision", true)      -- Disable collision
-character:AddParameter("MinWalkSpeed", 25)       -- Minimum movement speed
-```
-
-```luau
--- Check a parameter
-local currentSpeed = character:GetParameter("MaxWalkSpeed")
-local stunDuration = character:GetParameter("Stun").Duration
-```
-
----
-
-## VFXService API
-
-```luau
--- Start an effect (replicated to a set of players)
-VFXService:StartEffect(Players:GetPlayers(), "Animation", character.instance, {
-    Animation = Anims["SkillName"],
-    Speed = seq.Speed,
-})
-
-VFXService:StartEffect(Players:GetPlayers(), "Sound", RootPart, Sounds["SkillName"])
-VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-    UUID = self.SomeUUID,
-    Particle = Models["ParticleName"],
-    Origin = character.RootPart,
-})
-VFXService:StartEffect(Players:GetPlayers(), "Highlight", character.instance, {
-    FillColor = Color3.fromRGB(255, 0, 0),
-    OutlineColor = Color3.fromRGB(255, 0, 0),
-    FillTransparency = 0.5,
-    OutlineTransparency = 0,
-    Lifetime = 1,
-    Tween = true,
-})
-
--- Stop an effect
-VFXService:StopEffect(Players:GetPlayers(), "Animation", character.instance, {
-    Animation = Anims["SkillName"].Animation,
-})
-VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", self.SomeUUID)
-```
-
----
-
-## SkillCharacters Tags (Arbitrary Categorization)
-
-`SkillCharacters` is an array of strings that describe the skill's combat role. There is **no fixed enum** — tags are freeform. Examples from the codebase:
-
-```luau
-SkillCharacters = { "Hit" }                        -- Deals damage
-SkillCharacters = { "Defense" }                     -- Defensive move
-SkillCharacters = { "Escape", "Defense", "ComboStarter" }
-SkillCharacters = { "Hit", "ComboExtender", "Blockable" }
-SkillCharacters = { "Grab", "ComboEnder", "Hit", "Ragdoll", "IgnoreBlock" }
-SkillCharacters = { "Ragdoll", "PerfectBlockable", "Hit", "ComboEnder", "Armored", "BlockBreaker" }
-```
-
----
-
-## Combo System (Punch pattern)
-
-Punch.luau demonstrates the combo system:
-
-```luau
--- SkillData fields:
-ComboCooldown = 1.5,     -- Cooldown after max combo
-ComboResetTime = 1.5,    -- Time before combo resets
-MaxCombo = 4,            -- Number of hits in combo
-
--- In Activate:
-self.PunchCount += 1
-if self.PunchCount > self.Data.MaxCombo then
-    self.PunchCount = 1
-    self:SetCooldown(self.Data.ComboCooldown)
-elseif self.Data.ComboResetTime then
-    local oldCount = self.PunchCount
-    task.delay(self.Data.ComboResetTime, function()
-        if oldCount == self.PunchCount then
-            self.PunchCount = 1
-        end
-    end)
-end
-```
-
-Animation naming follows: `Punch1`, `Punch2`, `Punch3`, `Punch4`.
-
----
-
-## Dash Pattern
-
-```luau
--- SkillData fields:
-DashProperties = {
-    Speed = 50,
-    Time = 0.25,
-}
-
--- In onInit, uses direction detection helper:
-local function GetDashDirection(Normal)
-    -- returns "Forward", "Back", "Left", or "Right"
-end
-
--- Animation naming: DashForward, DashBack, DashLeft, DashRight
-```
-
----
-
-## Grab Pattern (Two Sequences)
-
-Grab has a complex multi-sequence flow:
-
-1. **`Sequence`** — The approach/grab attempt. Uses hitbox to find target. On hit, starts `GrabSequence`.
-2. **`GrabSequence`** — The throw animation. Binds target to attacker, plays throw anim, applies throw damage.
-
-```luau
--- SkillData fields:
-OnGrab = function(self: SkillData, target: Character) end  -- Called on grab connect
-OnThrow = function(self: SkillData, target: Character) end -- Called on throw
-
-AttackInfo = {
-    Hitbox = { Size, Offset, SortByDistance = true },
-    Block = { PerfectBlockable = false, BlockCancel = true },
-}
-
-Throw = {
-    Damage = 10,
-    Block = { PerfectBlockable = false, BlockCancel = true },
-    Knockback = { Preset?, Direction { Mode, Point?/Vector?, Add? }, Push?, Lift?, Hold?, Stiffness?, MaxForce? },
-    Ragdoll = { Duration },
-    Stun = { Priority, Duration },
-    Angular = { Velocity, Duration },
-}
-```
-
-Grab stats come from spec skin config (`Stats/Grab`). Берём блок через `GetAsset`, дефолты полей сохраняем через `or` (если нужен полностью опциональный блок — `TryGetAsset`):
-```luau
-local grabStats = self:GetAsset("Stats/Grab")
-self.GrabData = {
-    Prefix = "StandOff",
-    Offset = grabStats["AnimationOffset"] or CFrame.new(0, 0, -4) * CFrame.Angles(0, 180, 0),
-    StartHitFrame = grabStats["StartHitFrame"] or 30,
-    EndHitFrame = grabStats["EndHitFrame"] or 40,
-    FinalFrame = grabStats["FinalFrame"] or 30,
-}
-```
-
----
-
-## Barrage Pattern (Multi-Phase Attack)
-
-Three distinct attack phases, each with its own AttackInfo:
-
-```luau
-PreBarrageInfo = { Hitbox, Damage, Block, Stun }
-BarrageInfo = { Hitbox, Damage, Block, Stun, Knockback }  -- Looping section
-PostBarrageInfo = { Hitbox, Damage, Block, Stun, Knockback }
-```
-
-The sequence loops on the barrage frames (frame 45-190), emitting hits every N frames:
-```luau
-{45, function(seq, frame)
-    if frame % 4 ~= 0 then return end  -- Hit every 4 frames
-    -- Hitbox + Attack
-end, 190}  -- loopEndFrame
-```
-
----
+Use `GetAsset` for required assets and `TryGetAsset` for optional ones with an `or` default. Omit unused categories. Note: only a minority of existing skills have this block — still write it for new code.
 
 ## Registration
 
-### Step 1 — Create the skill module file
-
-```
-src/server/skills/YourSkill.luau          -- shared skills (all specs can use)
-src/server/skills/CharName/YourSkill.luau -- character-unique skills
-```
-
-### Step 2 — Add to spec
-
-In `src/server/specs/CharName.luau`:
-
 ```luau
-local Spec = {
-    Skills = {
-        ["YourSkill"] = "~/skills/YourSkill",              -- shared skill
-        ["YourSkill"] = "@Specs/CharName/YourSkill",        -- unique skill
-    },
+-- src/server/specs/<Spec>.luau
+Skills = {
+	["YourSkill"] = "~/skills/YourSkill",              -- shared
+	["YourSkill"] = "@Specs/<Spec>/YourSkill",          -- spec-unique
 }
-```
 
-### Step 3 — Add binds (optional)
-
-In `src/shared/configs/Specs.luau` under the spec's `Binds`:
-
-```luau
+-- src/shared/configs/Specs.luau, inside the spec's Binds
 ["YourSkill"] = Enum.KeyCode.R,
 ```
 
----
+The key must match the module filename. A missing bind produces a warning and the skill is skipped.
 
-## Quick Reference — What to Copy From
+## References — read when you need the detail
 
-| If you want... | Look at... |
+| File | Read when... |
 |---|---|
-| Simple toggle skill | `Run.luau` |
-| Single hit with sequence | `ArcSpearStrike.luau` |
-| Combo system | `Punch.luau` |
-| Defensive/block skill | `Block.luau` |
-| Mobility skill | `Dash.luau` |
-| Multi-phase attack | `Barrage.luau` |
-| Grab/throw skill | `Grab.luau` |
-| Ground-pound/foot | `Footrest.luau` |
-| Launch/uppercut | `Uppercut.luau` |
+| `references/contract.md` | defining SkillData fields, lifecycle, `GetAsset`/`BaseSpec`, `Checks`, `Tag`, cooldowns, typed bot tags |
+| `references/combat-service.md` | building hitboxes, attacks, block/stun/knockback data, lag compensation, `CreateGrab`, `Equip` |
+| `references/sequencer.md` | authoring frames, repeated hits, validators, cleanup, pause/resume |
+| `references/vfx.md` | playing/stopping any effect — exact 3-argument signatures and payload fields |
+| `references/patterns.md` | implementing combo, dash, grab, barrage, block or stand-tagged skills |
+| `references/registration.md` | choosing the analog file, placing the module, debugging binds/IDs |

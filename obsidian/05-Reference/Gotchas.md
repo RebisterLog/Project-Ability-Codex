@@ -16,5 +16,8 @@ Read before risky edits. These are non-obvious traps found in the codebase.
 12. **Binds have no Hold flag.** Repeated requests are validated on the server; see [[Input and BindService]].
 13. **ByteNet's 512 B/s is shared by every client→server packet.** Both reliable and unreliable remotes pass the same limiter (`ByteNet/process/server.luau`), so a high-frequency pose stream must be throttled and diffed; see [[Lag compensation]].
 14. **Client services run inside the `Main` Actor.** `RenderStepped` is not dispatched there; use `Heartbeat` for client-service frame work (as `BindService` does).
+15. **Only `const` is valid; `let` and `var` do not parse.** Luau rejects them with `Incomplete statement: expected assignment or a function call`, which breaks module loading before the game starts. StyLua (`tools/format.luau`) does **not** catch this, so run `luau-compile --only-parse` over `src/**/*.luau` as an extra check when adding lots of code. `keyof typeof Config.Models` is also invalid — use a bare identifier.
+16. **Removing a parameter never stops its VFX.** A watcher only sees the folded value; after `AddParameter:Destroy()` it is the default, so the expired entry is gone. Stop effects explicitly in the owning timer/cleanup (see `Hooks/Sever.luau`). `Bleed.Slow = 0` disables the bleed slow; `nil` keeps the legacy 8 studs/s cap.
+17. **`Cooldown = 0` used to erase manual cooldowns.** `Skill.Activate` now applies `Data.Cooldown` only when it is `> 0`; skills that call `self:SetCooldown(...)` themselves should omit the field (or leave it 0) so the manual timer survives activation and interruption.
 
 Related: [[Formatting and inspection]], [[Data schemas and Proxy]], [[Runtime boundaries]].
