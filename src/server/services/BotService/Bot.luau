@@ -20,6 +20,7 @@ local types = require(ServerScriptService.server.types)
 local bor = bit32.bor
 
 local TICK_INTERVAL = 1 / 60
+local STALL_RECOVERY_TIME = 4
 
 type BotProperties = {
 	Target: types.Character?,
@@ -45,6 +46,7 @@ type BotProperties = {
 	Blocked: { [string]: boolean },
 	NavBlocked: boolean,
 	DodgeIntent: boolean,
+	LastActionAt: number,
 
 	Random: Random,
 	Accumulator: number,
@@ -65,6 +67,7 @@ type BotMethods = {
 	UpdateHeld: (self: Bot, mask: number, now: number) -> (),
 
 	ActivateSkill: (self: Bot, id: string, owner: types.Spec?, spawned: boolean?) -> (),
+	WatchStall: (self: Bot, now: number) -> (),
 	Destroy: (self: Bot) -> (),
 }
 
@@ -162,11 +165,19 @@ end
 function Bot.ActivateSkill(self: Bot, id: string, owner: types.Spec?, spawned: boolean?)
 	if not owner then return end
 
+	-- AlignOrientation is applied on the next physics step, but hitboxes read
+	-- LookVector during this cast. Force the yaw now so skills fired right
+	-- after pathfinding still go where the bot is looking.
+	self.Navigator:FaceTargetNow()
+
 	-- Bots have no cursor and no StartSkill packet: the server supplies the
-	-- aim point from the bot's current target so aimed skills still work.
-	let aimPoint: Vector3? = nil
-	if id == "MarkedKnives" and self.Target then
-		const targetModel = if typeof(self.Target) == "Instance" then self.Target else self.Target.instance
+	-- aim point from the bot's current target for any skill with AimRequired.
+	local aimPoint: Vector3? = nil
+	local skill = owner and owner.Skills[id]
+	if skill and skill.Data.AimRequired == true and self.Target then
+		const targetModel = if typeof(self.Target) == "Instance"
+			then self.Target
+			else self.Target.instance
 		const root = targetModel and targetModel:FindFirstChild("HumanoidRootPart")
 		if root and root:IsA("BasePart") then aimPoint = root.Position end
 	end
@@ -178,6 +189,28 @@ function Bot.ActivateSkill(self: Bot, id: string, owner: types.Spec?, spawned: b
 	else
 		owner:ActivateSkill(id, aimPoint)
 	end
+end
+
+function Bot.WatchStall(self: Bot, now: number)
+	if self.LastActionAt == 0 then
+		self.LastActionAt = now
+		return
+	end
+	if now - self.LastActionAt < STALL_RECOVERY_TIME then return end
+
+	self.LastActionAt = now
+
+	-- Waiting out cooldowns inside reach is normal; only a bot that cannot
+	-- reach a usable firing position should have its navigation restarted.
+	local root = self.Character.RootPart
+	local target = self.Target
+	if not root or not target or not target.RootPart then return end
+
+	local distance = (root.Position - target.RootPart.Position).Magnitude
+	if distance <= self.Navigator.config.ReachDistance + 1 then return end
+
+	if self.Config.Debug then print("Bot stalled, restarting navigation") end
+	self.Navigator:RestartNavigation()
 end
 
 function Bot.OnIncoming(self: Bot, data: types.HitboxData, now: number)
@@ -202,6 +235,7 @@ function Bot.OnIncoming(self: Bot, data: types.HitboxData, now: number)
 
 	local _, spec = self.SkillIndex:Find(skillId)
 	self:ActivateSkill(skillId, spec, true)
+	self.LastActionAt = now
 end
 
 function Bot.Tick(self: Bot, dt: number, tickId: number, now: number)
@@ -239,11 +273,13 @@ function Bot.Tick(self: Bot, dt: number, tickId: number, now: number)
 
 	if self.HeldSkill == "Charge" then
 		self:SetPosture("Charge")
+		self.LastActionAt = now
 		return
 	end
 
 	if Defense.ShouldDefend(mask, recent) then
 		self:SetPosture("Defend")
+		self.LastActionAt = now
 		return
 	end
 
@@ -254,13 +290,21 @@ function Bot.Tick(self: Bot, dt: number, tickId: number, now: number)
 		or navState == "FollowingPath"
 		or navState == "HoldingDistance"
 
-	if navState == "Pathfinding" or navState == "FollowingPath" then return end
+	if navState == "Pathfinding" or navState == "FollowingPath" then
+		self.LastActionAt = now
+		return
+	end
 
 	self.DodgeIntent = Conditions.Has(mask, "TARGET_ATTACKING")
 		or Conditions.Has(mask, "OWN_THREATENED")
 
 	local id, mode = Attack.Step(self, mask, self.Sense.Distance, now)
-	if not id then return end
+	if not id then
+		self:WatchStall(now)
+		return
+	end
+
+	self.LastActionAt = now
 
 	if mode == "summon" then
 		self:ActivateSkill("Summon", self.SkillIndex:SummonOwner())
@@ -292,6 +336,7 @@ function Bot.SetTarget(self: Bot, character: types.Character?)
 	self.Navigator:SetTarget(character.RootPart)
 	self.Sense:SetTarget(character)
 	self.Threat:Clear()
+	self.LastActionAt = 0
 
 	table.clear(self.Repeats)
 
@@ -312,6 +357,7 @@ function Bot.ClearTarget(self: Bot)
 	self.Target = nil
 	self.Sense:ClearTarget()
 	self.Threat:Clear()
+	self.LastActionAt = 0
 
 	table.clear(self.Repeats)
 
@@ -383,6 +429,7 @@ return {
 			Blocked = {},
 			NavBlocked = false,
 			DodgeIntent = false,
+			LastActionAt = 0,
 
 			Random = random,
 			Accumulator = 0,

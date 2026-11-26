@@ -12,6 +12,7 @@ local LOS_CLEAR_INTERVAL = 2
 local LOS_BLOCKED_INTERVAL = 0.5
 local MAX_DIRECT_PITCH = math.rad(12)
 local FACE_INTERVAL = 0.05
+local FACE_ALIGN_EPSILON = math.cos(math.rad(2))
 local MAX_PATHS_PER_SECOND = 12
 local PATH_MAX_AGE = 5
 local STUCK_TIME = 0.8
@@ -26,6 +27,8 @@ local NO_PATH_TIMEOUT = 5
 local TARGET_TELEPORT_COOLDOWN = 10
 local TARGET_TELEPORT_DISTANCE = 4
 local ARRIVED_RESUME_DISTANCE = 9
+local ARRIVED_RECHECK_INTERVAL = 0.25
+local ARRIVED_REPATH_COOLDOWN = 2
 
 local JUMP_COOLDOWN = 1
 local PUMA_MIN = 3
@@ -250,7 +253,15 @@ type NavigationControllerMethods = {
 	TeleportTo: (self: NavigationController, position: Vector3) -> (),
 	TeleportNearTarget: (self: NavigationController, force: boolean?) -> (),
 	MoveInDirection: (self: NavigationController, direction: Vector3?) -> (),
-	FaceTarget: (self: NavigationController, pos: Vector3, targetPos: Vector3) -> (),
+	FaceTarget: (
+		self: NavigationController,
+		pos: Vector3,
+		targetPos: Vector3,
+		force: boolean?
+	) -> (),
+	FaceTargetNow: (self: NavigationController) -> (),
+	UpdateRotationEnabled: (self: NavigationController, pathOwnsRotation: boolean?) -> (),
+	RestartNavigation: (self: NavigationController) -> (),
 	HasLineOfSight: (
 		self: NavigationController,
 		from: Vector3,
@@ -278,8 +289,7 @@ local States = {
 	Idle = {
 		Enter = function(self: NavigatorState)
 			self.navigator.humanoid:Move(Vector3.zero)
-			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
-				and not self.navigator.RotationSuppressed
+			self.navigator:UpdateRotationEnabled()
 		end,
 
 		Update = function(self: NavigatorState, _dt: number)
@@ -295,8 +305,7 @@ local States = {
 			local dist = (pos - targetPos).Magnitude
 
 			navigator:FaceTarget(pos, targetPos)
-			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 
 			local hasLOS = navigator:HasLineOfSight(pos, targetPos)
 
@@ -320,8 +329,7 @@ local States = {
 	Direct = {
 		Enter = function(self: NavigatorState)
 			local navigator = self.navigator
-			navigator.alignOrient.Enabled = navigator.config.RotateToTarget
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 
 			if navigator.path then
 				navigator.path = nil
@@ -340,8 +348,7 @@ local States = {
 			local dist = (pos - targetPos).Magnitude
 
 			navigator:FaceTarget(pos, targetPos)
-			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 
 			if not navigator.config.ReachDistance then
 				navigator.stateMachine:ChangeState("Idle")
@@ -384,8 +391,7 @@ local States = {
 
 	HoldingDistance = {
 		Enter = function(self: NavigatorState)
-			self.navigator.alignOrient.Enabled = self.navigator.config.RotateToTarget
-				and not self.navigator.RotationSuppressed
+			self.navigator:UpdateRotationEnabled()
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -398,8 +404,7 @@ local States = {
 			local dist = (pos - targetPos).Magnitude
 
 			navigator:FaceTarget(pos, targetPos)
-			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 
 			if not navigator.config.HoldDistance then
 				navigator.stateMachine:ChangeState("Idle")
@@ -439,8 +444,10 @@ local States = {
 		Enter = function(self: NavigatorState)
 			local navigator = self.navigator
 			navigator.humanoid:Move(Vector3.zero)
-			navigator.alignOrient.Enabled = navigator.config.RotateToTarget
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
+			navigator.arrivedCheckAt = navigator.now - ARRIVED_RECHECK_INTERVAL
+			navigator.arrivedRepathAt = -math.huge
+			navigator.arrivedApproaching = false
 		end,
 
 		Update = function(self: NavigatorState, _dt: number)
@@ -454,16 +461,38 @@ local States = {
 			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
 			navigator:FaceTarget(pos, targetPos)
-			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 
 			if (pos - targetPos).Magnitude > ARRIVED_RESUME_DISTANCE then
+				navigator.arrivedApproaching = false
 				navigator.stateMachine:ChangeState(
-					if navigator:HasLineOfSight(pos, targetPos) then "Direct" else "Pathfinding"
+					if navigator:HasLineOfSight(pos, targetPos, true)
+						then "Direct"
+						else "Pathfinding"
 				)
 				return
 			end
 
+			-- Reaching the last waypoint is not enough: it can sit behind cover
+			-- or just below a ledge, where no skill is valid and the bot would
+			-- stand forever. Re-check visibility and re-path when it is gone.
+			if navigator.now - navigator.arrivedCheckAt >= ARRIVED_RECHECK_INTERVAL then
+				navigator.arrivedCheckAt = navigator.now
+
+				if not navigator:HasLineOfSight(pos, targetPos, true) then
+					navigator.arrivedApproaching = true
+					if navigator.now >= navigator.arrivedRepathAt then
+						navigator.arrivedRepathAt = navigator.now + ARRIVED_REPATH_COOLDOWN
+						navigator:RestartNavigation()
+						return
+					end
+
+					navigator:MoveInDirection(navigator:GetBaseDirection(pos, targetPos))
+					return
+				end
+			end
+
+			navigator.arrivedApproaching = false
 			navigator.humanoid:Move(Vector3.zero)
 		end,
 	},
@@ -472,8 +501,7 @@ local States = {
 		Enter = function(self: NavigatorState)
 			local navigator = self.navigator
 			navigator.pathWaitAt = navigator.now
-			navigator.alignOrient.Enabled = navigator.config.RotateToTarget
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -485,8 +513,7 @@ local States = {
 			local targetPos = target.Position
 
 			navigator:FaceTarget(pos, targetPos)
-			navigator.alignOrient.Enabled = not navigator.humanoid.PlatformStand
-				and not navigator.RotationSuppressed
+			navigator:UpdateRotationEnabled()
 
 			local hasValidPath = navigator.path
 				and navigator.waypoint
@@ -494,7 +521,7 @@ local States = {
 				and navigator.waypoint <= #navigator.waypoints
 
 			if hasValidPath then
-				navigator.alignOrient.Enabled = false
+				navigator:UpdateRotationEnabled(true)
 				navigator.stateMachine:ChangeState("FollowingPath")
 				return
 			end
@@ -514,7 +541,7 @@ local States = {
 
 	FollowingPath = {
 		Enter = function(self: NavigatorState)
-			self.navigator.alignOrient.Enabled = false
+			self.navigator:UpdateRotationEnabled(true)
 			self.navigator.waypoint = 1
 		end,
 
@@ -523,12 +550,22 @@ local States = {
 			local target = navigator.target
 			if not target then return end
 
+			navigator:UpdateRotationEnabled(true)
+
 			local pos = navigator.rootPart.Position
 			local targetPos = target.Position
 
 			local currentWaypoint = navigator.waypoints[navigator.waypoint]
 			if not currentWaypoint then
-				navigator.stateMachine:ChangeState("Arrived")
+				if (pos - targetPos).Magnitude > ARRIVED_RESUME_DISTANCE then
+					navigator.stateMachine:ChangeState(
+						if navigator:HasLineOfSight(pos, targetPos, true)
+							then "Direct"
+							else "Pathfinding"
+					)
+				else
+					navigator.stateMachine:ChangeState("Arrived")
+				end
 				return
 			end
 
@@ -557,10 +594,23 @@ local States = {
 			end
 
 			if distToWaypoint < (navigator.humanoid.WalkSpeed / 16) then
-				local remaining = #navigator.waypoints - navigator.waypoint
-				navigator.waypoint += math.max(1, math.floor(remaining / 2))
-				if navigator.waypoint > #navigator.waypoints then
-					navigator.stateMachine:ChangeState("Arrived")
+				local total = #navigator.waypoints
+				local remaining = total - navigator.waypoint
+				-- Skip half of the points ahead, but never step past the last
+				-- one: Arrived must start from an actually reached waypoint.
+				navigator.waypoint =
+					math.min(total, navigator.waypoint + math.max(1, math.floor(remaining / 2)))
+
+				if navigator.waypoint >= total then
+					if (pos - targetPos).Magnitude > ARRIVED_RESUME_DISTANCE then
+						navigator.stateMachine:ChangeState(
+							if navigator:HasLineOfSight(pos, targetPos, true)
+								then "Direct"
+								else "Pathfinding"
+						)
+					else
+						navigator.stateMachine:ChangeState("Arrived")
+					end
 				end
 			end
 		end,
@@ -626,8 +676,10 @@ type NavigationControllerProperties = {
 	targetTeleportAt: number,
 	unstuckTeleportAt: number,
 	teleportPending: boolean,
+	arrivedCheckAt: number,
+	arrivedRepathAt: number,
+	arrivedApproaching: boolean,
 	lastFaceTime: number,
-	lastFacePos: Vector3?,
 }
 
 export type NavigationController = NavigationControllerProperties & NavigationControllerMethods
@@ -787,7 +839,10 @@ function NavigationController:TeleportTo(position: Vector3)
 	local result = workspace:Raycast(origin, Vector3.yAxis * -GROUND_PROBE_LENGTH, self.rayParams)
 	local destination = if result then result.Position + Vector3.yAxis else position
 
-	self.rig:PivotTo(CFrame.new(destination))
+	-- Keep the current yaw: snapping to a fresh CFrame would leave the bot
+	-- facing world forward until the next facing update.
+	local pivot = self.rig:GetPivot()
+	self.rig:PivotTo(CFrame.new(destination) * (pivot - pivot.Position))
 	self.rootPart.AssemblyLinearVelocity = Vector3.zero
 	self.rootPart.AssemblyAngularVelocity = Vector3.zero
 end
@@ -826,7 +881,12 @@ end
 function NavigationController:CheckStuck(now: number)
 	local state = self.stateMachine:GetCurrent()
 
-	if state ~= "Direct" and state ~= "Pathfinding" and state ~= "FollowingPath" then
+	if
+		state ~= "Direct"
+		and state ~= "Pathfinding"
+		and state ~= "FollowingPath"
+		and not (state == "Arrived" and self.arrivedApproaching)
+	then
 		self.samplePos = nil
 		self.sampleAt = now
 		self.stuckLevel = 0
@@ -871,18 +931,70 @@ function NavigationController:CheckStuck(now: number)
 	self:HandleStuck(now)
 end
 
+function NavigationController:UpdateRotationEnabled(pathOwnsRotation: boolean?)
+	self.alignOrient.Enabled = self.config.RotateToTarget == true
+		and not self.RotationSuppressed
+		and not self.humanoid.PlatformStand
+		and not pathOwnsRotation
+end
+
 function NavigationController.FaceTarget(
 	self: NavigationController,
 	pos: Vector3,
-	targetPos: Vector3
+	targetPos: Vector3,
+	force: boolean?
 )
-	if self.now - self.lastFaceTime < FACE_INTERVAL then return end
-	if self.lastFacePos and (self.lastFacePos - targetPos).Magnitude < 0.1 then return end
+	if not force and self.now - self.lastFaceTime < FACE_INTERVAL then return end
+
+	local desired = (targetPos - pos) * FLAT
+	if desired.Magnitude < LOWEST_MAGNITUDE then return end
+
+	-- The target can stand still while the bot moves (path following, movement
+	-- styles, impulses). Comparing the current facing, not the last target
+	-- position, is what keeps the bot actually looking at its target.
+	local forward = self.rootPart.CFrame.LookVector * FLAT
+	if
+		not force
+		and forward.Magnitude > LOWEST_MAGNITUDE
+		and forward.Unit:Dot(desired.Unit) > FACE_ALIGN_EPSILON
+	then
+		return
+	end
 
 	self.lastFaceTime = self.now
-	self.lastFacePos = targetPos
-
 	self.alignOrient.CFrame = CFrame.lookAt(pos, targetPos * FLAT + Vector3.yAxis * pos.Y)
+end
+
+function NavigationController:FaceTargetNow()
+	if self.RotationSuppressed or self.humanoid.PlatformStand then return end
+
+	local target = self.target
+	if not target or not target.Parent then return end
+
+	local pos = self.rootPart.Position
+	local targetPos = target.Position
+	self:FaceTarget(pos, targetPos, true)
+
+	-- AlignOrientation only takes effect on the next physics step, while a
+	-- skill's hitbox reads LookVector in the very same tick as the cast.
+	local forward = self.rootPart.CFrame.LookVector * FLAT
+	local desired = (targetPos - pos) * FLAT
+	if forward.Magnitude < LOWEST_MAGNITUDE or desired.Magnitude < LOWEST_MAGNITUDE then return end
+	if forward.Unit:Dot(desired.Unit) > FACE_ALIGN_EPSILON then return end
+
+	self.rootPart.CFrame = CFrame.lookAt(pos, targetPos * FLAT + Vector3.yAxis * pos.Y)
+end
+
+function NavigationController:RestartNavigation()
+	self.path = nil
+	table.clear(self.waypoints)
+	self.waypoint = 0
+	self.lastCalcPathTime = -math.huge
+	self.pathCreatedAt = -math.huge
+	self.pathWaitAt = self.now
+	self.arrivedApproaching = false
+	self:InvalidateLOS()
+	self.stateMachine:ChangeState("Pathfinding")
 end
 
 function NavigationController.HasLineOfSight(
@@ -1027,7 +1139,9 @@ function NavigationController.SetTarget(self: NavigationController, target: Base
 	self:ResetStyleState()
 	self.lastLosTime = -math.huge
 	self.lastFaceTime = -math.huge
-	self.lastFacePos = nil
+	self.arrivedCheckAt = -math.huge
+	self.arrivedRepathAt = -math.huge
+	self.arrivedApproaching = false
 
 	self.stateMachine:ChangeState("Idle")
 end
@@ -1070,6 +1184,7 @@ end
 
 function NavigationController.EnableRotation(self: NavigationController)
 	self.RotationSuppressed = false
+	self:UpdateRotationEnabled()
 end
 
 function NavigationController.SetReachDistance(self: NavigationController, distance: number)
@@ -1172,8 +1287,10 @@ return {
 				targetTeleportAt = -math.huge,
 				unstuckTeleportAt = -math.huge,
 				teleportPending = false,
+				arrivedCheckAt = -math.huge,
+				arrivedRepathAt = -math.huge,
+				arrivedApproaching = false,
 				lastFaceTime = -math.huge,
-				lastFacePos = nil,
 			} :: NavigationController,
 			NavigationController
 		) :: NavigationController

@@ -13,6 +13,50 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 	ComboWeight = 1,
 
 	Skills = {
+		["Dash"] = {
+			Distance = 18,
+			Priority = 3,
+			PreferredDistance = {
+				Min = 8,
+				Max = 18,
+			},
+			MaxRepeats = 1,
+			RepeatResetTime = 3,
+
+			PreferredConditions = {
+				"TARGET_ATTACKING",
+				"TARGET_IGNORE_BLOCK",
+			},
+		},
+
+		["StandBarrage"] = {
+			Distance = 10,
+			StandSummon = true,
+			PreferredDistance = {
+				Min = 5,
+				Max = 10,
+			},
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
+				"TARGET_ARMORED",
+			},
+		},
+
+		["StopSign"] = {
+			StandSummon = true,
+			Priority = 2,
+			Distance = 6,
+
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
+			},
+
+			PreferredConditions = {
+				"TARGET_STUNNED",
+				"TARGET_BLOCKING",
+			},
+		},
+
 		["Punch"] = {
 			-- One activation = one hit; Punch itself chains up to MaxCombo.
 			MaxRepeats = 2,
@@ -61,20 +105,39 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		["Grab"] = {
-			Distance = 6,
+		["MarkedKnives"] = {
+			-- AimRequired skills get a server-generated AimPoint from Bot.ActivateSkill.
+			Distance = 30,
+			Priority = 2,
+
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
+			},
+		},
+
+		["LegBarrage"] = {
+			StandSummon = true,
+			Priority = 2,
+			Distance = 8,
 			PreferredDistance = {
-				Min = 4,
-				Max = 6,
+				Min = 5,
+				Max = 8,
 			},
 
-			RequiredConditions = {
-				"TARGET_BLOCKING",
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
+				"TARGET_ARMORED",
 			},
+		},
 
-			PreferredConditions = {
-				"TARGET_BLOCKING",
-				"TARGET_STUNNED",
+		["DistantSlam"] = {
+			-- Silently does nothing without a full mark; the skill starts no cooldown then.
+			StandSummon = true,
+			Priority = 3,
+			Distance = 25,
+
+			ForbiddenConditions = {
+				"TARGET_RAGDOLLED",
 			},
 		},
 	},
@@ -82,6 +145,7 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 	Combos = {
 		{
 			"Punch",
+			"MarkedKnives",
 		},
 	},
 }
