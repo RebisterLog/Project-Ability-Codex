@@ -60,8 +60,9 @@ const Skill: types.SkillData = {
 			BlockCancel = false,
 			BlockIgnore = false,
 		},
-		Stun = { Priority = Enums.Stun.Medium, Duration = 0.2 },
-		Knockback = { Direction = { Mode = "AwayFromAttacker" }, Push = 100, Hold = 0.25 },
+		Ragdoll = {
+			Duration = Enums.Ragdoll.Light,
+		},
 		HitEffects = { { Particle = "Models/LegBarrageHeavyVFX", Sound = "Default" } },
 	} :: types.AttackInfo,
 }
@@ -149,7 +150,7 @@ function Skill:onInit()
 			},
 
 			{
-				100,
+				120,
 				function()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
@@ -171,7 +172,7 @@ function Skill:onInit()
 				end,
 			},
 
-			{ 115 },
+			{ 135 },
 		},
 	}))
 end

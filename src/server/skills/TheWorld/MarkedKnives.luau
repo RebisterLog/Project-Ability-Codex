@@ -181,13 +181,13 @@ function Skill:onInit()
 			},
 
 			{
-				8,
+				15,
 				function()
 					shootVolley(self, self.AimPoint)
 				end,
 			},
 
-			{ 40 },
+			{ 20 },
 		},
 	}))
 end
