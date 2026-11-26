@@ -180,8 +180,10 @@ return {
 
 		if not Bleeding or not object then return end
 
-		if not object.Cleaner:Has("Slow") then
-			object.Cleaner:Set("Slow", self:AddParameter("MaxWalkSpeed", value.Slow or 8))
+		-- `Slow = 0` explicitly disables the slowdown; nil keeps the old 8.
+		const slow = if value.Slow == nil then 8 else value.Slow
+		if slow > 0 and not object.Cleaner:Has("Slow") then
+			object.Cleaner:Set("Slow", self:AddParameter("MaxWalkSpeed", slow))
 		end
 	end,
 
@@ -200,7 +202,7 @@ return {
 
 		const function original(name: string): string?
 			const key = "Original" .. name
-			var saved = self.instance:GetAttribute(key) :: string?
+			local saved = self.instance:GetAttribute(key) :: string?
 			if not saved then
 				saved = self.instance:GetAttribute(name) :: string?
 				self.instance:SetAttribute(key, saved)
@@ -208,15 +210,17 @@ return {
 			return saved
 		end
 
-		var hasLeg = false
-		var arms = 0
-		var walk: string? = nil
-		var run: string? = nil
-		var idle: string? = nil
+		local hasLeg = false
+		local arms = 0
+		local walk: string? = nil
+		local run: string? = nil
+		local idle: string? = nil
 
 		for _, entry in value do
 			if entry.WalkSpeed then hasLeg = true end
-			if entry.DamageMultiplier then arms += 1 end
+			if entry.DamageMultiplier then
+				arms += 1
+			end
 			if entry.Walk then walk = entry.Walk end
 			if entry.Run then run = entry.Run end
 			if entry.Idle then idle = entry.Idle end
@@ -224,7 +228,10 @@ return {
 
 		if object then
 			if hasLeg and not object.Cleaner:Has("SeverWalkSpeed") then
-				object.Cleaner:Set("SeverWalkSpeed", self:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
+				object.Cleaner:Set(
+					"SeverWalkSpeed",
+					self:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium)
+				)
 			end
 			if arms > 0 and not object.Cleaner:Has("SeverDamage") then
 				object.Cleaner:Set("SeverDamage", self:AddParameter("DamageMultiplier", 0.5 ^ arms))

@@ -21,25 +21,8 @@ const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Enums = require(ServerScriptService.server.Enums)
 const types = require(ServerScriptService.server.types)
 
-const PERFECT_BLOCK = {
-	Blockable = true,
-	PerfectBlockable = true,
-	BlockBreak = false,
-	BlockCancel = false,
-	BlockIgnore = false,
-} :: any
-
-const IGNORE_BLOCK = {
-	Blockable = false,
-	PerfectBlockable = false,
-	BlockBreak = false,
-	BlockCancel = false,
-	BlockIgnore = true,
-} :: any
-
 const Skill: types.SkillData = {
 	DisplayName = "Distant Slam",
-	Cooldown = 0, -- set manually only after a marked target is found
 	Tag = "OnlyForStand",
 	SearchRadius = 25,
 
@@ -47,7 +30,15 @@ const Skill: types.SkillData = {
 
 	AttackInfo = {
 		Damage = 25,
-		Block = IGNORE_BLOCK,
+		-- A perfect block parries; an ordinary block is passed through.
+		-- BlockIgnore would disable the perfect-block branch entirely.
+		Block = {
+			Blockable = false,
+			PerfectBlockable = true,
+			BlockBreak = false,
+			BlockCancel = false,
+			BlockIgnore = false,
+		},
 		Ragdoll = { Duration = Enums.Ragdoll.Light },
 		Knockback = { Push = 8, Hold = 0.1, Direction = { Mode = "Custom", Vector = Vector3.zero } },
 		HitAnimations = "Default",
@@ -55,25 +46,55 @@ const Skill: types.SkillData = {
 	} :: types.AttackInfo,
 }
 
+local function getMarkedKnives(self: types.Skill): any?
+	if not self.MarkedKnives then self.MarkedKnives = self.Character.MarkedKnives end
+	return self.MarkedKnives
+end
+
+local function clearAllMarks(self: types.Skill)
+	-- Called once the slam commits to a target: every mark is consumed whether
+	-- the hitbox connects or not. Marks are kept when no full mark exists or
+	-- when the full mark was out of range.
+	const marked = getMarkedKnives(self)
+	if marked and marked.Marks then
+		for target, _ in marked.Marks do
+			marked.Clear(target)
+		end
+	end
+end
+
+local function findTarget(self: types.Skill): types.Character?
+	const marked = getMarkedKnives(self)
+	if not marked or not marked.Marks then return nil end
+
+	local nearest: types.Character? = nil
+	local best = self.Data.SearchRadius :: number
+
+	for target, entry in marked.Marks do
+		if entry.Count < 3 then continue end
+		const dist = (target.RootPart.Position - self.Character.RootPart.Position).Magnitude
+		if dist < best then
+			best = dist
+			nearest = target
+		end
+	end
+	return nearest
+end
+
 function Skill:onInit()
 	const character = self.Character :: types.Character
 	const CombatService = Crane:GetService("CombatService")
 	const VFXService = Crane:GetService("VFXService")
-	const stats = self.Spec.Data.Assets.Stats.DistantSlam
 
-	self.Sequence2 = self.Cleaner:Add(CombatService.CreateSequence(character, {
+	self.StrikeSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
-				stats.HitFrame,
+				20,
 				function()
 					const target = self.Target
 					if not target or target.Humanoid.Health <= 0 then return end
 
 					const info = table.clone(self.Data.AttackInfo)
-					const block = target.Block
-					const isPerfect = block and block.Blocking == true
-						and (os.clock() - (block.PerfectBlockTime or 0)) <= (block.PerfectBlockWindow or 0)
-					info.Block = if isPerfect then PERFECT_BLOCK else IGNORE_BLOCK
 					info.Knockback = table.clone(self.Data.AttackInfo.Knockback)
 					info.Knockback.Direction = {
 						Mode = "Custom",
@@ -89,7 +110,6 @@ function Skill:onInit()
 						},
 					})
 
-					var landed = false
 					for _, candidate in hit do
 						if candidate ~= target then continue end
 						CombatService:Attack({
@@ -97,43 +117,37 @@ function Skill:onInit()
 							Victim = target,
 							Info = info,
 						})
-						landed = true
 					end
-					if not landed then return end
-					self:ClearAllMarks()
+					-- Marks are consumed whether the hitbox connects or not.
+					clearAllMarks(self)
 				end,
 			},
 			{ 35 },
 		},
 	}))
-	self.Sequence2.Cleaner:Add(function()
-		if self.CastCleaner then
-			self.CastCleaner:Destroy()
-			self.CastCleaner = nil
-		end
-	end)
 
-	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
+	self.TelegraphSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
 				0,
 				function(seq)
 					const target = self.Target
-					const stand = Crane:GetService("StandService"):GetStand(character) :: types.Stand
+					const stand =
+						Crane:GetService("StandService"):GetStand(character) :: types.Stand
 					if not target or not stand then return end
 
-					self.CastCleaner = self.Cleaner:Add(Crane.Buttler.new())
-					self.CastCleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
-					self.CastCleaner:Add(character:AddParameter("MaxJumpPower", 0))
+					-- Everything that must outlive the telegraph lives in the
+					-- strike sequence's cleaner. Stopping either sequence on
+					-- interrupt therefore releases all of it exactly once.
+					self.StrikeSequence.Cleaner:Add(
+						character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium)
+					)
+					self.StrikeSequence.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
 					stand:WeldTo(target.RootPart)
-					self.CastCleaner:Add(function()
+					self.StrikeSequence.Cleaner:Add(function()
 						stand:WeldToOwner()
-						if not character.Player then
-							pcall(function()
-								stand:HandleMovement()
-							end)
-						end
+						if not character.Player then stand:HandleMovement() end
 					end)
 
 					self.WarningUUID = os.clock()
@@ -142,9 +156,9 @@ function Skill:onInit()
 						Caster = character.instance,
 						Target = target.instance,
 						Stand = stand.instance,
-						Duration = stats.WarningDuration,
+						Duration = 1.5,
 					})
-					self.CastCleaner:Add(function()
+					self.StrikeSequence.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "DistantSlamWarning", {
 							UUID = self.WarningUUID,
 						})
@@ -168,75 +182,60 @@ function Skill:onInit()
 			},
 
 			{
-				stats.StandAnimationFrames,
+				45,
 				function()
-					if self.Sequence2 then
-						self.Sequence2:Play()
-						self.Sequence2:Await()
+					if self.StrikeSequence then
+						self.StrikeSequence:Play()
+						self.StrikeSequence:Await()
 					end
 				end,
 			},
 
-			{ stats.StandAnimationFrames + 5 },
+			{ 50 },
 		},
 	}))
-
-	function self:ClearAllMarks()
-		const skill = character.Spec and character.Spec.Skills.MarkedKnives
-		if skill and skill.Marks then
-			for target, _ in skill.Marks do
-				skill:ClearMark(target)
-			end
-		end
-	end
-end
-
-function Skill:FindTarget(): types.Character?
-	const marks = self.Character.Spec and self.Character.Spec.Skills.MarkedKnives
-	if not marks or not marks.Marks then return nil end
-
-	const now = workspace:GetServerTimeNow()
-	let nearest: types.Character? = nil
-	let best = self.Data.SearchRadius :: number
-
-	for target, entry in marks.Marks do
-		if entry.Count < 3 or entry.ExpiresAt <= now then continue end
-		const dist = (target.RootPart.Position - self.Character.RootPart.Position).Magnitude
-		if dist < best then
-			best = dist
-			nearest = target
-		end
-	end
-	return nearest
 end
 
 function Skill:Activate()
-	const marks = self.Character.Spec and self.Character.Spec.Skills.MarkedKnives
-	if not marks or not marks.Marks or next(marks.Marks) == nil then return end
+	const marked = getMarkedKnives(self)
+	if not marked or not marked.Marks then return end
 
-	const target = self:FindTarget()
+	-- No full mark means a silent exit: no cooldown and no mark cleanup.
+	local hasFullMark = false
+	for _, entry in marked.Marks do
+		if entry.Count >= 3 then
+			hasFullMark = true
+			break
+		end
+	end
+	if not hasFullMark then return end
+
+	-- Any committed cast spends the cooldown, whether the hitbox connects or
+	-- not. The engine no longer overwrites it with Cooldown = 0 on return.
+	self:SetCooldown(20)
+
+	const target = findTarget(self)
 	if not target then
-		self:SetCooldown(20)
-		self:ClearAllMarks()
+		-- A full mark out of range still spends the cooldown, but is kept.
 		return
 	end
 
-	self:SetCooldown(20)
 	self.Target = target
 
-	if self.Sequence then
-		self.Sequence:Play()
-		self.Sequence:Await()
+	if self.TelegraphSequence then
+		self.TelegraphSequence:Play()
+		self.TelegraphSequence:Await()
 	end
-	if self.Sequence2 then self.Sequence2:Await() end
+	if self.StrikeSequence then self.StrikeSequence:Await() end
 end
 
 function Skill:Interrupt()
-	if self.Sequence then self.Sequence:Stop() end
-	if self.Sequence2 then self.Sequence2:Stop() end
-	if self.CastCleaner then
-		self.CastCleaner:Destroy()
-		self.CastCleaner = nil
+	if self.TelegraphSequence then self.TelegraphSequence:Stop() end
+	if self.StrikeSequence then
+		self.StrikeSequence:Stop()
+		-- Stop() is a no-op while the sequence has not started, so clean its
+		-- Butler explicitly: that is where WeldToOwner and VFX teardown live.
+		self.StrikeSequence.Cleaner:Clean()
 	end
 end
 

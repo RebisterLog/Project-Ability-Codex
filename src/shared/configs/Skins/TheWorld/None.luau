@@ -50,6 +50,7 @@ const None = {
 		GrabVL = sound(GlobalAssets.Grab.Sounds.GrabVoice),
 
 		-- The World skills
+		StopSign = sound(Sounds.User.StopSign), -- Current source; swap for a dedicated clip later
 		MarkedKnivesThrow = sound(Sounds.User.MarkedKnivesThrow),
 		MarkedKnivesHit = sound(Sounds.User.MarkedKnivesHit),
 		DistantSlamCast = sound(Sounds.User.DistantSlamCast),
@@ -61,7 +62,9 @@ const None = {
 		Stand = Models.Stand,
 
 		-- The World skills
+		StopSign = Models.StopSign,
 		StopSignImpact = Models.StopSignImpact,
+		Knife = Models.Knife,
 		MarkIndicator = Models.MarkIndicator,
 		LegBarrageVFX = Models.LegBarrageVFX,
 		LegBarrageHeavyVFX = Models.LegBarrageHeavyVFX,
@@ -73,17 +76,6 @@ const None = {
 			AnimationOffset = CFrame.new(0, 0, -4) * CFrame.Angles(0, math.pi, 0),
 			FinalFrame = 30,
 		},
-
-		StopSign = { HitFrame = 50, EndFrame = 90, SignLifetime = 15 },
-		LegBarrage = {
-			FirstTick = 8,
-			LastTick = 84,
-			Interval = 4,
-			FinisherFrame = 100,
-			EndFrame = 115,
-		},
-		MarkedKnives = { SpawnFrames = { 8, 16, 24 }, EndFrame = 40 },
-		DistantSlam = { WarningDuration = 1.5, StandAnimationFrames = 45, HitFrame = 20 },
 	},
 
 	Stand = {
@@ -131,6 +123,7 @@ const None = {
 			BarrageVL = sound(Sounds.Stand.BarrageVL),
 
 			-- The World skills
+			StopSign = sound(Sounds.User.StopSign), -- A stand-specific clip can replace this later
 			LegBarrage = sound(Sounds.Stand.LegBarrage),
 			LegBarrageHit = sound(Sounds.Stand.LegBarrageHit),
 			LegBarrageVL = sound(Sounds.Stand.LegBarrageVL),

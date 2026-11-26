@@ -48,7 +48,6 @@ const Skill: types.SkillData = {
 			Hold = 0.05,
 			Direction = { Mode = "AwayFromAttacker" },
 		},
-		HitAnimations = "Default",
 	} :: types.AttackInfo,
 
 	PostBarrageInfo = {
@@ -62,8 +61,7 @@ const Skill: types.SkillData = {
 			BlockIgnore = false,
 		},
 		Stun = { Priority = Enums.Stun.Medium, Duration = 0.2 },
-		Knockback = { Preset = "Slam", Direction = { Mode = "AwayFromAttacker" } },
-		HitAnimations = "Default",
+		Knockback = { Direction = { Mode = "AwayFromAttacker" }, Push = 100, Hold = 0.25 },
 		HitEffects = { { Particle = "Models/LegBarrageHeavyVFX", Sound = "Default" } },
 	} :: types.AttackInfo,
 }
@@ -72,7 +70,6 @@ function Skill:onInit()
 	const character = self.Character :: types.Character
 	const CombatService = Crane:GetService("CombatService")
 	const VFXService = Crane:GetService("VFXService")
-	const stats = self.Spec.Data.Assets.Stats.LegBarrage
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -131,7 +128,7 @@ function Skill:onInit()
 			},
 
 			{
-				stats.FirstTick,
+				8,
 				function()
 					const targets = CombatService:Hitbox({
 						Skill = self,
@@ -147,12 +144,12 @@ function Skill:onInit()
 						})
 					end
 				end,
-				stats.LastTick,
-				Interval = stats.Interval,
+				84,
+				Interval = 4,
 			},
 
 			{
-				stats.FinisherFrame,
+				100,
 				function()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
@@ -174,7 +171,7 @@ function Skill:onInit()
 				end,
 			},
 
-			{ stats.EndFrame },
+			{ 115 },
 		},
 	}))
 end

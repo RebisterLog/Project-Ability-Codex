@@ -47,7 +47,7 @@ const Skill: types.SkillData = {
 				Add = { { Mode = "ToFront", Distance = 5 } },
 			},
 			Push = 6,
-			Lift = 0.75,
+			Lift = 0,
 			Hold = 0.05,
 		},
 

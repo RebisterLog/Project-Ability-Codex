@@ -3,20 +3,19 @@
 
 	Slow combo starter. Slams a sign into the ground, ignores block, breaks the
 	victim's guard, applies hyper armor to the caster, severs the right arm and
-	leaves a short bleed. The stand is presentation only; damage comes from the
-	character.
+	leaves a short bleed. Caster-only skill: all animations, sounds and the held
+	sign belong to the player, never to the stand.
 
 	ASSETS:
 	Animations
-	   Animations/StopSign, Stand/Animations/StopSign : cast clips
+	   Animations/StopSign : cast clip (caster only)
 	   Animations/StopSignVictim : victim reaction
 	Sounds
-	   Sounds/StopSign, Stand/Sounds/StopSign
+	   Sounds/StopSign : start / impact
 	   Sounds/StopSignHit : impact
 	Models
-	   Models/StopSign : sign left stuck in the ground
+	   Models/StopSign : held weapon, also left stuck in the ground
 	   Models/StopSignImpact : ground/debris VFX
-	   Models/SeveredRightArm : severed limb template
 ]=]
 
 const Players = game:GetService("Players")
@@ -30,7 +29,7 @@ const Skill: types.SkillData = {
 	DisplayName = "Stop Sign",
 	Cooldown = 15,
 
-	SkillCharacters = { "Hit", "Stun", "ComboStarter", "IgnoreBlock", "Armored", "Debuff" },
+	SkillCharacters = { "Hit", "Ragdoll", "ComboStarter", "IgnoreBlock", "Armored", "Debuff" },
 
 	AttackInfo = {
 		Damage = 20,
@@ -41,10 +40,9 @@ const Skill: types.SkillData = {
 			BlockCancel = true,
 			BlockIgnore = true,
 		},
-		Stun = { Priority = Enums.Stun.Medium, Duration = Enums.StunTime.Medium },
-		Knockback = { Preset = "Slam", Direction = { Mode = "AwayFromAttacker" } },
-		Bleed = { Damage = 0.5, Duration = 3 },
-		Sever = { Limb = Enums.Limb.RightArm, Duration = 8 },
+		Ragdoll = { Duration = Enums.Ragdoll.Light },
+		Bleed = { Damage = 0.5, Duration = 3, Slow = 0 },
+		Sever = { Limb = Enums.Limb.RightArm, Duration = 5 },
 		HitAnimations = "Default",
 		HitEffects = { { Particle = "Default", Sound = "Default" } },
 	} :: types.AttackInfo,
@@ -61,43 +59,42 @@ function Skill:onInit()
 	const character = self.Character :: types.Character
 	const CombatService = Crane:GetService("CombatService")
 	const VFXService = Crane:GetService("VFXService")
-	const stats = self.Spec and self.Spec.Data.Assets.Stats.StopSign or self.Data.Hitbox
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
 				0,
 				function(seq)
-					const stand =
-						Crane:GetService("StandService"):GetStand(character) :: types.Stand
-					const isStandActive = if stand then stand:IsActive() else false
-					self.AssetPrefix = if isStandActive then "Stand/" else ""
-					self.Caster = if isStandActive then stand.instance else character.instance
+					-- Hold the actual sign for the duration of the cast. Equip
+					-- clones the model and welds its Handle to RightHand.
+					const weapon = CombatService:Equip(character, self:GetAsset("Models/StopSign"))
+					seq.Cleaner:Add(weapon)
 
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 					seq.Cleaner:Add(CombatService:AddArmor(character))
 
+					const clip = self:GetAsset("Animations/StopSign")
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
-						Character = self.Caster,
-						Animation = self:GetAsset(self.AssetPrefix .. "Animations/StopSign"),
+						Character = character.instance,
+						Animation = clip,
 						Speed = seq.Speed,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = character.RootPart,
-						Sound = self:GetAsset(self.AssetPrefix .. "Sounds/StopSign"),
+						Sound = self:GetAsset("Sounds/StopSign"),
 					})
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
-							Character = self.Caster,
-							Animation = self:GetAsset(self.AssetPrefix .. "Animations/StopSign").Animation,
+							Character = character.instance,
+							Animation = clip.Animation,
 						})
 					end)
 				end,
 			},
 
 			{
-				stats.HitFrame,
+				50,
 				function()
 					const targets = CombatService:Hitbox({
 						Skill = self,
@@ -106,9 +103,6 @@ function Skill:onInit()
 					}) :: { types.Character }
 
 					for _, target in targets do
-						if target == character then continue end
-						if target:GetParameter("Ragdoll") then continue end
-
 						CombatService:Attack({
 							Attacker = character,
 							Victim = target,
@@ -116,24 +110,22 @@ function Skill:onInit()
 						})
 					end
 
-					-- Ground impact and the sign that stays behind.
-					const impact = character.RootPart.CFrame * CFrame.new(0, 0, -3)
 					self.ImpactUUID = os.clock()
 					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 						UUID = self.ImpactUUID,
 						Particle = self:GetAsset("Models/StopSignImpact"),
-						Origin = impact,
+						Origin = character.RootPart.CFrame,
 					})
-					const sign = self.Cleaner:Clone(self:GetAsset("Models/StopSign"))
-					sign:PivotTo(impact * CFrame.Angles(0, 0, math.pi / 2))
-					self.Cleaner:Add(sign)
-					task.delay(stats.SignLifetime or 15, function()
-						if sign.Parent then sign:Destroy() end
-					end)
+					-- VFXService:StartEffect(Players:GetPlayers(), "StopSignSign", {
+					-- 	UUID = self.ImpactUUID,
+					-- 	Model = self:GetAsset("Models/StopSign"),
+					-- 	Origin = character.RootPart.CFrame,
+					-- 	Duration = self.Data.Cooldown,
+					-- })
 				end,
 			},
 
-			{ stats.EndFrame },
+			{ 65 },
 		},
 	}))
 end
@@ -151,14 +143,13 @@ function Skill:Interrupt()
 
 	if self.ImpactUUID then
 		VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", { UUID = self.ImpactUUID })
+		VFXService:StopEffect(Players:GetPlayers(), "StopSignSign", { UUID = self.ImpactUUID })
 		self.ImpactUUID = nil
 	end
-	if self.Caster then
-		VFXService:StopEffect(Players:GetPlayers(), "Animation", {
-			Character = self.Caster,
-			Animation = self:GetAsset(self.AssetPrefix .. "Animations/StopSign").Animation,
-		})
-	end
+	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+		Character = self.Character.instance,
+		Animation = self:GetAsset("Animations/StopSign").Animation,
+	})
 end
 
 return Skill

@@ -26,7 +26,7 @@ return {
 			Damage = Bleed.Damage,
 			Duration = Bleed.Duration,
 			Interval = Interval,
-			Slow = Bleed.Slow or 8,
+			Slow = Bleed.Slow,
 		})
 
 		-- The ticks live in the parameter's cleaner instead of their own
