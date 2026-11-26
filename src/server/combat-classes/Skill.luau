@@ -85,7 +85,9 @@ function Skill.Activate(self: types.Skill, aimPoint: Vector3?)
 
 	self.Active = false
 
-	if self.Data.Cooldown then self:SetCooldown(self.Data.Cooldown) end
+	-- `Cooldown = 0` means the skill drives its own timer explicitly; never
+	-- overwrite that manual cooldown with a zero release time on activation.
+	if self.Data.Cooldown and self.Data.Cooldown > 0 then self:SetCooldown(self.Data.Cooldown) end
 end
 
 function Skill.Deactivate(self: types.Skill)

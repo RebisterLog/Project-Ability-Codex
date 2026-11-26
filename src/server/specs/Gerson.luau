@@ -1,9 +1,6 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
-const Configuration = ServerScriptService.server.Configuration
 const Configs = ReplicatedStorage.shared.configs
-const SpecsConfig = require(Configs.Specs)
-const skills = ServerScriptService.server.skills
 const types = require(ServerScriptService.server.types)
 
 const Spec = {

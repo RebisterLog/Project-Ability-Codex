@@ -152,7 +152,8 @@ export type AttackInfo = {
 	}?,
 
 	-- Hit feedback on a landed hit; nil falls back to assets.Default.Hits.
-	HitEffects: Folder?,
+	-- The hook consumes an array of tables, not a Folder.
+	HitEffects: { any }?,
 	HitSounds: Folder?,
 	HitAnimations: Folder? | string?,
 }
@@ -181,6 +182,9 @@ export type AttackData = {
 		BlockCanceled: boolean,
 		IFrames: number,
 		Armored: boolean,
+		-- Written and read by hooks at runtime but absent from the original contract.
+		Ragdolled: boolean?,
+		Absorbed: boolean?,
 	},
 }
 
@@ -426,6 +430,12 @@ export type ProjectileConfig = {
 	-- Skip the caster's own character in hit queries, default true.
 	IgnoreCaster: boolean?,
 	Debug: boolean?,
+	-- When set, the class does not replicate a body: it sends ONE effect start
+	-- with the flight numbers and the client predicts the visual locally.
+	VisualEffect: string?,
+	VisualUUID: string?,
+	-- Server timestamp the client uses to align its predicted flight phase.
+	StartAt: number?,
 }
 
 type ProjectileProperities = {
@@ -433,6 +443,9 @@ type ProjectileProperities = {
 	-- The cloned visual instance. Parented to `workspace.Effects`. Nil when
 	-- `Model` was omitted: server-side virtual projectiles have no body.
 	Instance: Model | BasePart | nil,
+	-- Set when the visual is predicted by a client effect instead of a body.
+	VisualEffect: string?,
+	VisualUUID: string?,
 
 	Position: Vector3,
 	Velocity: Vector3,
@@ -548,10 +561,22 @@ export type SkillData = {
 	Tag: string?,
 
 	BaseSpec: string?,
-	Cooldown: number,
+	-- Skills commonly use 0 and drive their own timer via SetCooldown.
+	Cooldown: number?,
 	DisplayName: string,
 	AttackInfo: AttackInfo,
 	SkillCharacters: { BotsCharacters.SkillCharacter },
+
+	-- Optional metadata read by individual skills and their hooks.
+	AimRequired: boolean?, -- the server supplies an aim point for this skill
+	UseCooldown: number?, -- cooldown applied on use, when distinct from Cooldown
+	MarkDuration: number?, -- lifetime of the mark applied by the skill
+	SearchRadius: number?, -- radius used when looking for targets
+	Hitbox: any?, -- hitbox description forwarded to CombatService
+	BarrageInfo: any?, -- configuration for a barrage sequence
+	PostBarrageInfo: any?, -- configuration applied after a barrage
+	ProjectileData: any?, -- projectile spawn parameters
+
 	onInit: (self: Skill) -> (),
 	onDestroy: (self: Skill) -> (),
 	Activate: (self: Skill, aimPoint: Vector3?) -> (),
@@ -697,7 +722,7 @@ type SpecMethods = {
 	AddSkill: (self: Spec, skill: Skill) -> (),
 	RemoveSkill: (self: Spec, skillId: string) -> (),
 	GetAvailableSkills: (self: Spec) -> { Skill },
-	ActivateSkill: (self: Spec, skillId: string) -> (),
+	ActivateSkill: (self: Spec, skillId: string, aimPoint: Vector3?) -> (),
 	DeactivateSkill: (self: Spec, skillId: string) -> (),
 	InterruptSkill: (self: Spec, skillId: string) -> (),
 	Destroy: (self: Spec) -> (),

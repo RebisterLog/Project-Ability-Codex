@@ -4,6 +4,9 @@ export type SpecInfo = {
 	DisplayName: string,
 	IsPublic: boolean,
 	Type: ("Spec" | "SubSpec")?,
+
+	TimeStopVision: boolean?,
+
 	Binds: {
 		[string]: BindKey,
 	},
@@ -19,7 +22,6 @@ const Specs = {
 			["Block"] = Enum.KeyCode.F,
 			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
-			["Grab"] = Enum.KeyCode.X,
 			--
 			["Footrest"] = Enum.KeyCode.E,
 			["Uppercut"] = Enum.KeyCode.R,
@@ -39,7 +41,6 @@ const Specs = {
 			["Block"] = Enum.KeyCode.F,
 			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
-			["Grab"] = Enum.KeyCode.X,
 
 			["Barrage"] = Enum.KeyCode.E,
 			["ArcSpearStrike"] = Enum.KeyCode.R,
@@ -56,7 +57,6 @@ const Specs = {
 			["Block"] = Enum.KeyCode.F,
 			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
-			["Grab"] = Enum.KeyCode.X,
 
 			["ShellLaunch"] = Enum.KeyCode.T,
 			["Bonk"] = Enum.KeyCode.R,
@@ -72,7 +72,6 @@ const Specs = {
 			["Block"] = Enum.KeyCode.F,
 			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
-			["Grab"] = Enum.KeyCode.X,
 			["Summon"] = Enum.KeyCode.Q,
 
 			["StandBarrage"] = Enum.KeyCode.E,
@@ -93,7 +92,6 @@ const Specs = {
 			["Block"] = Enum.KeyCode.F,
 			["Punch"] = Enum.UserInputType.MouseButton1,
 			["Run"] = Enum.KeyCode.LeftControl,
-			--["Grab"] = Enum.KeyCode.X,
 			["Summon"] = Enum.KeyCode.Q,
 
 			["StandBarrage"] = Enum.KeyCode.E,

@@ -8,6 +8,9 @@ const Configuration = ServerScriptService.server.Configuration
 
 const SkillsFolder = ServerScriptService.server.skills
 
+-- The server never trusts a client cursor point; limit how far a skill may aim.
+const MAX_AIM_DISTANCE = 120
+
 const SkillService = Crane:CreateService({
 	Name = "SkillService",
 })
@@ -58,6 +61,16 @@ function SkillService:ActivateSkill(
 	local spec = component:GetSpec()
 	if not spec or not spec.Skills[skillId] then spec = component:GetSubSpec() end
 	if not spec or not spec.Skills[skillId] then return false end
+
+	-- Clients (and bots) can submit any cursor point; clamp it to a sane radius
+	-- around the caster before a skill consumes it. A nil point is left alone
+	-- so skills can still apply their own fallback.
+	if aimPoint and component.RootPart then
+		const delta = aimPoint - component.RootPart.Position
+		if delta.Magnitude > MAX_AIM_DISTANCE then
+			aimPoint = component.RootPart.Position + delta.Unit * MAX_AIM_DISTANCE
+		end
+	end
 
 	spec:ActivateSkill(skillId, aimPoint)
 	return true
