@@ -5,7 +5,6 @@ const ServerScriptService = game:GetService("ServerScriptService")
 const Enums = require(ServerScriptService.server.Enums)
 const ChargeConfigs = require(ReplicatedStorage.shared.configs.Charges)
 const ChargeState = require(ReplicatedStorage.shared.combat.ChargeState)
-const AmmoConfigs = require(ReplicatedStorage.shared.configs.Ammo)
 
 type StunState = { Priority: number, Duration: number }
 
@@ -57,11 +56,6 @@ const SeveredParser = function(a, b)
 		end
 	end
 	return result
-end
-
-const DefaultAmmo = {}
-for id, config in AmmoConfigs do
-	DefaultAmmo[id] = { Amount = config.Max, Max = config.Max, NextRegenAt = 0 }
 end
 
 return {
@@ -140,10 +134,10 @@ return {
 		Replicate = ChargeState.Snapshot,
 	},
 
-	Ammo = {
-		Default = DefaultAmmo,
+	KnivesCharge = {
+		Default = table.clone(ChargeConfigs.KnivesCharge.Default),
 		Parser = LastParser,
-		Replicate = Mirror,
+		Replicate = ChargeState.Snapshot,
 	},
 
 	SeveredLimbs = {

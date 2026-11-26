@@ -146,7 +146,7 @@ function Character.onStart(self: typeof(Character))
 	self.Parameters.DamageHold.Draining = false
 
 	self:AddParameter("HamonCharge", table.clone(Parameters.HamonCharge.Default))
-	self:AddParameter("Ammo", table.clone(Parameters.Ammo.Default))
+	self:AddParameter("KnivesCharge", table.clone(Parameters.KnivesCharge.Default))
 	self:AddParameter("SeveredLimbs", table.clone(Parameters.SeveredLimbs.Default))
 
 	for name, watcher in ParametersWatchers do

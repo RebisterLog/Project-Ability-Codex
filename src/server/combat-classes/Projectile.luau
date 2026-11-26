@@ -47,6 +47,7 @@
 	@class Projectile
 ]=]
 
+const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const RunService = game:GetService("RunService")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -154,6 +155,13 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 		Running = false,
 		Finished = false,
 
+		-- When set, the model is NOT replicated: the client effect named here
+		-- clones it once and predicts the flight from the numbers below.
+		VisualEffect = Config.VisualEffect,
+		VisualUUID = Config.VisualEffect
+				and (tostring(os.clock()) .. tostring(math.random(1, 1e6)))
+			or nil,
+
 		Cleaner = Cleaner,
 
 		Hit = Signal(),
@@ -162,7 +170,7 @@ function Projectile.new(Config: types.ProjectileConfig): types.Projectile
 		Stepped = Signal(),
 	}, Projectile) :: types.Projectile
 
-	if Config.Model then
+	if Config.Model and not Config.VisualEffect then
 		self.Instance = Cleaner:Clone(Config.Model) :: Model | BasePart
 
 		-- Parent to `workspace.Effects`, never `workspace.Live`. The default hitbox
@@ -204,6 +212,11 @@ function Projectile.Finish(self: types.Projectile, reason: string)
 		self.Connection = nil
 	end
 
+	if self.VisualEffect and self.VisualUUID then
+		const VFXService = Crane:GetService("VFXService")
+		VFXService:StopEffect(Players:GetPlayers(), self.VisualEffect, { UUID = self.VisualUUID })
+	end
+
 	self.Cleaner:Destroy()
 
 	self.End:Fire(reason)
@@ -216,6 +229,34 @@ end
 function Projectile.Start(self: types.Projectile)
 	if self.Running or self.Finished then return end
 	self.Running = true
+
+	if self.VisualEffect then
+		-- Send the flight spec at the exact moment the server begins stepping,
+		-- so StartAt matches the first simulated frame rather than construction.
+		const Config = self.Config
+		const Reflection = self.Reflection
+		const VFXService = Crane:GetService("VFXService")
+		VFXService:StartEffect(Players:GetPlayers(), self.VisualEffect, {
+			UUID = self.VisualUUID,
+			Model = Config.Model,
+			Position = self.Position,
+			Direction = self.Direction.Unit,
+			Speed = self.Speed,
+			StartAt = workspace:GetServerTimeNow(),
+			Gravity = Config.Gravity or Vector3.zero,
+			Orientation = self.FixedRotation,
+			OrientToVelocity = self.OrientToVelocity,
+			Lifetime = Config.Lifetime or DEFAULT_LIFETIME,
+			MaxDistance = Config.MaxDistance,
+			Reflection = {
+				Enabled = Reflection.Enabled,
+				Restitution = Reflection.Restitution,
+				MaxBounces = Reflection.MaxBounces,
+				IgnoreCharacters = Reflection.IgnoreCharacters,
+				SurfaceOffset = Reflection.SurfaceOffset,
+			},
+		})
+	end
 
 	self.Connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		Projectile.Step(self, deltaTime)
@@ -404,7 +445,7 @@ function Projectile.Step(self: types.Projectile, deltaTime: number)
 	if self.HitboxEnabled then
 		const Info = {
 			Size = Config.HitboxSize,
-			Origin = CFrame.new(destination),
+			Origin = CFrame.lookAt(destination, destination + self.Direction),
 			-- Defaults to ignoring the caster, matching how skills query hitboxes.
 			CanQueryCaster = Config.IgnoreCaster == false,
 			Debug = Config.Debug,

@@ -11,7 +11,6 @@ const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const Signal = Crane.Signal
 const Enums = require(ServerScriptService.server.Enums)
 const Charges = require(ServerScriptService.server["combat-classes"].Charges)
-const Ammo = require(ServerScriptService.server["combat-classes"].Ammo)
 const types = require(ServerScriptService.server.types)
 
 -- The legacy fallback must not scale with Dash (100 studs/s) or a hard landing.
@@ -200,14 +199,6 @@ end
 
 function CombatService:StopChargeFill(character: types.Character, id: Charges.ChargeId): number
 	return Charges.Get(id):StopFill(character)
-end
-
-function CombatService:GetAmmo(character: types.Character, id: string): number
-	return Ammo.Get(character, id)
-end
-
-function CombatService:ConsumeAmmo(character: types.Character, id: string): boolean
-	return Ammo.Consume(character, id)
 end
 
 function CombatService.CreateSequence(Character: types.Character, data)

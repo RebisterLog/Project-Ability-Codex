@@ -11,7 +11,17 @@ type MarkData = {
 return {
 	onStart = function(_, data: MarkData)
 		const uuid = data.UUID
-		if not uuid or Cache[uuid] then return end
+		if not uuid then return end
+
+		const existing = Cache[uuid]
+		if existing then
+			-- The same indicator is reused for 1/3, 2/3 and 3/3: keep the label in sync.
+			const label = existing:FindFirstChild("TextLabel")
+			if label and label:IsA("TextLabel") then
+				label.Text = ("MARK %d/3"):format(math.clamp(data.Count or 0, 0, 3))
+			end
+			return
+		end
 
 		const character = data.Character
 		const root = character and character:FindFirstChild("HumanoidRootPart")

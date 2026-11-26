@@ -16,9 +16,24 @@ const Configs = {
 			DamageMultiplier = 1.25,
 		},
 	},
+
+	-- Discrete knife charges: always fills, one unit every 5 seconds.
+	KnivesCharge = {
+		Default = {
+			Amount = 3,
+			LastGainAt = 0,
+			Filling = true,
+			FillStartedAt = 0,
+			FillStartAmount = 3,
+			Max = 3,
+			FillRate = 1 / 5,
+			DecayRate = 0,
+			HoldSeconds = 0,
+		},
+	},
 }
 
-export type ChargeId = "HamonCharge"
+export type ChargeId = "HamonCharge" | "KnivesCharge"
 export type State = ChargeState.State
 
 return Configs
