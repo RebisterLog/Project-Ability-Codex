@@ -39,6 +39,7 @@ const VENDORED = {
 	"src/shared/packages/Fusion",
 	"src/shared/packages/Cmdr",
 	"src/shared/packages/ForgeVFX",
+	"src/shared/packages/BloodFX",
 	"src/shared/packages/Lapis",
 	"src/shared/packages/Janitor",
 	"src/shared/packages/roact-spring",

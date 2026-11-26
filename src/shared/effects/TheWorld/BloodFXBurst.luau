@@ -3,6 +3,15 @@ const BloodFX = require(ReplicatedStorage.shared.packages.BloodFX)
 
 const Emitters: { [string]: any } = {}
 
+const RIG_PARTS = {
+	Head = "Head",
+	Torso = "Torso",
+	LeftArm = "Left Arm",
+	RightArm = "Right Arm",
+	LeftLeg = "Left Leg",
+	RightLeg = "Right Leg",
+} :: { [string]: string }
+
 type BloodData = {
 	Character: Model?,
 	Limb: string?,
@@ -16,7 +25,8 @@ return {
 		if Emitters[uuid] then return end
 
 		const character = data.Character
-		const origin = character and character:FindFirstChild(data.Limb or "")
+		const partName = data.Limb and (RIG_PARTS[data.Limb] or data.Limb) or ""
+		const origin = character and character:FindFirstChild(partName)
 		if not origin or not origin:IsA("BasePart") then
 			const root = character and character:FindFirstChild("HumanoidRootPart")
 			if root and root:IsA("BasePart") then

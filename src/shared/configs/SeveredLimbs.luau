@@ -21,6 +21,4 @@ const Config = {
 	},
 }
 
-export type LimbModelKey = keyof typeof Config.Models
-
 return Config

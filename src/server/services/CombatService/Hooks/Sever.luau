@@ -16,6 +16,17 @@ const function globalClip(name: string): string?
 	return clip and (clip :: Animation).AnimationId or nil
 end
 
+-- Enums.Limb uses compact names; the character rigs in this project are R6
+-- and their parts contain spaces.
+const RIG_PARTS = {
+	[Enums.Limb.Head] = "Head",
+	[Enums.Limb.Torso] = "Torso",
+	[Enums.Limb.LeftArm] = "Left Arm",
+	[Enums.Limb.RightArm] = "Right Arm",
+	[Enums.Limb.LeftLeg] = "Left Leg",
+	[Enums.Limb.RightLeg] = "Right Leg",
+} :: { [string]: string }
+
 return {
 	Name = "Sever",
 	Type = "Cast",
@@ -50,18 +61,35 @@ return {
 			} :: any
 		)
 		victim.Cleaner:Add(wound)
-		task.delay(Info.Sever.Duration, function()
-			if not victim.TornDown then wound:Destroy() end
-		end)
 
+		-- The parameter watcher only folds state; it never sees the expired
+		-- entry after Destroy(), so effect teardown must be explicit here.
+		local stopped = false
+		const function stop()
+			if stopped then return end
+			stopped = true
+			if not victim.TornDown then wound:Destroy() end
+			VFXService:StopEffect(Players:GetPlayers(), "SeveredLimb", { UUID = uuid })
+			VFXService:StopEffect(Players:GetPlayers(), "BloodFXBurst", { UUID = uuid })
+		end
+		victim.Cleaner:Add(stop)
+		task.delay(Info.Sever.Duration, stop)
+
+		-- The client clones the victim's own limb part (with its colours and
+		-- accessories) and spawns it at this CFrame. The global model is only a
+		-- fallback for rigs that do not expose the expected part name.
 		const model = SeverAssets.Models:FindFirstChild((Config.Models :: any)[limb] or limb)
+		const rigPart = victim.instance:FindFirstChild(RIG_PARTS[limb] or limb)
+		const origin = if rigPart and rigPart:IsA("BasePart")
+			then rigPart.CFrame
+			else victim.RootPart.CFrame
 
 		VFXService:StartEffect(Players:GetPlayers(), "SeveredLimb", {
 			UUID = uuid,
 			Character = victim.instance,
 			Limb = limb,
 			Model = model,
-			Position = victim.RootPart.Position,
+			Origin = origin,
 		})
 		VFXService:StartEffect(Players:GetPlayers(), "BloodFXBurst", {
 			UUID = uuid,
