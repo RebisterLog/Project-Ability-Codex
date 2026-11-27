@@ -3,10 +3,10 @@
 --- Pure decision rule for stuck recovery. Kept free of Roblox globals so it
 --- can be tested with lune (tools/tests/StuckRules.test.luau).
 ---
---- A bot whose movement is locked by a skill (Dash, Block, attacks) is not
+--- A bot whose movement is locked by a skill (Dash, Block, stun) is not
 --- stuck: the Humanoid simply cannot move. Treating that as a stall makes
---- HandleStuck teleport the rig and zero AssemblyLinearVelocity, which kills
---- dash momentum and looks like the bot is being held in place.
+--- HandleStuck drop the path and repath mid-fight, which looks like the bot
+--- being held in place.
 
 const StuckRules = {}
 

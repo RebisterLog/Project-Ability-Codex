@@ -16,15 +16,6 @@ local FACE_INTERVAL = 0.05
 local FACE_ALIGN_EPSILON = math.cos(math.rad(2))
 local MAX_PATHS_PER_SECOND = 12
 local PATH_MAX_AGE = 5
-local TELEPORT_COOLDOWN = 4
-local TELEPORT_LIMIT = 2
-local WAYPOINT_SAFE_DISTANCE = 2
-local TELEPORT_HEIGHT = 3
-local GROUND_PROBE_LENGTH = 12
-local UNSTUCK_TELEPORT_COOLDOWN = 6
-local NO_PATH_TIMEOUT = 5
-local TARGET_TELEPORT_COOLDOWN = 10
-local TARGET_TELEPORT_DISTANCE = 4
 local ARRIVED_RESUME_DISTANCE = 9
 local ARRIVED_RECHECK_INTERVAL = 0.25
 local ARRIVED_REPATH_COOLDOWN = 2
@@ -248,9 +239,7 @@ type NavigationControllerMethods = {
 	ResetStyleState: (self: NavigationController) -> (),
 	Update: (self: NavigationController, dt: number, now: number) -> (),
 	CheckStuck: (self: NavigationController, now: number) -> (),
-	HandleStuck: (self: NavigationController, now: number) -> (),
-	TeleportTo: (self: NavigationController, position: Vector3) -> (),
-	TeleportNearTarget: (self: NavigationController, force: boolean?) -> (),
+	HandleStuck: (self: NavigationController) -> (),
 	MoveInDirection: (self: NavigationController, direction: Vector3?) -> (),
 	FaceTarget: (
 		self: NavigationController,
@@ -501,9 +490,7 @@ local States = {
 
 	Pathfinding = {
 		Enter = function(self: NavigatorState)
-			local navigator = self.navigator
-			navigator.pathWaitAt = navigator.now
-			navigator:UpdateRotationEnabled()
+			self.navigator:UpdateRotationEnabled()
 		end,
 
 		Update = function(self: NavigatorState, dt: number)
@@ -529,13 +516,6 @@ local States = {
 			end
 
 			navigator:UpdatePathfinding(pos, targetPos, dt)
-
-			if
-				navigator.now - navigator.pathWaitAt >= NO_PATH_TIMEOUT
-				and navigator.now - navigator.targetTeleportAt >= TARGET_TELEPORT_COOLDOWN
-			then
-				navigator:TeleportNearTarget()
-			end
 
 			navigator:MoveInDirection(navigator:GetBaseDirection(pos, targetPos))
 		end,
@@ -672,12 +652,6 @@ type NavigationControllerProperties = {
 	samplePos: Vector3?,
 	sampleAt: number,
 	stuckLevel: number,
-	teleportCount: number,
-	teleportAt: number,
-	pathWaitAt: number,
-	targetTeleportAt: number,
-	unstuckTeleportAt: number,
-	teleportPending: boolean,
 	arrivedCheckAt: number,
 	arrivedRepathAt: number,
 	arrivedApproaching: boolean,
@@ -780,46 +754,12 @@ function NavigationController.MoveInDirection(self: NavigationController, direct
 	self.humanoid:Move(direction)
 end
 
-function NavigationController:HandleStuck(now: number)
+function NavigationController:HandleStuck()
 	self:InvalidateLOS()
 
-	local total = #self.waypoints
-	local current = self.waypoint
-	local target = self.target
-
-	-- Jump to the midpoint of the points that are still ahead, not to the
-	-- midpoint of the whole path: the bot may already have walked half of it.
-	local index: number? = nil
-	if current and total > 0 and current <= total then
-		local remaining = total - current
-		index = current + math.max(1, math.floor(remaining / 2))
-		if index > total then index = total end
-	end
-
-	local waypoint = index and self.waypoints[index]
-	local safe = waypoint
-		and (
-			not target
-			or (waypoint.Position - target.Position).Magnitude >= WAYPOINT_SAFE_DISTANCE
-		)
-	local canTeleport = safe
-		and now - self.teleportAt >= TELEPORT_COOLDOWN
-		and self.teleportCount < TELEPORT_LIMIT
-
-	if self.stuckLevel == 0 and index and waypoint and canTeleport then
-		self.stuckLevel = 1
-		self.teleportAt = now
-		self.teleportCount += 1
-		self.teleportPending = true
-
-		self:TeleportTo(waypoint.Position + Vector3.yAxis * TELEPORT_HEIGHT)
-		self.waypoint = index + 1
-		self.samplePos = self.rootPart.Position
-		self.sampleAt = now
-		self:InvalidateLOS()
-		return
-	end
-
+	-- A stall drops the path and forces a fresh one. Only a repeated stall
+	-- gets a jump: teleporting the rig mid-fight is what made bots visibly
+	-- snap to a new spot when the player hit them.
 	if self.stuckLevel == 0 then
 		self.stuckLevel = 1
 		self.path = nil
@@ -834,54 +774,6 @@ function NavigationController:HandleStuck(now: number)
 	self:Jump()
 	self.stuckLevel = 0
 	self.lastCalcPathTime = -math.huge
-end
-
-function NavigationController:TeleportTo(position: Vector3)
-	local origin = position + Vector3.yAxis * 4
-	local result = workspace:Raycast(origin, Vector3.yAxis * -GROUND_PROBE_LENGTH, self.rayParams)
-	local destination = if result then result.Position + Vector3.yAxis else position
-
-	-- Keep the current yaw: snapping to a fresh CFrame would leave the bot
-	-- facing world forward until the next facing update. Keep the momentum
-	-- too — zeroing it here is what makes a recovery teleport look like the
-	-- bot was frozen and cancels a dash mover that is still running.
-	local pivot = self.rig:GetPivot()
-	local linear = self.rootPart.AssemblyLinearVelocity
-	local angular = self.rootPart.AssemblyAngularVelocity
-	self.rig:PivotTo(CFrame.new(destination) * (pivot - pivot.Position))
-	self.rootPart.AssemblyLinearVelocity = linear
-	self.rootPart.AssemblyAngularVelocity = angular
-end
-
-function NavigationController:TeleportNearTarget(_force: boolean?)
-	local target = self.target
-	if not target then return end
-
-	self.targetTeleportAt = self.now
-	self.teleportPending = false
-
-	local direction = (self.rootPart.Position - target.Position) * FLAT
-	if direction.Magnitude < LOWEST_MAGNITUDE then
-		direction = self.rootPart.CFrame.LookVector * FLAT
-	end
-	if direction.Magnitude < LOWEST_MAGNITUDE then return end
-
-	local destination = target.Position
-		+ direction.Unit * TARGET_TELEPORT_DISTANCE
-		+ Vector3.yAxis * TELEPORT_HEIGHT
-
-	self:TeleportTo(destination)
-	self.samplePos = self.rootPart.Position
-	self.sampleAt = self.now
-
-	self.path = nil
-	table.clear(self.waypoints)
-	self.waypoint = 0
-	self.lastCalcPathTime = -math.huge
-	self.pathCreatedAt = -math.huge
-	self.pathWaitAt = self.now
-	self:InvalidateLOS()
-	self.stateMachine:ChangeState("Direct")
 end
 
 function NavigationController:CheckStuck(now: number)
@@ -922,9 +814,9 @@ function NavigationController:CheckStuck(now: number)
 	self.samplePos = pos
 	self.sampleAt = now
 
-	-- Skill locks (Dash/Block/attacks) hold WalkSpeed at 0 for their whole
-	-- sequence. Sampling that as a stall teleports the rig and zeroes its
-	-- velocity, which is what kills dash momentum and looks like a freeze.
+	-- Skill locks (Dash/Block/stun) hold WalkSpeed near zero for their whole
+	-- sequence. Sampling that as a stall makes the bot jump and repath in
+	-- the middle of a fight, which looks like a teleport.
 	local recover = StuckRules.ShouldRecover({
 		elapsed = elapsed,
 		moved = moved,
@@ -934,27 +826,16 @@ function NavigationController:CheckStuck(now: number)
 
 	if not recover then
 		self.stuckLevel = 0
-		self.teleportPending = false
 		return
 	end
 
-	if self.teleportPending and now - self.unstuckTeleportAt >= UNSTUCK_TELEPORT_COOLDOWN then
-		self.teleportPending = false
-		self.unstuckTeleportAt = now
-		self:TeleportNearTarget(true)
-		return
-	end
-
-	self:HandleStuck(now)
+	self:HandleStuck()
 end
 
 function NavigationController:UpdateRotationEnabled(pathOwnsRotation: boolean?)
-	-- With a sway/impulse style the movement direction deliberately differs
-	-- from the target direction. Holding the body locked on the target then
-	-- fights Humanoid.AutoRotate and makes the bot jitter in place. Movement
-	-- styles rotate naturally; exact facing is enforced at cast time instead.
+	-- Defend's orbit/strafe move sideways but must still face the target:
+	-- only path following, grabs and ragdoll may take rotation away.
 	self.alignOrient.Enabled = self.config.RotateToTarget == true
-		and self.config.Style == MovementStyles.direct
 		and not self.RotationSuppressed
 		and not self.humanoid.PlatformStand
 		and not pathOwnsRotation
@@ -995,25 +876,10 @@ function NavigationController:FaceTargetNow()
 
 	local pos = self.rootPart.Position
 	local targetPos = target.Position
+
+	-- Force the constraint's yaw for this cast. Writing the rig's CFrame here
+	-- made the whole character snap on every attack-triggered skill cast.
 	self:FaceTarget(pos, targetPos, true)
-
-	-- AlignOrientation only takes effect on the next physics step, while a
-	-- skill's hitbox reads LookVector in the very same tick as the cast.
-	local forward = self.rootPart.CFrame.LookVector * FLAT
-	local desired = (targetPos - pos) * FLAT
-	if forward.Magnitude < LOWEST_MAGNITUDE or desired.Magnitude < LOWEST_MAGNITUDE then return end
-	if forward.Unit:Dot(desired.Unit) > FACE_ALIGN_EPSILON then return end
-
-	-- Pivot the whole rig with a rotation-only goal and keep its momentum.
-	-- Writing rootPart.CFrame directly used to teleport the root alone and
-	-- drop the assembly velocity, which showed up as a stutter on every cast.
-	local pivot = self.rig:GetPivot()
-	local goal = CFrame.lookAt(pos, targetPos * FLAT + Vector3.yAxis * pos.Y)
-	local linear = self.rootPart.AssemblyLinearVelocity
-	local angular = self.rootPart.AssemblyAngularVelocity
-	self.rig:PivotTo(CFrame.new(pivot.Position) * (goal - goal.Position))
-	self.rootPart.AssemblyLinearVelocity = linear
-	self.rootPart.AssemblyAngularVelocity = angular
 end
 
 function NavigationController:RestartNavigation()
@@ -1022,7 +888,6 @@ function NavigationController:RestartNavigation()
 	self.waypoint = 0
 	self.lastCalcPathTime = -math.huge
 	self.pathCreatedAt = -math.huge
-	self.pathWaitAt = self.now
 	self.arrivedApproaching = false
 	self:InvalidateLOS()
 	self.stateMachine:ChangeState("Pathfinding")
@@ -1124,7 +989,6 @@ function NavigationController.UpdatePathfinding(
 			self.waypoints = path:GetWaypoints()
 			self.lastTargetPos = to
 			self.pathCreatedAt = self.now
-			self.teleportCount = 0
 			self.stuckLevel = 0
 
 			if self.config.Debug then self:VisualizePath(path) end
@@ -1165,11 +1029,6 @@ function NavigationController.SetTarget(self: NavigationController, target: Base
 	self.target = target
 	self.lastTargetPos = target.Position
 	self.pathCreatedAt = -math.huge
-	self.teleportCount = 0
-	self.teleportAt = -math.huge
-	self.targetTeleportAt = -math.huge
-	self.unstuckTeleportAt = -math.huge
-	self.teleportPending = false
 	self:ResetStyleState()
 	self.lastLosTime = -math.huge
 	self.lastFaceTime = -math.huge
@@ -1185,11 +1044,6 @@ function NavigationController.ClearTarget(self: NavigationController)
 
 	self.target = nil
 	self.pathCreatedAt = -math.huge
-	self.teleportCount = 0
-	self.teleportAt = -math.huge
-	self.targetTeleportAt = -math.huge
-	self.unstuckTeleportAt = -math.huge
-	self.teleportPending = false
 	self:ResetStyleState()
 	self.lastLosTime = -math.huge
 	self.humanoid:Move(Vector3.zero)
@@ -1315,12 +1169,6 @@ return {
 				samplePos = nil,
 				sampleAt = 0,
 				stuckLevel = 0,
-				teleportCount = 0,
-				teleportAt = -math.huge,
-				pathWaitAt = -math.huge,
-				targetTeleportAt = -math.huge,
-				unstuckTeleportAt = -math.huge,
-				teleportPending = false,
 				arrivedCheckAt = -math.huge,
 				arrivedRepathAt = -math.huge,
 				arrivedApproaching = false,
