@@ -2,6 +2,7 @@ const Debris = game:GetService("Debris")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const TweenService = game:GetService("TweenService")
 const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
+const FXUtil = require(ReplicatedStorage.shared.utility.FXUtil)
 
 type EmitData = {
 	UUID: number?,
@@ -42,8 +43,8 @@ return {
 		if not template then return end
 
 		const Particle = template:Clone()
-		const Origin = Data.Origin
-		const Offset = Data.Offset or CFrame.identity
+		local Origin = FXUtil.TranslateToCFrame(Data.Origin)
+		const Offset = FXUtil.TranslateToCFrame(Data.Offset)
 		const UseForge = Data.UseForge
 
 		prepareParticle(Particle)
@@ -57,53 +58,15 @@ return {
 			else nil
 
 		local container: Instance = Particle
-
-		if originPart then
-			if Particle:IsA("BasePart") then
-				const weld = Instance.new("Weld")
-				weld.Part0 = originPart
-				weld.Part1 = Particle
-				weld.C0 = Offset
-				weld.Parent = Particle
-			else
-				-- Attachments and Folders cannot be welded directly. Give them
-				-- an invisible Part anchor instead and weld that to the origin.
-				const anchor = Instance.new("Part")
-				anchor.Size = Vector3.new(1, 1, 1)
-				anchor.CFrame = originPart.CFrame * Offset
-				prepareParticle(anchor)
-
-				const weld = Instance.new("Weld")
-				weld.Part0 = originPart
-				weld.Part1 = anchor
-				weld.Parent = anchor
-
-				Particle.Parent = anchor
-				for _, part in Particle:GetDescendants() do
-					if part:IsA("BasePart") then
-						const inner = Instance.new("Weld")
-						inner.Part0 = anchor
-						inner.Part1 = part
-						inner.Parent = part
-					end
-				end
-				container = anchor
-			end
-		elseif Particle:IsA("BasePart") then
-			Particle.CFrame = anchorCFrame(Origin, Offset)
-			Particle.Anchored = true
+		
+		if Offset and typeof(Offset) == "CFrame" then
+			Origin *= Offset
+		end
+		
+		if Data.AttachTo then
+			FXUtil.AttachTo(Particle, Data.AttachTo)
 		else
-			const anchor = Instance.new("Part")
-			anchor.Size = Vector3.new(1, 1, 1)
-			anchor.CFrame = anchorCFrame(Origin, Offset)
-			anchor.Anchored = true
-			prepareParticle(anchor)
-
-			Particle.Parent = anchor
-			for _, part in Particle:GetDescendants() do
-				if part:IsA("BasePart") then part.Anchored = true end
-			end
-			container = anchor
+			FXUtil.MoveTo(Particle, Origin)
 		end
 
 		container.Parent = workspace.Effects
