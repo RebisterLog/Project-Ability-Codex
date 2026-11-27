@@ -160,31 +160,11 @@ function Skill.onInit(self)
 							Attacker = character,
 							Victim = Target,
 							Info = AttackInfo,
-						})
+						}):andThen(function(data)
+							if not data.State.Success then return end
+							VFXService:StartEffect({ Target }, "CameraShake", { Type = "Sendo" })
+						end)
 					end
-
-					const Valid = {}
-					const Radius = AttackInfo.Hitbox.Size.Magnitude * 1.25
-					for _, Player in Players:GetPlayers() do
-						if
-							not (
-								Player.Character
-								and Player.Character:FindFirstChild("HumanoidRootPart")
-							)
-						then
-							continue
-						end
-						if
-							(Player.Character.HumanoidRootPart.Position - RootPart.Position).Magnitude
-							>= Radius
-						then
-							continue
-						end
-
-						table.insert(Valid, Player)
-					end
-
-					VFXService:StartEffect(Valid, "CameraShake", { Type = "Sendo" })
 				end,
 				120,
 				Interval = 10,
