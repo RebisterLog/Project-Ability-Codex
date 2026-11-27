@@ -1,23 +1,3 @@
---[=[
-	Stop Sign
-
-	Slow combo starter. Slams a sign into the ground, ignores block, breaks the
-	victim's guard, applies hyper armor to the caster, severs the right arm and
-	leaves a short bleed. Caster-only skill: all animations, sounds and the held
-	sign belong to the player, never to the stand.
-
-	ASSETS:
-	Animations
-	   Animations/StopSign : cast clip (caster only)
-	   Animations/StopSignVictim : victim reaction
-	Sounds
-	   Sounds/StopSign : start / impact
-	   Sounds/StopSignHit : impact
-	Models
-	   Models/StopSign : held weapon, also left stuck in the ground
-	   Models/StopSignImpact : ground/debris VFX
-]=]
-
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -51,7 +31,7 @@ const Skill: types.SkillData = {
 		Size = Vector3.new(7, 7, 7),
 		Offset = CFrame.new(0, 0, -3),
 		MovementCorrection = true,
-		Debug = false,
+		Debug = true,
 	},
 }
 
@@ -65,8 +45,6 @@ function Skill:onInit()
 			{
 				0,
 				function(seq)
-					-- Hold the actual sign for the duration of the cast. Equip
-					-- clones the model and welds its Handle to RightHand.
 					const weapon = CombatService:Equip(character, self:GetAsset("Models/StopSign"))
 					seq.Cleaner:Add(weapon)
 
@@ -116,12 +94,6 @@ function Skill:onInit()
 						Particle = self:GetAsset("Models/StopSignImpact"),
 						Origin = character.RootPart.CFrame,
 					})
-					-- VFXService:StartEffect(Players:GetPlayers(), "StopSignSign", {
-					-- 	UUID = self.ImpactUUID,
-					-- 	Model = self:GetAsset("Models/StopSign"),
-					-- 	Origin = character.RootPart.CFrame,
-					-- 	Duration = self.Data.Cooldown,
-					-- })
 				end,
 			},
 

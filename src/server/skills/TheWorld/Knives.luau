@@ -1,19 +1,3 @@
---[=[
-	Knives
-
-	Three knives fly to a fixed world point supplied by the client's AimPoint.
-	Each landed knife simply deals damage; there is no extra state to store or
-	display. Uses the shared KnivesCharge pool (3 charges, +1 every 5 s).
-
-	ASSETS:
-	Animations
-	   Animations/MarkedKnives : caster throw clip (no stand variant)
-	Sounds
-	   Sounds/MarkedKnivesThrow, Sounds/MarkedKnivesHit
-	Models
-	   Models/Knife (with its Trail)
-]=]
-
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -50,10 +34,8 @@ const Skill: types.SkillData = {
 		},
 		Speed = 150,
 		Lifetime = 2,
-		-- The aim point is clamped to 120; knives must keep flying past it.
 		AimFallbackDistance = 60,
 		MaxDistance = 200,
-		-- A narrow box along the blade instead of a fat sphere.
 		HitboxSize = Vector3.new(0.3, 0.5, 2.5),
 		Debug = true,
 	},
@@ -80,12 +62,8 @@ local function shootVolley(self: types.Skill, aimPoint: Vector3)
 			Lifetime = self.Data.ProjectileData.Lifetime,
 			MaxDistance = self.Data.ProjectileData.MaxDistance,
 			CanPierce = false,
-			-- Face the travel direction so the client visual and the server
-			-- hitbox/debug box share the same orientation.
 			OrientToVelocity = true,
 			Debug = self.Data.ProjectileData.Debug,
-			-- No replicated body: the client predicts the flight from these
-			-- numbers once, the server keeps only the constant hitbox path.
 			VisualEffect = "ProjectileFlight",
 		})
 		self.Cleaner:Add(knife)

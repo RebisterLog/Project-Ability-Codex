@@ -1,18 +1,3 @@
---[=[
-	Leg Barrage
-
-	The stand rains quick leg strikes, then finishes with a guard-breaking
-	kick. Same skeleton as StandBarrage but its own clips and VFX.
-
-	ASSETS:
-	Animations
-	   Stand/Animations/LegBarrage, Stand/Animations/LegBarrageFinisher
-	Sounds
-	   Stand/Sounds/LegBarrage, LegBarrageHit, LegBarrageVL
-	Models
-	   Models/LegBarrageVFX, Models/LegBarrageHeavyVFX
-]=]
-
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -32,6 +17,7 @@ const Skill: types.SkillData = {
 			Size = Vector3.new(6, 6, 8),
 			Offset = CFrame.new(0, 0, -4),
 			MovementCorrection = true,
+			Debug = true,
 		},
 		Damage = 0.25,
 		Block = {

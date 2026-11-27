@@ -1,20 +1,3 @@
---[=[
-	Distance Slam
-
-	Automatically picks the nearest enemy within 50 studs, telegraphs, then
-	lands a remote kick on them. The stand is welded to the victim's root;
-	the caster stays put and is slowed from the cast through the strike.
-	No time stop is involved.
-
-	ASSETS:
-	Animations
-	   Animations/DistantSlamCast, Stand/Animations/DistantSlam
-	Sounds
-	   Sounds/DistantSlamCast, Stand/Sounds/DistantSlam
-	Models
-	   Models/DistantSlamWarning : warning ParticleEmitter on the stand
-]=]
-
 const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
@@ -31,8 +14,6 @@ const Skill: types.SkillData = {
 
 	AttackInfo = {
 		Damage = 25,
-		-- A perfect block parries; an ordinary block is passed through.
-		-- BlockIgnore would disable the perfect-block branch entirely.
 		Block = {
 			Blockable = false,
 			PerfectBlockable = true,
@@ -101,9 +82,6 @@ function Skill:onInit()
 						Crane:GetService("StandService"):GetStand(character) :: types.Stand
 					if not target or not stand then return end
 
-					-- Everything that must outlive the telegraph lives in the
-					-- strike sequence's cleaner. Stopping either sequence on
-					-- interrupt therefore releases all of it exactly once.
 					stand:WeldTo(target.RootPart)
 					self.StrikeSequence.Cleaner:Add(function()
 						stand:WeldToOwner()
@@ -144,8 +122,6 @@ function Skill:onInit()
 			{
 				45,
 				function()
-					-- The strike is awaited by Activate, not here: blocking
-					-- this frame callback would stall the telegraph itself.
 					if self.StrikeSequence then self.StrikeSequence:Play() end
 				end,
 			},
@@ -160,16 +136,11 @@ function Skill:Activate()
 
 	const CombatService = Crane:GetService("CombatService")
 
-	-- One layer spans the search, telegraph and strike. It is released by the
-	-- strike cleaner, or by hand below when no target is found (Interrupt is
-	-- not called when the bind is simply released).
 	self.CastSlow = self.Character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium)
 	self.CastNoJump = self.Character:AddParameter("MaxJumpPower", 0)
 	self.StrikeSequence.Cleaner:Add(self.CastSlow)
 	self.StrikeSequence.Cleaner:Add(self.CastNoJump)
 
-	-- Any committed cast spends the cooldown, whether the hitbox connects or
-	-- not. The engine no longer overwrites it with Cooldown = 0 on return.
 	self:SetCooldown(20)
 
 	const targets = CombatService:Hitbox({
@@ -191,8 +162,6 @@ function Skill:Activate()
 		self.TelegraphSequence:Await()
 	end
 
-	-- A strike interrupted during the telegraph never starts; Await() would
-	-- hang forever on a sequence stuck in the None state.
 	if self.StrikeSequence and self.StrikeSequence:IsPlaying() then self.StrikeSequence:Await() end
 end
 
