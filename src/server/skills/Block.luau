@@ -115,7 +115,7 @@ function Block:Activate()
 	-- One-shot particles get a UUID so a released guard cannot leave them
 	-- behind; the collector stops them on every exit path.
 	const function emit(particle)
-		const uuid = math.random(1, 0x7FFFFFFF)
+		const uuid = os.clock()
 		VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
 			UUID = uuid,
 			Particle = particle,

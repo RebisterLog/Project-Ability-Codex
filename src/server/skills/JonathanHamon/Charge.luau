@@ -122,7 +122,7 @@ function Skill.Activate(self)
 
 	const chargeVFX = self:TryGetAsset("VFXs/Charge")
 	if chargeVFX then
-		const vfxUUID = math.random(1, 0x7FFFFFFF)
+		const vfxUUID = os.clock()
 		VFXService:StartEffect(Players:GetPlayers(), "ForgeVFXHold", {
 			UUID = vfxUUID,
 			Template = chargeVFX,

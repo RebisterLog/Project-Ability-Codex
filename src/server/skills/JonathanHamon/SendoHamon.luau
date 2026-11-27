@@ -128,7 +128,7 @@ function Skill.onInit(self)
 						Sound = self:GetAsset("Sounds/SendoHamon"),
 					})
 
-					const vfxUUID = math.random(1, 0x7FFFFFFF)
+					const vfxUUID = os.clock()
 					VFXService:StartEffect(Players:GetPlayers(), "ForgeVFXHold", {
 						UUID = vfxUUID,
 						Template = self:GetAsset("Models/SendoHamon"),

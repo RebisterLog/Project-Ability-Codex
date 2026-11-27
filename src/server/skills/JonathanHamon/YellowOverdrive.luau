@@ -82,7 +82,7 @@ function Skill.onInit(self)
 	const AttackInfo = self.Data.AttackInfo
 
 	self.LastDrain = 0
-	self.VFXUUID = math.random(1, 0x7FFFFFFF)
+	self.VFXUUID = os.clock()
 	self.VFXStarted = false
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
