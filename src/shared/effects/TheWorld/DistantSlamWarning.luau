@@ -33,7 +33,7 @@ return {
 		label.AnchorPoint = Vector2.new(0.5, 0)
 		label.Position = UDim2.new(0.5, 0, 0.15, 0)
 		label.Size = UDim2.fromOffset(420, 54)
-		label.Text = "DISTANT SLAM INCOMING"
+		label.Text = "DISTANCE SLAM INCOMING"
 		label.TextColor3 = Color3.fromRGB(255, 130, 130)
 		label.TextScaled = true
 		label.Parent = screen

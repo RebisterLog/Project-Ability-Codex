@@ -65,7 +65,6 @@ const None = {
 		StopSign = Models.StopSign,
 		StopSignImpact = Models.StopSignImpact,
 		Knife = Models.Knife,
-		MarkIndicator = Models.MarkIndicator,
 		LegBarrageVFX = Models.LegBarrageVFX,
 		LegBarrageHeavyVFX = Models.LegBarrageHeavyVFX,
 		DistantSlamWarning = Models.DistantSlamWarning,

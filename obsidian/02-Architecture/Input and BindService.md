@@ -23,7 +23,7 @@ key / mouse / touch
 
 The server never trusts the point for hit resolution: it is only a direction/aim hint for projectile launch. `SkillService:ActivateSkill(character, skillId, aimPoint)` forwards it through `Spec:ActivateSkill` into `Skill:Activate(aimPoint)` and then `SkillData.Activate(self, aimPoint)`. Skills that do not need aim simply ignore the extra argument.
 
-The client clamps the point in `BindService.aimPointFor` (120 studs from the caster's `HumanoidRootPart`); `SkillService:ActivateSkill` now applies the same clamp on the server, so bot-generated points and Studio Bridge calls are covered too. A `nil` point is left untouched. Only opted-in skills receive a point: the client uses the `AIMED_SKILLS` set in `BindService` (currently `MarkedKnives`), while bots read `AimRequired = true` from the skill data. Keeping the client list explicit avoids sending a vector for every held bind.
+The client clamps the point in `BindService.aimPointFor` (120 studs from the caster's `HumanoidRootPart`); `SkillService:ActivateSkill` now applies the same clamp on the server, so bot-generated points and Studio Bridge calls are covered too. A `nil` point is left untouched. Only opted-in skills receive a point: the client uses the `AIMED_SKILLS` set in `BindService` (currently `Knives`), while bots read `AimRequired = true` from the skill data. Keeping the client list explicit avoids sending a vector for every held bind.
 
 ## Important behaviours
 
