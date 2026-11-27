@@ -37,6 +37,8 @@ return {
 		const bodyType = data.Type or "Arm"
 		const rate = data.Rate or 30
 		const lifetime = data.Lifetime or 0.3
+		const spread = if bodyType == "Leg" then 0.5 else 1
+		const forward = if bodyType == "Leg" then -2 else 0
 
 		if self.Barrages[uuid] then self:onStop({ UUID = uuid }) end
 
@@ -80,19 +82,19 @@ return {
 
 				const randomSide = if math.random() > 0.5 then 1 else -1
 				const offsetA = CFrame.new(
-					side * math.random(50, 100) / 100,
-					math.random(-100, 100) / 100,
-					1
+					side * math.random(50, 100) / 100 * spread,
+					math.random(-100, 100) / 100 * spread,
+					1 + forward
 				) + Vector3.zAxis * -3
 				const offsetB = CFrame.new(
-					side * math.random(0, 400) / 100,
-					math.random(-550, 550) / 100,
-					-2
+					side * math.random(0, 400) / 100 * spread,
+					math.random(-550, 550) / 100 * spread,
+					-2 + forward
 				) + Vector3.zAxis * -3
 				const offsetC = CFrame.new(
-					math.random(0, 50) / 100 * side,
-					math.random(0, 100) / 100 * randomSide,
-					-9 + (randomSide * math.random(0, 50) / 100)
+					math.random(0, 50) / 100 * side * spread,
+					math.random(0, 100) / 100 * randomSide * spread,
+					-9 + (randomSide * math.random(0, 50) / 100) + forward
 				)
 
 				const component = Bodypart.new(part, {

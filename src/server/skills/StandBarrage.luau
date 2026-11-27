@@ -105,7 +105,6 @@ function Skill.onInit(self)
 
 	local barrageAnim = self:GetAsset("Stand/Animations/Barrage")
 	local barrageSound = self:GetAsset("Stand/Sounds/Barrage")
-	local barrageVlSound = self:GetAsset("Stand/Sounds/BarrageVL")
 	local barrageHitSound = self:GetAsset("Stand/Sounds/BarrageHit")
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
@@ -120,10 +119,6 @@ function Skill.onInit(self)
 						Character = self.Caster.instance,
 						Animation = barrageAnim,
 						Speed = seq.Speed,
-					})
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-						Origin = RootPart,
-						Sound = barrageVlSound,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
@@ -146,10 +141,6 @@ function Skill.onInit(self)
 
 						VFXService:StopEffect(Players:GetPlayers(), "Barrage", {
 							UUID = self.BarrageUUID,
-						})
-						VFXService:StopEffect(Players:GetPlayers(), "Sound", {
-							Origin = RootPart,
-							Sound = barrageVlSound.Sound,
 						})
 						VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 							Origin = RootPart,
@@ -198,10 +189,6 @@ function Skill.onInit(self)
 				function()
 					VFXService:StopEffect(Players:GetPlayers(), "Barrage", {
 						UUID = self.BarrageUUID,
-					})
-					VFXService:StopEffect(Players:GetPlayers(), "Sound", {
-						Origin = RootPart,
-						Sound = barrageVlSound.Sound,
 					})
 					VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,

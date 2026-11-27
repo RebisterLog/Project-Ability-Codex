@@ -41,7 +41,8 @@ VFXService:StartEffect(Players:GetPlayers(), "Highlight", {
 | `Sound` | `Origin` (CFrame or Instance), `Sound`, `Volume`, `MaxDistance`, `MinDistance`. |
 | `EmitParticle` | `UUID` (kept for stopping), `Particle`, `Origin`, optional `Offset`, `UseForge`. |
 | `Highlight` | `Character` / `Adornee` / `UUID`, colors and transparencies, `Lifetime`, `Tween`. |
-| `Hitbox`, `Ragdoll`, `Barrage`, `CameraShake`, ... | used by combat hooks and debug views; read the effect module for its protocol. |
+| `Barrage` | `UUID` (kept for stopping), `Character` (Model), `Type` (`"Arm"` by default, `"Leg"` uses a tighter path farther forward), `Rate`, `Lifetime`. |
+| `Hitbox`, `Ragdoll`, `CameraShake`, ... | used by combat hooks and debug views; read the effect module for its protocol. |
 ## Rules
 
 1. Every started effect must be stopped: register the stop once at frame 0 in `seq.Cleaner` (or in the skill's `self.Cleaner` for skill-lifetime effects) so it runs on both natural end and interruption.

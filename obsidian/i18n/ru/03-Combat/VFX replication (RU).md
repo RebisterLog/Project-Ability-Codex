@@ -37,7 +37,8 @@ VFXService:StopEffectExcept(players, name, data)
 | `Sound` | `Origin`, `Sound`, `Volume`, `MaxDistance`, `MinDistance`. |
 | `EmitParticle` | `UUID`, `Particle`, `Origin`, `Offset`, `UseForge`. |
 | `Highlight` | `Character` / `Adornee` / `UUID`, `FillColor`, `OutlineColor`, `Lifetime`, `Tween`. |
-| `Barrage`, `EquipShell`, `CameraShake`, `Hitbox` и др. | См. модуль эффекта в `src/shared/effects/`. |
+| `Barrage` | `UUID` (для остановки), `Character` (Model), `Type` (`"Arm"` по умолчанию, `"Leg"` — уже траектория и дальше вперёд), `Rate`, `Lifetime`. |
+| `EquipShell`, `CameraShake`, `Hitbox` и др. | См. модуль эффекта в `src/shared/effects/`. |
 ## Правила
 
 1. Каждый запущенный эффект должен быть остановлен: зарегистрируйте остановку один раз в `seq.Cleaner` на кадре 0 (сработает и при естественном завершении, и при прерывании) или в `self.Cleaner` скилла. `Janitor` у скилла нет.

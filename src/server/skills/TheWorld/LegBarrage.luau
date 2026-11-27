@@ -14,8 +14,8 @@ const Skill: types.SkillData = {
 
 	BarrageInfo = {
 		Hitbox = {
-			Size = Vector3.new(6, 6, 8),
-			Offset = CFrame.new(0, 0, -4),
+			Size = Vector3.new(5, 5, 10),
+			Offset = CFrame.new(0, 0, -6),
 			MovementCorrection = true,
 			Debug = true,
 		},
@@ -41,7 +41,7 @@ const Skill: types.SkillData = {
 		Damage = 10,
 		Block = {
 			Blockable = false,
-			PerfectBlockable = false,
+			PerfectBlockable = true,
 			BlockBreak = true,
 			BlockCancel = false,
 			BlockIgnore = false,
@@ -68,6 +68,8 @@ function Skill:onInit()
 					self.Stand = stand
 					if not stand then return end
 
+					self.BarrageUUID = os.clock()
+
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
@@ -78,18 +80,7 @@ function Skill:onInit()
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = stand.RootPart,
-						Sound = self:GetAsset("Stand/Sounds/LegBarrageVL"),
-					})
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-						Origin = stand.RootPart,
 						Sound = self:GetAsset("Stand/Sounds/LegBarrage"),
-					})
-
-					self.VFXUUID = os.clock()
-					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
-						UUID = self.VFXUUID,
-						Particle = self:GetAsset("Models/LegBarrageVFX"),
-						Origin = stand.RootPart,
 					})
 
 					seq.Cleaner:Add(function()
@@ -97,25 +88,32 @@ function Skill:onInit()
 							Character = stand.instance,
 							Animation = self:GetAsset("Stand/Animations/LegBarrage").Animation,
 						})
-						VFXService:StopEffect(
-							Players:GetPlayers(),
-							"EmitParticle",
-							{ UUID = self.VFXUUID }
-						)
-						VFXService:StopEffect(Players:GetPlayers(), "Sound", {
-							Origin = stand.RootPart,
-							Sound = self:GetAsset("Stand/Sounds/LegBarrage").Sound,
+						VFXService:StopEffect(Players:GetPlayers(), "Barrage", {
+							UUID = self.BarrageUUID,
 						})
 						VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 							Origin = stand.RootPart,
-							Sound = self:GetAsset("Stand/Sounds/LegBarrageVL").Sound,
+							Sound = self:GetAsset("Stand/Sounds/LegBarrage").Sound,
 						})
 					end)
 				end,
 			},
 
 			{
-				8,
+				36,
+				function()
+					VFXService:StartEffect(Players:GetPlayers(), "Barrage", {
+						Character = self.Stand.instance,
+						Type = "Leg",
+						Rate = 120,
+						Lifetime = 0.3,
+						UUID = self.BarrageUUID,
+					})
+				end,
+			},
+
+			{
+				40,
 				function()
 					const targets = CombatService:Hitbox({
 						Skill = self,
@@ -131,12 +129,21 @@ function Skill:onInit()
 						})
 					end
 				end,
-				84,
+				110,
 				Interval = 4,
 			},
 
 			{
-				120,
+				112,
+				function()
+					VFXService:StopEffect(Players:GetPlayers(), "Barrage", {
+						UUID = self.BarrageUUID,
+					})
+				end,
+			},
+
+			{
+				128,
 				function()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
