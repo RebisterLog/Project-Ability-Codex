@@ -8,7 +8,7 @@ const Projectile = require(ServerScriptService.server["combat-classes"].Projecti
 const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
-	DisplayName = "Knives",
+	DisplayName = "Checkmate",
 	AimRequired = true,
 	UseCooldown = 0.25,
 

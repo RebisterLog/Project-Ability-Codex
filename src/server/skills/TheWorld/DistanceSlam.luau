@@ -6,7 +6,7 @@ const Enums = require(ServerScriptService.server.Enums)
 const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
-	DisplayName = "Distance Slam",
+	DisplayName = "Fraid Kick",
 	Tag = "OnlyForStand",
 	SearchRadius = 50,
 
