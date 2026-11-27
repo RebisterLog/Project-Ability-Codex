@@ -1,9 +1,10 @@
 --[=[
-	Distant Slam
+	Distance Slam
 
-	Telegraphs and then lands a remote kick on the nearest fully marked enemy.
-	The stand is welded to the victim's root; the caster stays put and is slowed
-	until both sequences finish. No time stop is involved.
+	Automatically picks the nearest enemy within 50 studs, telegraphs, then
+	lands a remote kick on them. The stand is welded to the victim's root;
+	the caster stays put and is slowed from the cast through the strike.
+	No time stop is involved.
 
 	ASSETS:
 	Animations
@@ -22,9 +23,9 @@ const Enums = require(ServerScriptService.server.Enums)
 const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
-	DisplayName = "Distant Slam",
+	DisplayName = "Distance Slam",
 	Tag = "OnlyForStand",
-	SearchRadius = 25,
+	SearchRadius = 50,
 
 	SkillCharacters = { "Hit", "Blockable", "PerfectBlock", "Ragdoll" },
 
@@ -45,41 +46,6 @@ const Skill: types.SkillData = {
 		HitEffects = { { Particle = "Default", Sound = "Default" } },
 	} :: types.AttackInfo,
 }
-
-local function getMarkedKnives(self: types.Skill): any?
-	if not self.MarkedKnives then self.MarkedKnives = self.Character.MarkedKnives end
-	return self.MarkedKnives
-end
-
-local function clearAllMarks(self: types.Skill)
-	-- Called once the slam commits to a target: every mark is consumed whether
-	-- the hitbox connects or not. Marks are kept when no full mark exists or
-	-- when the full mark was out of range.
-	const marked = getMarkedKnives(self)
-	if marked and marked.Marks then
-		for target, _ in marked.Marks do
-			marked.Clear(target)
-		end
-	end
-end
-
-local function findTarget(self: types.Skill): types.Character?
-	const marked = getMarkedKnives(self)
-	if not marked or not marked.Marks then return nil end
-
-	local nearest: types.Character? = nil
-	local best = self.Data.SearchRadius :: number
-
-	for target, entry in marked.Marks do
-		if entry.Count < 3 then continue end
-		const dist = (target.RootPart.Position - self.Character.RootPart.Position).Magnitude
-		if dist < best then
-			best = dist
-			nearest = target
-		end
-	end
-	return nearest
-end
 
 function Skill:onInit()
 	const character = self.Character :: types.Character
@@ -105,6 +71,7 @@ function Skill:onInit()
 						Skill = self,
 						Caster = character,
 						Info = {
+							Debug = true,
 							Size = Vector3.new(5, 5, 5),
 							Origin = CFrame.new(target.RootPart.Position),
 						},
@@ -118,8 +85,6 @@ function Skill:onInit()
 							Info = info,
 						})
 					end
-					-- Marks are consumed whether the hitbox connects or not.
-					clearAllMarks(self)
 				end,
 			},
 			{ 35 },
@@ -139,11 +104,6 @@ function Skill:onInit()
 					-- Everything that must outlive the telegraph lives in the
 					-- strike sequence's cleaner. Stopping either sequence on
 					-- interrupt therefore releases all of it exactly once.
-					self.StrikeSequence.Cleaner:Add(
-						character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium)
-					)
-					self.StrikeSequence.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
-
 					stand:WeldTo(target.RootPart)
 					self.StrikeSequence.Cleaner:Add(function()
 						stand:WeldToOwner()
@@ -198,30 +158,33 @@ end
 function Skill:Activate()
 	self.Target = nil
 
-	const marked = getMarkedKnives(self)
-	if not marked or not marked.Marks then return end
+	const CombatService = Crane:GetService("CombatService")
 
-	-- No full mark means a silent exit: no cooldown and no mark cleanup.
-	local hasFullMark = false
-	for _, entry in marked.Marks do
-		if entry.Count >= 3 then
-			hasFullMark = true
-			break
-		end
-	end
-	if not hasFullMark then return end
+	-- One layer spans the search, telegraph and strike. It is released by the
+	-- strike cleaner, or by hand below when no target is found (Interrupt is
+	-- not called when the bind is simply released).
+	self.CastSlow = self.Character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium)
+	self.CastNoJump = self.Character:AddParameter("MaxJumpPower", 0)
+	self.StrikeSequence.Cleaner:Add(self.CastSlow)
+	self.StrikeSequence.Cleaner:Add(self.CastNoJump)
 
 	-- Any committed cast spends the cooldown, whether the hitbox connects or
 	-- not. The engine no longer overwrites it with Cooldown = 0 on return.
 	self:SetCooldown(20)
 
-	const target = findTarget(self)
-	if not target then
-		-- A full mark out of range still spends the cooldown, but is kept.
+	const targets = CombatService:Hitbox({
+		Caster = self.Character,
+		Info = {
+			Size = self.Data.SearchRadius,
+			SortByDistance = true,
+		},
+	}) :: { types.Character }
+	self.Target = targets[1]
+	if not self.Target then
+		self.CastSlow:Destroy()
+		self.CastNoJump:Destroy()
 		return
 	end
-
-	self.Target = target
 
 	if self.TelegraphSequence then
 		self.TelegraphSequence:Play()
@@ -237,8 +200,6 @@ function Skill:Interrupt()
 	if self.TelegraphSequence then self.TelegraphSequence:Stop() end
 	if self.StrikeSequence then
 		self.StrikeSequence:Stop()
-		-- Stop() is a no-op while the sequence has not started, so clean its
-		-- Butler explicitly: that is where WeldToOwner and VFX teardown live.
 		self.StrikeSequence.Cleaner:Clean()
 	end
 end

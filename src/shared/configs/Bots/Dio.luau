@@ -130,11 +130,11 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		["DistantSlam"] = {
-			-- Silently does nothing without a full mark; the skill starts no cooldown then.
+		["DistanceSlam"] = {
+			-- Always casts on the nearest enemy within 50 studs and spends its cooldown.
 			StandSummon = true,
 			Priority = 3,
-			Distance = 25,
+			Distance = 50,
 
 			ForbiddenConditions = {
 				"TARGET_RAGDOLLED",

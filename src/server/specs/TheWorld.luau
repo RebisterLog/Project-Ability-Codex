@@ -22,7 +22,7 @@ const Spec = {
 		["StopSign"] = "@Specs/TheWorld/StopSign",
 		["Knives"] = "@Specs/TheWorld/Knives",
 		["LegBarrage"] = "@Specs/TheWorld/LegBarrage",
-		["DistantSlam"] = "@Specs/TheWorld/DistantSlam",
+		["DistanceSlam"] = "@Specs/TheWorld/DistanceSlam",
 	},
 
 	onInit = function(self: types.Spec)
