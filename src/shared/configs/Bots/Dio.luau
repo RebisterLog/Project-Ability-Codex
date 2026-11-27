@@ -105,7 +105,7 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 			},
 		},
 
-		["MarkedKnives"] = {
+		["Knives"] = {
 			-- AimRequired skills get a server-generated AimPoint from Bot.ActivateSkill.
 			Distance = 30,
 			Priority = 2,
@@ -145,7 +145,7 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 	Combos = {
 		{
 			"Punch",
-			"MarkedKnives",
+			"Knives",
 		},
 	},
 }

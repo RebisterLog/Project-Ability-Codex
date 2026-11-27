@@ -77,7 +77,7 @@ const Specs = {
 			["StandBarrage"] = Enum.KeyCode.E,
 
 			["StopSign"] = Enum.KeyCode.R,
-			["MarkedKnives"] = Enum.KeyCode.T,
+			["Knives"] = Enum.KeyCode.T,
 			["LegBarrage"] = Enum.KeyCode.Y,
 			["DistantSlam"] = Enum.KeyCode.G,
 		},

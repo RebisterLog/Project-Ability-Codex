@@ -1,10 +1,9 @@
 --[=[
-	Marked Knives
+	Knives
 
 	Three knives fly to a fixed world point supplied by the client's AimPoint.
-	Each landed knife deals 2.5 and adds 1/3 of a personal mark. Marks never
-	expire; a full mark is consumed by Distant Slam.
-	Uses the shared KnivesCharge pool (3 charges, +1 every 5 s).
+	Each landed knife simply deals damage; there is no extra state to store or
+	display. Uses the shared KnivesCharge pool (3 charges, +1 every 5 s).
 
 	ASSETS:
 	Animations
@@ -12,7 +11,7 @@
 	Sounds
 	   Sounds/MarkedKnivesThrow, Sounds/MarkedKnivesHit
 	Models
-	   Models/Knife (with its Trail), Models/MarkIndicator
+	   Models/Knife (with its Trail)
 ]=]
 
 const Players = game:GetService("Players")
@@ -24,7 +23,7 @@ const Projectile = require(ServerScriptService.server["combat-classes"].Projecti
 const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
-	DisplayName = "Marked Knives",
+	DisplayName = "Knives",
 	AimRequired = true,
 	UseCooldown = 3,
 
@@ -59,38 +58,6 @@ const Skill: types.SkillData = {
 		Debug = true,
 	},
 }
-
-local function clearMark(self: types.Skill, target: types.Character)
-	const VFXService = Crane:GetService("VFXService")
-	self.Marks[target] = nil
-	const uuid = self.MarkUUIDs[target]
-	if uuid then
-		VFXService:StopEffect(Players:GetPlayers(), "MarkIndicator", { UUID = uuid })
-		self.MarkUUIDs[target] = nil
-	end
-end
-
-local function addMark(self: types.Skill, target: types.Character)
-	const VFXService = Crane:GetService("VFXService")
-	-- Marks do not time out. Only a full mark consumed by Distant Slam (or
-	-- the target's death) removes them.
-	const entry = self.Marks[target] or { Count = 0 }
-	entry.Count = math.min(3, entry.Count + 1)
-	self.Marks[target] = entry
-
-	if not self.MarkUUIDs[target] then
-		self.MarkUUIDs[target] = tostring(os.clock()) .. target.instance.Name
-	end
-	VFXService:StartEffect(Players:GetPlayers(), "MarkIndicator", {
-		UUID = self.MarkUUIDs[target],
-		Character = target.instance,
-		Count = entry.Count,
-	})
-
-	self.Cleaner:Add(target.Humanoid.Died:Once(function()
-		clearMark(self, target)
-	end))
-end
 
 local function shootVolley(self: types.Skill, aimPoint: Vector3)
 	const CombatService = Crane:GetService("CombatService")
@@ -129,9 +96,7 @@ local function shootVolley(self: types.Skill, aimPoint: Vector3)
 				Victim = target,
 				Skill = self,
 				Info = self.Data.AttackInfo,
-			}):andThen(function(data)
-				if data.State.Success then addMark(self, target) end
-			end)
+			})
 		end)
 		knife:Start()
 	end
@@ -141,17 +106,6 @@ function Skill:onInit()
 	const character = self.Character :: types.Character
 	const CombatService = Crane:GetService("CombatService")
 	const VFXService = Crane:GetService("VFXService")
-
-	self.Marks = {}
-	self.MarkUUIDs = {}
-
-	-- Shared marks table for Distant Slam: no cross-skill lookup through Spec.
-	character.MarkedKnives = {
-		Marks = self.Marks,
-		Clear = function(target: types.Character)
-			clearMark(self, target)
-		end,
-	}
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {

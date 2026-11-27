@@ -24,7 +24,7 @@ const NON_REPEATABLE = { Summon = true }
 
 -- Skills that consume a world-space cursor point. Sending it for every bind
 -- would waste ByteNet's shared 512 B/s budget, so only these ids opt in.
-const AIMED_SKILLS = { MarkedKnives = true }
+const AIMED_SKILLS = { Knives = true }
 const MAX_AIM_DISTANCE = 120
 
 -- First priority level. Candidates inside one slot are sorted by skill id.

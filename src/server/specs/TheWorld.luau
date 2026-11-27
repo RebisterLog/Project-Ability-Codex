@@ -20,7 +20,7 @@ const Spec = {
 		["StandBarrage"] = "~/skills/StandBarrage",
 
 		["StopSign"] = "@Specs/TheWorld/StopSign",
-		["MarkedKnives"] = "@Specs/TheWorld/MarkedKnives",
+		["Knives"] = "@Specs/TheWorld/Knives",
 		["LegBarrage"] = "@Specs/TheWorld/LegBarrage",
 		["DistantSlam"] = "@Specs/TheWorld/DistantSlam",
 	},
