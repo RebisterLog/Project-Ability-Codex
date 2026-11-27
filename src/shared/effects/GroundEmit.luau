@@ -12,7 +12,7 @@ task.spawn(function()
 end)
 
 const Params = RaycastParams.new()
-Params.FilterDescendantsInstances = {workspace.Map}
+Params.FilterDescendantsInstances = { workspace.Map }
 Params.FilterType = Enum.RaycastFilterType.Include
 Params.IgnoreWater = true
 
@@ -27,25 +27,24 @@ return {
 	onStart = function(_self, data: ExtraEmitData)
 		const Effect = data.Effect or "EmitParticle"
 		const Offset = data.Offset or CFrame.identity
-			
+
 		local Origin = FXUtil.TranslateToCFrame(data.Origin)
 		local GroundOffset = data.GroundOffset or CFrame.identity
-		
-		if not Origin then
-			return
-		end
-		
-		if Offset then
-			Origin = Origin * Offset
-		end
-		
+
+		if not Origin then return end
+
+		if Offset then Origin = Origin * Offset end
+
 		const Direction = data.Direction or Vector3.new(0, -8, 0)
 		local result = workspace:Raycast(Origin.Position, Direction, Params)
 		if not result then return end
-		
-		VFXService:StartEffect(Effect, Crane.Utils.Reconcile({
-			Origin = result.Position + result.Normal * 0.125,
-			Offset = GroundOffset
-		}, data))
+
+		VFXService:StartEffect(
+			Effect,
+			Crane.Utils.Reconcile({
+				Origin = result.Position + result.Normal * 0.125,
+				Offset = GroundOffset,
+			}, data)
+		)
 	end,
 }

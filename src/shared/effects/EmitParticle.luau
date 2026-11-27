@@ -58,11 +58,11 @@ return {
 			else nil
 
 		local container: Instance = Particle
-		
+
 		if Offset and typeof(Offset) == "CFrame" then
 			Origin *= Offset
 		end
-		
+
 		if Data.AttachTo then
 			FXUtil.AttachTo(Particle, Data.AttachTo)
 		else

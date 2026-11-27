@@ -22,9 +22,7 @@ function module.TranslateToCFrame(origin: CFrame | Vector3 | Instance?): CFrame?
 	elseif originType == "Instance" then
 		local instance = origin :: Instance
 
-		if not instance:IsDescendantOf(game) then
-			return nil
-		end
+		if not instance:IsDescendantOf(game) then return nil end
 
 		if instance:IsA("BasePart") then
 			return instance.CFrame
@@ -33,14 +31,10 @@ function module.TranslateToCFrame(origin: CFrame | Vector3 | Instance?): CFrame?
 		elseif instance:IsA("Model") then
 			local primaryPart = instance:FindFirstChild("Torso") or instance.PrimaryPart
 
-			if primaryPart and primaryPart:IsA("BasePart") then
-				return primaryPart.CFrame
-			end
+			if primaryPart and primaryPart:IsA("BasePart") then return primaryPart.CFrame end
 
 			for _, descendant in instance:GetDescendants() do
-				if descendant:IsA("BasePart") then
-					return instance:GetPivot()
-				end
+				if descendant:IsA("BasePart") then return instance:GetPivot() end
 			end
 		end
 	end
@@ -49,9 +43,7 @@ function module.TranslateToCFrame(origin: CFrame | Vector3 | Instance?): CFrame?
 end
 
 function module.MoveTo(inst: BasePart | Model, origin: CFrame?): ()
-	if not origin then
-		return
-	end
+	if not origin then return end
 
 	if inst:IsA("Model") then
 		if not inst.PrimaryPart then
@@ -66,15 +58,11 @@ function module.MoveTo(inst: BasePart | Model, origin: CFrame?): ()
 end
 
 function module.AttachTo(inst: BasePart | Model, config: AttachConfig): Weld | Motor6D?
-	if type(config) ~= "table" then
-		return nil
-	end
+	if type(config) ~= "table" then return nil end
 
 	local targetPart = config.Part
 
-	if not targetPart or not targetPart:IsDescendantOf(workspace) then
-		return nil
-	end
+	if not targetPart or not targetPart:IsDescendantOf(workspace) then return nil end
 
 	if inst:IsA("Model") and not inst.PrimaryPart then
 		warn(inst, "needs a PrimaryPart")
@@ -83,17 +71,13 @@ function module.AttachTo(inst: BasePart | Model, config: AttachConfig): Weld | M
 
 	local offset = module.TranslateToCFrame(config.Offset)
 
-	if inst:IsA("Model") then
-		inst = inst.PrimaryPart :: BasePart
-	end
+	if inst:IsA("Model") then inst = inst.PrimaryPart :: BasePart end
 
 	inst.Anchored = false
 	inst.CanCollide = false
 	inst.Massless = true
 
-	local weld: Weld | Motor6D = Instance.new(
-		config.UseMotor6D and "Motor6D" or "Weld"
-	)
+	local weld: Weld | Motor6D = Instance.new(config.UseMotor6D and "Motor6D" or "Weld")
 
 	local inverseAttach = config.MakePartP0 or config.InverseAttach
 
@@ -102,21 +86,13 @@ function module.AttachTo(inst: BasePart | Model, config: AttachConfig): Weld | M
 
 	weld.Parent = config.MakePartParent and targetPart or inst
 
-	if config.C0 then
-		weld.C0 = config.C0
-	end
+	if config.C0 then weld.C0 = config.C0 end
 
-	if config.C1 then
-		weld.C1 = config.C1
-	end
+	if config.C1 then weld.C1 = config.C1 end
 
-	if offset then
-		weld.C0 = weld.C0 * offset
-	end
+	if offset then weld.C0 = weld.C0 * offset end
 
-	if config.Duration then
-		task.delay(config.Duration, weld.Destroy, weld)
-	end
+	if config.Duration then task.delay(config.Duration, weld.Destroy, weld) end
 
 	return weld
 end

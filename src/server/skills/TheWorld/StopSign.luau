@@ -12,23 +12,23 @@ const Skill: types.SkillData = {
 	SkillCharacters = { "Hit", "Ragdoll", "ComboStarter", "IgnoreBlock", "Armored", "Debuff" },
 
 	AttackInfo = {
-		Damage = 15;
+		Damage = 10,
 		Ragdoll = { Duration = Enums.Ragdoll.Light },
 		Bleed = { Damage = 0.5, Duration = 3, Slow = 0 },
 		Sever = { Limb = Enums.Limb.RightArm, Duration = 5 },
-		
+
 		Hitbox = {
 			MovementCorrection = true,
 			Size = Vector3.new(5, 7, 10),
 			Offset = CFrame.new(0, 0, -8),
 			Debug = true,
-		};
+		},
 	} :: types.AttackInfo,
-	
+
 	SlamInfo = {
 		Priority = Enums.IFrames.Ragdoll,
-		
-		Damage = 10,
+
+		Damage = 5,
 		Block = {
 			Blockable = false,
 			PerfectBlockable = false,
@@ -36,7 +36,7 @@ const Skill: types.SkillData = {
 			BlockCancel = true,
 			BlockIgnore = true,
 		},
-		
+
 		Ragdoll = { Duration = Enums.Ragdoll.Light },
 
 		HitAnimations = "Default",
@@ -48,7 +48,7 @@ const Skill: types.SkillData = {
 			MovementCorrection = true,
 			Debug = true,
 		},
-	};
+	},
 }
 
 function Skill:onInit()
@@ -59,125 +59,148 @@ function Skill:onInit()
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
-			{0, function(seq)
-				const weapon = CombatService:Equip(character, self:GetAsset("Models/StopSign"))
-				seq.StopSign = weapon
-				seq.Cleaner:Add(weapon)
+			{
+				0,
+				function(seq)
+					const weapon = CombatService:Equip(character, self:GetAsset("Models/StopSign"))
+					seq.StopSign = weapon
+					seq.Cleaner:Add(weapon)
 
-				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
-				seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
-				seq.Cleaner:Set("Armor", CombatService:AddArmor(character))
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium))
+					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
+					seq.Cleaner:Set("Armor", CombatService:AddArmor(character))
 
-				const clip = self:GetAsset("Animations/StopSign")
-				VFXService:StartEffect(Players:GetPlayers(), "Animation", {
-					Character = character.instance,
-					Animation = clip,
-					Speed = seq.Speed,
-					FadeInTime = 0.25;
-				})
-				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-					Origin = character.RootPart,
-					Sound = self:GetAsset("Sounds/StopSign"),
-				})
-				seq.Cleaner:Add(function()
-					VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+					const clip = self:GetAsset("Animations/StopSign")
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
-						Animation = clip.Animation,
+						Animation = clip,
+						Speed = seq.Speed,
+						FadeInTime = 0.25,
 					})
-				end)
-			end,};
-			
-			{43, function(seq)
-				seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
-				seq.Cleaner:Add(character:AddParameter("NoRotate", true))
-			end,};
-			
-			{46, function(seq)
-				VFXService:StartEffect({character.instance}, "Step", {
-					Normal = Vector3.new(0, 0, -1),
-					Speed = 40,
-					EndSpeed = 8,
-					Turn = true,
-					Character = character.instance,
-					Time = 0.25 * seq.Speed,
-				})
-			end,};
-			
-			{46, function(seq)
-				const AttackInfo = self.Data.AttackInfo
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = character.RootPart,
+						Sound = self:GetAsset("Sounds/StopSign"),
+					})
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = character.instance,
+							Animation = clip.Animation,
+						})
+					end)
+				end,
+			},
 
-				const targets = CombatService:Hitbox({
-					Skill = self,
-					Caster = character,
-					Info = AttackInfo.Hitbox,
-				}) :: { types.Character }
+			{
+				43,
+				function(seq)
+					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", 0))
+					seq.Cleaner:Add(character:AddParameter("NoRotate", true))
+				end,
+			},
 
-				for _, target in targets do
-					CombatService:Attack({
+			{
+				46,
+				function(seq)
+					VFXService:StartEffect({ character.instance }, "Step", {
+						Normal = Vector3.new(0, 0, -1),
+						Speed = 40,
+						EndSpeed = 8,
+						Turn = true,
+						Character = character.instance,
+						Time = 0.25 * seq.Speed,
+					})
+				end,
+			},
+
+			{
+				46,
+				function(seq)
+					const AttackInfo = self.Data.AttackInfo
+
+					const targets = CombatService:Hitbox({
 						Skill = self,
-						Victim = target,
-						Info = AttackInfo,
-					})
-				end
-			end,};
+						Caster = character,
+						Info = AttackInfo.Hitbox,
+					}) :: { types.Character }
 
-			{50, function(seq)
-				const SlamInfo = self.Data.SlamInfo
+					for _, target in targets do
+						CombatService:Attack({
+							Skill = self,
+							Victim = target,
+							Info = AttackInfo,
+						})
+					end
+				end,
+			},
 
-				const targets = CombatService:Hitbox({
-					Skill = self,
-					Caster = character,
-					Info = SlamInfo.Hitbox,
-				}) :: { types.Character }
+			{
+				50,
+				function(seq)
+					const SlamInfo = self.Data.SlamInfo
 
-				for _, target in targets do
-					CombatService:Attack({
+					const targets = CombatService:Hitbox({
 						Skill = self,
-						Victim = target,
-						Info = SlamInfo,
-					})
-				end
+						Caster = character,
+						Info = SlamInfo.Hitbox,
+					}) :: { types.Character }
 
-				VFXService:StartEffect(Players:GetPlayers(), "GroundEmit", {
-					Particle = self:GetAsset("Models/StopSignImpact"),
-					Origin = character.RootPart,
-					Offset = SlamInfo.Hitbox.Offset,
-					GroundOffset = CFrame.new(0,1,0) * CFrame.Angles(0, 0, math.rad(90))
-				})
-				
-				const Valid = {}
-				const Radius = SlamInfo.Hitbox.Size * 1.25
-				for _, Player in Players:GetPlayers() do
-					if
-						not (
-							Player.Character
+					for _, target in targets do
+						CombatService:Attack({
+							Skill = self,
+							Victim = target,
+							Info = SlamInfo,
+						})
+					end
+
+					VFXService:StartEffect(Players:GetPlayers(), "GroundEmit", {
+						Particle = self:GetAsset("Models/StopSignImpact"),
+						Origin = character.RootPart,
+						Offset = SlamInfo.Hitbox.Offset,
+						GroundOffset = CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+					})
+
+					const Valid = {}
+					const Radius = SlamInfo.Hitbox.Size * 1.25
+					for _, Player in Players:GetPlayers() do
+						if
+							not (
+								Player.Character
 								and Player.Character:FindFirstChild("HumanoidRootPart")
-						)
-					then
-						continue
-					end
-					if
-						(Player.Character.HumanoidRootPart.Position - character.RootPart.Position).Magnitude
-						>= Radius
-					then
-						continue
+							)
+						then
+							continue
+						end
+						if
+							(
+								Player.Character.HumanoidRootPart.Position
+								- character.RootPart.Position
+							).Magnitude >= Radius
+						then
+							continue
+						end
+
+						table.insert(Valid, Player)
 					end
 
-					table.insert(Valid, Player)
-				end
+					VFXService:StartEffect(Valid, "CameraShake", { Type = "Slam" })
+				end,
+			},
 
-				VFXService:StartEffect(Valid, "CameraShake", { Type = "Slam" })
-			end,};
-			
-			{55, function(seq)
-				VFXService:StartEffect(Players:GetPlayers(), "TW_DiscardSign", {
-					Model = seq.StopSign,
-				})
-			end,};
-			
-			{50, function(seq)
-				seq.Cleaner:Remove("Armor")
-			end,};
+			{
+				55,
+				function(seq)
+					VFXService:StartEffect(Players:GetPlayers(), "TW_DiscardSign", {
+						Model = seq.StopSign,
+					})
+				end,
+			},
+
+			{
+				50,
+				function(seq)
+					seq.Cleaner:Remove("Armor")
+				end,
+			},
 
 			{ 85 },
 		},

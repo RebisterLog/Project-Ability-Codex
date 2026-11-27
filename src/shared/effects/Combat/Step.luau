@@ -26,7 +26,7 @@ type StepVelocityData = {
 	Distance: number?,
 	MaxDistance: number?,
 	RaycastParameters: RaycastParams?,
-	Filter: {Instance}?,
+	Filter: { Instance }?,
 	Turn: boolean?,
 	Override: boolean?,
 }
@@ -92,9 +92,7 @@ return {
 		local worldNormal = rootPart.CFrame:VectorToWorldSpace(normal)
 
 		local function getDirection()
-			if data.Turn then
-				return direction + rootPart.CFrame:VectorToWorldSpace(normal)
-			end
+			if data.Turn then return direction + rootPart.CFrame:VectorToWorldSpace(normal) end
 
 			return direction + worldNormal
 		end
@@ -112,21 +110,13 @@ return {
 		local function calculateVelocity()
 			local alpha = math.clamp(elapsedTime / animationDuration, 0, 1)
 
-			local easingAlpha = game.TweenService:GetValue(
-				alpha,
-				easingStyle,
-				easingDirection
-			)
+			local easingAlpha = game.TweenService:GetValue(alpha, easingStyle, easingDirection)
 
 			local interpolatedVelocity = startVelocity ~= endVelocity
-				and startVelocity:Lerp(endVelocity, easingAlpha)
+					and startVelocity:Lerp(endVelocity, easingAlpha)
 				or startVelocity
 
-			local velocity = getDirection() * math.lerp(
-				currentSpeed,
-				endSpeed,
-				easingAlpha
-			)
+			local velocity = getDirection() * math.lerp(currentSpeed, endSpeed, easingAlpha)
 
 			local unitDirection = velocity.Unit
 			currentSpeed = velocity.Magnitude
@@ -134,16 +124,10 @@ return {
 			if maxDistance then
 				local raycastDistance = distance or maxDistance
 
-				local raycastResult = workspace:Raycast(
-					rootPart.Position,
-					velocity,
-					raycastParams
-				)
+				local raycastResult = workspace:Raycast(rootPart.Position, velocity, raycastParams)
 
 				if raycastResult then
-					raycastDistance = (
-						rootPart.Position - raycastResult.Position
-					).Magnitude
+					raycastDistance = (rootPart.Position - raycastResult.Position).Magnitude
 				end
 
 				currentSpeed = math.lerp(
@@ -200,8 +184,6 @@ return {
 		if not rootPart then return end
 
 		local bodyVelocity = rootPart:FindFirstChild("StepVelocity")
-		if bodyVelocity then
-			bodyVelocity:Destroy()
-		end
+		if bodyVelocity then bodyVelocity:Destroy() end
 	end,
 }
