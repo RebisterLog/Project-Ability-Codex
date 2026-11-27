@@ -1,6 +1,16 @@
 # Input and BindService
 
-Bindings live in `src/shared/configs/Specs.luau` under each spec's `Binds` table. A bind maps a skill id to an `Enum.KeyCode` or `Enum.UserInputType` value (mouse buttons and touch are supported).
+Bindings live in `src/shared/configs/Specs.luau` under each spec's `Binds` table. A bind maps a skill id to an `Enum.KeyCode` or `Enum.UserInputType` value (mouse buttons and touch are supported). A per-spec override can replace those defaults at equip time.
+
+## Custom binds and the skill bar
+
+`src/shared/configs/Binds.luau` is the allow-list of keys a player may assign. Its `HiddenSkills` table lists skill ids that get no cell on the skill bar at all (`Run` today), while their binds keep working through `BindService`. The client skill bar (`SkillBarComponent` + `SkillBarView`) shows only enabled, bound skills, ordered `Spec` before `SubSpec`. It uses `Parameters.ReleaseTime` from the Proxy for the drain animation and the numeric timer; no total cooldown duration is replicated.
+
+Holding the left mouse button on a cell for one second enters rebinding mode. The next key from the allow-list is sent as `RebindSkill({ SpecName, SkillId, Bind })`, where `Bind` is `tostring(EnumItem)` because ByteNet has no enum codec. `SpecModule:Rebind` validates spec ownership and skill membership, stores the bind in `PlayerSaveData.SpecBinds[specName][skillId]`, and applies it at once to the live skill with `skill:SetBind` when that spec is equipped.
+
+Binds are keyed by **spec name**, not by the owned spec UUID, so switching specs and returning restores the player's choices. `SpecModule:EquipSpec` converts the saved strings back to EnumItems through the same allow-list and passes them to `SpecService:CreateSpec` as per-character overrides, which take precedence over `Specs.luau`. Duplicate keys between skills are allowed and resolved by the slot/skill-id ordering described below. `BindService.SkillActivated` fires once per press and briefly shrinks the cell via `scope:Spring`.
+
+Cells use an explicit `LayoutOrder`: all `Spec` skills first, then `SubSpec`, alphabetical inside each slot. A spec may define `Palette = { BackgroundColor, NameColor, CooldownColor, TimerColor, BindColor, BindTextColor }` in `Specs.luau` — one colour per element of a cell; a subspec has its own entry and therefore its own palette. Any missing colour falls back to the built-in value.
 
 ## How input reaches a skill
 

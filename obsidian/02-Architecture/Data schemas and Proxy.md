@@ -6,8 +6,10 @@
 |---|---|
 | `GameData` | Global game document shape. |
 | `PlayerData` | `PlayerDynamicData` combined with `PlayerSaveData`. |
-| `PlayerDynamicData` | Runtime state: spec slot, character parameters, current spec/subspec. |
-| `PlayerSaveData` | Persistent state: saved specs and progression. |
+| `PlayerDynamicData` | Runtime state: `Skills`, character parameters. |
+| `PlayerSaveData` | Persistent state: saved specs, progression, equipped spec UUIDs (`Spec`/`SubSpec`) and `SpecBinds`. |
+
+`PlayerSaveData.SpecBinds` is `{ [specName]: { [skillId]: tostring(bind) } }`. EnumItems cannot be written to a DataStore, so binds are stored as strings and converted back through `src/shared/configs/Binds.luau`. The key must exist in the schema's returned default table, otherwise `DraftController.merge` drops saved binds when a document loads.
 
 Public types are exported from `src/server/types.luau`, `src/client/types.luau` and `src/shared/schemas/`. See [[Types index]].
 

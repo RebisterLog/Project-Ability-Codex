@@ -1,7 +1,5 @@
 --!strict
 
-type Bind = Enum.KeyCode | Enum.UserInputType
-
 export type SkinData = {
 	Id: string, -- id(name) of Skin
 	Spec: string, -- Spec name this skin belongs to
@@ -22,7 +20,7 @@ export type PlayerSaveData = {
 	Level: number,
 	Inventory: { string },
 
-	SpecBinds: { [string]: { [string]: Bind } }, -- [spec name]: {[skillId]: keycode}
+	SpecBinds: { [string]: { [string]: string } },
 	Skins: { [string]: SkinData }, -- [unique id]: data
 	Specs: { [string]: SpecData }, -- [unique id]: data
 	EquippedSkins: { [string]: string }, -- [unique id of owned spec]: skin name
@@ -37,6 +35,7 @@ return {
 	Money = 0,
 	Inventory = {},
 
+	SpecBinds = {},
 	Skins = {},
 	Specs = {},
 	EquippedSkins = {},

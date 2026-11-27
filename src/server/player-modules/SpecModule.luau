@@ -2,10 +2,36 @@ const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const types = require(ServerScriptService.server.types)
+const AllowedBinds = require(ReplicatedStorage.shared.configs.Binds)
 
 const SpecModule = {
 	Name = "SpecModule",
 } :: types.PlayerModule
+
+const function toBind(value: string): types.Bind?
+	for _, option in AllowedBinds.Allowed do
+		if tostring(option.Bind) == value then return option.Bind end
+	end
+
+	return nil
+end
+
+function SpecModule.CustomBinds(
+	self: typeof(SpecModule),
+	specName: string
+): { [string]: types.Bind }
+	const result: { [string]: types.Bind } = {}
+	const source = self.playerProxy()
+	const saved = source.SpecBinds and source.SpecBinds[specName]
+	if not saved then return result end
+
+	for skillId, value in saved do
+		const bind = toBind(value)
+		if bind then result[skillId] = bind end
+	end
+
+	return result
+end
 
 const function EquipSpec(self: typeof(SpecModule), slot: types.SpecSlot, specId: string): boolean
 	const proxy = self.playerProxy
@@ -29,7 +55,12 @@ const function EquipSpec(self: typeof(SpecModule), slot: types.SpecSlot, specId:
 	end
 
 	const skinName = proxy().EquippedSkins[specId] or "None"
-	const spec = characterComponent:SetSpec(ownedSpec.Name, skinName, {}, specId)
+	const spec = characterComponent:SetSpec(
+		ownedSpec.Name,
+		skinName,
+		self:CustomBinds(ownedSpec.Name),
+		specId
+	)
 	if not spec then return false end
 
 	self:ReplicateSkills(slot, spec)
@@ -42,6 +73,11 @@ const function EquipSpec(self: typeof(SpecModule), slot: types.SpecSlot, specId:
 end
 
 function SpecModule:onStart()
+	self.player.Janitor:Add(Crane:GetPacket("RebindSkill").listen(function(request, player)
+		if player ~= self.player.instance then return end
+		self:Rebind(request.SpecName, request.SkillId, request.Bind)
+	end))
+
 	if self.playerProxy().Spec == "None" then
 		const starterSpec: types.SpecSaveData = {
 			Id = Crane.Utils.GenerateUUID(),
@@ -112,6 +148,39 @@ function SpecModule.ClearSlot(self: typeof(SpecModule), slot: types.SpecSlot): b
 	})
 
 	return true
+end
+
+function SpecModule.Rebind(
+	self: typeof(SpecModule),
+	specName: string,
+	skillId: string,
+	value: string
+)
+	if not self:GetSpecIdByName(specName) then return end
+
+	const bind = toBind(value)
+	if not bind then return end
+
+	const specService = Crane:GetService("SpecService")
+	const specData = specService:GetSpecData({ Id = specName, Skin = "None" })
+	if not specData or not specData.Skills[skillId] then return end
+
+	const source = self.playerProxy()
+	const saved = table.clone((source.SpecBinds and source.SpecBinds[specName]) or {})
+	saved[skillId] = value
+	self.playerProxy:Patch({
+		{ Name = "SetDictionary", Path = { "SpecBinds" }, Args = { specName, saved } },
+	})
+
+	const slot = specService:GetSpecType(specName)
+	const character = self.player.instance.Character
+	const characterComponent: types.Character? = character
+		and Crane:GetComponent("Character", character) :: types.Character?
+	const liveSpec = if characterComponent and slot then characterComponent[slot] else nil
+	const skill = if liveSpec and liveSpec.Data.Id == specName
+		then liveSpec.Skills[skillId]
+		else nil
+	if skill then skill:SetBind(bind) end
 end
 
 --- The id of the owned spec by its config name, if the player owns it.

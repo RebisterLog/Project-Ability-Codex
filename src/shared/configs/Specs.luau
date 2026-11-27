@@ -1,11 +1,21 @@
 export type BindKey = Enum.KeyCode & Enum.UserInputType
 
+export type SpecPalette = {
+	BackgroundColor: Color3?,
+	NameColor: Color3?,
+	CooldownColor: Color3?,
+	TimerColor: Color3?,
+	BindColor: Color3?,
+	BindTextColor: Color3?,
+}
+
 export type SpecInfo = {
 	DisplayName: string,
 	IsPublic: boolean,
 	Type: ("Spec" | "SubSpec")?,
 
 	TimeStopVision: boolean?,
+	Palette: SpecPalette?,
 
 	Binds: {
 		[string]: BindKey,
@@ -106,6 +116,15 @@ const Specs = {
 		Type = "SubSpec",
 		DisplayName = "Jonathan Hamon",
 		IsPublic = true,
+
+		Palette = {
+			BackgroundColor = Color3.fromHex("#423621"),
+			NameColor = Color3.fromHex("#FFC862"),
+			CooldownColor = Color3.fromHex("#8B69CE"),
+			TimerColor = Color3.fromHex("#FFC862"),
+			BindColor = Color3.fromHex("#FFC862"),
+			BindTextColor = Color3.fromHex("#423621"),
+		},
 
 		Binds = {
 			["Charge"] = Enum.KeyCode.LeftAlt,

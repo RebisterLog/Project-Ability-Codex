@@ -44,6 +44,8 @@ const BindService = Crane:CreateService({
 BindService.Binds = {} :: { [Bind]: { Candidate } }
 BindService.Held = {} :: { [string]: SkillRef }
 BindService.StopQueue = {} :: { [string]: PendingStop }
+BindService.SkillActivated = Crane.Signal()
+BindService.Rebinding = false
 
 function BindService.GetSkillData(self: typeof(BindService), ref: SkillRef)
 	const skills = self.playerProxy().Skills
@@ -170,6 +172,7 @@ end
 
 function BindService.SendStart(self: typeof(BindService), candidate: Candidate, key: string)
 	self.clientSkills:Activate(candidate.SkillId)
+	self.SkillActivated:Fire(candidate.Slot, candidate.SkillId)
 	Crane:GetPacket("StartSkill").send({
 		Id = candidate.SkillId,
 		AimPoint = self:AimPointFor(candidate),
@@ -199,7 +202,7 @@ function BindService.onStart(self: typeof(BindService))
 	end))
 
 	self.Cleaner:Add(UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if gameProcessed then return end
+		if gameProcessed or self.Rebinding then return end
 
 		const key = self:InputKey(input)
 		if self.Held[key] then return end

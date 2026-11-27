@@ -82,6 +82,14 @@ return ByteNet.defineNamespace("CranePackets", function()
 					IsGrounded = ByteNet.bool,
 				}),
 			}),
+
+			RebindSkill = ByteNet.definePacket({
+				value = ByteNet.struct({
+					SpecName = ByteNet.string,
+					SkillId = ByteNet.string,
+					Bind = ByteNet.string,
+				}),
+			}),
 		},
 
 		queries = {},

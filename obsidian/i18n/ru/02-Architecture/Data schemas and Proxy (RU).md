@@ -6,8 +6,10 @@
 |---|---|
 | `GameData` | Форма глобального документа игры. |
 | `PlayerData` | `PlayerDynamicData` + `PlayerSaveData`. |
-| `PlayerDynamicData` | Состояние рантайма: слот спека, параметры персонажа, текущие спеки. |
-| `PlayerSaveData` | Сохраняемое состояние: спекы и прогресс. |
+| `PlayerDynamicData` | Состояние рантайма: `Skills`, параметры персонажа. |
+| `PlayerSaveData` | Сохраняемое состояние: спекы, прогресс, UUID надетых спеков (`Spec`/`SubSpec`) и `SpecBinds`. |
+
+`PlayerSaveData.SpecBinds` — это `{ [specName]: { [skillId]: tostring(bind) } }`. EnumItem нельзя записать в DataStore, поэтому бинды хранятся строками и переводятся обратно через `src/shared/configs/Binds.luau`. Ключ должен присутствовать в возвращаемой таблице схемы по умолчанию, иначе `DraftController.merge` выбросит сохранённые бинды при загрузке документа.
 
 Публичные типы экспортируются из `src/server/types.luau`, `src/client/types.luau` и `src/shared/schemas/`. См. [[Types index (RU)]].
 

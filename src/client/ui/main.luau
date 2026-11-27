@@ -29,6 +29,7 @@ const PlayerHUDComponent = require(script.Parent.components.PlayerHUDComponent)
 const PreloadingComponent = require(script.Parent.components.PreloadingComponent)
 const Settings = require(script.Parent.components.Settings)
 const Shadow = require(script.Parent.utils.Shadow)
+const SkillBarComponent = require(script.Parent.components.SkillBarComponent)
 
 const scope = scoped(Fusion, {
 	Button = Button,
@@ -126,6 +127,7 @@ return function(
 			PreloadingComponent = PreloadingComponent(scope, proxies, router),
 			HamonDebug = HamonComponent(scope, playerProxy, gameProxy),
 			AmmoDebug = AmmoComponent(scope, playerProxy, gameProxy),
+			SkillBar = SkillBarComponent(scope, playerProxy, gameProxy),
 		},
 	})
 end
