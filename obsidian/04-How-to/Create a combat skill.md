@@ -29,6 +29,7 @@
 - On a sequence the validator key is `Validator` (not `Validate`), and repeated hits use frame keys `Interval = N` / `Offset = M` rather than `if frame % N ~= 0 then return end`. A ranged frame entry is **not** a loop. See [[Sequencer]].
 - `VFXService:StartEffect` / `StopEffect` take exactly three arguments: `(players, name, dataTable)`. There is no positional `RootPart` or animation argument. See [[VFX replication]].
 - Dynamic asset keys are normal: `self:GetAsset("Animations/Punch" .. self.PunchCount)`. `BaseSpec` provides an asset fallback for shared skills.
+- A Folder asset can be cached in `onInit`: sort `GetChildren()` by name, wrap each `Animation` with `Helpers.actionAnimation`, then advance an index per cast (`Knives` cycles throw clips this way). `Interrupt` must stop the clip that was actually chosen.
 - Use `function Skill.onInit(self)` style for new code; match the file when editing.
 
 ## Verification

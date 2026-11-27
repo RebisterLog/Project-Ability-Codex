@@ -2,6 +2,7 @@ const Players = game:GetService("Players")
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
+const Helpers = require(ReplicatedStorage.shared.configs.Skins.helpers)
 const Enums = require(ServerScriptService.server.Enums)
 const Projectile = require(ServerScriptService.server["combat-classes"].Projectile)
 const types = require(ServerScriptService.server.types)
@@ -9,7 +10,7 @@ const types = require(ServerScriptService.server.types)
 const Skill: types.SkillData = {
 	DisplayName = "Knives",
 	AimRequired = true,
-	UseCooldown = 3,
+	UseCooldown = 0.25,
 
 	SkillCharacters = { "Projectile", "Hit", "IgnoreBlock" },
 
@@ -23,7 +24,7 @@ const Skill: types.SkillData = {
 			BlockIgnore = true,
 		},
 		HitAnimations = "Default",
-		HitEffects = { { Particle = "Default", Sound = "Sounds/MarkedKnivesHit" } },
+		HitEffects = { { Particle = "Default", Sound = "Sounds/KnivesHit" } },
 	} :: types.AttackInfo,
 
 	ProjectileData = {
@@ -85,6 +86,15 @@ function Skill:onInit()
 	const CombatService = Crane:GetService("CombatService")
 	const VFXService = Crane:GetService("VFXService")
 
+	const animations = (self:GetAsset("Animations/Knives") :: Folder):GetChildren()
+	table.sort(animations, function(a, b)
+		return a.Name < b.Name
+	end)
+	self.KnivesClips = {}
+	for _, animation in animations do
+		table.insert(self.KnivesClips, Helpers.actionAnimation(animation))
+	end
+
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
@@ -93,7 +103,7 @@ function Skill:onInit()
 					seq.Cleaner:Add(character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Slowed))
 					seq.Cleaner:Add(character:AddParameter("MaxJumpPower", 0))
 
-					const clip = self:GetAsset("Animations/MarkedKnives")
+					const clip = self.Clip
 					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
 						Character = character.instance,
 						Animation = clip,
@@ -101,7 +111,7 @@ function Skill:onInit()
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = character.RootPart,
-						Sound = self:GetAsset("Sounds/MarkedKnivesThrow"),
+						Sound = self:GetAsset("Sounds/KnivesThrow"),
 					})
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
@@ -127,6 +137,10 @@ end
 function Skill:Activate(aimPoint: Vector3?)
 	const CombatService = Crane:GetService("CombatService")
 	if math.floor(CombatService:GetCharge(self.Character, "KnivesCharge")) < 1 then return end
+
+	self.KnivesIndex = (self.KnivesIndex or 0) % #self.KnivesClips + 1
+	self.Clip = self.KnivesClips[self.KnivesIndex]
+
 	CombatService:ConsumeCharge(self.Character, "KnivesCharge", 1)
 	self:SetCooldown(self.Data.UseCooldown)
 
@@ -143,10 +157,12 @@ end
 function Skill:Interrupt()
 	const VFXService = Crane:GetService("VFXService")
 	if self.Sequence then self.Sequence:Stop() end
-	VFXService:StopEffect(Players:GetPlayers(), "Animation", {
-		Character = self.Character.instance,
-		Animation = self:GetAsset("Animations/MarkedKnives").Animation,
-	})
+	if self.Clip then
+		VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+			Character = self.Character.instance,
+			Animation = self.Clip.Animation,
+		})
+	end
 end
 
 return Skill

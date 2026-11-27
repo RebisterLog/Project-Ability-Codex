@@ -29,6 +29,7 @@
 - На секвенсе валидатор — `Validator` (не `Validate`); повторяющиеся попадания задаются `Interval = N` / `Offset = M`, а не `if frame % N ~= 0 then return end`. Диапазонный кадр — не цикл. См. [[Sequencer (RU)]].
 - `VFXService:StartEffect/StopEffect` принимают ровно три аргумента: `(players, name, dataTable)`. Позиционного `RootPart` или анимации нет; стоп анимации берёт `clip.Animation`, старт — таблицу клипа.
 - Динамические ключи ассетов допустимы: `self:GetAsset("Animations/Punch" .. self.PunchCount)`. `BaseSpec` задаёт фолбэк ассетов для общих скиллов.
+- Папку-ассет можно закэшировать в `onInit`: отсортировать `GetChildren()` по имени, обернуть каждую `Animation` через `Helpers.actionAnimation` и сдвигать индекс на каждый каст (так `Knives` перебирает анимации броска). В `Interrupt` нужно останавливать выбранный клип.
 - Верхние привязки объявляйте через `const`; `--!native` / `--!optimize 2` — только для по-настоящему горячего серверного кода.
 - Для нового кода предпочитайте `function Skill.onInit(self)`; при редактировании следуйте стилю файла.
 

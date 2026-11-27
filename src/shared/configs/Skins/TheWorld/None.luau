@@ -33,8 +33,7 @@ const None = {
 
 		-- The World skills
 		StopSign = actionAnimation(Animations.User.StopSign),
-		StopSignVictim = actionAnimation(Animations.User.StopSignVictim),
-		MarkedKnives = actionAnimation(Animations.User.MarkedKnives),
+		Knives = Animations.User.Knives,
 		DistantSlamCast = actionAnimation(Animations.User.DistantSlamCast),
 	},
 	Sounds = {
@@ -51,8 +50,8 @@ const None = {
 
 		-- The World skills
 		StopSign = sound(Sounds.User.StopSign), -- Current source; swap for a dedicated clip later
-		MarkedKnivesThrow = sound(Sounds.User.MarkedKnivesThrow),
-		MarkedKnivesHit = sound(Sounds.User.MarkedKnivesHit),
+		KnivesThrow = sound(Sounds.User.KnivesThrow),
+		KnivesHit = sound(Sounds.User.KnivesHit),
 		DistantSlamCast = sound(Sounds.User.DistantSlamCast),
 	},
 	Models = {
@@ -65,7 +64,6 @@ const None = {
 		StopSign = Models.StopSign,
 		StopSignImpact = Models.StopSignImpact,
 		Knife = Models.Knife,
-		LegBarrageVFX = Models.LegBarrageVFX,
 		LegBarrageHeavyVFX = Models.LegBarrageHeavyVFX,
 		DistantSlamWarning = Models.DistantSlamWarning,
 	},
@@ -89,10 +87,6 @@ const None = {
 			Punch3 = actionAnimation(Animations.Stand.Punches.Punch3),
 			Punch4 = actionAnimation(Animations.Stand.Punches.Punch4),
 			Block = actionAnimation(Animations.Stand.Block),
-			-- Grab
-			Grab = actionAnimation(Animations.Stand.GrabStart),
-			GrabThrow = actionAnimation(Animations.Stand.GrabHit),
-			GrabThrowVictim = actionAnimation(Animations.Enemy.GrabStandOn),
 			-- Summon
 			Summon = actionAnimation(Animations.Stand.Summon),
 			Unsummon = actionAnimation(Animations.Stand.Unsummon),
@@ -102,8 +96,6 @@ const None = {
 			-- The World skills
 			StopSign = actionAnimation(Animations.Stand.StopSign),
 			LegBarrage = actionAnimation(Animations.Stand.LegBarrage),
-			LegBarrageFinisher = actionAnimation(Animations.Stand.LegBarrageFinisher),
-			MarkedKnives = actionAnimation(Animations.Stand.MarkedKnives),
 			DistantSlam = actionAnimation(Animations.Stand.DistantSlam),
 		},
 		Sounds = {
@@ -111,22 +103,16 @@ const None = {
 			Punch2 = sound(Sounds.Stand.Punches.Punch2),
 			Punch3 = sound(Sounds.Stand.Punches.Punch3),
 			Punch4 = sound(Sounds.Stand.Punches.Punch4),
-			Grab = sound(Sounds.Stand.GrabStart),
-			Grabbed = sound(Sounds.Stand.GrabHit),
-			GrabVL = sound(Sounds.Stand.GrabVoice),
 			Summon = sound(Sounds.Stand.Summon),
 			SummonVL = sound(Sounds.Stand.SummonVL),
 			-- Barrage
 			Barrage = sound(Sounds.Stand.Barrage, 0.25),
 			BarrageHit = sound(Sounds.Stand.BarrageHeavyHit, 0.25),
-			BarrageVL = sound(Sounds.Stand.BarrageVL),
 
 			-- The World skills
 			StopSign = sound(Sounds.User.StopSign), -- A stand-specific clip can replace this later
 			LegBarrage = sound(Sounds.Stand.LegBarrage),
 			LegBarrageHit = sound(Sounds.Stand.LegBarrageHit),
-			LegBarrageVL = sound(Sounds.Stand.LegBarrageVL),
-			MarkedKnives = sound(Sounds.Stand.MarkedKnives),
 			DistantSlam = sound(Sounds.Stand.DistantSlam),
 		},
 		Models = {

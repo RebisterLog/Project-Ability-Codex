@@ -26,7 +26,7 @@ const Configs = {
 			FillStartedAt = 0,
 			FillStartAmount = 3,
 			Max = 3,
-			FillRate = 1 / 5,
+			FillRate = 1 / 3,
 			DecayRate = 0,
 			HoldSeconds = 0,
 		},
