@@ -79,7 +79,7 @@ const Skill: types.SkillData = {
 			Debug = true,
 		},
 
-		Damage = 4,
+		Damage = 1,
 
 		Block = {
 			Blockable = true,
@@ -109,11 +109,14 @@ const Skill: types.SkillData = {
 			Debug = true,
 		},
 
-		Damage = 4,
+		Damage = 2,
 
 		Ragdoll = {
 			Duration = Enums.Ragdoll.Heavy,
 		},
+
+		Bleed = { Damage = 0.5, Duration = 3, Slow = 0 },
+		Sever = { Limb = Enums.Limb.RightArm, Duration = 5 },
 
 		Block = {
 			Blockable = true,
