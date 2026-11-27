@@ -7,7 +7,7 @@ const TweenService = game:GetService("TweenService")
 
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const ForgeVFX = require(ReplicatedStorage.shared.packages.ForgeVFX)
-const TimeStopZones = require(ReplicatedStorage.shared.effects.TimeStopZones)
+const TimeStopZones = require(ReplicatedStorage.shared.effects.Combat.TimeStopZones)
 
 --[=[ Time Stop.
 
