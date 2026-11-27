@@ -569,6 +569,7 @@ export type SkillData = {
 
 	-- Optional metadata read by individual skills and their hooks.
 	AimRequired: boolean?, -- the server supplies an aim point for this skill
+	Toggle: boolean?, -- press flips state; the client must not re-send it while held
 	UseCooldown: number?, -- cooldown applied on use, when distinct from Cooldown
 	MarkDuration: number?, -- lifetime of the mark applied by the skill
 	SearchRadius: number?, -- radius used when looking for targets
@@ -625,6 +626,8 @@ export type SkillReplicationData = {
 	Parameters: {
 		Bind: Bind,
 		Enabled: boolean,
+		AimRequired: boolean,
+		Toggle: boolean,
 		-- Server time (workspace:GetServerTimeNow()), comparable on the client.
 		ReleaseTime: number,
 	},

@@ -29,6 +29,8 @@ function Skill.new(character: types.Character, spec: types.Spec, data: types.Ski
 				ReleaseTime = 0,
 				Enabled = false,
 				Bind = Enum.KeyCode.Unknown,
+				AimRequired = data.AimRequired == true,
+				Toggle = data.Toggle == true,
 			},
 		}),
 	}, Skill) :: types.Skill

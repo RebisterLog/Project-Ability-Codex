@@ -10,6 +10,8 @@ type SkillData = {
 		ReleaseTime: number,
 		Bind: Enum.KeyCode | Enum.UserInputType,
 		Enabled: boolean,
+		AimRequired: boolean,
+		Toggle: boolean,
 	},
 }
 

@@ -3,6 +3,7 @@ const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
 	DisplayName = "Run",
+	Toggle = true,
 }
 
 function Skill:onInit() end
