@@ -9,7 +9,7 @@ const HAMON_COST = 25
 
 const Skill = {
 	DisplayName = "Zoom Punch",
-	Cooldown = 8,
+	UseCooldown = 8,
 	BaseSpec = "JonathanHamon",
 	SkillCharacters = { "Hit", "Blockable" },
 
@@ -127,6 +127,8 @@ function Skill.Activate(self)
 		self.Sequence:Play()
 		self.Sequence:Await()
 	end
+
+	self:SetCooldown(self.Data.UseCooldown)
 end
 
 function Skill.Interrupt(self)

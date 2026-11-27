@@ -29,7 +29,7 @@ const DRAIN_PER_SECOND = 5
 
 const Skill: types.SkillData = {
 	DisplayName = "Yellow Overdrive",
-	Cooldown = 10,
+	UseCooldown = 10,
 	BaseSpec = "JonathanHamon",
 	SkillCharacters = {
 		"Hit",
@@ -207,6 +207,8 @@ function Skill.Activate(self)
 		self.Sequence:Play()
 		self.Sequence:Await()
 	end
+
+	self:SetCooldown(self.Data.UseCooldown)
 end
 
 function Skill.Interrupt(self)

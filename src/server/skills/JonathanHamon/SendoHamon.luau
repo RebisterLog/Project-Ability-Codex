@@ -27,7 +27,7 @@ const HAMON_COST = 25
 
 const Skill: types.SkillData = {
 	DisplayName = "Sendo Hamon",
-	Cooldown = 15,
+	UseCooldown = 15,
 	BaseSpec = "JonathanHamon",
 	SkillCharacters = { "Hit", "Blockable", "Ragdoll", "IgnoreBlock" },
 
@@ -162,7 +162,11 @@ function Skill.onInit(self)
 							Info = AttackInfo,
 						}):andThen(function(data)
 							if not data.State.Success then return end
-							VFXService:StartEffect({ Target }, "CameraShake", { Type = "Sendo" })
+							VFXService:StartEffect(
+								{ Target.instance },
+								"CameraShake",
+								{ Type = "Sendo" }
+							)
 						end)
 					end
 				end,
@@ -203,6 +207,8 @@ function Skill.Activate(self)
 		self.Sequence:Play()
 		self.Sequence:Await()
 	end
+
+	self:SetCooldown(self.Data.UseCooldown)
 end
 
 function Skill.Interrupt(self)
