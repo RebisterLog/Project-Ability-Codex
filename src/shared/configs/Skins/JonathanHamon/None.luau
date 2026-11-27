@@ -31,6 +31,7 @@ const None = {
 		Sword = Models.Sword,
 		SendoHamon = Models.SendoHamon,
 		YellowOverdrive = Models.YellowOverdrive,
+		SilverPierce = Models.SilverPierce,
 	},
 }
 

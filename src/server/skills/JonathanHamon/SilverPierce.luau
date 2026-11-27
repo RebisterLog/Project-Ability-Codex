@@ -13,6 +13,7 @@
 
    Models
       Sword : Equipped through CombatService:Equip for the skill duration.
+      SilverPierce : One-shot particle VFX for the thrust.
 
 ]=]
 
@@ -97,6 +98,19 @@ function Skill.onInit(self)
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/SilverPierce"),
 					})
+
+					self.VFXUUID = os.clock()
+					VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
+						UUID = self.VFXUUID,
+						Particle = self:GetAsset("Models/SilverPierce"),
+						Origin = RootPart,
+					})
+
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "EmitParticle", {
+							UUID = self.VFXUUID,
+						})
+					end)
 				end,
 			},
 
