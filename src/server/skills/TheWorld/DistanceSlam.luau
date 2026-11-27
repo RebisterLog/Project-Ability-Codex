@@ -33,10 +33,54 @@ function Skill:onInit()
 	const CombatService = Crane:GetService("CombatService")
 	const VFXService = Crane:GetService("VFXService")
 
-	self.StrikeSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
+	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
-				20,
+				0,
+				function(seq)
+					const target = self.Target
+					const stand =
+						Crane:GetService("StandService"):GetStand(character) :: types.Stand
+					if not target or not stand then return end
+
+					stand:WeldTo(target.RootPart)
+					seq.Cleaner:Add(function()
+						stand:WeldToOwner()
+						if not character.Player then stand:HandleMovement() end
+					end)
+
+					self.WarningUUID = os.clock()
+					VFXService:StartEffect(Players:GetPlayers(), "DistantSlamWarning", {
+						UUID = self.WarningUUID,
+						Caster = character.instance,
+						Target = target.instance,
+						Stand = stand.instance,
+						Duration = 1.5,
+					})
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "DistantSlamWarning", {
+							UUID = self.WarningUUID,
+						})
+						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
+							Character = stand.instance,
+							Animation = self:GetAsset("Stand/Animations/DistantSlam").Animation,
+						})
+					end)
+
+					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
+						Character = stand.instance,
+						Animation = self:GetAsset("Stand/Animations/DistantSlam"),
+						Speed = seq.Speed,
+					})
+
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = character.RootPart,
+						Sound = self:GetAsset("Sounds/DistantSlamCast"),
+					})
+				end,
+			},
+			{
+				45,
 				function()
 					const target = self.Target
 					if not target or target.Humanoid.Health <= 0 then return end
@@ -68,64 +112,6 @@ function Skill:onInit()
 					end
 				end,
 			},
-			{ 35 },
-		},
-	}))
-
-	self.TelegraphSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
-		Frames = {
-			{
-				0,
-				function(seq)
-					const target = self.Target
-					const stand =
-						Crane:GetService("StandService"):GetStand(character) :: types.Stand
-					if not target or not stand then return end
-
-					stand:WeldTo(target.RootPart)
-					self.StrikeSequence.Cleaner:Add(function()
-						stand:WeldToOwner()
-						if not character.Player then stand:HandleMovement() end
-					end)
-
-					self.WarningUUID = os.clock()
-					VFXService:StartEffect(Players:GetPlayers(), "DistantSlamWarning", {
-						UUID = self.WarningUUID,
-						Caster = character.instance,
-						Target = target.instance,
-						Stand = stand.instance,
-						Duration = 1.5,
-					})
-					self.StrikeSequence.Cleaner:Add(function()
-						VFXService:StopEffect(Players:GetPlayers(), "DistantSlamWarning", {
-							UUID = self.WarningUUID,
-						})
-						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
-							Character = stand.instance,
-							Animation = self:GetAsset("Stand/Animations/DistantSlam").Animation,
-						})
-					end)
-
-					VFXService:StartEffect(Players:GetPlayers(), "Animation", {
-						Character = stand.instance,
-						Animation = self:GetAsset("Stand/Animations/DistantSlam"),
-						Speed = seq.Speed,
-					})
-
-					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-						Origin = character.RootPart,
-						Sound = self:GetAsset("Sounds/DistantSlamCast"),
-					})
-				end,
-			},
-
-			{
-				45,
-				function()
-					if self.StrikeSequence then self.StrikeSequence:Play() end
-				end,
-			},
-
 			{ 50 },
 		},
 	}))
@@ -138,8 +124,8 @@ function Skill:Activate()
 
 	self.CastSlow = self.Character:AddParameter("MaxWalkSpeed", Enums.CastSpeed.Medium)
 	self.CastNoJump = self.Character:AddParameter("MaxJumpPower", 0)
-	self.StrikeSequence.Cleaner:Add(self.CastSlow)
-	self.StrikeSequence.Cleaner:Add(self.CastNoJump)
+	self.Sequence.Cleaner:Add(self.CastSlow)
+	self.Sequence.Cleaner:Add(self.CastNoJump)
 
 	self:SetCooldown(20)
 
@@ -157,20 +143,12 @@ function Skill:Activate()
 		return
 	end
 
-	if self.TelegraphSequence then
-		self.TelegraphSequence:Play()
-		self.TelegraphSequence:Await()
-	end
-
-	if self.StrikeSequence and self.StrikeSequence:IsPlaying() then self.StrikeSequence:Await() end
+	self.Sequence:Play()
+	self.Sequence:Await()
 end
 
 function Skill:Interrupt()
-	if self.TelegraphSequence then self.TelegraphSequence:Stop() end
-	if self.StrikeSequence then
-		self.StrikeSequence:Stop()
-		self.StrikeSequence.Cleaner:Clean()
-	end
+	if self.Sequence then self.Sequence:Stop() end
 end
 
 return Skill
