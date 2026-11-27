@@ -143,10 +143,11 @@ const Dio: BotsCharacters.BotCharacterConfig = {
 	},
 
 	Combos = {
-		{
-			"Punch",
-			"Knives",
-		},
+		{ "Dash", "Punch", "Punch", "Knives", "StandBarrage", "StopSign" },
+		{ "Knives", "Dash", "Punch", "StandBarrage", "Punch", "LegBarrage" },
+		{ "Punch", "Knives", "Punch", "StandBarrage", "DistanceSlam" },
+		{ "Dash", "Knives", "Punch", "StandBarrage", "Punch", "StopSign" },
+		{ "Knives", "Punch", "Punch", "StandBarrage", "Knives", "LegBarrage" },
 	},
 }
 
