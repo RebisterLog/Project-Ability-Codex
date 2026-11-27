@@ -5,6 +5,7 @@ local PathfindingService = game:GetService("PathfindingService")
 
 local MovementStyles = require(script.MovementStyles)
 local StateMachine = require(script.StateMachine)
+local StuckRules = require(script.StuckRules)
 
 local LOWEST_MAGNITUDE = 0.001
 local FLAT = Vector3.new(1, 0, 1)
@@ -15,8 +16,6 @@ local FACE_INTERVAL = 0.05
 local FACE_ALIGN_EPSILON = math.cos(math.rad(2))
 local MAX_PATHS_PER_SECOND = 12
 local PATH_MAX_AGE = 5
-local STUCK_TIME = 0.8
-local STUCK_DISTANCE = 0.3
 local TELEPORT_COOLDOWN = 4
 local TELEPORT_LIMIT = 2
 local WAYPOINT_SAFE_DISTANCE = 2
@@ -427,10 +426,13 @@ local States = {
 				return
 			end
 
-			local baseDirection = navigator:GetBaseDirection(
-				targetPos,
-				(pos - targetPos).Unit * navigator.config.HoldDistance
-			)
+			-- Holding means backing off from the target, not walking toward
+			-- the world origin: GetBaseDirection takes a world point, so the
+			-- old (away * HoldDistance) argument mixed two coordinate spaces.
+			local away = (pos - targetPos) * FLAT
+			local baseDirection = if away.Magnitude > LOWEST_MAGNITUDE
+				then away.Unit
+				else navigator.rootPart.CFrame.LookVector * FLAT * -1
 			local styleCallback = MovementStyleConfigs[navigator.config.Style]
 			navigator:MoveInDirection(
 				if styleCallback
@@ -840,11 +842,15 @@ function NavigationController:TeleportTo(position: Vector3)
 	local destination = if result then result.Position + Vector3.yAxis else position
 
 	-- Keep the current yaw: snapping to a fresh CFrame would leave the bot
-	-- facing world forward until the next facing update.
+	-- facing world forward until the next facing update. Keep the momentum
+	-- too — zeroing it here is what makes a recovery teleport look like the
+	-- bot was frozen and cancels a dash mover that is still running.
 	local pivot = self.rig:GetPivot()
+	local linear = self.rootPart.AssemblyLinearVelocity
+	local angular = self.rootPart.AssemblyAngularVelocity
 	self.rig:PivotTo(CFrame.new(destination) * (pivot - pivot.Position))
-	self.rootPart.AssemblyLinearVelocity = Vector3.zero
-	self.rootPart.AssemblyAngularVelocity = Vector3.zero
+	self.rootPart.AssemblyLinearVelocity = linear
+	self.rootPart.AssemblyAngularVelocity = angular
 end
 
 function NavigationController:TeleportNearTarget(_force: boolean?)
@@ -909,13 +915,24 @@ function NavigationController:CheckStuck(now: number)
 		return
 	end
 
-	if now - self.sampleAt < STUCK_TIME then return end
+	local elapsed = now - self.sampleAt
+	if elapsed < StuckRules.STUCK_TIME then return end
 
 	local moved = (pos - self.samplePos).Magnitude
 	self.samplePos = pos
 	self.sampleAt = now
 
-	if moved >= STUCK_DISTANCE then
+	-- Skill locks (Dash/Block/attacks) hold WalkSpeed at 0 for their whole
+	-- sequence. Sampling that as a stall teleports the rig and zeroes its
+	-- velocity, which is what kills dash momentum and looks like a freeze.
+	local recover = StuckRules.ShouldRecover({
+		elapsed = elapsed,
+		moved = moved,
+		walkSpeed = self.humanoid.WalkSpeed,
+		dashing = self.rootPart:FindFirstChild("DashLinearVelocity") ~= nil,
+	})
+
+	if not recover then
 		self.stuckLevel = 0
 		self.teleportPending = false
 		return
@@ -932,7 +949,12 @@ function NavigationController:CheckStuck(now: number)
 end
 
 function NavigationController:UpdateRotationEnabled(pathOwnsRotation: boolean?)
+	-- With a sway/impulse style the movement direction deliberately differs
+	-- from the target direction. Holding the body locked on the target then
+	-- fights Humanoid.AutoRotate and makes the bot jitter in place. Movement
+	-- styles rotate naturally; exact facing is enforced at cast time instead.
 	self.alignOrient.Enabled = self.config.RotateToTarget == true
+		and self.config.Style == MovementStyles.direct
 		and not self.RotationSuppressed
 		and not self.humanoid.PlatformStand
 		and not pathOwnsRotation
@@ -982,7 +1004,16 @@ function NavigationController:FaceTargetNow()
 	if forward.Magnitude < LOWEST_MAGNITUDE or desired.Magnitude < LOWEST_MAGNITUDE then return end
 	if forward.Unit:Dot(desired.Unit) > FACE_ALIGN_EPSILON then return end
 
-	self.rootPart.CFrame = CFrame.lookAt(pos, targetPos * FLAT + Vector3.yAxis * pos.Y)
+	-- Pivot the whole rig with a rotation-only goal and keep its momentum.
+	-- Writing rootPart.CFrame directly used to teleport the root alone and
+	-- drop the assembly velocity, which showed up as a stutter on every cast.
+	local pivot = self.rig:GetPivot()
+	local goal = CFrame.lookAt(pos, targetPos * FLAT + Vector3.yAxis * pos.Y)
+	local linear = self.rootPart.AssemblyLinearVelocity
+	local angular = self.rootPart.AssemblyAngularVelocity
+	self.rig:PivotTo(CFrame.new(pivot.Position) * (goal - goal.Position))
+	self.rootPart.AssemblyLinearVelocity = linear
+	self.rootPart.AssemblyAngularVelocity = angular
 end
 
 function NavigationController:RestartNavigation()
@@ -1054,14 +1085,17 @@ function NavigationController.UpdatePathfinding(
 )
 	if self.isComputingPath then return end
 
-	local now = os.clock()
+	-- One clock for the whole navigator: mixing os.clock(), tick() and
+	-- GetServerTimeNow() made the path budget and recalculation interval
+	-- disagree with the state machine's `now`.
+	const now = self.now
 	if now - budgetStart >= 1 then
 		budgetStart = now
 		pathBudget = 0
 	end
 	if pathBudget >= MAX_PATHS_PER_SECOND then return end
 
-	local timeSinceLastCalc = tick() - (self.lastCalcPathTime or 0)
+	local timeSinceLastCalc = now - (self.lastCalcPathTime or 0)
 	if timeSinceLastCalc < self.config.PathRecalculateInterval then return end
 
 	local pathFinished = self.path and self.waypoint and self.waypoint > #self.waypoints
@@ -1072,7 +1106,7 @@ function NavigationController.UpdatePathfinding(
 	if self.path and not pathFinished and not targetMoved and not pathExpired then return end
 
 	self.isComputingPath = true
-	self.lastCalcPathTime = tick()
+	self.lastCalcPathTime = now
 	pathBudget += 1
 
 	task.spawn(function()
