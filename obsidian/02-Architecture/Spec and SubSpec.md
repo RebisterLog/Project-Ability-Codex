@@ -11,6 +11,14 @@ A **spec** is a character loadout: a list of skills, key binds, a skin (animatio
 | Public config | `src/shared/configs/Specs.luau` (`DisplayName`, `IsPublic`, optional `Type`, `Binds`) |
 | Assets | `ReplicatedStorage.assets.<Name>.<Skin>` with `Animations`, `Sounds`, `Models`, `VFXs`, `Stand` (Studio-only; no `Music` folder) |
 
+## UI metadata
+
+The public config also carries display metadata: `Rarity` (a code from `src/shared/configs/Rarity.luau`), `InventoryIcon` and `HudIcon` (asset ids, optional) and `Description` (a Roblox RichText string). Both configs are under `src/shared`, so the client requires them directly — nothing is replicated through Proxy. `Rarity` maps a code to `{ Name, Color, Order }` and is auto-loaded by `ConfigsService`.
+
+Equipping goes through `SetSpecSlot { Slot, SpecName? }` and `SetSkin { SpecName, SkinName? }`. The server resolves ownership by name with `SpecModule:GetSpecIdByName`, validates the slot, and refuses to clear the main `Spec` slot — the empty state is the `Standless` spec. Clearing `SubSpec` uses `SpecModule:ClearSlot("SubSpec")`; clearing a skin uses `SkinModule:EquipSkin(name, "None")`.
+
+Deletion uses `DeleteItem { Kind, Id }` where `Kind` is `"Spec"` or `"Skin"` and `Id` is the owned record's uuid. The server unequips first: `SpecModule:DeleteSpec` switches the main slot to `Standless` or clears `SubSpec`, then removes the record plus its `EquippedSkins` and `SpecBinds` entries. `SkinModule:DeleteSkin` resets the equipped skin to `"None"` first. `Standless` itself cannot be deleted.
+
 ## Skill path rules in a spec module
 
 | Prefix | Meaning | Example |

@@ -11,6 +11,14 @@
 | Публичный конфиг | `src/shared/configs/Specs.luau` (`DisplayName`, `IsPublic`, `Binds`) |
 | Ассеты | `ReplicatedStorage.assets.<Name>.<Skin>` с `Animations`, `Sounds`, `Models`, `VFXs`, `Stand` (`Music/` не используется) |
 
+## Метаданные для UI
+
+Публичный конфиг также хранит данные для отображения: `Rarity` (код из `src/shared/configs/Rarity.luau`), `InventoryIcon` и `HudIcon` (id ассетов, необязательные) и `Description` (строка Roblox RichText). Оба конфига лежат в `src/shared`, поэтому клиент требует их напрямую — через Proxy ничего не реплицируется. `Rarity` сопоставляет код с `{ Name, Color, Order }` и автоматически загружается `ConfigsService`.
+
+Экипировка идёт через пакеты `SetSpecSlot { Slot, SpecName? }` и `SetSkin { SpecName, SkinName? }`. Сервер проверяет владение по имени через `SpecModule:GetSpecIdByName`, валидирует слот и запрещает очищать основной слот `Spec` — пустое состояние это спек `Standless`. Снятие `SubSpec` вызывает `SpecModule:ClearSlot("SubSpec")`, снятие скина — `SkinModule:EquipSkin(name, "None")`.
+
+Удаление идёт через `DeleteItem { Kind, Id }`, где `Kind` — `"Spec"` или `"Skin"`, а `Id` — uuid записи во владении. Сервер сначала снимает предмет: `SpecModule:DeleteSpec` ставит `Standless` в основной слот или очищает `SubSpec`, затем удаляет запись вместе с `EquippedSkins` и `SpecBinds`. `SkinModule:DeleteSkin` сначала сбрасывает скин на `"None"`. Сам `Standless` удалить нельзя.
+
 ## Правила путей скиллов
 
 | Префикс | Значение | Пример |

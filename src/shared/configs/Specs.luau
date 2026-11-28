@@ -17,6 +17,11 @@ export type SpecInfo = {
 	TimeStopVision: boolean?,
 	Palette: SpecPalette?,
 
+	Rarity: string,
+	InventoryIcon: string?,
+	HudIcon: string?,
+	Description: string?,
+
 	Binds: {
 		[string]: BindKey,
 	},
@@ -26,6 +31,7 @@ const Specs = {
 	["Standless"] = {
 		DisplayName = "Standless",
 		IsPublic = true,
+		Rarity = "Common",
 
 		Binds = {
 			["Dash"] = Enum.KeyCode.C,
@@ -45,6 +51,7 @@ const Specs = {
 	["Undyne"] = {
 		DisplayName = "Undyne",
 		IsPublic = true,
+		Rarity = "Common",
 
 		Binds = {
 			["Dash"] = Enum.KeyCode.C,
@@ -61,6 +68,7 @@ const Specs = {
 	["Gerson"] = {
 		DisplayName = "Gerson",
 		IsPublic = true,
+		Rarity = "Common",
 
 		Binds = {
 			["Dash"] = Enum.KeyCode.C,
@@ -76,6 +84,7 @@ const Specs = {
 	["TheWorld"] = {
 		DisplayName = "The World",
 		IsPublic = true,
+		Rarity = "Common",
 
 		Binds = {
 			["Dash"] = Enum.KeyCode.C,
@@ -96,6 +105,7 @@ const Specs = {
 	["StarPlatinum"] = {
 		DisplayName = "Star Platinum",
 		IsPublic = true,
+		Rarity = "Common",
 
 		Binds = {
 			["Dash"] = Enum.KeyCode.C,
@@ -116,6 +126,7 @@ const Specs = {
 		Type = "SubSpec",
 		DisplayName = "Jonathan Hamon",
 		IsPublic = true,
+		Rarity = "Common",
 
 		Palette = {
 			BackgroundColor = Color3.fromHex("#423621"),

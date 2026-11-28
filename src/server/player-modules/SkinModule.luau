@@ -10,7 +10,17 @@ const SkinModule = {
 
 function SkinModule.onInit() end
 
-function SkinModule.onStart() end
+function SkinModule.onStart(self: typeof(SkinModule))
+	self.player.Janitor:Add(Crane:GetPacket("SetSkin").listen(function(request, player)
+		if player ~= self.player.instance then return end
+		self:EquipSkin(request.SpecName, request.SkinName or "None")
+	end))
+
+	self.player.Janitor:Add(Crane:GetPacket("DeleteItem").listen(function(request, player)
+		if player ~= self.player.instance then return end
+		if request.Kind == "Skin" then self:DeleteSkin(request.Id) end
+	end))
+end
 
 --- Ownership is per spec name: `None` is the built-in default and needs no grant.
 function SkinModule.HasSkin(self: typeof(SkinModule), specName: string, skinName: string): boolean
@@ -33,6 +43,19 @@ end
 
 function SkinModule.GetEquippedSkin(self: typeof(SkinModule), specId: string): string
 	return self.playerProxy().EquippedSkins[specId] or "None"
+end
+
+function SkinModule.DeleteSkin(self: typeof(SkinModule), id: string)
+	const skin = self.playerProxy().Skins[id]
+	if not skin then return end
+
+	const specModule = self.player.Modules["SpecModule"]
+	const specId = specModule:GetSpecIdByName(skin.Spec)
+	if specId and self:GetEquippedSkin(specId) == skin.Id then self:EquipSkin(skin.Spec, "None") end
+
+	self.playerProxy:Patch({
+		{ Name = "RemoveDictionary", Path = { "Skins" }, Args = { id } },
+	})
 end
 
 --- Persists the choice and re-equips only when that spec is currently worn.

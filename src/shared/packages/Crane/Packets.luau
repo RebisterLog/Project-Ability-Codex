@@ -90,6 +90,27 @@ return ByteNet.defineNamespace("CranePackets", function()
 					Bind = ByteNet.string,
 				}),
 			}),
+
+			SetSpecSlot = ByteNet.definePacket({
+				value = ByteNet.struct({
+					Slot = ByteNet.string,
+					SpecName = ByteNet.optional(ByteNet.string),
+				}),
+			}),
+
+			SetSkin = ByteNet.definePacket({
+				value = ByteNet.struct({
+					SpecName = ByteNet.string,
+					SkinName = ByteNet.optional(ByteNet.string),
+				}),
+			}),
+
+			DeleteItem = ByteNet.definePacket({
+				value = ByteNet.struct({
+					Kind = ByteNet.string,
+					Id = ByteNet.string,
+				}),
+			}),
 		},
 
 		queries = {},

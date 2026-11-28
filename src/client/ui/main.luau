@@ -25,6 +25,7 @@ const Button = require(script.Parent.utils.Button)
 const AmmoComponent = require(script.Parent.components.AmmoComponent)
 const HamonComponent = require(script.Parent.components.HamonComponent)
 const Helix = require(script.Parent.utils.Helix)
+const InventoryComponent = require(script.Parent.components.InventoryComponent)
 const PlayerHUDComponent = require(script.Parent.components.PlayerHUDComponent)
 const PreloadingComponent = require(script.Parent.components.PreloadingComponent)
 const Settings = require(script.Parent.components.Settings)
@@ -89,28 +90,18 @@ return function(
 		},
 		{
 			Name = "PlayerHUD",
-			Page = PlayerHUDComponent(scope, proxies, router),
-
-			OnEnter = function(scope)
-				print("PlayerHUD entered")
-			end,
-
-			OnLeave = function(scope)
-				print("PlayerHUD left")
+			Page = function(pageScope)
+				return {
+					PlayerHUDComponent(pageScope, proxies, router),
+					HamonComponent(pageScope, playerProxy, gameProxy),
+					AmmoComponent(pageScope, playerProxy, gameProxy),
+					SkillBarComponent(pageScope, playerProxy, gameProxy),
+				}
 			end,
 		},
-
 		{
-			Name = "Settings",
-			Page = Settings(scope, proxies, router),
-
-			OnEnter = function(scope)
-				print("Settings entered")
-			end,
-
-			OnLeave = function(scope)
-				print("Settings left")
-			end,
+			Name = "Inventory",
+			Page = InventoryComponent(scope, proxies, router),
 		},
 	})
 
@@ -120,14 +111,11 @@ return function(
 		IgnoreGuiInset = true,
 		Parent = PlayerGui,
 		ResetOnSpawn = false,
-		ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
+		--	ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets,
 
 		[Children] = {
 			RootRouter = router:Render("PlayerHUD"),
 			PreloadingComponent = PreloadingComponent(scope, proxies, router),
-			HamonDebug = HamonComponent(scope, playerProxy, gameProxy),
-			AmmoDebug = AmmoComponent(scope, playerProxy, gameProxy),
-			SkillBar = SkillBarComponent(scope, playerProxy, gameProxy),
 		},
 	})
 end

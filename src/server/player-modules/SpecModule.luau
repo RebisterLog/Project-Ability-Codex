@@ -78,6 +78,32 @@ function SpecModule:onStart()
 		self:Rebind(request.SpecName, request.SkillId, request.Bind)
 	end))
 
+	self.player.Janitor:Add(Crane:GetPacket("SetSpecSlot").listen(function(request, player)
+		if player ~= self.player.instance then return end
+
+		const slot = request.Slot
+		if slot ~= "Spec" and slot ~= "SubSpec" then return end
+
+		if not request.SpecName then
+			if slot == "SubSpec" then self:ClearSlot("SubSpec") end
+			return
+		end
+
+		const specId = self:GetSpecIdByName(request.SpecName)
+		if not specId then return end
+
+		if slot == "Spec" then
+			self:SetSpec(specId)
+		else
+			self:SetSubSpec(specId)
+		end
+	end))
+
+	self.player.Janitor:Add(Crane:GetPacket("DeleteItem").listen(function(request, player)
+		if player ~= self.player.instance then return end
+		if request.Kind == "Spec" then self:DeleteSpec(request.Id) end
+	end))
+
 	if self.playerProxy().Spec == "None" then
 		const starterSpec: types.SpecSaveData = {
 			Id = Crane.Utils.GenerateUUID(),
@@ -190,6 +216,24 @@ function SpecModule.GetSpecIdByName(self: typeof(SpecModule), specName: string):
 	end
 
 	return nil
+end
+
+function SpecModule.DeleteSpec(self: typeof(SpecModule), id: string)
+	const owned = self.playerProxy().Specs[id]
+	if not owned or owned.Name == "Standless" then return end
+
+	if self:GetSpec() == id then
+		const standlessId = self:GetSpecIdByName("Standless")
+		if not standlessId or not self:SetSpec(standlessId) then return end
+	elseif self:GetSubSpec() == id then
+		self:ClearSlot("SubSpec")
+	end
+
+	self.playerProxy:Patch({
+		{ Name = "RemoveDictionary", Path = { "Specs" }, Args = { id } },
+		{ Name = "RemoveDictionary", Path = { "EquippedSkins" }, Args = { id } },
+		{ Name = "RemoveDictionary", Path = { "SpecBinds" }, Args = { owned.Name } },
+	})
 end
 
 function SpecModule.GetSpec(self: typeof(SpecModule)): string
