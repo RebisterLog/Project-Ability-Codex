@@ -80,6 +80,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = character.RootPart,
 						Sound = self:GetAsset("Sounds/StopSign"),
+						Speed = seq.Speed,
 					})
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
@@ -107,7 +108,7 @@ function Skill:onInit()
 						EndSpeed = 8,
 						Turn = true,
 						Character = character.instance,
-						Time = 0.25 * seq.Speed,
+						Time = if seq.Speed > 0 then 0.25 / seq.Speed else 0.25,
 					})
 				end,
 			},

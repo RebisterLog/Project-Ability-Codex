@@ -97,6 +97,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/SilverPierce"),
+						Speed = seq.Speed,
 					})
 
 					self.VFXUUID = os.clock()

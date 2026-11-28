@@ -121,6 +121,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
 						Sound = self:GetAsset("Stand/Sounds/GrabSlam"),
+						Speed = seq.Speed,
 					})
 
 					seq.Cleaner:Add(function()
@@ -200,6 +201,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
 						Sound = self:GetAsset("Stand/Sounds/GrabSlamStart"),
+						Speed = seq.Speed,
 					})
 
 					seq.Cleaner:Add(function()

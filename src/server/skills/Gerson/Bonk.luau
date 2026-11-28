@@ -100,6 +100,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/BonkSlam"),
+						Speed = seq.Speed,
 					})
 				end,
 			},

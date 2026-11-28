@@ -81,6 +81,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = stand.RootPart,
 						Sound = self:GetAsset("Stand/Sounds/LegBarrage"),
+						Speed = seq.Speed,
 					})
 
 					seq.Cleaner:Add(function()
@@ -144,10 +145,11 @@ function Skill:onInit()
 
 			{
 				128,
-				function()
+				function(seq)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
 						Sound = self:GetAsset("Stand/Sounds/LegBarrageHit"),
+						Speed = seq.Speed,
 					})
 					const targets = CombatService:Hitbox({
 						Skill = self,

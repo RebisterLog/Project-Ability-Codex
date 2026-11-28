@@ -70,6 +70,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = self.Stand.RootPart,
 						Sound = self:GetAsset("Stand/Sounds/StarFinger"),
+						Speed = seq.Speed,
 					})
 
 					seq.Cleaner:Add(function()

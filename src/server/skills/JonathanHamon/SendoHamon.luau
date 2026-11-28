@@ -126,6 +126,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/SendoHamon"),
+						Speed = seq.Speed,
 					})
 
 					const vfxUUID = os.clock()

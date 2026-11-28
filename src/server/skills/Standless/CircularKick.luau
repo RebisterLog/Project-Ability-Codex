@@ -107,10 +107,12 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/CircularKick"),
+						Speed = seq.Speed,
 					})
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/CircularKickVL"),
+						Speed = seq.Speed,
 					})
 
 					seq.Cleaner:Add(function()
@@ -174,6 +176,7 @@ function Skill:onInit()
 								VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 									Origin = Target.RootPart,
 									Sound = self:GetAsset("Sounds/CircularKickHit"),
+									Speed = seq.Speed,
 								})
 							end
 						end)

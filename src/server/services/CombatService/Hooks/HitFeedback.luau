@@ -55,6 +55,7 @@ return {
 		const victim = Data.Victim.instance
 		const attacker = Data.Attacker.instance
 		const skill = Data.Skill
+		const speed = Data.Attacker:GetParameter("Timescale")
 
 		for _, v in Data.Info.HitEffects or {} do
 			local Particle = v.Particle
@@ -87,6 +88,7 @@ return {
 				LookAt = v.LookAt or "Attacker",
 				Particle = Particle,
 				Sound = Sound,
+				Speed = speed,
 			})
 		end
 
@@ -104,6 +106,7 @@ return {
 					Animation = animation,
 					Priority = Enum.AnimationPriority.Action,
 				},
+				Speed = speed,
 			})
 		end
 

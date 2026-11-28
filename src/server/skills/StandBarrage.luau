@@ -123,6 +123,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = barrageSound,
+						Speed = seq.Speed,
 					})
 
 					self.BarrageUUID = os.clock()
@@ -199,10 +200,11 @@ function Skill.onInit(self)
 
 			{
 				173,
-				function()
+				function(seq)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = barrageHitSound,
+						Speed = seq.Speed,
 					})
 				end,
 			},

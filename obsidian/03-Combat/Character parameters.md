@@ -18,7 +18,7 @@ Layering: `LowestParser` for `MaxWalkSpeed`/`MaxJumpPower`, `HighestParser` for 
 | `IFrames` | Invincibility level (`Enums.IFrames`). |
 | `Stun` | `{ Duration, Priority }` (`Enums.Stun`). |
 | `Armor` | Super armor; see [[AttackInfo and AttackData]]. |
-| `Timescale` | Animation/speed multiplier; used by `seq.Speed` (clamped 0..10). |
+| `Timescale` | Animation/speed multiplier; used by `seq.Speed` (clamped 0..10) and watched by active sequences, so a mid-cast change retunes them. |
 | `CastingSkill` | Active cast lock (last wins). |
 | `CooldownMultiplier`, `DamageMultiplier`, `DamageReceivalMultiplier`, `HealMultiplier` | Multiplicative modifiers. |
 | `Ragdoll`, `Restrain`, `NoCollision`, `NoRotate` | State overrides. |

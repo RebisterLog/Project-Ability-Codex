@@ -5,7 +5,6 @@ const RunService = game:GetService("RunService")
 const ServerScriptService = game:GetService("ServerScriptService")
 const Crane = require(ReplicatedStorage.shared.packages.Crane)
 const Enums = require(ServerScriptService.server.Enums)
-const Sequencer = require(ReplicatedStorage.shared.packages.Sequencer)
 const types = require(ServerScriptService.server.types)
 
 const Skill: types.SkillData = {
@@ -98,7 +97,7 @@ function Skill.onInit(self)
 	self.AlreadyHit = {}
 	self.Shell = nil
 
-	self.ShellSequence = Sequencer.new({
+	self.ShellSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
 			{
 				0,
@@ -108,7 +107,7 @@ function Skill.onInit(self)
 
 					const velocity = seq.Cleaner:Construct(Instance, "BodyVelocity") :: BodyVelocity
 					velocity.MaxForce = Vector3.new(10_000, 0, 10_000)
-					velocity.Velocity = RootPart.CFrame.LookVector * 100
+					velocity.Velocity = RootPart.CFrame.LookVector * 100 * seq.Speed
 					velocity.P = math.huge
 					velocity.Parent = shell.PrimaryPart
 
@@ -149,6 +148,7 @@ function Skill.onInit(self)
 							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 								Origin = shell.PrimaryPart,
 								Sound = shellBounceSound,
+								Speed = seq.Speed,
 							})
 
 							if nearest and dist < 100 then
@@ -175,6 +175,8 @@ function Skill.onInit(self)
 					const slideSound = shellSlideSound.Sound:Clone() :: Sound
 					slideSound.Parent = shell.PrimaryPart
 					slideSound.Looped = true
+					-- shortcut: PlaybackSpeed is capped at 0.5..2 by Roblox.
+					slideSound.PlaybackSpeed = math.clamp(seq.Speed, 0.5, 2)
 					slideSound:Play()
 
 					seq.Cleaner:Add(slideSound)
@@ -217,7 +219,7 @@ function Skill.onInit(self)
 
 			{ 121 },
 		},
-	})
+	}))
 
 	self.Sequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
 		Frames = {
@@ -260,6 +262,7 @@ end
 
 function Skill.Interrupt(self)
 	if self.Sequence then self.Sequence:Stop() end
+	if self.ShellSequence then self.ShellSequence:Stop() end
 end
 
 return Skill

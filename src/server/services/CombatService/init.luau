@@ -206,6 +206,11 @@ function CombatService.CreateSequence(Character: types.Character, data)
 
 	Sequence:AdjustSpeed(Character:GetParameter("Timescale"))
 
+	-- Retune an active cast when a time effect changes the parameter mid-flight.
+	Sequence.Cleaner:Add(Character:WatchParameter("Timescale", function(value)
+		Sequence:AdjustSpeed(value)
+	end))
+
 	return Sequence
 end
 

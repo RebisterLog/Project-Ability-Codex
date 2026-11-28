@@ -117,6 +117,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/YellowOverdrive"),
+						Speed = seq.Speed,
 					})
 
 					-- The VFX itself starts right before the first hitbox (frame 25).

@@ -72,6 +72,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset(assetPrefix .. "Sounds/Punch" .. self.PunchCount),
+						Speed = seq.Speed,
 					})
 
 					for i, trail: Trail in self.Caster:QueryDescendants("#PunchTrail") do

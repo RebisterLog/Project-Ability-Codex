@@ -96,6 +96,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/UppercutVL"),
+						Speed = seq.Speed,
 					})
 
 					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {

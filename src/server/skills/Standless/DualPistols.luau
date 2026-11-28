@@ -144,7 +144,7 @@ function Skill:onInit()
 	const ShotFrames = self.Data.ShotFrames
 	const TotalFrames = self.Data.TotalFrames
 
-	const Shoot = function()
+	const Shoot = function(speed: number)
 		const muzzle = RootPart.CFrame * ProjectileData.Offset
 
 		const bullet = Projectile.new({
@@ -160,8 +160,8 @@ function Skill:onInit()
 			CanPierce = ProjectileData.CanPierce,
 		})
 
-		-- Tracked by the skill, so interrupt / spec removal cleans it up for free.
-		self.Cleaner:Add(bullet)
+		-- Cast-scoped: an interrupt must take the bullet with it.
+		self.Sequence.Cleaner:Add(bullet)
 
 		bullet.Hit:Connect(function(target: types.Character)
 			CombatService:Attack({
@@ -182,6 +182,7 @@ function Skill:onInit()
 		VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 			Origin = RootPart,
 			Sound = shotSound,
+			Speed = speed,
 		})
 	end
 
@@ -213,11 +214,13 @@ function Skill:onInit()
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 					Origin = RootPart,
 					Sound = self:GetAsset("Sounds/DualPistolsVoice"),
+					Speed = seq.Speed,
 				})
 
 				VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 					Origin = RootPart,
 					Sound = self:GetAsset("Sounds/DualPistolsReload"),
+					Speed = seq.Speed,
 				})
 
 				-- Runs on both a clean finish and an interrupt, so the pistols end
@@ -244,8 +247,8 @@ function Skill:onInit()
 	for _, frame in ShotFrames do
 		table.insert(Frames, {
 			frame,
-			function()
-				Shoot()
+			function(seq)
+				Shoot(seq.Speed)
 			end,
 		})
 	end

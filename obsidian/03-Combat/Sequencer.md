@@ -48,7 +48,7 @@ The callback receives `(seq, currentFrame)`, where `currentFrame` is the exact f
 
 The validator key is **`Validator`**. `Validate = function() ... end` is silently ignored (it survives as dead code in some older skills). `Validator` can abort a sequence when its condition stops holding (for example a grab target disappeared).
 
-`CreateSequence` constructs the Sequencer and calls `AdjustSpeed(character:GetParameter("Timescale"))`, so any `data.Speed` is overridden by the character's `Timescale`, clamped to `0..10`.
+`CreateSequence` constructs the Sequencer and calls `AdjustSpeed(character:GetParameter("Timescale"))`, so any `data.Speed` is overridden by the character's `Timescale`, clamped to `0..10`. It also watches the parameter and retunes an active sequence when `Timescale` changes mid-cast; the watcher is detached by `seq.Cleaner`. Do not construct sequences with `Sequencer.new` in skills — that bypasses both the initial speed and the watcher.
 
 ## Scoped cleanup
 
@@ -60,6 +60,6 @@ The validator key is **`Validator`**. `Validate = function() ... end` is silentl
 | `seq.Cleaner:Set(key, obj, method?)` | Keyed version; replaces the previous object. |
 | `seq.Cleaner:Remove(key)` | Release early. |
 
-Use `self.Cleaner` for objects that must survive the sequence (e.g. a mover created in `Activate` that does not await). `seq.Speed` follows the character's `Timescale` parameter, so animation and hit timing stay aligned. For hold-to-cast skills, release the sequence on `self.Deactivated:Once(...)` rather than assuming one activation.
+Use `self.Cleaner` for objects that must survive the sequence (e.g. a mover created in `Activate` that does not await). `seq.Speed` follows the character's `Timescale` parameter, so animation and hit timing stay aligned; a retune does **not** re-speed clips that are already playing — they keep the speed they were started with. For hold-to-cast skills, release the sequence on `self.Deactivated:Once(...)` rather than assuming one activation.
 
 Related: [[Combat pipeline]], [[Skill contract and lifecycle]], [[Character parameters]], [[VFX replication]].

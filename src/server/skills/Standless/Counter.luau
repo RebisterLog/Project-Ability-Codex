@@ -107,7 +107,7 @@ function Skill:onInit()
 	self.Target = nil :: types.Character?
 
 	self.CounterSequence = self.Cleaner:Add(CombatService.CreateSequence(character, {
-		Validate = function()
+		Validator = function()
 			const target = self.Target
 			if not target or not target.instance.Parent then return false end
 
@@ -136,11 +136,11 @@ function Skill:onInit()
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = self:GetAsset("Sounds/CounterHit") }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/CounterHit"),
+						Speed = seq.Speed,
+					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {
@@ -229,11 +229,11 @@ function Skill:onInit()
 						Speed = seq.Speed,
 					})
 
-					VFXService:StartEffect(
-						Players:GetPlayers(),
-						"Sound",
-						{ Origin = RootPart, Sound = self:GetAsset("Sounds/CounterVoice") }
-					)
+					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
+						Origin = RootPart,
+						Sound = self:GetAsset("Sounds/CounterVoice"),
+						Speed = seq.Speed,
+					})
 
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {

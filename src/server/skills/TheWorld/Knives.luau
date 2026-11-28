@@ -67,7 +67,7 @@ local function shootVolley(self: types.Skill, aimPoint: Vector3)
 			Debug = self.Data.ProjectileData.Debug,
 			VisualEffect = "ProjectileFlight",
 		})
-		self.Cleaner:Add(knife)
+		self.Sequence.Cleaner:Add(knife)
 
 		knife.Hit:Connect(function(target: types.Character)
 			CombatService:Attack({
@@ -112,6 +112,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = character.RootPart,
 						Sound = self:GetAsset("Sounds/KnivesThrow"),
+						Speed = seq.Speed,
 					})
 					seq.Cleaner:Add(function()
 						VFXService:StopEffect(Players:GetPlayers(), "Animation", {

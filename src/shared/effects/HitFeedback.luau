@@ -21,6 +21,7 @@ type HitFeedbackData = {
 	Attacker: Model,
 	Particle: BasePart | string,
 	Sound: Sound?,
+	Speed: number?,
 	LookAt: LookAt,
 	BodyPart: BodyPart?,
 }
@@ -62,6 +63,7 @@ return {
 			VFXService:StartEffect("Sound", {
 				Origin = CF,
 				Sound = data.Sound,
+				Speed = data.Speed,
 			})
 		end
 

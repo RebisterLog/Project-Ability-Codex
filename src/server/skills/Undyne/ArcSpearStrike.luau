@@ -97,6 +97,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/ArcSpearStrike"),
+						Speed = seq.Speed,
 					})
 				end,
 			},
@@ -124,6 +125,7 @@ function Skill.onInit(self)
 							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 								Origin = Data.Victim.RootPart.CFrame,
 								Sound = self:GetAsset("Sounds/ArcSpearStrikeHit"),
+								Speed = seq.Speed,
 							})
 						end)
 					end

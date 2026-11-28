@@ -194,6 +194,7 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/LuckAndPluck"),
+						Speed = seq.Speed,
 					})
 				end,
 			},

@@ -76,6 +76,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = character.RootPart,
 						Sound = self:GetAsset("Sounds/DistantSlamCast"),
+						Speed = seq.Speed,
 					})
 				end,
 			},

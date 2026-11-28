@@ -82,19 +82,27 @@ function Skill.onInit(self)
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/FootrestVL"),
+						Speed = seq.Speed,
 					})
 				end,
 			},
 
 			{
 				24,
-				function()
+				function(seq)
 					self.UUID = tick()
 					VFXService:StartEffect(Players:GetPlayers(), "EmitFolder", {
 						Character = character.instance,
 						EffectsFolder = self:GetAsset("Models/Footrest"),
 						UUID = self.UUID,
 					})
+					seq.Cleaner:Add(function()
+						VFXService:StopEffect(Players:GetPlayers(), "EmitFolder", {
+							Character = character.instance,
+							EffectsFolder = self:GetAsset("Models/Footrest"),
+							UUID = self.UUID,
+						})
+					end)
 				end,
 			},
 
@@ -162,11 +170,6 @@ function Skill.Interrupt(self)
 	VFXService:StopEffect(Players:GetPlayers(), "Sound", {
 		Origin = RootPart,
 		Sound = self:GetAsset("Sounds/FootrestVL").Sound,
-	})
-	VFXService:StopEffect(Players:GetPlayers(), "EmitFolder", {
-		Character = character.instance,
-		EffectsFolder = self:GetAsset("Models/Footrest"),
-		UUID = self.UUID,
 	})
 end
 

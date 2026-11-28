@@ -7,6 +7,7 @@ type SoundData = {
 	Volume: number?,
 	MaxDistance: number?,
 	MinDistance: number?,
+	Speed: number?,
 }
 
 type SoundStopData = {
@@ -48,6 +49,9 @@ return {
 		Sound.RollOffMaxDistance = data.MaxDistance or 100
 		Sound.RollOffMinDistance = data.MinDistance or 10
 		Sound.Volume = volume or 1
+		-- shortcut: Roblox clamps PlaybackSpeed to 0.5..2; wider Timescale
+		-- values need a time-stretch API instead of this property.
+		Sound.PlaybackSpeed = math.clamp(data.Speed or 1, 0.5, 2)
 
 		if typeof(Origin) == "CFrame" then
 			const Attachment = Instance.new("Attachment")

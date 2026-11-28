@@ -111,6 +111,7 @@ function Skill:onInit()
 							Character = character.instance,
 							Animation = dashAnim,
 							SpecId = self.Spec.Data.Id,
+							Speed = seq.Speed,
 						})
 					end
 
@@ -119,6 +120,7 @@ function Skill:onInit()
 						VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 							Origin = RootPart,
 							Sound = dashSound,
+							Speed = seq.Speed,
 						})
 					end
 
@@ -148,7 +150,9 @@ function Skill:onInit()
 								-- same frame; its stale callback must not tear down
 								-- the new one.
 								if mover.Destroyed then return end
-								if not DashMovement.Update(mover, deltaTime) then stopDash(self) end
+								if not DashMovement.Update(mover, deltaTime * seq.Speed) then
+									stopDash(self)
+								end
 							end)
 						)
 					end

@@ -108,6 +108,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/WaitALittleBit"),
+						Speed = seq.Speed,
 					})
 
 					seq.Cleaner:Add(function()
@@ -142,6 +143,7 @@ function Skill:onInit()
 							VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 								Origin = Target.RootPart,
 								Sound = self:GetAsset("Sounds/WaitALittleBitHit"),
+								Speed = seq.Speed,
 							})
 						end)
 					end

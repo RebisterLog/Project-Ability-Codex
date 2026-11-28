@@ -114,6 +114,7 @@ function Skill:onInit()
 					VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 						Origin = RootPart,
 						Sound = self:GetAsset("Sounds/KnifeStab"),
+						Speed = seq.Speed,
 					})
 				end,
 			},
@@ -149,6 +150,7 @@ function Skill:onInit()
 						VFXService:StartEffect(Players:GetPlayers(), "Sound", {
 							Origin = Data.Victim.RootPart,
 							Sound = self:GetAsset("Sounds/KnifeStabHit"),
+							Speed = seq.Speed,
 						})
 
 						VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
