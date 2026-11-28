@@ -11,6 +11,8 @@ VFXService:StopEffectExcept(players, name, data)
 
 `players` is a list of `Player` objects or character `Model`s; `data` is the protocol table declared by the effect module. There is no positional `RootPart`, instance or animation argument — older four-argument examples are obsolete.
 
+`Animation` and `Sound` play directly inside their effect modules on the client — there are no `Animations` / `Sounds` Actors or Actor messages.
+
 ```luau
 -- Animation: START takes the clip TABLE; STOP takes the raw clip.Animation
 VFXService:StartEffect(Players:GetPlayers(), "Animation", {
@@ -22,7 +24,8 @@ VFXService:StopEffect(Players:GetPlayers(), "Animation", {
 })
 
 VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-    Origin = self.Character.RootPart, Sound = self:GetAsset("Sounds/NAME"), Volume = 1,
+    Origin = self.Character.RootPart, Sound = self:GetAsset("Sounds/NAME"),
+    Volume = 1, Speed = seq.Speed,
 })
 VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
     UUID = self.ParticleUUID, Particle = self:GetAsset("Models/ParticleName"),
@@ -37,8 +40,8 @@ VFXService:StartEffect(Players:GetPlayers(), "Highlight", {
 
 | Kind | `data` payload |
 |---|---|
-| `Animation` | `Character` (Model), `Animation` (clip table on start / raw instance on stop), optional `Speed`, `Type`, `FadeTime`. |
-| `Sound` | `Origin` (CFrame or Instance), `Sound`, `Volume`, `MaxDistance`, `MinDistance`. |
+| `Animation` | `Character` (Model), `Animation` (clip table on start / raw instance on stop), optional `Speed`, `Type`, `FadeTime`. A bulk hold uses `{ Type = "PauseAll"|"ResumeAll", Characters = { Model } }` — the old flat `{ PauseAll = models }` form is rejected by validation. |
+| `Sound` | `Origin` (CFrame or Instance), `Sound`, `Volume`, `MaxDistance`, `MinDistance`, optional `Speed` (mapped to `PlaybackSpeed`, capped to `0.5..2` by Roblox). |
 | `EmitParticle` | `UUID` (kept for stopping), `Particle`, `Origin`, optional `Offset`, `UseForge`. |
 | `Highlight` | `Character` / `Adornee` / `UUID`, colors and transparencies, `Lifetime`, `Tween`. |
 | `Barrage` | `UUID` (kept for stopping), `Character` (Model), `Type` (`"Arm"` by default, `"Leg"` uses a tighter path farther forward), `Rate`, `Lifetime`. |

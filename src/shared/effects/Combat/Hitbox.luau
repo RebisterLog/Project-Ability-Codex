@@ -1,5 +1,4 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
 const Skins = require(ReplicatedStorage.shared.configs.Skins)
 
 const Hitbox = {}

@@ -4,6 +4,8 @@
 
 `StartEffect` / `StopEffect` принимают **ровно три аргумента**: `(players, name, dataTable)`. `players` — список объектов `Player` или `Model` (модель превращается в игрока через `Players:GetPlayerFromCharacter`); `data` — протокольная таблица самого эффекта.
 
+`Animation` и `Sound` воспроизводятся напрямую в своих модулях эффектов на клиенте — отдельные Actors `Animations` / `Sounds` и сообщения Actors не используются.
+
 ```luau
 const clip = self:GetAsset("Animations/NAME") -- таблица клипа: .Animation, .Priority, .Looped
 
@@ -12,7 +14,8 @@ VFXService:StartEffect(Players:GetPlayers(), "Animation", {
     Character = character.instance, Animation = clip, Speed = seq.Speed,
 })
 VFXService:StartEffect(Players:GetPlayers(), "Sound", {
-    Origin = character.RootPart, Sound = self:GetAsset("Sounds/NAME"), Volume = 1,
+    Origin = character.RootPart, Sound = self:GetAsset("Sounds/NAME"),
+    Volume = 1, Speed = seq.Speed,
 })
 VFXService:StartEffect(Players:GetPlayers(), "EmitParticle", {
     UUID = self.UUID, Particle = particle, Origin = character.RootPart,
@@ -33,8 +36,8 @@ VFXService:StopEffectExcept(players, name, data)
 
 | Тип | Поля `data` |
 |---|---|
-| `Animation` | `Character` (Model), `Animation` (таблица клипа при старте / `clip.Animation` при стопе), `Speed`, `FadeTime`. |
-| `Sound` | `Origin`, `Sound`, `Volume`, `MaxDistance`, `MinDistance`. |
+| `Animation` | `Character` (Model), `Animation` (таблица клипа при старте / `clip.Animation` при стопе), `Speed`, `FadeTime`. Массовая заморозка: `{ Type = "PauseAll"\|"ResumeAll", Characters = { Model } }` — старый плоский формат `{ PauseAll = models }` отклоняется валидацией. |
+| `Sound` | `Origin`, `Sound`, `Volume`, `MaxDistance`, `MinDistance`, `Speed` (преобразуется в `PlaybackSpeed`, Roblox ограничивает диапазон `0.5..2`). |
 | `EmitParticle` | `UUID`, `Particle`, `Origin`, `Offset`, `UseForge`. |
 | `Highlight` | `Character` / `Adornee` / `UUID`, `FillColor`, `OutlineColor`, `Lifetime`, `Tween`. |
 | `Barrage` | `UUID` (для остановки), `Character` (Model), `Type` (`"Arm"` по умолчанию, `"Leg"` — уже траектория и дальше вперёд), `Rate`, `Lifetime`. |

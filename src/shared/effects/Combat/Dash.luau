@@ -1,5 +1,5 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
-const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
+const Animation = require(ReplicatedStorage.shared.effects.Animation)
 const Skins = require(ReplicatedStorage.shared.configs.Skins)
 const Camera = workspace.CurrentCamera
 
@@ -58,7 +58,7 @@ function Dash.PlayAnimation(Character: Model, SpecData: SpecData, Direction: Dir
 
 	const AnimData = (Skins[SpecId][SkinId].Animations or {})["Dash" .. Direction]
 
-	AnimationActor:SendMessage("Play", Character, AnimData.Animation, {
+	Animation.Play(Character, AnimData.Animation, {
 		Priority = AnimData.Priority,
 		Speed = AnimData.Speed,
 	})

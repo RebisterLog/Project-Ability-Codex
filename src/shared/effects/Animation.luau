@@ -1,4 +1,8 @@
-const AnimationActor = game.Players.LocalPlayer.PlayerScripts.client.Animations
+const Tracks: { [Animator]: { [Animation]: AnimationTrack } } = {}
+
+-- Speed of every track currently held at zero by a bulk pause. A track already
+-- in the map is skipped by a later hold — the first one owns the restore.
+const HeldSpeeds: { [AnimationTrack]: number } = {}
 
 const Animation = {}
 
@@ -36,6 +40,104 @@ type AnimationStopData = {
 	Overlay: boolean?,
 }
 
+type AnimationsPlayProps = {
+	Priority: Enum.AnimationPriority?,
+	Speed: number?,
+	FadeInTime: number?,
+	Weight: number?,
+	Looped: boolean?,
+	Overlay: boolean?,
+}
+
+type AnimationsStopProps = {
+	FadeOutTime: number?,
+	Overlay: boolean?,
+}
+
+const function getAnimator(character: Model): Animator?
+	if typeof(character) ~= "Instance" or not character:IsA("Model") then return nil end
+	return character:FindFirstChildWhichIsA("Animator", true)
+end
+
+const function pauseModels(models: { Model })
+	for _, character in models do
+		const animator = getAnimator(character)
+		if not animator then continue end
+
+		for _, track in animator:GetPlayingAnimationTracks() do
+			if HeldSpeeds[track] ~= nil then continue end
+			if track.Speed == 0 then continue end
+			HeldSpeeds[track] = track.Speed
+			track:AdjustSpeed(0)
+		end
+	end
+end
+
+const function resumeModels(models: { Model })
+	for _, character in models do
+		const animator = getAnimator(character)
+		if not animator then continue end
+
+		for _, track in animator:GetPlayingAnimationTracks() do
+			const speed = HeldSpeeds[track]
+			if speed == nil then continue end
+
+			HeldSpeeds[track] = nil
+			track:AdjustSpeed(speed)
+		end
+	end
+end
+
+function Animation.Play(character: Model, animation: Animation, props: AnimationsPlayProps?)
+	const animator = getAnimator(character)
+	if not animator then return end
+
+	props = props
+		or {
+			Priority = Enum.AnimationPriority.Action,
+			Speed = 1,
+			FadeInTime = 0,
+			Weight = 1,
+		}
+
+	if not Tracks[animator] then
+		Tracks[animator] = {}
+
+		animator.Destroying:Once(function()
+			Tracks[animator] = nil
+		end)
+	end
+
+	const track = Tracks[animator][animation] or animator:LoadAnimation(animation)
+	Tracks[animator][animation] = track
+	track.Looped = props.Looped == true
+	track:Play(props.FadeInTime, props.Weight, props.Speed)
+end
+
+function Animation.Stop(character: Model, animation: Animation, props: AnimationsStopProps?)
+	const animator = getAnimator(character)
+	if not animator then return end
+
+	if not Tracks[animator] or not Tracks[animator][animation] then return end
+
+	props = props or { FadeOutTime = 0 }
+
+	const track = Tracks[animator][animation]
+	HeldSpeeds[track] = nil
+	track:Stop(props.FadeOutTime)
+end
+
+function Animation.AdjustSpeed(character: Model, animation: Animation, speed: number?)
+	const animator = getAnimator(character)
+	if not animator then return end
+
+	const tracks = Tracks[animator]
+	const track = tracks and tracks[animation]
+	if not track or speed == nil then return end
+
+	track:AdjustSpeed(speed)
+end
+
 function Animation:Validate(data: AnimationData)
 	if data.Type == "PauseAll" or data.Type == "ResumeAll" then
 		return typeof(data.Characters) == "table"
@@ -58,17 +160,22 @@ function Animation:onStart(data: AnimationData)
 	const clip = data.Animation
 
 	if data.Type == "PauseAll" or data.Type == "ResumeAll" then
-		AnimationActor:SendMessage(data.Type, data.Characters)
+		if type(data.Characters) ~= "table" then return end
+		if data.Type == "PauseAll" then
+			pauseModels(data.Characters)
+		else
+			resumeModels(data.Characters)
+		end
 		return
 	end
 	if not clip then return end
 	if data.Type == "AdjustSpeed" then
 		if character == nil then return end
-		AnimationActor:SendMessage("AdjustSpeed", character, clip.Animation, data.AdjustSpeed)
+		Animation.AdjustSpeed(character, clip.Animation, data.AdjustSpeed)
 		return
 	end
 	if character == nil then return end
-	AnimationActor:SendMessage("Play", character, clip.Animation, {
+	Animation.Play(character, clip.Animation, {
 		Speed = data.Speed,
 		Priority = clip.Priority,
 		FadeInTime = clip.FadeInTime,
@@ -83,7 +190,7 @@ function Animation:onStop(data: AnimationStopData)
 
 	if not animation then return end
 
-	AnimationActor:SendMessage("Stop", data.Character, animation, {
+	Animation.Stop(data.Character, animation, {
 		FadeOutTime = data.FadeTime,
 		Overlay = data.Overlay,
 	})

@@ -170,12 +170,16 @@ function TimeStopFreeze.apply(ctx: FreezeContext)
 	-- Animation hold, both sides: server tracks through Animate, client clips
 	-- through the shared Animation VFX (bulk form passed as the first arg).
 	const pausedTracks = pauseServerTracks(holdModels)
-	vfxService:StartEffect(players(), "Animation", { PauseAll = holdModels })
+	vfxService:StartEffect(players(), "Animation", { Type = "PauseAll", Characters = holdModels })
 
 	-- Registered first so LIFO it runs last, after Restrain and DamageHold.
 	castCleaner:Add(function()
 		resumeServerTracks(pausedTracks)
-		vfxService:StartEffect(players(), "Animation", { ResumeAll = holdModels })
+		vfxService:StartEffect(
+			players(),
+			"Animation",
+			{ Type = "ResumeAll", Characters = holdModels }
+		)
 	end)
 
 	const pausedSkills = pauseSequences(others)
@@ -229,7 +233,11 @@ function TimeStopFreeze.apply(ctx: FreezeContext)
 	end
 
 	if #stasisAudience > 0 then
-		vfxService:StartEffect(stasisAudience, "Animation", { PauseAll = casterModels })
+		vfxService:StartEffect(
+			stasisAudience,
+			"Animation",
+			{ Type = "PauseAll", Characters = casterModels }
+		)
 		vfxService:StartEffect(stasisAudience, "TimeStopHold", {
 			Caster = character.instance,
 			Stand = standModel,
@@ -239,7 +247,11 @@ function TimeStopFreeze.apply(ctx: FreezeContext)
 
 	castCleaner:Add(function()
 		if #stasisAudience == 0 then return end
-		vfxService:StartEffect(stasisAudience, "Animation", { ResumeAll = casterModels })
+		vfxService:StartEffect(
+			stasisAudience,
+			"Animation",
+			{ Type = "ResumeAll", Characters = casterModels }
+		)
 		vfxService:StopEffect(stasisAudience, "TimeStopHold", {
 			Caster = character.instance,
 			Stand = standModel,
