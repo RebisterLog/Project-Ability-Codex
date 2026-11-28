@@ -84,7 +84,7 @@ function Page.new(pageScope: Fusion.Scope, props: PageProps)
 
 	if fragment == nil then
 		-- Пустая страница: `Children` без детей допустим.
-	elseif fragment:IsA("Instance") then
+	elseif typeof(fragment) == "Instance" then
 		children.Fragment = fragment
 	else
 		for index, child in fragment do

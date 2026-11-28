@@ -1,4 +1,5 @@
 const ReplicatedStorage = game:GetService("ReplicatedStorage")
+const GuiService = game:GetService("GuiService")
 
 const Fusion = require(ReplicatedStorage.shared.packages.Fusion)
 
@@ -20,6 +21,8 @@ const PlayerHUDView = function(
 	const delayedHealthSpring = scope:Spring(props.DelayedHealthRatio, 8)
 	const experienceSpring = scope:Spring(props.Experience, 12)
 
+	const guiInset = GuiService:GetGuiInset()
+
 	const healthSize = scope:Computed(function(use)
 		return UDim2.fromScale(math.clamp(use(healthSpring), 0, 1), 1)
 	end)
@@ -39,6 +42,7 @@ const PlayerHUDView = function(
 	return scope:New("Frame")({
 		Name = "HUD",
 		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(guiInset.X, guiInset.Y),
 		Size = UDim2.fromScale(0.35, 0.15463),
 
 		[Children] = {

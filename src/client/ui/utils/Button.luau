@@ -32,6 +32,13 @@ const Button = function(scope: Fusion.Scope, button: GuiButton)
 
 	const tweensInProgress = {}
 
+	const function applyTweens(tweens: { Tween })
+		table.clear(tweensInProgress)
+		for _, tween in playAllTweens(tweens) do
+			table.insert(tweensInProgress, tween)
+		end
+	end
+
 	const onHover = function()
 		const tweens = {
 			TweenService:Create(button, BTN_TWEEN_INFO, { Size = prettySize }),
@@ -67,23 +74,31 @@ const Button = function(scope: Fusion.Scope, button: GuiButton)
 	end
 
 	button.MouseEnter:Connect(function()
+		if not button.Active then return end
 		cancelAllTweens(tweensInProgress)
-		playAllTweens(onHover())
+		applyTweens(onHover())
 	end)
 
 	button.MouseButton1Up:Connect(function()
+		if not button.Active then return end
 		cancelAllTweens(tweensInProgress)
-		playAllTweens(onHover())
+		applyTweens(onHover())
 	end)
 
 	button.MouseLeave:Connect(function()
 		cancelAllTweens(tweensInProgress)
-		playAllTweens(onUnhover())
+		applyTweens(onUnhover())
 	end)
 
 	button.MouseButton1Down:Connect(function()
 		cancelAllTweens(tweensInProgress)
-		playAllTweens(onUnhover())
+		applyTweens(onUnhover())
+	end)
+
+	button:GetPropertyChangedSignal("Active"):Connect(function()
+		if button.Active then return end
+		cancelAllTweens(tweensInProgress)
+		applyTweens(onUnhover())
 	end)
 
 	return button
